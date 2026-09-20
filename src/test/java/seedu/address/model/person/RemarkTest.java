@@ -1,5 +1,6 @@
 package seedu.address.model.person;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -27,5 +28,13 @@ public class RemarkTest {
         // different remark -> returns false
         Remark differentRemark = new Remark("Bye");
         assertFalse(remark.equals(differentRemark));
+    }
+
+    @Test
+    public void hashCode_sameValues_sameHashCode() {
+        Remark firstRemark = new Remark("Hello");
+        Remark secondRemark = new Remark("Hello");
+
+        assertEquals(firstRemark.hashCode(), secondRemark.hashCode());
     }
 }
