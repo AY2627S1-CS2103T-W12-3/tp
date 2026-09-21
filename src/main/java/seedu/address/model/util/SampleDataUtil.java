@@ -18,8 +18,10 @@ import seedu.address.model.tag.Tag;
  * Contains utility methods for populating {@code AddressBook} with sample data.
  */
 public class SampleDataUtil {
+
+    public static final Remark EMPTY_REMARK = new Remark("");
+
     public static Person[] getSamplePersons() {
-        public static final Remark EMPTY_REMARK = new Remark("");
         return new Person[] {
             new Person(new Name("Alex Yeoh"), new Phone("87438807"), new Email("alexyeoh@example.com"),
                 new Address("Blk 30 Geylang Street 29, #06-40"), EMPTY_REMARK,

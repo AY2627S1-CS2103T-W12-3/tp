@@ -38,7 +38,6 @@ public class CommandTestUtil {
     public static final String VALID_REMARK_AMY = "Like skiing.";
     public static final String VALID_REMARK_BOB = "Favorite pastime: Eating";
 
-
     public static final String NAME_DESC_AMY = " " + PREFIX_NAME + VALID_NAME_AMY;
     public static final String NAME_DESC_BOB = " " + PREFIX_NAME + VALID_NAME_BOB;
     public static final String PHONE_DESC_AMY = " " + PREFIX_PHONE + VALID_PHONE_AMY;
