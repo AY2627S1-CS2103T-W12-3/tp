@@ -11,6 +11,7 @@
     "phone" : "98765432",
     "email" : "johnd@example.com",
     "address" : "311, Clementi Ave 2, #02-25",
+    "remark" : "He can't take beer!",
     "tags" : [ "owesMoney", "friends" ]
   }, {
     "name" : "Carl Kurz",
