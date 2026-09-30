@@ -11,6 +11,15 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 
 ## Project team
 
+### Vicky Lim
+
+<img src="images/vickylim08.png" width="200px">
+
+[[github](https://github.com/vickylim08)]
+
+* Role: Developer
+* Responsibilities: Testing, Scheduling and Tracking
+
 ### Elbert Tristan Lie
 
 <img src="images/yuanshengbronze.png" width="200px">
