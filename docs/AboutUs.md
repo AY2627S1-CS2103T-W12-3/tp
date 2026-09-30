@@ -20,6 +20,15 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 * Role: Developer
 * Responsibilities: Testing, Scheduling and Tracking
 
+### Elbert Tristan Lie
+
+<img src="images/yuanshengbronze.png" width="200px">
+
+[[github](https://github.com/yuanshengbronze)]
+
+* Role: Developer
+* Responsibilites: Code Quality, In Charge of Events
+
 ### Jane Doe
 
 <img src="images/johndoe.png" width="200px">
