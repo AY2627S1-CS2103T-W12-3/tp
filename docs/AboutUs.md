@@ -11,6 +11,15 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 
 ## Project team
 
+### Evan Nathanael
+
+<img src="images/evannathanael.png" width="200px">
+
+[[github](https://github.com/evannathanael)]
+
+* Role: Team Lead
+* Responsibilities: In Charge of Tags
+
 ### Vicky Lim
 
 <img src="images/vickylim08.png" width="200px">
