@@ -1,7 +1,6 @@
 {
   "baseUrl": "",
   "titlePrefix": "CoordiMate",
-  "titleSuffix": "AddressBook Level-3",
   "faviconPath": "images/SeEduLogo.png",
   "style": {
     "codeTheme": "light"
