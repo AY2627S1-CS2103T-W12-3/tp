@@ -11,15 +11,14 @@ You can reach us at the email `seer[at]comp.nus.edu.sg`
 
 ## Project team
 
-### John Doe
+### Elbert Tristan Lie
 
-<img src="images/johndoe.png" width="200px">
+<img src="images/yuanshengbronze.png" width="200px">
 
-[[homepage](http://www.comp.nus.edu.sg/~damithch)]
-[[github](https://github.com/johndoe)]
-[[portfolio](team/johndoe.md)]
+[[github](https://github.com/yuanshengbronze)]
 
-* Role: Project Advisor
+* Role: Developer
+* Responsibilites: Code Quality, In Charge of Events
 
 ### Jane Doe
 
