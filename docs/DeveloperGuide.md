@@ -13,7 +13,7 @@
 
 ## **Acknowledgements**
 
-* _{List the sources of reused or adapted ideas, code, documentation, and third-party libraries here, with links to the originals.}_
+* _{This project is based on the AddressBook-Level3 project created by the [SE-EDU initiative](https://se-education.org).}_
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -320,6 +320,55 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
     * 3a1. AddressBook shows an error message.
 
       Use case resumes at step 2.
+
+**Use case: Create an event**
+
+**Preconditions:** CoordiMate is running.
+
+**MSS**
+
+1. The Exco member creates an event by entering its name, start date/time, and end date/time using the `addevent` command.
+2. CoordiMate validates the details and creates the event.
+3. CoordiMate displays a confirmation with the event name and its start and end times.
+4. The use case ends.
+
+**Extensions**
+
+* 1a. The event name is empty, a date/time is missing or incorrectly formatted, or a required parameter is repeated.
+  * 1a1. CoordiMate displays the relevant error.
+  * 1a2. The Exco member corrects the details and retries step 1.
+
+* 1b. An event with that name already exists.
+  * 1b1. CoordiMate reports that duplicate event names are not allowed.
+  * 1b2. The Exco member chooses a different name and retries step 1.
+
+* 2a. CoordiMate cannot save the event because the local data file cannot be written or is invalid.
+  * 2a1. CoordiMate displays the relevant error and does not create the event.
+  * The use case ends.
+
+**Use case: Assign members to an event**
+
+**Preconditions:** CoordiMate is running. The event and the contacts to be assigned already exist.
+
+**MSS**
+
+1. The Exco member assigns one or more contacts to an event using the `assign` command, specifying the event ID and contact IDs.
+2. CoordiMate verifies the event and contacts, then associates the contacts with the event.
+3. CoordiMate confirms how many members were assigned.
+4. The use case ends.
+
+**Extensions**
+
+* 1a. The event ID or a contact ID is invalid.
+  * 1a1. CoordiMate displays the relevant error.
+  * 1a2. The Exco member corrects the ID and retries step 1.
+
+* 1b. No contact IDs are provided.
+  * 1b1. CoordiMate reports that at least one member must be specified.
+  * 1b2. The Exco member provides one or more contact IDs and retries step 1.
+
+* 2a. A contact is already assigned, or the same contact ID appears more than once.
+  * 2a1. CoordiMate avoids creating duplicate assignments and reports the number of newly assigned members.
 
 *{More to be added}*
 
