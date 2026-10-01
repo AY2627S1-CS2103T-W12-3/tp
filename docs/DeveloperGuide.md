@@ -506,15 +506,59 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * 2a. A contact is already assigned, or the same contact ID appears more than once.
   * 2a1. CoordiMate avoids creating duplicate assignments and reports the number of newly assigned members.
 
+**Use case: Record event attendance**
+
+**Preconditions:** CoordiMate is running. The event exists and has at least one member assigned to it.
+
+**MSS**
+
+1. The Exco member requests to view the list of members assigned to an event.
+2. CoordiMate displays the list of members for that event.
+3. The Exco member marks a member's attendance status as present or absent using the `markattendance` command.
+4. CoordiMate records the attendance status and confirms the update.
+5. Steps 3-4 are repeated for each member whose attendance is to be recorded.
+6. The use case ends.
+
+**Extensions**
+
+* 1a. The event does not exist.
+  * 1a1. CoordiMate displays the relevant error.
+  * The use case ends.
+
+* 2a. No members are assigned to the event.
+  * 2a1. CoordiMate informs the Exco member that the event has no members.
+  * The use case ends.
+
+* 3a. The specified member is not assigned to the event.
+  * 3a1. CoordiMate displays the relevant error.
+  * The Exco member retries step 3.
+
+* 3b. The attendance status given is neither "present" nor "absent".
+  * 3b1. CoordiMate displays an error listing the valid status values.
+  * The Exco member retries step 3.
+
+* 3c. The member already has the specified attendance status recorded.
+  * 3c1. CoordiMate informs the Exco member that no change was made.
+  * The use case resumes from step 5.
+
+* 4a. CoordiMate cannot save the updated attendance record to the local data file.
+  * 4a1. CoordiMate displays the relevant error and does not update the displayed status.
+  * The use case resumes from step 5.
+
 *{More to be added}*
 
 ### Non-Functional Requirements
 
-1.  Should work on any _mainstream OS_ as long as it has Java `25` or above installed.
-2.  Should be able to hold up to 1000 persons without noticeable sluggishness in performance for typical usage.
+1.  Should work on any _mainstream OS_ (Windows, macOS, Linux) as long as it has Java `25` or above installed.
+2.  Should be able to hold up to 250 contacts and 6 events per semester without a noticeable sluggishness in performance for typical usage.
 3.  A user with above average typing speed for regular English text (i.e. not code, not system admin commands) should be able to accomplish most of the tasks faster using commands than using the mouse.
-
-*{More to be added}*
+4.  Should respond to any user command within 2 seconds under typical load (up to 250 contacts, 6 events).
+5.  Should not require an internet connection to operate, since all contact, event, and attendance data is stored and managed locally.
+6.  Should not lose previously saved data if the application terminates unexpectedly (e.g. crash, power loss) mid-operation.
+7.  Data should be stored in a human-editable, non-proprietary file format (not a DBMS), so users can back up, inspect, or migrate their data manually.
+8.  Should be shipped as a single JAR file that does not require a separate installer.
+9.  A first-time user with no prior experience should be able to complete the in-app tutorial and add their first contact within 10 minutes.
+10. The colour-coding feature should not be the sole means of distinguishing contact categories, so the app remains usable by colour-blind users (e.g. tags are also shown as text).
 
 ### Glossary
 
