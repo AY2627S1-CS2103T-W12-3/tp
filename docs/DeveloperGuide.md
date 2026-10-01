@@ -270,13 +270,15 @@ _{Explain here how the data archiving feature will be implemented}_
 
 **Target user profile**:
 
-* has a need to manage a significant number of contacts
+* is a university CCA EXCO member managing information for one organisation
+* needs to manage the organisation's contacts, events, and attendance records
+* needs to preserve useful information for future committee members
 * prefers desktop apps over other types of applications
 * can type fast
 * prefers typing to mouse interactions
 * is reasonably comfortable using CLI apps
 
-**Value proposition**: Manage contacts faster than with a typical mouse-driven GUI application.
+**Value proposition**: CoordiMate helps university CCA EXCO members organise contacts, coordinate events, track attendance, and preserve important information to support smooth committee handovers.
 
 
 ### User stories
@@ -332,6 +334,43 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 (For all use cases below, the **System** is the `AddressBook` and the **Actor** is the `user`, unless specified otherwise)
 
+**Use case: Add a contact**
+
+**System:** CoordiMate
+
+**Actor:** University CCA EXCO member
+
+**Preconditions:** CoordiMate is running.
+
+**Main success scenario (MSS)**
+
+1. EXCO member requests to add a contact, providing the contact's name, phone number, email address, role, and any applicable optional details.
+2. CoordiMate adds the contact and confirms that the contact was saved.
+
+    Use case ends.
+
+**Extensions**
+
+* 1a. A required detail is missing, empty, repeated, or invalid, or the EXCO member provides an unknown field.
+
+  * 1a1. CoordiMate informs the EXCO member of the error.
+  * 1a2. EXCO member corrects the contact details.
+
+    Steps 1a1-1a2 are repeated until the contact details are valid.<br>
+    Use case resumes from step 2.
+
+* 1b. A contact with the same normalised phone number or email address already exists.
+
+  * 1b1. CoordiMate informs the EXCO member that the contact already exists and makes no changes.
+
+    Use case ends.
+
+* 2a. CoordiMate cannot write to the local data file.
+
+  * 2a1. CoordiMate informs the EXCO member that the contact could not be saved and makes no changes.
+
+    Use case ends.
+    
 **Use case: Find contacts**
 
 **System:** CoordiMate
@@ -367,28 +406,56 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
     Use case ends.
 
-**Use case: Delete a person**
+**Use case: Delete a contact**
 
-**MSS**
+**System:** CoordiMate
 
-1.  User requests to list persons
-2.  AddressBook shows a list of persons
-3.  User requests to delete a specific person in the list
-4.  AddressBook deletes the person
+**Actor:** University CCA EXCO member
+
+**Preconditions:** CoordiMate is running and at least one contact has been saved.
+
+**Main success scenario (MSS)**
+
+1. EXCO member requests to delete a contact, identifying the contact by its displayed index, exact name, phone number, or email address.
+2. CoordiMate displays the matching contact and requests confirmation.
+3. EXCO member confirms the deletion.
+4. CoordiMate deletes the contact and confirms the deletion.
 
     Use case ends.
 
 **Extensions**
 
-* 2a. The list is empty.
+* 1a. The EXCO member provides no identifier, more than one identifier, an unknown field, or an invalid index.
 
-  Use case ends.
+  * 1a1. CoordiMate informs the EXCO member of the error.
+  * 1a2. EXCO member provides one valid identifier.
 
-* 3a. The given index is invalid.
+    Use case resumes from step 2.
 
-    * 3a1. AddressBook shows an error message.
+* 1b. No contact matches the provided identifier.
 
-      Use case resumes at step 2.
+  * 1b1. CoordiMate informs the EXCO member that no matching contact was found.
+
+    Use case ends.
+
+* 1c. More than one contact matches the provided name.
+
+  * 1c1. CoordiMate requests a phone number, email address, or displayed index to identify the contact.
+  * 1c2. EXCO member provides one of the requested identifiers.
+
+    Use case resumes from step 2.
+
+* 3a. EXCO member declines the deletion.
+
+  * 3a1. CoordiMate leaves the contact unchanged.
+
+    Use case ends.
+
+* 4a. The contact is assigned to a future event.
+
+  * 4a1. CoordiMate removes the contact from the event's active participant list and retains existing attendance records.
+
+    Use case ends.
 
 **Use case: Create an event**
 
