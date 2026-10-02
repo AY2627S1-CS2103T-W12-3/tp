@@ -332,7 +332,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 ### Use cases
 
-(For all use cases below, the **System** is the `AddressBook` and the **Actor** is the `user`, unless specified otherwise)
+(For all use cases below, the **System** is the `Coordimate` and the **Actor** is the `user`, unless specified otherwise)
 
 **Use case: Add a contact**
 
@@ -562,8 +562,37 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 ### Glossary
 
+* **Archive**: To move a contact or event out of the active list without permanently deleting it, so that it can still be retrieved later.
+* **Assigned member**: A contact who has been assigned to a particular event. Also referred to as a *member* of that event.
+* **Attendance status**: Whether an assigned member was `present` or `absent` at an event.
+* **CCA (Co-Curricular Activity)**: A student club or society in a university, such as a band, sports team or interest group.
+* **CLI (Command Line Interface)**: A way of using the app by typing text commands, as opposed to clicking buttons in a graphical interface.
+* **Colour-code**: To assign a colour to a contact so that contacts of the same role or group can be recognised visually.
+* **Committee handover**: The transfer of responsibilities and information from an outgoing EXCO to the incoming EXCO.
+* **Contact**: A person saved in CoordiMate, with details such as name, phone number, email address and role.
+* **Custom tag**: A tag created by the user, to categorise contacts in ways not covered by the default tags.
+* **Default tag**: A tag that is available without the user creating it: `EXCO`, `Sponsor`, `UniversityStaff` and `Logistics`.
+* **Displayed index**: The number shown beside a contact in the currently displayed list, used to identify that contact in commands.
+* **Duplicate contact**: A contact with the same normalised phone number or email address as another saved contact. Contacts with the same name are not considered duplicates.
+* **Event**: An activity organised by the CCA, such as a concert or fair, with a unique name, a start date/time and an end date/time.
+* **Event ID**: The number that identifies an event in commands such as `assign`.
+* **Event lead**: An EXCO member who is in charge of organising a particular event.
+* **EXCO (Executive Committee)**: The group of students elected to lead and run a CCA.
+* **External contact**: A contact from outside the CCA, such as a sponsor, university staff member, or EXCO member of a collaborating CCA.
+* **Future event**: An event whose start date/time is later than the current date/time.
+* **Internal contact**: A contact from within the CCA, such as a member, fellow EXCO member or advisor.
+* **JAR file**: A single file that packages a Java application so that it can be run without installation.
+* **Local data file**: The file on the user's computer where CoordiMate automatically saves all contacts, events and attendance records.
 * **Mainstream OS**: Windows, Linux, Unix, or macOS
-* **Private contact detail**: A contact detail that is not meant to be shared with others
+* **Normalised phone number**: A phone number with spaces, hyphens and brackets removed, used to detect duplicates. For example, `+65 9123 4567` and `+6591234567` are the same.
+* **On leave**: A temporary status marking a contact as unavailable until a specified date, after which it is cleared automatically.
+* **Organisation**: The external company or body that a contact belongs to, such as a sponsor company or university office.
+* **Prefix**: The short label before a value in a command that tells CoordiMate which field it belongs to, such as `n/` for name or `t/` for tag.
+* **Role**: A contact's responsibility or position in relation to the CCA, such as `Logistics Lead` or `Vice-President`.
+* **Tag**: A short label attached to a contact to categorise it, such as `EXCO` or `Sponsor`. A contact can have multiple tags.
+* **Telegram handle**: A user's username on the Telegram messaging app, such as `@aishatan`.
+* **Tutorial**: An in-app guide that introduces a first-time user to CoordiMate's key features.
+* **Typical usage**: Using CoordiMate with up to 250 contacts and 6 events, as described in the NFRs.
 
 --------------------------------------------------------------------------------------------------------------------
 
