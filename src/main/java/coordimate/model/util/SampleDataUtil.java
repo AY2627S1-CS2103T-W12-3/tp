@@ -41,11 +41,11 @@ public class SampleDataUtil {
     }
 
     public static ReadOnlyCoordiMate getSampleCoordiMate() {
-        CoordiMate sampleAb = new CoordiMate();
+        CoordiMate sampleCoordiMate = new CoordiMate();
         for (Person samplePerson : getSamplePersons()) {
-            sampleAb.addPerson(samplePerson);
+            sampleCoordiMate.addPerson(samplePerson);
         }
-        return sampleAb;
+        return sampleCoordiMate;
     }
 
     /**

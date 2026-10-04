@@ -63,11 +63,11 @@ public class TypicalPersons {
      * Returns an {@code CoordiMate} with all the typical persons.
      */
     public static CoordiMate getTypicalCoordiMate() {
-        CoordiMate ab = new CoordiMate();
+        CoordiMate coordiMate = new CoordiMate();
         for (Person person : getTypicalPersons()) {
-            ab.addPerson(person);
+            coordiMate.addPerson(person);
         }
-        return ab;
+        return coordiMate;
     }
 
     public static List<Person> getTypicalPersons() {

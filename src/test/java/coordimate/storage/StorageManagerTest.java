@@ -24,7 +24,7 @@ public class StorageManagerTest {
 
     @BeforeEach
     public void setUp() {
-        JsonCoordiMateStorage coordiMateStorage = new JsonCoordiMateStorage(getTempFilePath("ab"));
+        JsonCoordiMateStorage coordiMateStorage = new JsonCoordiMateStorage(getTempFilePath("coordimate"));
         JsonUserPrefsStorage userPrefsStorage = new JsonUserPrefsStorage(getTempFilePath("prefs"));
         storageManager = new StorageManager(coordiMateStorage, userPrefsStorage);
     }
@@ -63,6 +63,11 @@ public class StorageManagerTest {
     @Test
     public void getCoordiMateFilePath() {
         assertNotNull(storageManager.getCoordiMateFilePath());
+    }
+
+    @Test
+    public void getUserPrefsFilePath() {
+        assertNotNull(storageManager.getUserPrefsFilePath());
     }
 
 }

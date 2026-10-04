@@ -7,6 +7,7 @@ import static coordimate.testutil.TypicalPersons.ALICE;
 import static coordimate.testutil.TypicalPersons.getTypicalCoordiMate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collection;
@@ -85,6 +86,22 @@ public class CoordiMateTest {
     public void toStringMethod() {
         String expected = CoordiMate.class.getCanonicalName() + "{persons=" + coordiMate.getPersonList() + "}";
         assertEquals(expected, coordiMate.toString());
+    }
+
+    @Test
+    public void equals_sameObject_returnsTrue() {
+        assertEquals(coordiMate, coordiMate);
+    }
+
+    @Test
+    public void equals_differentType_returnsFalse() {
+        assertNotEquals(coordiMate, new Object());
+    }
+
+    @Test
+    public void hashCode_sameData_returnsSameHashCode() {
+        CoordiMate copy = new CoordiMate(coordiMate);
+        assertEquals(coordiMate.hashCode(), copy.hashCode());
     }
 
     /**

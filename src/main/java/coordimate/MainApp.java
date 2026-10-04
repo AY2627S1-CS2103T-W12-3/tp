@@ -43,14 +43,29 @@ public class MainApp extends Application {
     protected Storage storage;
     protected Model model;
 
+    private final Path userPrefsFilePath;
+    private final Path coordiMateFilePath;
+
+    public MainApp() {
+        this(USER_PREFS_FILE_PATH, COORDIMATE_FILE_PATH);
+    }
+
+    /**
+     * Creates a {@code MainApp} that stores its data at the given file paths.
+     */
+    MainApp(Path userPrefsFilePath, Path coordiMateFilePath) {
+        this.userPrefsFilePath = userPrefsFilePath;
+        this.coordiMateFilePath = coordiMateFilePath;
+    }
+
     @Override
     public void init() throws Exception {
         logger.info("=============================[ Initializing CoordiMate ]===========================");
         super.init();
 
-        JsonUserPrefsStorage userPrefsStorage = new JsonUserPrefsStorage(USER_PREFS_FILE_PATH);
+        JsonUserPrefsStorage userPrefsStorage = new JsonUserPrefsStorage(userPrefsFilePath);
         UserPrefs userPrefs = initPrefs(userPrefsStorage);
-        JsonCoordiMateStorage coordiMateStorage = new JsonCoordiMateStorage(COORDIMATE_FILE_PATH);
+        JsonCoordiMateStorage coordiMateStorage = new JsonCoordiMateStorage(coordiMateFilePath);
         storage = new StorageManager(coordiMateStorage, userPrefsStorage);
 
         model = initModelManager(storage, userPrefs);
