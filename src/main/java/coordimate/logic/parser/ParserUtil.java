@@ -25,6 +25,7 @@ public class ParserUtil {
     /**
      * Parses {@code oneBasedIndex} into an {@code Index} and returns it. Leading and trailing whitespaces will be
      * trimmed.
+     *
      * @throws ParseException if the specified index is invalid (not a non-zero unsigned integer).
      */
     public static Index parseIndex(String oneBasedIndex) throws ParseException {
@@ -115,10 +116,10 @@ public class ParserUtil {
      */
     public static Set<Tag> parseTags(Collection<String> tags) throws ParseException {
         requireNonNull(tags);
-        final Set<Tag> tagSet = new HashSet<>();
+        final Set<Tag> parsedTags = new HashSet<>();
         for (String tagName : tags) {
-            tagSet.add(parseTag(tagName));
+            parsedTags.add(parseTag(tagName));
         }
-        return tagSet;
+        return parsedTags;
     }
 }

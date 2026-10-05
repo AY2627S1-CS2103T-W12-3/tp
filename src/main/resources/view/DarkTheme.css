@@ -149,7 +149,7 @@
 .result-display {
     -fx-background-color: transparent;
     -fx-font-family: "Segoe UI Light";
-    -fx-font-size: 13pt;
+    -fx-font-size: 10pt;
     -fx-text-fill: white;
 }
 
@@ -349,4 +349,196 @@
     -fx-border-radius: 2;
     -fx-background-radius: 2;
     -fx-font-size: 11;
+}
+
+.workspace-tabs {
+    -fx-background-color: #383838;
+    -fx-tab-min-width: 110;
+    -fx-tab-min-height: 44;
+}
+
+.workspace-tabs > .tab-header-area {
+    -fx-min-height: 0;
+    -fx-pref-height: 0;
+    -fx-max-height: 0;
+}
+
+.view-navigation {
+    -fx-background-color: #2d2d2d;
+    -fx-padding: 16 8;
+}
+
+.view-button {
+    -fx-background-color: #383838;
+    -fx-background-radius: 3;
+    -fx-border-radius: 3;
+    -fx-border-color: #515658;
+    -fx-padding: 8 10;
+    -fx-min-height: 44;
+    -fx-text-fill: white;
+    -fx-font-family: "Segoe UI Semibold";
+    -fx-font-size: 14px;
+}
+
+.view-button:selected {
+    -fx-background-color: #424d5f;
+    -fx-border-color: #3e7b91;
+}
+
+.view-button:focused {
+    -fx-border-color: white;
+}
+
+.workspace-content {
+    -fx-background-color: #383838;
+    -fx-padding: 8;
+}
+
+.event-workspace {
+    -fx-background-color: #383838;
+    -fx-padding: 0;
+    -fx-border-width: 0;
+}
+
+.event-workspace:vertical > .split-pane-divider {
+    -fx-background-color: #383838;
+    -fx-border-color: #515658 transparent transparent transparent;
+}
+
+.event-list-section, .event-details-section {
+    -fx-padding: 16;
+    -fx-background-color: #383838;
+}
+
+.section-heading {
+    -fx-font-family: "Segoe UI Semibold";
+    -fx-font-size: 16px;
+    -fx-text-fill: white;
+    -fx-opacity: 1;
+}
+
+.event-list .list-cell {
+    -fx-padding: 6 0;
+    -fx-background-color: #383838;
+}
+
+.event-card {
+    -fx-padding: 16;
+    -fx-background-color: #3c3e3f;
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
+    -fx-border-color: #515658;
+    -fx-border-width: 1;
+}
+
+.event-list .list-cell:selected .event-card {
+    -fx-background-color: #424d5f;
+    -fx-border-color: #3e7b91;
+    -fx-border-width: 2;
+}
+
+.event-list:focused .list-cell:selected .event-card {
+    -fx-border-color: white;
+}
+
+.event-card-name {
+    -fx-font-family: "Segoe UI Semibold";
+    -fx-font-size: 16px;
+    -fx-text-fill: white;
+    -fx-opacity: 1;
+}
+
+.event-title {
+    -fx-font-family: "Segoe UI Semibold";
+    -fx-font-size: 24px;
+    -fx-text-fill: white;
+    -fx-opacity: 1;
+}
+
+.detail-caption, .event-list .detail-caption, .command-hint {
+    -fx-font-family: "Segoe UI";
+    -fx-font-size: 13px;
+    -fx-text-fill: #d0d0d0;
+    -fx-opacity: 1;
+}
+
+.detail-value {
+    -fx-font-family: "Segoe UI";
+    -fx-font-size: 15px;
+    -fx-text-fill: white;
+    -fx-opacity: 1;
+}
+
+.event-details-card {
+    -fx-padding: 18;
+    -fx-background-color: #3c3e3f;
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
+    -fx-border-color: #515658;
+}
+
+.event-details-scroll, .event-details-scroll > .viewport {
+    -fx-background-color: #383838;
+    -fx-padding: 0;
+}
+
+.event-list .placeholder .label {
+    -fx-text-fill: #d0d0d0;
+    -fx-wrap-text: true;
+    -fx-padding: 12;
+}
+
+.feedback-band {
+    -fx-padding: 4 12;
+    -fx-background-color: #383838;
+    -fx-border-width: 1 0;
+    -fx-border-color: #515658;
+}
+
+.feedback-band:command-success {
+    -fx-border-color: #3e7b91;
+}
+
+.feedback-band:command-error {
+    -fx-background-color: #422e2b;
+    -fx-border-color: #d06651;
+}
+
+.feedback-band:command-error #resultDisplay,
+.feedback-band:command-error .feedback-status {
+    -fx-text-fill: #f2b2a3;
+}
+
+.feedback-status {
+    -fx-text-fill: white;
+    -fx-font-size: 12px;
+    -fx-opacity: 1;
+}
+
+.command-container {
+    -fx-padding: 12;
+    -fx-background-color: #383838;
+}
+
+#commandTextField {
+    -fx-min-height: 44;
+    -fx-border-color: #515658;
+    -fx-border-radius: 3;
+    -fx-padding: 8 12;
+    -fx-prompt-text-fill: #d0d0d0;
+}
+
+#commandTextField:focused {
+    -fx-border-color: white;
+}
+
+#commandTextField.error {
+    -fx-border-color: #d06651;
+    -fx-background-color: #422e2b;
+    -fx-text-fill: #f2b2a3 !important;
+}
+
+#submitButton {
+    -fx-min-height: 44;
+    -fx-padding: 8 16;
 }

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.layout.VBox?>
+
+<SplitPane fx:id="eventSplitPane" dividerPositions="0.5" styleClass="event-workspace"
+           xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
+  <VBox spacing="12" minWidth="0" minHeight="0" styleClass="event-list-section">
+    <Label fx:id="eventCount" text="Events" styleClass="section-heading" />
+    <ListView fx:id="eventListView" VBox.vgrow="ALWAYS" minWidth="0" minHeight="0"
+              accessibleText="Events. Select an event to view its details." styleClass="event-list" />
+  </VBox>
+  <ScrollPane fitToWidth="true" minWidth="0" minHeight="0" styleClass="event-details-scroll">
+    <VBox spacing="18" styleClass="event-details-section">
+      <Label text="Event details" styleClass="section-heading" />
+      <Label fx:id="selectedName" text="No event selected" wrapText="true" styleClass="event-title" />
+      <VBox fx:id="eventDetails" spacing="16" styleClass="event-details-card">
+        <VBox spacing="5">
+          <Label text="Start date &amp; time" styleClass="detail-caption" />
+          <Label fx:id="startTime" wrapText="true" styleClass="detail-value" />
+        </VBox>
+        <VBox spacing="5">
+          <Label text="End date &amp; time" styleClass="detail-caption" />
+          <Label fx:id="endTime" wrapText="true" styleClass="detail-value" />
+        </VBox>
+        <VBox spacing="5">
+          <Label text="Duration" styleClass="detail-caption" />
+          <Label fx:id="duration" wrapText="true" styleClass="detail-value" />
+        </VBox>
+      </VBox>
+      <Label fx:id="selectionHint" text="Add an event with addevent to see its details here."
+             wrapText="true" styleClass="detail-caption" />
+    </VBox>
+  </ScrollPane>
+</SplitPane>

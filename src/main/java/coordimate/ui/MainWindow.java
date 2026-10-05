@@ -6,13 +6,18 @@ import java.util.logging.Logger;
 import coordimate.commons.core.GuiSettings;
 import coordimate.commons.core.LogsCenter;
 import coordimate.logic.Logic;
+import coordimate.logic.commands.AddEventCommand;
 import coordimate.logic.commands.CommandResult;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.logic.parser.exceptions.ParseException;
+import javafx.beans.binding.Bindings;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import javafx.scene.control.TextInputControl;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.StackPane;
@@ -34,6 +39,7 @@ public class MainWindow extends UiPart<Stage> {
 
     // Independent Ui parts residing in this Ui container
     private PersonListPanel personListPanel;
+    private EventListPanel eventListPanel;
     private ResultDisplay resultDisplay;
     private HelpWindow helpWindow;
 
@@ -45,6 +51,24 @@ public class MainWindow extends UiPart<Stage> {
 
     @FXML
     private StackPane personListPanelPlaceholder;
+
+    @FXML
+    private StackPane eventListPanelPlaceholder;
+
+    @FXML
+    private TabPane views;
+
+    @FXML
+    private Tab contactsTab;
+
+    @FXML
+    private Tab eventsTab;
+
+    @FXML
+    private ToggleButton contactsView;
+
+    @FXML
+    private ToggleButton eventsView;
 
     @FXML
     private StackPane resultDisplayPlaceholder;
@@ -82,7 +106,9 @@ public class MainWindow extends UiPart<Stage> {
 
     /**
      * Sets the accelerator of a MenuItem.
-     * @param keyCombination the KeyCombination value of the accelerator
+     *
+     * @param menuItem The menu item whose accelerator is assigned.
+     * @param keyCombination the KeyCombination value of the accelerator.
      */
     private void setAccelerator(MenuItem menuItem, KeyCombination keyCombination) {
         menuItem.setAccelerator(keyCombination);
@@ -116,6 +142,17 @@ public class MainWindow extends UiPart<Stage> {
     void fillInnerParts() {
         personListPanel = new PersonListPanel(logic.getFilteredPersonList());
         personListPanelPlaceholder.getChildren().add(personListPanel.getRoot());
+
+        eventListPanel = new EventListPanel(logic.getEventList());
+        eventListPanelPlaceholder.getChildren().add(eventListPanel.getRoot());
+        contactsTab.textProperty().bind(Bindings.size(logic.getFilteredPersonList()).asString("Contacts (%d)"));
+        eventsTab.textProperty().bind(Bindings.size(logic.getEventList()).asString("Events (%d)"));
+        contactsView.textProperty().bind(contactsTab.textProperty());
+        eventsView.textProperty().bind(eventsTab.textProperty());
+        views.getSelectionModel().selectedItemProperty().addListener((observable, oldTab, tab) -> {
+            contactsView.setSelected(tab == contactsTab);
+            eventsView.setSelected(tab == eventsTab);
+        });
 
         resultDisplay = new ResultDisplay();
         resultDisplayPlaceholder.getChildren().add(resultDisplay.getRoot());
@@ -172,6 +209,24 @@ public class MainWindow extends UiPart<Stage> {
     }
 
     /**
+     * Selects the contacts tab and its view button.
+     */
+    @FXML
+    private void showContacts() {
+        views.getSelectionModel().select(contactsTab);
+        contactsView.setSelected(true);
+    }
+
+    /**
+     * Selects the events tab and its view button.
+     */
+    @FXML
+    private void showEvents() {
+        views.getSelectionModel().select(eventsTab);
+        eventsView.setSelected(true);
+    }
+
+    /**
      * Executes the command and returns the result.
      *
      * @see coordimate.logic.Logic#execute(String)
@@ -182,18 +237,23 @@ public class MainWindow extends UiPart<Stage> {
             logger.info("Result: " + commandResult.getFeedbackToUser());
             resultDisplay.setFeedbackToUser(commandResult.getFeedbackToUser());
 
-            if (commandResult.isShowHelp()) {
+            if (commandText.strip().split("\\s+", 2)[0].equals(AddEventCommand.COMMAND_WORD)) {
+                views.getSelectionModel().select(eventsTab);
+                eventListPanel.selectNewestEvent();
+            }
+
+            if (commandResult.shouldShowHelp()) {
                 handleHelp();
             }
 
-            if (commandResult.isExit()) {
+            if (commandResult.shouldExit()) {
                 handleExit();
             }
 
             return commandResult;
         } catch (CommandException | ParseException e) {
             logger.info("An error occurred while executing command: " + commandText);
-            resultDisplay.setFeedbackToUser(e.getMessage());
+            resultDisplay.setErrorFeedback(e.getMessage());
             throw e;
         }
     }

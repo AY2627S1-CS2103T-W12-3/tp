@@ -14,18 +14,18 @@ public class CommandResult {
     private final String feedbackToUser;
 
     /** Help information should be shown to the user. */
-    private final boolean showHelp;
+    private final boolean shouldShowHelp;
 
     /** The application should exit. */
-    private final boolean exit;
+    private final boolean shouldExit;
 
     /**
      * Constructs a {@code CommandResult} with the specified fields.
      */
-    public CommandResult(String feedbackToUser, boolean showHelp, boolean exit) {
+    public CommandResult(String feedbackToUser, boolean shouldShowHelp, boolean shouldExit) {
         this.feedbackToUser = requireNonNull(feedbackToUser);
-        this.showHelp = showHelp;
-        this.exit = exit;
+        this.shouldShowHelp = shouldShowHelp;
+        this.shouldExit = shouldExit;
     }
 
     /**
@@ -40,12 +40,18 @@ public class CommandResult {
         return feedbackToUser;
     }
 
-    public boolean isShowHelp() {
-        return showHelp;
+    /**
+     * Returns true if the command requests that help be shown.
+     */
+    public boolean shouldShowHelp() {
+        return shouldShowHelp;
     }
 
-    public boolean isExit() {
-        return exit;
+    /**
+     * Returns true if the command requests that the application exit.
+     */
+    public boolean shouldExit() {
+        return shouldExit;
     }
 
     @Override
@@ -60,21 +66,21 @@ public class CommandResult {
         }
 
         return feedbackToUser.equals(otherCommandResult.feedbackToUser)
-                && showHelp == otherCommandResult.showHelp
-                && exit == otherCommandResult.exit;
+                && shouldShowHelp == otherCommandResult.shouldShowHelp
+                && shouldExit == otherCommandResult.shouldExit;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(feedbackToUser, showHelp, exit);
+        return Objects.hash(feedbackToUser, shouldShowHelp, shouldExit);
     }
 
     @Override
     public String toString() {
         return new ToStringBuilder(this)
                 .add("feedbackToUser", feedbackToUser)
-                .add("showHelp", showHelp)
-                .add("exit", exit)
+                .add("showHelp", shouldShowHelp)
+                .add("exit", shouldExit)
                 .toString();
     }
 

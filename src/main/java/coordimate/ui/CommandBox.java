@@ -5,6 +5,7 @@ import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.logic.parser.exceptions.ParseException;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.Region;
 
@@ -20,6 +21,9 @@ public class CommandBox extends UiPart<Region> {
 
     @FXML
     private TextField commandTextField;
+
+    @FXML
+    private Button submitButton;
 
     /**
      * Creates a {@code CommandBox} with the given {@code CommandExecutor}.
@@ -37,7 +41,7 @@ public class CommandBox extends UiPart<Region> {
     @FXML
     private void handleCommandEntered() {
         String commandText = commandTextField.getText();
-        if (commandText.equals("")) {
+        if (commandText.isBlank()) {
             return;
         }
 
@@ -54,19 +58,21 @@ public class CommandBox extends UiPart<Region> {
      */
     private void setStyleToDefault() {
         commandTextField.getStyleClass().remove(ERROR_STYLE_CLASS);
+        submitButton.setText("Enter");
     }
 
     /**
      * Sets the command box style to indicate a failed command.
      */
     private void setStyleToIndicateCommandFailure() {
-        ObservableList<String> styleClass = commandTextField.getStyleClass();
+        ObservableList<String> styleClasses = commandTextField.getStyleClass();
 
-        if (styleClass.contains(ERROR_STYLE_CLASS)) {
+        if (styleClasses.contains(ERROR_STYLE_CLASS)) {
             return;
         }
 
-        styleClass.add(ERROR_STYLE_CLASS);
+        styleClasses.add(ERROR_STYLE_CLASS);
+        submitButton.setText("Retry");
     }
 
     /**

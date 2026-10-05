@@ -5,7 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- * Writes and reads files
+ * Writes and reads files.
  */
 public class FileUtil {
 
@@ -13,6 +13,7 @@ public class FileUtil {
 
     /**
      * Creates a file if it does not exist along with its missing parent directories.
+     *
      * @throws IOException if the file or directory cannot be created.
      */
     public static void createIfMissing(Path file) throws IOException {
@@ -26,7 +27,7 @@ public class FileUtil {
     }
 
     /**
-     * Creates parent directories of file if it has a parent directory
+     * Creates parent directories of file if it has a parent directory.
      */
     private static void createParentDirsOfFile(Path file) throws IOException {
         Path parentDir = file.getParent();
@@ -37,7 +38,7 @@ public class FileUtil {
     }
 
     /**
-     * Assumes file exists
+     * Returns the UTF-8 contents of an existing file.
      */
     public static String readFromFile(Path file) throws IOException {
         return new String(Files.readAllBytes(file), CHARSET);

@@ -6,12 +6,16 @@ import java.util.logging.Logger;
 
 import coordimate.commons.core.GuiSettings;
 import coordimate.commons.core.LogsCenter;
+import coordimate.commons.exceptions.DataLoadingException;
+import coordimate.logic.commands.AddEventCommand;
 import coordimate.logic.commands.Command;
 import coordimate.logic.commands.CommandResult;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.logic.parser.CoordiMateParser;
 import coordimate.logic.parser.exceptions.ParseException;
 import coordimate.model.Model;
+import coordimate.model.ModelManager;
+import coordimate.model.event.Event;
 import coordimate.model.person.Person;
 import coordimate.storage.Storage;
 import javafx.collections.ObservableList;
@@ -44,9 +48,11 @@ public class LogicManager implements Logic {
     public CommandResult execute(String commandText) throws CommandException, ParseException {
         logger.info("----------------[USER COMMAND][" + commandText + "]");
 
-        CommandResult commandResult;
         Command command = coordiMateParser.parseCommand(commandText);
-        commandResult = command.execute(model);
+        if (command instanceof AddEventCommand) {
+            return executeAddEvent(command);
+        }
+        CommandResult commandResult = command.execute(model);
 
         try {
             storage.saveCoordiMate(model.getCoordiMate());
@@ -59,9 +65,35 @@ public class LogicManager implements Logic {
         return commandResult;
     }
 
+    /**
+     * Saves an event on a copy of the model and commits it only after storage succeeds.
+     * Rejects the command if existing data cannot be loaded or the new data cannot be saved.
+     */
+    private CommandResult executeAddEvent(Command command) throws CommandException {
+        try {
+            storage.readCoordiMate();
+        } catch (DataLoadingException e) {
+            throw new CommandException(AddEventCommand.MESSAGE_LOAD_ERROR, e);
+        }
+        Model candidate = new ModelManager(model.getCoordiMate(), model.getUserPrefs());
+        CommandResult result = command.execute(candidate);
+        try {
+            storage.saveCoordiMate(candidate.getCoordiMate());
+        } catch (IOException e) {
+            throw new CommandException(AddEventCommand.MESSAGE_SAVE_ERROR, e);
+        }
+        model.setCoordiMate(candidate.getCoordiMate());
+        return result;
+    }
+
     @Override
     public ObservableList<Person> getFilteredPersonList() {
         return model.getFilteredPersonList();
+    }
+
+    @Override
+    public ObservableList<Event> getEventList() {
+        return model.getCoordiMate().getEventList();
     }
 
     @Override

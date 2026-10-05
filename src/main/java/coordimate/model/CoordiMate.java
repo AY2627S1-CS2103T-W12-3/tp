@@ -5,8 +5,10 @@ import static java.util.Objects.requireNonNull;
 import java.util.List;
 
 import coordimate.commons.util.ToStringBuilder;
+import coordimate.model.event.Event;
 import coordimate.model.person.Person;
 import coordimate.model.person.UniquePersonList;
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
 /**
@@ -16,11 +18,16 @@ import javafx.collections.ObservableList;
 public class CoordiMate implements ReadOnlyCoordiMate {
 
     private final UniquePersonList persons = new UniquePersonList();
+    private final ObservableList<Event> events = FXCollections.observableArrayList();
+    private final ObservableList<Event> unmodifiableEvents = FXCollections.unmodifiableObservableList(events);
 
+    /**
+     * Creates an empty contact and event store.
+     */
     public CoordiMate() {}
 
     /**
-     * Creates an CoordiMate using the Persons in the {@code toBeCopied}
+     * Creates a CoordiMate using the people and events in {@code toBeCopied}.
      */
     public CoordiMate(ReadOnlyCoordiMate toBeCopied) {
         this();
@@ -44,6 +51,46 @@ public class CoordiMate implements ReadOnlyCoordiMate {
         requireNonNull(newData);
 
         setPersons(newData.getPersonList());
+        setEvents(newData.getEventList());
+    }
+
+    /**
+     * Rejects duplicate names before replacing the event list.
+     */
+    public void setEvents(List<Event> events) {
+        requireNonNull(events);
+        for (int i = 0; i < events.size(); i++) {
+            requireNonNull(events.get(i));
+            for (int j = 0; j < i; j++) {
+                if (events.get(i).isSameEvent(events.get(j))) {
+                    throw new IllegalArgumentException("An event with this name already exists.");
+                }
+            }
+        }
+        this.events.setAll(events);
+    }
+
+    /**
+     * Returns true if an event with the same name exists, regardless of its timings.
+     */
+    public boolean hasEvent(Event event) {
+        requireNonNull(event);
+        return events.stream().anyMatch(event::isSameEvent);
+    }
+
+    /**
+     * Rejects an event if its name is already in use.
+     */
+    public void addEvent(Event event) {
+        if (hasEvent(event)) {
+            throw new IllegalArgumentException("An event with this name already exists.");
+        }
+        events.add(event);
+    }
+
+    @Override
+    public ObservableList<Event> getEventList() {
+        return unmodifiableEvents;
     }
 
     //// person-level operations
@@ -89,6 +136,7 @@ public class CoordiMate implements ReadOnlyCoordiMate {
     public String toString() {
         return new ToStringBuilder(this)
                 .add("persons", persons)
+                .add("events", events)
                 .toString();
     }
 
@@ -108,11 +156,11 @@ public class CoordiMate implements ReadOnlyCoordiMate {
             return false;
         }
 
-        return persons.equals(otherCoordiMate.persons);
+        return persons.equals(otherCoordiMate.persons) && events.equals(otherCoordiMate.events);
     }
 
     @Override
     public int hashCode() {
-        return persons.hashCode();
+        return java.util.Objects.hash(persons, events);
     }
 }

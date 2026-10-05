@@ -46,6 +46,9 @@ public class MainApp extends Application {
     private final Path userPrefsFilePath;
     private final Path coordiMateFilePath;
 
+    /**
+     * Creates an application using the default data and preference file paths.
+     */
     public MainApp() {
         this(USER_PREFS_FILE_PATH, COORDIMATE_FILE_PATH);
     }
@@ -83,10 +86,9 @@ public class MainApp extends Application {
     private Model initModelManager(Storage storage, ReadOnlyUserPrefs userPrefs) {
         logger.info("Using data file : " + storage.getCoordiMateFilePath());
 
-        Optional<ReadOnlyCoordiMate> coordiMateOptional;
         ReadOnlyCoordiMate initialData;
         try {
-            coordiMateOptional = storage.readCoordiMate();
+            Optional<ReadOnlyCoordiMate> coordiMateOptional = storage.readCoordiMate();
             if (coordiMateOptional.isEmpty()) {
                 logger.info("Creating a new data file " + storage.getCoordiMateFilePath()
                         + " populated with a sample CoordiMate.");

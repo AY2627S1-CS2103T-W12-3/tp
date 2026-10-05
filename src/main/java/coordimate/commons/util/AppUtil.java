@@ -6,7 +6,7 @@ import coordimate.MainApp;
 import javafx.scene.image.Image;
 
 /**
- * A container for app-specific utility functions
+ * A container for app-specific utility functions.
  */
 public class AppUtil {
 
@@ -19,23 +19,23 @@ public class AppUtil {
     }
 
     /**
-     * Checks that {@code condition} is true. Used for validating arguments to methods.
+     * Checks that {@code isConditionMet} is true. Used for validating arguments to methods.
      *
-     * @throws IllegalArgumentException if {@code condition} is false.
+     * @throws IllegalArgumentException if {@code isConditionMet} is false.
      */
-    public static void checkArgument(Boolean condition) {
-        if (!condition) {
+    public static void checkArgument(Boolean isConditionMet) {
+        if (!isConditionMet) {
             throw new IllegalArgumentException();
         }
     }
 
     /**
-     * Checks that {@code condition} is true. Used for validating arguments to methods.
+     * Checks that {@code isConditionMet} is true. Used for validating arguments to methods.
      *
-     * @throws IllegalArgumentException with {@code errorMessage} if {@code condition} is false.
+     * @throws IllegalArgumentException with {@code errorMessage} if {@code isConditionMet} is false.
      */
-    public static void checkArgument(Boolean condition, String errorMessage) {
-        if (!condition) {
+    public static void checkArgument(Boolean isConditionMet, String errorMessage) {
+        if (!isConditionMet) {
             throw new IllegalArgumentException(errorMessage);
         }
     }

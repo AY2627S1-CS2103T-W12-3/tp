@@ -3,14 +3,15 @@ package coordimate.storage;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Optional;
 import java.util.logging.Logger;
 
 import coordimate.commons.core.LogsCenter;
 import coordimate.commons.exceptions.DataLoadingException;
 import coordimate.commons.exceptions.IllegalValueException;
-import coordimate.commons.util.FileUtil;
 import coordimate.commons.util.JsonUtil;
 import coordimate.model.ReadOnlyCoordiMate;
 
@@ -23,6 +24,9 @@ public class JsonCoordiMateStorage {
 
     private Path filePath;
 
+    /**
+     * Creates JSON storage for contacts and events at the given file path.
+     */
     public JsonCoordiMateStorage(Path filePath) {
         this.filePath = filePath;
     }
@@ -42,7 +46,7 @@ public class JsonCoordiMateStorage {
     }
 
     /**
-     * Similar to {@link #readCoordiMate()}.
+     * Returns CoordiMate data from the given file, or an empty optional if it does not exist.
      *
      * @param filePath location of the data. Cannot be null.
      * @throws DataLoadingException if loading the data from storage failed.
@@ -58,7 +62,7 @@ public class JsonCoordiMateStorage {
 
         try {
             return Optional.of(jsonCoordiMate.get().toModelType());
-        } catch (IllegalValueException ive) {
+        } catch (IllegalValueException | IllegalArgumentException | NullPointerException ive) {
             logger.info("Illegal values found in " + filePath + ": " + ive.getMessage());
             throw new DataLoadingException(ive);
         }
@@ -66,6 +70,7 @@ public class JsonCoordiMateStorage {
 
     /**
      * Saves the given {@link ReadOnlyCoordiMate} to the storage.
+     *
      * @param coordiMate cannot be null.
      * @throws IOException if there was any problem writing to the file.
      */
@@ -74,16 +79,24 @@ public class JsonCoordiMateStorage {
     }
 
     /**
-     * Similar to {@link #saveCoordiMate(ReadOnlyCoordiMate)}.
+     * Saves the given data to the specified file by atomically replacing its contents.
      *
+     * @param coordiMate The contact and event data to save. Cannot be null.
      * @param filePath location of the data. Cannot be null.
      */
     public void saveCoordiMate(ReadOnlyCoordiMate coordiMate, Path filePath) throws IOException {
         requireNonNull(coordiMate);
         requireNonNull(filePath);
 
-        FileUtil.createIfMissing(filePath);
-        JsonUtil.saveJsonFile(new JsonSerializableCoordiMate(coordiMate), filePath);
+        Path target = filePath.toAbsolutePath();
+        Files.createDirectories(target.getParent());
+        Path temporary = Files.createTempFile(target.getParent(), "coordimate-", ".tmp");
+        try {
+            JsonUtil.saveJsonFile(new JsonSerializableCoordiMate(coordiMate), temporary);
+            Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+        } finally {
+            Files.deleteIfExists(temporary);
+        }
     }
 
 }

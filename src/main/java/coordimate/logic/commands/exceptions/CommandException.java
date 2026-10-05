@@ -1,9 +1,14 @@
 package coordimate.logic.commands.exceptions;
 
+import coordimate.logic.commands.Command;
+
 /**
  * Represents an error which occurs during execution of a {@link Command}.
  */
 public class CommandException extends Exception {
+    /**
+     * Creates a command error with the given message.
+     */
     public CommandException(String message) {
         super(message);
     }

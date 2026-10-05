@@ -8,6 +8,7 @@ import java.util.logging.Logger;
 
 import coordimate.commons.core.GuiSettings;
 import coordimate.commons.core.LogsCenter;
+import coordimate.model.event.Event;
 import coordimate.model.person.Person;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -35,6 +36,9 @@ public class ModelManager implements Model {
         filteredPersons = new FilteredList<>(this.coordiMate.getPersonList());
     }
 
+    /**
+     * Creates a model with no contacts or events and default user preferences.
+     */
     public ModelManager() {
         this(new CoordiMate(), new UserPrefs());
     }
@@ -70,6 +74,16 @@ public class ModelManager implements Model {
     }
 
     @Override
+    public boolean hasEvent(Event event) {
+        return coordiMate.hasEvent(event);
+    }
+
+    @Override
+    public void addEvent(Event event) {
+        coordiMate.addEvent(event);
+    }
+
+    @Override
     public boolean hasPerson(Person person) {
         requireNonNull(person);
         return coordiMate.hasPerson(person);
@@ -97,7 +111,7 @@ public class ModelManager implements Model {
 
     /**
      * Returns an unmodifiable view of the list of {@code Person} backed by the internal list of
-     * {@code coordiMate}
+     * {@code coordiMate}.
      */
     @Override
     public ObservableList<Person> getFilteredPersonList() {

@@ -7,6 +7,9 @@ package coordimate.logic.parser;
 public class Prefix {
     private final String prefix;
 
+    /**
+     * Creates an argument prefix using the given text.
+     */
     public Prefix(String prefix) {
         this.prefix = prefix;
     }

@@ -5,6 +5,9 @@ package coordimate.model.person.exceptions;
  * identity).
  */
 public class DuplicatePersonException extends RuntimeException {
+    /**
+     * Creates an error indicating that a person with the same identity already exists.
+     */
     public DuplicatePersonException() {
         super("Operation would result in duplicate persons");
     }
