@@ -53,7 +53,7 @@ public class AddEventCommandParserTest {
         assertError(valid + " r/Logistics", AddEventCommandParser.MESSAGE_UNKNOWN_PARAMETER);
         assertError(" x/foo" + valid, AddEventCommandParser.MESSAGE_UNKNOWN_PARAMETER);
         for (String repeated : new String[] {" evn/Fair", " st/09-10-2026", " et/10-10-2026",
-                " /et 10-10-2026"}) {
+            " /et 10-10-2026"}) {
             assertError(valid + repeated, AddEventCommandParser.MESSAGE_REPEATED_PARAMETER);
         }
         assertError(" evn/Fair evn/Fair st/09-10-2026 et/10-10-2026",
