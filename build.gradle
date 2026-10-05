@@ -7,7 +7,7 @@ plugins {
 }
 
 application {
-    mainClass = 'seedu.address.Main'
+    mainClass = 'coordimate.Main'
 }
 
 java {
@@ -72,7 +72,7 @@ dependencies {
 }
 
 shadowJar {
-    archiveFileName = 'addressbook.jar'
+    archiveFileName = 'coordimate.jar'
 }
 
 defaultTasks 'clean', 'test'
