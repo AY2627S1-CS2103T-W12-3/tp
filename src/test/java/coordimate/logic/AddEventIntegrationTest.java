@@ -46,7 +46,7 @@ public class AddEventIntegrationTest {
         String differentCase = "addevent evn/fair st/11-10-2026 et/12-10-2026";
         assertEquals(AddEventCommand.MESSAGE_DUPLICATE_EVENT,
                 assertThrows(CommandException.class, () ->
-                        newLogic(reloaded, storage).execute(differentCase)).getMessage());
+                newLogic(reloaded, storage).execute(differentCase)).getMessage());
     }
 
     @Test
@@ -90,16 +90,19 @@ public class AddEventIntegrationTest {
     @Test
     public void execute_corruptedFile_notOverwritten() throws Exception {
         String event = "{\"name\":\"Fair\",\"startTime\":\"09-10-2026\",\"endTime\":\"10-10-2026\"}";
-        for (String contents : new String[] {"invalid json", "null", "{}", "{\"persons\":[],\"events\":[null]}",
+        String[] corruptedContents = {
+            "invalid json", "null", "{}", "{\"persons\":[],\"events\":[null]}",
             "{\"persons\":[],\"events\":[" + event + "," + event + "]}",
             "{\"persons\":[],\"events\":[" + event + "," + event.replace("Fair", "fair") + "]}",
             "{\"persons\":[],\"events\":[{\"name\":\"Fair\",\"startTime\":\"31-02-2026\"}]}",
             "{\"persons\":[],\"events\":[{\"name\":\"Fair\",\"startTime\":\"10-10-2026\","
-                + "\"endTime\":\"09-10-2026\"}]}",
+                    + "\"endTime\":\"09-10-2026\"}]}",
             "{\"persons\":[],\"events\":[{\"name\":\"Fair\",\"startTime\":\"09-10-2026 18:00\","
-                + "\"endTime\":\"09-10-2026 15:00\"}]}",
+                    + "\"endTime\":\"09-10-2026 15:00\"}]}",
             "{\"persons\":[],\"events\":[{\"name\":\" \",\"startTime\":\"09-10-2026\","
-                + "\"endTime\":\"10-10-2026\"}]}"}) {
+                    + "\"endTime\":\"10-10-2026\"}]}"
+        };
+        for (String contents : corruptedContents) {
             Path path = temporaryFolder.resolve("corrupt.json");
             Files.writeString(path, contents);
             ModelManager model = new ModelManager();

@@ -21,10 +21,13 @@ public class CoordiMate implements ReadOnlyCoordiMate {
     private final ObservableList<Event> events = FXCollections.observableArrayList();
     private final ObservableList<Event> unmodifiableEvents = FXCollections.unmodifiableObservableList(events);
 
+    /**
+     * Creates an empty contact and event store.
+     */
     public CoordiMate() {}
 
     /**
-     * Creates an CoordiMate using the Persons in the {@code toBeCopied}
+     * Creates a CoordiMate using the people and events in {@code toBeCopied}.
      */
     public CoordiMate(ReadOnlyCoordiMate toBeCopied) {
         this();
@@ -68,7 +71,7 @@ public class CoordiMate implements ReadOnlyCoordiMate {
     }
 
     /**
-     * Timings may overlap; only names must be unique.
+     * Returns true if an event with the same name exists, regardless of its timings.
      */
     public boolean hasEvent(Event event) {
         requireNonNull(event);

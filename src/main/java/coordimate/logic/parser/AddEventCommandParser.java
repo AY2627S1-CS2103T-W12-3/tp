@@ -21,41 +21,41 @@ public class AddEventCommandParser implements Parser<AddEventCommand> {
     public static final String MESSAGE_UNKNOWN_PARAMETER = "Unknown parameter. Example: r/Logistics";
     public static final String MESSAGE_REPEATED_PARAMETER = "Each required parameter may only be specified once.";
 
-    private static final Pattern PARAMETER = Pattern.compile("(?<!\\S)([A-Za-z]+/|/[A-Za-z]+)");
-    private static final Set<String> REQUIRED = Set.of("evn/", "st/", "et/");
+    private static final Pattern PARAMETER_PATTERN = Pattern.compile("(?<!\\S)([A-Za-z]+/|/[A-Za-z]+)");
+    private static final Set<String> REQUIRED_PREFIXES = Set.of("evn/", "st/", "et/");
 
     @Override
     public AddEventCommand parse(String args) throws ParseException {
         requireNonNull(args);
         Map<String, String> values = new LinkedHashMap<>();
-        Matcher matcher = PARAMETER.matcher(args);
-        String previous = null;
+        Matcher matcher = PARAMETER_PATTERN.matcher(args);
+        String previousPrefix = null;
         int valueStart = 0;
         while (matcher.find()) {
-            if (previous == null && !args.substring(0, matcher.start()).isBlank()) {
-                throw invalidFormat();
+            if (previousPrefix == null && !args.substring(0, matcher.start()).isBlank()) {
+                throw createInvalidFormatException();
             }
-            if (previous != null) {
-                values.put(previous, args.substring(valueStart, matcher.start()).strip());
+            if (previousPrefix != null) {
+                values.put(previousPrefix, args.substring(valueStart, matcher.start()).strip());
             }
             String prefix = matcher.group();
             if (prefix.equals("/et")) {
                 prefix = "et/";
             }
-            if (!REQUIRED.contains(prefix)) {
+            if (!REQUIRED_PREFIXES.contains(prefix)) {
                 throw new ParseException(MESSAGE_UNKNOWN_PARAMETER);
             }
             if (values.containsKey(prefix)) {
                 throw new ParseException(MESSAGE_REPEATED_PARAMETER);
             }
-            previous = prefix;
+            previousPrefix = prefix;
             valueStart = matcher.end();
         }
-        if (previous != null) {
-            values.put(previous, args.substring(valueStart).strip());
+        if (previousPrefix != null) {
+            values.put(previousPrefix, args.substring(valueStart).strip());
         }
         if (!values.containsKey("evn/")) {
-            throw invalidFormat();
+            throw createInvalidFormatException();
         }
         String name = values.get("evn/");
         String start = values.getOrDefault("st/", "");
@@ -73,7 +73,7 @@ public class AddEventCommandParser implements Parser<AddEventCommand> {
         }
     }
 
-    private ParseException invalidFormat() {
+    private ParseException createInvalidFormatException() {
         return new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, AddEventCommand.MESSAGE_USAGE));
     }
 }

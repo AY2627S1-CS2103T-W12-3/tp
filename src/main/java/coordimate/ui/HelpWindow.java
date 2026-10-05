@@ -11,7 +11,7 @@ import javafx.scene.input.ClipboardContent;
 import javafx.stage.Stage;
 
 /**
- * Controller for a help page
+ * Controller for a help page.
  */
 public class HelpWindow extends UiPart<Stage> {
 
@@ -46,6 +46,7 @@ public class HelpWindow extends UiPart<Stage> {
 
     /**
      * Shows the help window.
+     *
      * @throws IllegalStateException
      *     <ul>
      *         <li>

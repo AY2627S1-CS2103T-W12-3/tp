@@ -20,6 +20,9 @@ public class AddEventCommand extends Command {
 
     private final Event toAdd;
 
+    /**
+     * Creates a command that adds the given event.
+     */
     public AddEventCommand(Event event) {
         toAdd = requireNonNull(event);
     }

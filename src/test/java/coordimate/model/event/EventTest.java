@@ -59,8 +59,8 @@ public class EventTest {
     @Test
     public void eventTime_invalidValues_rejected() {
         for (String value : new String[] {"", " ", "29-02-2026", "31-04-2026", "08-13-2026",
-            "8-08-2026", "08-8-2026", "08-08-26", "2026-08-08", "15:00", "08-08-2026 24:00",
-            "08-08-2026 15:60", "08-08-2026 3:00", "08-08-2026 15:00:00", "08-08-2026  15:00"}) {
+                "8-08-2026", "08-8-2026", "08-08-26", "2026-08-08", "15:00", "08-08-2026 24:00",
+                "08-08-2026 15:60", "08-08-2026 3:00", "08-08-2026 15:00:00", "08-08-2026  15:00"}) {
             assertFalse(EventTime.isValidTime(value));
             assertThrows(IllegalArgumentException.class, () -> new EventTime(value));
         }

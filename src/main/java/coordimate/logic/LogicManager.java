@@ -48,12 +48,11 @@ public class LogicManager implements Logic {
     public CommandResult execute(String commandText) throws CommandException, ParseException {
         logger.info("----------------[USER COMMAND][" + commandText + "]");
 
-        CommandResult commandResult;
         Command command = coordiMateParser.parseCommand(commandText);
         if (command instanceof AddEventCommand) {
             return executeAddEvent(command);
         }
-        commandResult = command.execute(model);
+        CommandResult commandResult = command.execute(model);
 
         try {
             storage.saveCoordiMate(model.getCoordiMate());
@@ -66,6 +65,10 @@ public class LogicManager implements Logic {
         return commandResult;
     }
 
+    /**
+     * Saves an event on a copy of the model and commits it only after storage succeeds.
+     * Rejects the command if existing data cannot be loaded or the new data cannot be saved.
+     */
     private CommandResult executeAddEvent(Command command) throws CommandException {
         try {
             storage.readCoordiMate();

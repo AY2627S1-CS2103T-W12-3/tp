@@ -27,7 +27,7 @@ class JsonSerializableCoordiMate {
     private final List<JsonAdaptedEvent> events = new ArrayList<>();
 
     /**
-     * Constructs a {@code JsonSerializableCoordiMate} with the given persons.
+     * Constructs a {@code JsonSerializableCoordiMate} with the given people and optional events.
      */
     @JsonCreator
     public JsonSerializableCoordiMate(@JsonProperty("persons") List<JsonAdaptedPerson> persons,

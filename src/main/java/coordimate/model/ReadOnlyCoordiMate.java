@@ -5,7 +5,7 @@ import coordimate.model.person.Person;
 import javafx.collections.ObservableList;
 
 /**
- * Unmodifiable view of an CoordiMate
+ * Unmodifiable view of an CoordiMate.
  */
 public interface ReadOnlyCoordiMate {
 

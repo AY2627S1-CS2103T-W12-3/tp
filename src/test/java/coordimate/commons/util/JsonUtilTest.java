@@ -11,7 +11,7 @@ import coordimate.testutil.SerializableTestClass;
 import coordimate.testutil.TestUtil;
 
 /**
- * Tests JSON Read and Write
+ * Tests JSON Read and Write.
  */
 public class JsonUtilTest {
 

@@ -36,6 +36,9 @@ public class ModelManager implements Model {
         filteredPersons = new FilteredList<>(this.coordiMate.getPersonList());
     }
 
+    /**
+     * Creates a model with no contacts or events and default user preferences.
+     */
     public ModelManager() {
         this(new CoordiMate(), new UserPrefs());
     }
@@ -108,7 +111,7 @@ public class ModelManager implements Model {
 
     /**
      * Returns an unmodifiable view of the list of {@code Person} backed by the internal list of
-     * {@code coordiMate}
+     * {@code coordiMate}.
      */
     @Override
     public ObservableList<Person> getFilteredPersonList() {

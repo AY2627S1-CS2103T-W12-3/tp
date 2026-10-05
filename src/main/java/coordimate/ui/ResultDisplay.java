@@ -43,6 +43,9 @@ public class ResultDisplay extends UiPart<Region> {
         resultDisplay.setText("Ready. Choose Contacts or Events, then enter a command.");
     }
 
+    /**
+     * Displays successful command feedback with the success status and information icon.
+     */
     public void setFeedbackToUser(String feedbackToUser) {
         requireNonNull(feedbackToUser);
         resultDisplay.setText(feedbackToUser);

@@ -24,6 +24,9 @@ public class JsonCoordiMateStorage {
 
     private Path filePath;
 
+    /**
+     * Creates JSON storage for contacts and events at the given file path.
+     */
     public JsonCoordiMateStorage(Path filePath) {
         this.filePath = filePath;
     }
@@ -43,7 +46,7 @@ public class JsonCoordiMateStorage {
     }
 
     /**
-     * Similar to {@link #readCoordiMate()}.
+     * Returns CoordiMate data from the given file, or an empty optional if it does not exist.
      *
      * @param filePath location of the data. Cannot be null.
      * @throws DataLoadingException if loading the data from storage failed.
@@ -67,6 +70,7 @@ public class JsonCoordiMateStorage {
 
     /**
      * Saves the given {@link ReadOnlyCoordiMate} to the storage.
+     *
      * @param coordiMate cannot be null.
      * @throws IOException if there was any problem writing to the file.
      */
@@ -75,8 +79,9 @@ public class JsonCoordiMateStorage {
     }
 
     /**
-     * Similar to {@link #saveCoordiMate(ReadOnlyCoordiMate)}.
+     * Saves the given data to the specified file by atomically replacing its contents.
      *
+     * @param coordiMate The contact and event data to save. Cannot be null.
      * @param filePath location of the data. Cannot be null.
      */
     public void saveCoordiMate(ReadOnlyCoordiMate coordiMate, Path filePath) throws IOException {

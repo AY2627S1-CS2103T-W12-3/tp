@@ -16,7 +16,8 @@ public final class Event {
     private final EventTime endTime;
 
     /**
-     * Trims the name without changing internal spacing or capitalization.
+     * Creates an event with a trimmed, non-empty name and a start time no later than its end time.
+     * Preserves the name's internal spacing and capitalization.
      */
     public Event(String name, EventTime startTime, EventTime endTime) {
         this.name = requireNonNull(name).strip();
@@ -43,7 +44,7 @@ public final class Event {
     }
 
     /**
-     * Timings do not affect event identity.
+     * Returns true if the other event has the same name, ignoring case and timings.
      */
     public boolean isSameEvent(Event other) {
         return other != null && name.equalsIgnoreCase(other.name);

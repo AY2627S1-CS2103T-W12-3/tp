@@ -24,7 +24,8 @@ public final class EventTime {
     private final String value;
 
     /**
-     * Validates trimmed input without assigning a time to date-only values.
+     * Creates an event time from a valid trimmed date with an optional time of day.
+     * Preserves date-only values without assigning them a time.
      */
     public EventTime(String input) {
         requireNonNull(input);
@@ -38,7 +39,7 @@ public final class EventTime {
     }
 
     /**
-     * Rejects impossible dates and times as well as incorrect formatting.
+     * Returns true if the value is a valid date with an optional time in the required format.
      */
     public static boolean isValidTime(String value) {
         requireNonNull(value);
@@ -57,7 +58,8 @@ public final class EventTime {
     }
 
     /**
-     * Compares dates first; on the same date, compares times only when both are specified.
+     * Returns true if this date is later, or if the dates match and this specified time is later.
+     * Compares times on matching dates only when both values specify a time of day.
      */
     public boolean isAfter(EventTime other) {
         requireNonNull(other);

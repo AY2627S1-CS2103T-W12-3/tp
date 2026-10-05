@@ -65,13 +65,13 @@ public class CommandBox extends UiPart<Region> {
      * Sets the command box style to indicate a failed command.
      */
     private void setStyleToIndicateCommandFailure() {
-        ObservableList<String> styleClass = commandTextField.getStyleClass();
+        ObservableList<String> styleClasses = commandTextField.getStyleClass();
 
-        if (styleClass.contains(ERROR_STYLE_CLASS)) {
+        if (styleClasses.contains(ERROR_STYLE_CLASS)) {
             return;
         }
 
-        styleClass.add(ERROR_STYLE_CLASS);
+        styleClasses.add(ERROR_STYLE_CLASS);
         submitButton.setText("Retry");
     }
 

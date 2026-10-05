@@ -10,12 +10,15 @@ import coordimate.model.ReadOnlyUserPrefs;
 import coordimate.model.UserPrefs;
 
 /**
- * A class to access UserPrefs stored on the hard disk as a JSON file
+ * A class to access UserPrefs stored on the hard disk as a JSON file.
  */
 public class JsonUserPrefsStorage {
 
     private Path filePath;
 
+    /**
+     * Creates JSON storage for user preferences at the given file path.
+     */
     public JsonUserPrefsStorage(Path filePath) {
         this.filePath = filePath;
     }
@@ -35,7 +38,8 @@ public class JsonUserPrefsStorage {
     }
 
     /**
-     * Similar to {@link #readUserPrefs()}
+     * Returns preferences from the given file, or an empty optional if it does not exist.
+     *
      * @param prefsFilePath location of the data. Cannot be null.
      * @throws DataLoadingException if the file format is not as expected.
      */
@@ -45,6 +49,7 @@ public class JsonUserPrefsStorage {
 
     /**
      * Saves the given {@link coordimate.model.ReadOnlyUserPrefs} to the storage.
+     *
      * @param userPrefs cannot be null.
      * @throws IOException if there was any problem writing to the file.
      */

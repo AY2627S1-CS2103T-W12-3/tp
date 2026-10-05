@@ -26,10 +26,14 @@ public class UserPrefs implements ReadOnlyUserPrefs {
         setGuiSettings(userPrefs.getGuiSettings());
     }
 
+    @Override
     public GuiSettings getGuiSettings() {
         return guiSettings;
     }
 
+    /**
+     * Replaces the user's window settings with the given non-null settings.
+     */
     public void setGuiSettings(GuiSettings guiSettings) {
         requireNonNull(guiSettings);
         this.guiSettings = guiSettings;

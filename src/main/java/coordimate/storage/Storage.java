@@ -10,7 +10,7 @@ import coordimate.model.ReadOnlyUserPrefs;
 import coordimate.model.UserPrefs;
 
 /**
- * API of the Storage component
+ * API of the Storage component.
  */
 public interface Storage {
 
@@ -29,6 +29,7 @@ public interface Storage {
 
     /**
      * Saves the given {@link coordimate.model.ReadOnlyUserPrefs} to the storage.
+     *
      * @param userPrefs cannot be null.
      * @throws IOException if there was any problem writing to the file.
      */
@@ -49,6 +50,7 @@ public interface Storage {
 
     /**
      * Saves the given {@link ReadOnlyCoordiMate} to the storage.
+     *
      * @param coordiMate cannot be null.
      * @throws IOException if there was any problem writing to the file.
      */

@@ -63,7 +63,7 @@ public class EventListPanel extends UiPart<Region> {
                 showDetails(event));
         eventSplitPane.widthProperty().addListener((observable, oldWidth, width) ->
                 eventSplitPane.setOrientation(width.doubleValue() < 680
-                        ? Orientation.VERTICAL : Orientation.HORIZONTAL));
+                ? Orientation.VERTICAL : Orientation.HORIZONTAL));
         showDetails(null);
         eventListView.getSelectionModel().selectFirst();
     }
@@ -76,20 +76,27 @@ public class EventListPanel extends UiPart<Region> {
         eventListView.scrollTo(eventListView.getItems().size() - 1);
     }
 
+    /**
+     * Shows the isSelected event's details, or a selection hint when no event is isSelected.
+     */
     private void showDetails(Event event) {
-        boolean selected = event != null;
-        eventDetails.setVisible(selected);
-        eventDetails.setManaged(selected);
-        selectionHint.setVisible(!selected);
-        selectionHint.setManaged(!selected);
-        selectedName.setText(selected ? event.getName() : "No event selected");
-        if (selected) {
+        boolean isSelected = event != null;
+        eventDetails.setVisible(isSelected);
+        eventDetails.setManaged(isSelected);
+        selectionHint.setVisible(!isSelected);
+        selectionHint.setManaged(!isSelected);
+        selectedName.setText(isSelected ? event.getName() : "No event isSelected");
+        if (isSelected) {
             startTime.setText(event.getStartTime().toString());
             endTime.setText(event.getEndTime().toString());
             duration.setText(formatDuration(event));
         }
     }
 
+    /**
+     * Returns the event's duration in hours and minutes when both times of day are specified.
+     * Returns a placeholder message for date-only times.
+     */
     private String formatDuration(Event event) {
         String start = event.getStartTime().toString();
         String end = event.getEndTime().toString();
@@ -104,6 +111,9 @@ public class EventListPanel extends UiPart<Region> {
                 + (remainder == 0 ? "" : " " + remainder + (remainder == 1 ? " minute" : " minutes"));
     }
 
+    /**
+     * Displays an event's name and start and end times in a list card.
+     */
     private static class EventListCell extends ListCell<Event> {
         private final Label name = new Label();
         private final Label times = new Label();
@@ -119,10 +129,10 @@ public class EventListPanel extends UiPart<Region> {
         }
 
         @Override
-        protected void updateItem(Event event, boolean empty) {
-            super.updateItem(event, empty);
+        protected void updateItem(Event event, boolean isEmpty) {
+            super.updateItem(event, isEmpty);
             setText(null);
-            if (empty || event == null) {
+            if (isEmpty || event == null) {
                 setGraphic(null);
             } else {
                 name.setText((getIndex() + 1) + ". " + event.getName());

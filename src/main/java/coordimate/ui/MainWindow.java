@@ -106,7 +106,9 @@ public class MainWindow extends UiPart<Stage> {
 
     /**
      * Sets the accelerator of a MenuItem.
-     * @param keyCombination the KeyCombination value of the accelerator
+     *
+     * @param menuItem The menu item whose accelerator is assigned.
+     * @param keyCombination the KeyCombination value of the accelerator.
      */
     private void setAccelerator(MenuItem menuItem, KeyCombination keyCombination) {
         menuItem.setAccelerator(keyCombination);
@@ -206,12 +208,18 @@ public class MainWindow extends UiPart<Stage> {
         return personListPanel;
     }
 
+    /**
+     * Selects the contacts tab and its view button.
+     */
     @FXML
     private void showContacts() {
         views.getSelectionModel().select(contactsTab);
         contactsView.setSelected(true);
     }
 
+    /**
+     * Selects the events tab and its view button.
+     */
     @FXML
     private void showEvents() {
         views.getSelectionModel().select(eventsTab);
@@ -234,11 +242,11 @@ public class MainWindow extends UiPart<Stage> {
                 eventListPanel.selectNewestEvent();
             }
 
-            if (commandResult.isShowHelp()) {
+            if (commandResult.shouldShowHelp()) {
                 handleHelp();
             }
 
-            if (commandResult.isExit()) {
+            if (commandResult.shouldExit()) {
                 handleExit();
             }
 

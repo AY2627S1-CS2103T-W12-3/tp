@@ -15,6 +15,9 @@ class JsonAdaptedEvent {
     private final String startTime;
     private final String endTime;
 
+    /**
+     * Creates a JSON event record with the given name and time strings.
+     */
     @JsonCreator
     public JsonAdaptedEvent(@JsonProperty("name") String name,
             @JsonProperty("startTime") String startTime, @JsonProperty("endTime") String endTime) {
@@ -23,12 +26,17 @@ class JsonAdaptedEvent {
         this.endTime = endTime;
     }
 
+    /**
+     * Copies an event's name and time representations into a JSON event record.
+     */
     public JsonAdaptedEvent(Event source) {
         this(source.getName(), source.getStartTime().toString(), source.getEndTime().toString());
     }
 
     /**
-     * Applies the same constraints to stored events as to command input.
+     * Returns an event reconstructed from this record using the model's validation rules.
+     *
+     * @throws IllegalValueException If required fields are missing or violate event constraints.
      */
     public Event toModelType() throws IllegalValueException {
         if (name == null || startTime == null || endTime == null) {

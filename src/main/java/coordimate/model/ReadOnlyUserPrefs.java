@@ -7,6 +7,9 @@ import coordimate.commons.core.GuiSettings;
  */
 public interface ReadOnlyUserPrefs {
 
+    /**
+     * Returns the user's window size and position settings.
+     */
     GuiSettings getGuiSettings();
 
 }
