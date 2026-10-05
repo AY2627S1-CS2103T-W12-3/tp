@@ -5,12 +5,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
 import coordimate.commons.exceptions.IllegalValueException;
 import coordimate.commons.util.JsonUtil;
 import coordimate.model.CoordiMate;
+import coordimate.model.event.Event;
+import coordimate.model.event.EventTime;
 import coordimate.testutil.TypicalPersons;
 
 public class JsonSerializableCoordiMateTest {
@@ -42,6 +46,43 @@ public class JsonSerializableCoordiMateTest {
                 JsonSerializableCoordiMate.class).get();
         assertThrows(IllegalValueException.class, JsonSerializableCoordiMate.MESSAGE_DUPLICATE_PERSON,
                 dataFromFile::toModelType);
+    }
+
+    @Test
+    public void toModelType_events_preservedDuringRoundTrip() throws Exception {
+        CoordiMate source = TypicalPersons.getTypicalCoordiMate();
+        source.addEvent(new Event("Concert", new EventTime("08-08-2026"), new EventTime("08-08-2026 18:00")));
+        source.addEvent(new Event("Fair", new EventTime("09-08-2026"), new EventTime("10-08-2026")));
+        CoordiMate restored = new JsonSerializableCoordiMate(source).toModelType();
+        assertEquals(source.getPersonList(), restored.getPersonList());
+        assertEquals(source.getEventList(), restored.getEventList());
+    }
+
+    @Test
+    public void toModelType_duplicateEventNames_throwsIllegalValueException() {
+        List<JsonAdaptedEvent> events = List.of(
+                new JsonAdaptedEvent("Concert", "08-08-2026", "08-08-2026"),
+                new JsonAdaptedEvent(" Concert ", "09-08-2026", "10-08-2026"));
+        JsonSerializableCoordiMate data = new JsonSerializableCoordiMate(List.of(), events);
+        assertThrows(IllegalValueException.class, JsonSerializableCoordiMate.MESSAGE_DUPLICATE_EVENT,
+                data::toModelType);
+    }
+
+    @Test
+    public void toModelType_nullListEntries_throwsIllegalValueException() {
+        JsonSerializableCoordiMate nullPerson = new JsonSerializableCoordiMate(
+                Arrays.asList((JsonAdaptedPerson) null), List.of());
+        assertThrows(IllegalValueException.class, "Persons list must not contain null entries.",
+                nullPerson::toModelType);
+        JsonSerializableCoordiMate nullEvent = new JsonSerializableCoordiMate(List.of(),
+                Arrays.asList((JsonAdaptedEvent) null));
+        assertThrows(IllegalValueException.class, "Events list must not contain null entries.", nullEvent::toModelType);
+    }
+
+    @Test
+    public void constructor_missingPersons_throwsIllegalArgumentException() {
+        String message = "Persons list must be present.";
+        assertThrows(IllegalArgumentException.class, message, () -> new JsonSerializableCoordiMate(null, List.of()));
     }
 
 }
