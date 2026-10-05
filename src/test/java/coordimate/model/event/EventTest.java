@@ -34,6 +34,18 @@ public class EventTest {
     }
 
     @Test
+    public void identity_sameNameDifferentCase_isDuplicateAndPreservesCase() {
+        Event event = new Event("Fair", date, time);
+        for (String name : new String[] {"fair", "FAIR", "fAiR"}) {
+            Event duplicate = new Event(name, date, date);
+            assertTrue(event.isSameEvent(duplicate));
+            assertTrue(duplicate.isSameEvent(event));
+            assertEquals(name, duplicate.getName());
+        }
+        assertEquals("Fair", event.getName());
+    }
+
+    @Test
     public void eventTime_validValues_preserveOptionalTime() {
         for (String value : new String[] {"29-02-2024", "09-10-2026", "08-08-2026 00:00", "08-08-2026 23:59"}) {
             assertTrue(EventTime.isValidTime(value));

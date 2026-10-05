@@ -5,7 +5,7 @@ import static java.util.Objects.requireNonNull;
 import java.util.Objects;
 
 /**
- * An event's identity is its trimmed, case-sensitive name.
+ * An event's identity is its trimmed, case-insensitive name.
  */
 public final class Event {
     public static final String MESSAGE_EMPTY_NAME = "Event name must not be empty.";
@@ -46,7 +46,7 @@ public final class Event {
      * Timings do not affect event identity.
      */
     public boolean isSameEvent(Event other) {
-        return other != null && name.equals(other.name);
+        return other != null && name.equalsIgnoreCase(other.name);
     }
 
     @Override

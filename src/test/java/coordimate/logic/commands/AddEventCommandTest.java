@@ -41,6 +41,22 @@ public class AddEventCommandTest {
     }
 
     @Test
+    public void execute_duplicateNameDifferentCase_rejected() throws Exception {
+        ModelManager model = new ModelManager();
+        new AddEventCommand(event).execute(model);
+        Event duplicate = new Event(" final CONCERT ",
+                new EventTime("09-10-2026"), new EventTime("10-10-2026"));
+        assertEquals(AddEventCommand.MESSAGE_DUPLICATE_EVENT,
+                assertThrows(CommandException.class, () -> new AddEventCommand(duplicate).execute(model)).getMessage());
+        assertEquals(List.of(event), model.getCoordiMate().getEventList());
+        assertThrows(IllegalArgumentException.class, () -> model.addEvent(duplicate));
+        CoordiMate data = new CoordiMate(model.getCoordiMate());
+        assertThrows(IllegalArgumentException.class, () -> data.setEvents(List.of(event, duplicate)));
+        assertEquals(List.of(event), data.getEventList());
+        assertEquals(List.of(event), model.getCoordiMate().getEventList());
+    }
+
+    @Test
     public void model_eventsCopiedAndReset_listIsUnmodifiable() {
         CoordiMate data = new CoordiMate();
         data.addEvent(event);
