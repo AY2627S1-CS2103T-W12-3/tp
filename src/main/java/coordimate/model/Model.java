@@ -3,6 +3,7 @@ package coordimate.model;
 import java.util.function.Predicate;
 
 import coordimate.commons.core.GuiSettings;
+import coordimate.model.event.Event;
 import coordimate.model.person.Person;
 import javafx.collections.ObservableList;
 
@@ -35,6 +36,16 @@ public interface Model {
 
     /** Returns the CoordiMate */
     ReadOnlyCoordiMate getCoordiMate();
+
+    /**
+     * Checks for a duplicate event name, regardless of timings.
+     */
+    boolean hasEvent(Event event);
+
+    /**
+     * Adds an event whose name must not already be in use.
+     */
+    void addEvent(Event event);
 
     /**
      * Returns true if a person with the same identity as {@code person} exists in the CoordiMate.

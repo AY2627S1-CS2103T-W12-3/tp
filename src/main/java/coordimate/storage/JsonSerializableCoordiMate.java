@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonRootName;
 import coordimate.commons.exceptions.IllegalValueException;
 import coordimate.model.CoordiMate;
 import coordimate.model.ReadOnlyCoordiMate;
+import coordimate.model.event.Event;
 import coordimate.model.person.Person;
 
 /**
@@ -20,15 +21,24 @@ import coordimate.model.person.Person;
 class JsonSerializableCoordiMate {
 
     public static final String MESSAGE_DUPLICATE_PERSON = "Persons list contains duplicate person(s).";
+    public static final String MESSAGE_DUPLICATE_EVENT = "Events list contains duplicate event name(s).";
 
     private final List<JsonAdaptedPerson> persons = new ArrayList<>();
+    private final List<JsonAdaptedEvent> events = new ArrayList<>();
 
     /**
      * Constructs a {@code JsonSerializableCoordiMate} with the given persons.
      */
     @JsonCreator
-    public JsonSerializableCoordiMate(@JsonProperty("persons") List<JsonAdaptedPerson> persons) {
+    public JsonSerializableCoordiMate(@JsonProperty("persons") List<JsonAdaptedPerson> persons,
+            @JsonProperty("events") List<JsonAdaptedEvent> events) {
+        if (persons == null) {
+            throw new IllegalArgumentException("Persons list must be present.");
+        }
         this.persons.addAll(persons);
+        if (events != null) {
+            this.events.addAll(events);
+        }
     }
 
     /**
@@ -38,6 +48,7 @@ class JsonSerializableCoordiMate {
      */
     public JsonSerializableCoordiMate(ReadOnlyCoordiMate source) {
         persons.addAll(source.getPersonList().stream().map(JsonAdaptedPerson::new).collect(Collectors.toList()));
+        events.addAll(source.getEventList().stream().map(JsonAdaptedEvent::new).collect(Collectors.toList()));
     }
 
     /**
@@ -48,11 +59,24 @@ class JsonSerializableCoordiMate {
     public CoordiMate toModelType() throws IllegalValueException {
         CoordiMate coordiMate = new CoordiMate();
         for (JsonAdaptedPerson jsonAdaptedPerson : persons) {
+            if (jsonAdaptedPerson == null) {
+                throw new IllegalValueException("Persons list must not contain null entries.");
+            }
             Person person = jsonAdaptedPerson.toModelType();
             if (coordiMate.hasPerson(person)) {
                 throw new IllegalValueException(MESSAGE_DUPLICATE_PERSON);
             }
             coordiMate.addPerson(person);
+        }
+        for (JsonAdaptedEvent jsonAdaptedEvent : events) {
+            if (jsonAdaptedEvent == null) {
+                throw new IllegalValueException("Events list must not contain null entries.");
+            }
+            Event event = jsonAdaptedEvent.toModelType();
+            if (coordiMate.hasEvent(event)) {
+                throw new IllegalValueException(MESSAGE_DUPLICATE_EVENT);
+            }
+            coordiMate.addEvent(event);
         }
         return coordiMate;
     }

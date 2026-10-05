@@ -91,6 +91,42 @@ Examples:
 * `add n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01`
 * `add n/Betsy Crowe t/friend e/betsycrowe@example.com a/Newgate Prison p/1234567 t/criminal`
 
+### Adding an event: `addevent`
+
+Creates an event and saves it to the local data file.
+
+Format: `addevent evn/EVENT_NAME st/START_TIME et/END_TIME`
+
+Each parameter must appear once. Event names must contain a non-whitespace character;
+leading and trailing whitespace is removed. Names are case-sensitive and must be unique.
+Different events may share the same start and end times.
+
+Start and end times use `dd-MM-yyyy`, optionally followed by `HH:mm` in 24-hour format.
+Date-only values are saved without a time of day. The `/et` spelling from the examples
+is also accepted as an alternative to `et/`.
+
+The start must not be after the end. Equal start and end values are allowed.
+Dates are compared first. On the same date, times are compared only when both are
+specified. Invalid ordering reports: `Start time must not be after end time.`
+
+Examples:
+
+* `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`
+* `addevent evn/Student Life Fair st/09-10-2026 /et 10-10-2026`
+
+Success: `Created Event Student Life Fair. Start Time: 09-10-2026. End Time: 10-10-2026.`
+
+Use the **Events** tab on the left to browse saved events. Selecting an event shows its
+start time, end time, and duration. A successful `addevent` opens this tab and selects
+the new event. At narrower window sizes, the list appears above the details.
+
+Command feedback appears above the input at the bottom of the window. Rejected commands
+show a red feedback band and input border. The command stays in the input so you can
+correct it, then press Enter or click **Retry**.
+
+If saving fails, no event is added. If the existing data file is invalid, the command
+reports a load error and leaves the file untouched.
+
 ### Listing all persons: `list`
 
 Shows a list of all persons in CoordiMate.

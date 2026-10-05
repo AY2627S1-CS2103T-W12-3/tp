@@ -8,6 +8,7 @@ import java.util.logging.Logger;
 
 import coordimate.commons.core.GuiSettings;
 import coordimate.commons.core.LogsCenter;
+import coordimate.model.event.Event;
 import coordimate.model.person.Person;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -67,6 +68,16 @@ public class ModelManager implements Model {
     @Override
     public ReadOnlyCoordiMate getCoordiMate() {
         return coordiMate;
+    }
+
+    @Override
+    public boolean hasEvent(Event event) {
+        return coordiMate.hasEvent(event);
+    }
+
+    @Override
+    public void addEvent(Event event) {
+        coordiMate.addEvent(event);
     }
 
     @Override

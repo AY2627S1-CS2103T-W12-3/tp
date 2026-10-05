@@ -84,7 +84,8 @@ public class CoordiMateTest {
 
     @Test
     public void toStringMethod() {
-        String expected = CoordiMate.class.getCanonicalName() + "{persons=" + coordiMate.getPersonList() + "}";
+        String expected = CoordiMate.class.getCanonicalName() + "{persons=" + coordiMate.getPersonList()
+                + ", events=" + coordiMate.getEventList() + "}";
         assertEquals(expected, coordiMate.toString());
     }
 
@@ -117,6 +118,11 @@ public class CoordiMateTest {
         @Override
         public ObservableList<Person> getPersonList() {
             return persons;
+        }
+
+        @Override
+        public ObservableList<coordimate.model.event.Event> getEventList() {
+            return FXCollections.emptyObservableList();
         }
     }
 

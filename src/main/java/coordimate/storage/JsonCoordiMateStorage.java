@@ -3,14 +3,15 @@ package coordimate.storage;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Optional;
 import java.util.logging.Logger;
 
 import coordimate.commons.core.LogsCenter;
 import coordimate.commons.exceptions.DataLoadingException;
 import coordimate.commons.exceptions.IllegalValueException;
-import coordimate.commons.util.FileUtil;
 import coordimate.commons.util.JsonUtil;
 import coordimate.model.ReadOnlyCoordiMate;
 
@@ -58,7 +59,7 @@ public class JsonCoordiMateStorage {
 
         try {
             return Optional.of(jsonCoordiMate.get().toModelType());
-        } catch (IllegalValueException ive) {
+        } catch (IllegalValueException | IllegalArgumentException | NullPointerException ive) {
             logger.info("Illegal values found in " + filePath + ": " + ive.getMessage());
             throw new DataLoadingException(ive);
         }
@@ -82,8 +83,15 @@ public class JsonCoordiMateStorage {
         requireNonNull(coordiMate);
         requireNonNull(filePath);
 
-        FileUtil.createIfMissing(filePath);
-        JsonUtil.saveJsonFile(new JsonSerializableCoordiMate(coordiMate), filePath);
+        Path target = filePath.toAbsolutePath();
+        Files.createDirectories(target.getParent());
+        Path temporary = Files.createTempFile(target.getParent(), "coordimate-", ".tmp");
+        try {
+            JsonUtil.saveJsonFile(new JsonSerializableCoordiMate(coordiMate), temporary);
+            Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+        } finally {
+            Files.deleteIfExists(temporary);
+        }
     }
 
 }

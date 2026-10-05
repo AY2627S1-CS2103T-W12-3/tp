@@ -9,6 +9,7 @@ import java.util.regex.Pattern;
 
 import coordimate.commons.core.LogsCenter;
 import coordimate.logic.commands.AddCommand;
+import coordimate.logic.commands.AddEventCommand;
 import coordimate.logic.commands.ClearCommand;
 import coordimate.logic.commands.Command;
 import coordimate.logic.commands.DeleteCommand;
@@ -53,6 +54,7 @@ public class CoordiMateParser {
 
         return switch (commandWord) {
             case AddCommand.COMMAND_WORD -> new AddCommandParser().parse(arguments);
+            case AddEventCommand.COMMAND_WORD -> new AddEventCommandParser().parse(arguments);
             case EditCommand.COMMAND_WORD -> new EditCommandParser().parse(arguments);
             case DeleteCommand.COMMAND_WORD -> new DeleteCommandParser().parse(arguments);
             case ClearCommand.COMMAND_WORD -> new ClearCommand();

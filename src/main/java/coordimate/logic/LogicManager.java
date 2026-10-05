@@ -6,12 +6,16 @@ import java.util.logging.Logger;
 
 import coordimate.commons.core.GuiSettings;
 import coordimate.commons.core.LogsCenter;
+import coordimate.commons.exceptions.DataLoadingException;
+import coordimate.logic.commands.AddEventCommand;
 import coordimate.logic.commands.Command;
 import coordimate.logic.commands.CommandResult;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.logic.parser.CoordiMateParser;
 import coordimate.logic.parser.exceptions.ParseException;
 import coordimate.model.Model;
+import coordimate.model.ModelManager;
+import coordimate.model.event.Event;
 import coordimate.model.person.Person;
 import coordimate.storage.Storage;
 import javafx.collections.ObservableList;
@@ -46,6 +50,9 @@ public class LogicManager implements Logic {
 
         CommandResult commandResult;
         Command command = coordiMateParser.parseCommand(commandText);
+        if (command instanceof AddEventCommand) {
+            return executeAddEvent(command);
+        }
         commandResult = command.execute(model);
 
         try {
@@ -59,9 +66,31 @@ public class LogicManager implements Logic {
         return commandResult;
     }
 
+    private CommandResult executeAddEvent(Command command) throws CommandException {
+        try {
+            storage.readCoordiMate();
+        } catch (DataLoadingException e) {
+            throw new CommandException(AddEventCommand.MESSAGE_LOAD_ERROR, e);
+        }
+        Model candidate = new ModelManager(model.getCoordiMate(), model.getUserPrefs());
+        CommandResult result = command.execute(candidate);
+        try {
+            storage.saveCoordiMate(candidate.getCoordiMate());
+        } catch (IOException e) {
+            throw new CommandException(AddEventCommand.MESSAGE_SAVE_ERROR, e);
+        }
+        model.setCoordiMate(candidate.getCoordiMate());
+        return result;
+    }
+
     @Override
     public ObservableList<Person> getFilteredPersonList() {
         return model.getFilteredPersonList();
+    }
+
+    @Override
+    public ObservableList<Event> getEventList() {
+        return model.getCoordiMate().getEventList();
     }
 
     @Override
