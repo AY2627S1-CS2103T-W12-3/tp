@@ -165,6 +165,24 @@ Success: `Edited Event NUS Student Life Fair. Start Time: 09-10-2026. End Time: 
 
 If saving fails, the event and existing data file remain unchanged.
 
+### Deleting an event: `deleteevent`
+
+Deletes the event with the supplied name, ignoring capitalization. Internal spacing
+must match the existing event name.
+
+Format: `deleteevent evn/EVENT_NAME`
+
+Examples:
+
+* `deleteevent evn/Final Concert`
+* `deleteevent evn/Student Life Fair`
+
+Success: `Deleted Event Final Concert.`
+
+If the event does not exist, the command reports `Event {EVENT_NAME} does not exist.`
+An unknown parameter reports `Unknown parameter. Example: deleteevent evn/Logistics Meeting`.
+If saving fails, the event and existing data file remain unchanged.
+
 ### Assigning members to an event: `assign`
 
 Assigns one or more contacts to an existing event as members and saves the change.

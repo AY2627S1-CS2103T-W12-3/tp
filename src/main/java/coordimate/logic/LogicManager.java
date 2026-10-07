@@ -11,6 +11,7 @@ import coordimate.logic.commands.AddEventCommand;
 import coordimate.logic.commands.AssignCommand;
 import coordimate.logic.commands.Command;
 import coordimate.logic.commands.CommandResult;
+import coordimate.logic.commands.DeleteEventCommand;
 import coordimate.logic.commands.EditEventCommand;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.logic.parser.CoordiMateParser;
@@ -52,7 +53,7 @@ public class LogicManager implements Logic {
 
         Command command = coordiMateParser.parseCommand(commandText);
         if (command instanceof AddEventCommand || command instanceof EditEventCommand
-                || command instanceof AssignCommand) {
+                || command instanceof AssignCommand || command instanceof DeleteEventCommand) {
             return executeEventCommand(command);
         }
         CommandResult commandResult = command.execute(model);
@@ -88,6 +89,7 @@ public class LogicManager implements Logic {
             String message = switch (command) {
                 case EditEventCommand _ -> EditEventCommand.MESSAGE_SAVE_ERROR;
                 case AssignCommand _ -> AssignCommand.MESSAGE_SAVE_ERROR;
+                case DeleteEventCommand _ -> DeleteEventCommand.MESSAGE_SAVE_ERROR;
                 default -> AddEventCommand.MESSAGE_SAVE_ERROR;
             };
             throw new CommandException(message, e);
