@@ -43,8 +43,8 @@ public class AddCommand extends Command {
             + PREFIX_NOTE + "Handles venue bookings";
 
     public static final String MESSAGE_SUCCESS = "Contact saved successfully: %1$s";
-    public static final String MESSAGE_DUPLICATE_PERSON = "A contact with this phone number or email already exists."
-            + "\nNo changes were made.";
+    public static final String MESSAGE_DUPLICATE_PERSON = "A contact with this name, phone number, or email "
+            + "already exists.\nNo changes were made.";
     public static final String MESSAGE_SAVE_ERROR = "Contact could not be saved. No changes were made.";
     public static final String MESSAGE_LOAD_ERROR =
             "Contact data could not be loaded. Please check the local data file.";

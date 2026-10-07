@@ -364,7 +364,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
     Steps 1a1-1a2 are repeated until the contact details are valid.<br>
     Use case resumes from step 2.
 
-* 1b. A contact with the same normalised phone number or email address already exists.
+* 1b. A contact with the same name (ignoring case and surrounding spaces), normalised phone number,
+  or email address already exists.
 
   * 1b1. CoordiMate informs the EXCO member that the contact already exists and makes no changes.
 
@@ -430,7 +431,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 1. EXCO member requests to delete a contact, identifying the contact by its displayed index, exact name, phone number, or email address.
 2. CoordiMate displays the matching contact and requests confirmation.
 3. EXCO member confirms the deletion.
-4. CoordiMate deletes the selected contact, removes them from all event participant lists (including past events), deletes their attendance records, and confirms the deletion. Events and any other contacts with the same name remain unchanged.
+4. CoordiMate deletes the selected contact, removes them from all event participant lists (including past events), deletes their attendance records, and confirms the deletion. Events and other contacts remain unchanged.
 
     Use case ends.
 
@@ -586,7 +587,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * **Custom tag**: A tag created by the user, to categorise contacts in ways not covered by the default tags.
 * **Default tag**: A tag that is available without the user creating it: `EXCO`, `Sponsor`, `UniversityStaff` and `Logistics`.
 * **Displayed index**: The number shown beside a contact in the currently displayed list, used to identify that contact in commands.
-* **Duplicate contact**: A contact with the same normalised phone number or email address as another saved contact. Contacts with the same name are not considered duplicates.
+* **Duplicate contact**: A contact with the same name (ignoring case and surrounding spaces), normalised phone number, or email address as another saved contact.
 * **Event**: An activity organised by the CCA, such as a concert or fair, with a unique name, a start date/time and an end date/time.
 * **Event lead**: An EXCO member who is in charge of organising a particular event.
 * **EXCO (Executive Committee)**: The group of students elected to lead and run a CCA.

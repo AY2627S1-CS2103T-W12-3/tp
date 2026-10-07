@@ -102,8 +102,8 @@ public class Person {
     }
 
     /**
-     * Returns true if either the normalised phone or email matches.
-     * Contacts with the same name alone are not duplicates.
+     * Returns true if the names match ignoring case, or either the normalised phone or email matches.
+     * Names are already trimmed when constructed.
      */
     public boolean isSamePerson(Person otherPerson) {
         if (otherPerson == this) {
@@ -111,7 +111,8 @@ public class Person {
         }
 
         return otherPerson != null
-                && (phone.getNormalizedValue().equals(otherPerson.phone.getNormalizedValue())
+                && (name.getFullName().equalsIgnoreCase(otherPerson.name.getFullName())
+                || phone.getNormalizedValue().equals(otherPerson.phone.getNormalizedValue())
                 || email.getNormalizedValue().equals(otherPerson.email.getNormalizedValue()));
     }
 

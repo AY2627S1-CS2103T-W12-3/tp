@@ -88,12 +88,12 @@ public class CoordiMateTest {
     }
 
     @Test
-    public void addPerson_sameNameWithDifferentPhoneAndEmail_succeeds() {
+    public void addPerson_sameNameWithDifferentPhoneAndEmail_throwsDuplicatePersonException() {
         coordiMate.addPerson(ALICE);
         Person differentAlice = new PersonBuilder(BENSON).withName(ALICE.getName().toString()).build();
-        coordiMate.addPerson(differentAlice);
+        assertThrows(DuplicatePersonException.class, () -> coordiMate.addPerson(differentAlice));
 
-        assertEquals(List.of(ALICE, differentAlice), coordiMate.getPersonList());
+        assertEquals(List.of(ALICE), coordiMate.getPersonList());
     }
 
     @Test

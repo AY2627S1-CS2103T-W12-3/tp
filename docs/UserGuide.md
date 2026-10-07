@@ -85,8 +85,11 @@ Format: `help`
 
 Adds a person to CoordiMate.
 
-Contacts may share a name, but a phone number or email address already used by another contact is rejected.
+Contact names must be unique after trimming surrounding spaces and ignoring case.
+An add is also rejected if its phone number or email address is already used by another contact.
 Phone numbers are compared without spaces, hyphens, or brackets; email addresses are compared without regard to case.
+For any duplicate, CoordiMate reports `A contact with this name, phone number, or email already exists.`
+and makes no changes.
 If the local contact data cannot be loaded or saved, CoordiMate reports an error and leaves the contact list unchanged.
 
 Format: `add n/NAME p/PHONE e/EMAIL r/ROLE [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [t/TAG]... [m/NOTE]`
@@ -257,6 +260,7 @@ Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]... `
 * When editing tags, all of the person's existing tags are removed; adding tags is not cumulative.
 * To remove all of a person's tags, enter `t/` without a tag after it.
 * If the person's name changes, events they are assigned to show the new name.
+* A new name already used by another contact, ignoring case and surrounding spaces, is rejected.
 
 Examples:
 *  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st person to be `91234567` and `johndoe@example.com` respectively.

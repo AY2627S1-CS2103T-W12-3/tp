@@ -160,27 +160,22 @@ public class EditCommandTest {
     }
 
     @Test
-    public void execute_sameNameWithDistinctPhoneAndEmail_success() {
-        Person originalPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
-        Person editedPerson = new PersonBuilder(originalPerson).withName(BENSON.getName().toString()).build();
+    public void execute_sameNameWithDistinctPhoneAndEmail_failure() {
         EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON,
-                new EditPersonDescriptorBuilder().withName(BENSON.getName().toString()).build());
-        Model expectedModel = new ModelManager(new CoordiMate(model.getCoordiMate()), new UserPrefs());
-        expectedModel.setPerson(originalPerson, editedPerson);
+                new EditPersonDescriptorBuilder().withName("  bEnSoN mEiEr  ").build());
 
-        assertCommandSuccess(editCommand, model,
-                String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson)), expectedModel);
+        assertCommandFailure(editCommand, model, EditCommand.MESSAGE_DUPLICATE_PERSON);
     }
 
     @Test
-    public void execute_renameConflictsWithEventMember_failureWithoutChanges() {
+    public void execute_renameToExistingMemberName_rejectedAsDuplicate() {
         Person firstPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
         model.addEvent(new Event("Concert", new EventTime("08-08-2026"), new EventTime("08-08-2026"),
                 List.of(firstPerson.getName(), BENSON.getName())));
         EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON,
                 new EditPersonDescriptorBuilder().withName(BENSON.getName().toString()).build());
 
-        assertCommandFailure(editCommand, model, EditCommand.MESSAGE_MEMBER_NAME_CONFLICT);
+        assertCommandFailure(editCommand, model, EditCommand.MESSAGE_DUPLICATE_PERSON);
     }
 
     @Test

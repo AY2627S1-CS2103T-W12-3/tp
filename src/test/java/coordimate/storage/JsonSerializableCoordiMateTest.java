@@ -94,6 +94,16 @@ public class JsonSerializableCoordiMateTest {
     }
 
     @Test
+    public void toModelType_duplicateNamesIgnoringCase_throwsIllegalValueException() {
+        Person differentAlice = new PersonBuilder(BENSON).withName("  aLiCe pAuLiNe  ").build();
+        JsonSerializableCoordiMate data = new JsonSerializableCoordiMate(
+                List.of(new JsonAdaptedPerson(ALICE), new JsonAdaptedPerson(differentAlice)), List.of());
+
+        assertThrows(IllegalValueException.class, JsonSerializableCoordiMate.MESSAGE_DUPLICATE_PERSON,
+                data::toModelType);
+    }
+
+    @Test
     public void toModelType_events_preservedDuringRoundTrip() throws Exception {
         CoordiMate source = TypicalPersons.getTypicalCoordiMate();
         source.addEvent(new Event("Concert", new EventTime("08-08-2026"), new EventTime("08-08-2026 18:00")));

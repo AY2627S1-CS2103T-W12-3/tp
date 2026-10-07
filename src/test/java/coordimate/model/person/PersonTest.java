@@ -48,35 +48,36 @@ public class PersonTest {
         // null -> returns false
         assertFalse(ALICE.isSamePerson(null));
 
-        // same name, different phone and email -> returns false
+        // same name, different phone and email -> returns true
         Person editedAlice = new PersonBuilder(ALICE).withPhone(VALID_PHONE_BOB).withEmail(VALID_EMAIL_BOB)
                 .withAddress(VALID_ADDRESS_BOB).withTags(VALID_TAG_HUSBAND).build();
-        assertFalse(ALICE.isSamePerson(editedAlice));
+        assertTrue(ALICE.isSamePerson(editedAlice));
+
+        // name matching ignores case and surrounding spaces
+        editedAlice = new PersonBuilder(ALICE).withName("  aLiCe pAuLiNe  ")
+                .withPhone(VALID_PHONE_BOB).withEmail(VALID_EMAIL_BOB).build();
+        assertTrue(ALICE.isSamePerson(editedAlice));
 
         // different name, same phone and email -> returns true
         editedAlice = new PersonBuilder(ALICE).withName(VALID_NAME_BOB).build();
         assertTrue(ALICE.isSamePerson(editedAlice));
 
-        // name differs in case, same phone and email -> returns true
-        Person editedBob = new PersonBuilder(BOB).withName(VALID_NAME_BOB.toLowerCase()).build();
-        assertTrue(BOB.isSamePerson(editedBob));
-
-        // a formatted version of the same phone is a duplicate even with a different email
-        editedAlice = new PersonBuilder(ALICE).withPhone("(9435) 1253").withEmail(VALID_EMAIL_BOB).build();
+        // a formatted version of the same phone is a duplicate even with a different name and email
+        editedAlice = new PersonBuilder(ALICE).withName(VALID_NAME_BOB)
+                .withPhone("(9435) 1253").withEmail(VALID_EMAIL_BOB).build();
         assertTrue(ALICE.isSamePerson(editedAlice));
 
-        // email comparison ignores case even with a different phone
-        editedAlice = new PersonBuilder(ALICE).withPhone(VALID_PHONE_BOB).withEmail("ALICE@EXAMPLE.COM").build();
+        // email comparison ignores case even with a different name and phone
+        editedAlice = new PersonBuilder(ALICE).withName(VALID_NAME_BOB)
+                .withPhone(VALID_PHONE_BOB).withEmail("ALICE@EXAMPLE.COM").build();
         assertTrue(ALICE.isSamePerson(editedAlice));
 
         // changing the role does not create a new contact identity
         editedAlice = new PersonBuilder(ALICE).withRole("Logistics").build();
         assertTrue(ALICE.isSamePerson(editedAlice));
 
-        // different phone and email are not duplicates, even when names match
-        editedBob = new PersonBuilder(BOB).withPhone(ALICE.getPhone().toString())
-                .withEmail(ALICE.getEmail().toString()).build();
-        assertFalse(BOB.isSamePerson(editedBob));
+        // different name, phone, and email -> returns false
+        assertFalse(ALICE.isSamePerson(BOB));
     }
 
     @Test

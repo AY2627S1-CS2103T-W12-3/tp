@@ -13,7 +13,7 @@ import javafx.collections.ObservableList;
 
 /**
  * A list of persons that enforces uniqueness between its elements and does not allow nulls.
- * Contacts must have distinct normalised phone numbers and email addresses.
+ * Contacts must have distinct names (ignoring case), normalised phone numbers, and email addresses.
  * Removal uses {@code Person#equals(Object)} so the exact contact is removed.
  *
  * Supports a minimal set of list operations.

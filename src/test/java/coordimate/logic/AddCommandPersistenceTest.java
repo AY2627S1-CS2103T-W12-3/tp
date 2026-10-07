@@ -51,6 +51,25 @@ public class AddCommandPersistenceTest {
     }
 
     @Test
+    public void execute_duplicateName_modelAndFileUnchanged() throws Exception {
+        Path path = temporaryFolder.resolve("contacts.json");
+        ModelManager model = new ModelManager();
+        model.addPerson(AMY);
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path);
+        storage.saveCoordiMate(model.getCoordiMate());
+        String beforeFile = Files.readString(path);
+        CoordiMate beforeModel = new CoordiMate(model.getCoordiMate());
+
+        Logic logic = newLogic(model, storage);
+        CommandException exception = assertThrows(CommandException.class, () ->
+                logic.execute("add n/  aMy bEe  p/82345678 e/new@example.com r/Logistics"));
+
+        assertEquals(AddCommand.MESSAGE_DUPLICATE_PERSON, exception.getMessage());
+        assertEquals(beforeModel, model.getCoordiMate());
+        assertEquals(beforeFile, Files.readString(path));
+    }
+
+    @Test
     public void execute_saveFailure_modelAndFileUnchanged() throws Exception {
         IOException[] failures = {new IOException("Disk full"), new AccessDeniedException("data")};
         for (IOException failure : failures) {
