@@ -106,7 +106,7 @@ public class CoordiMateParserTest {
                 SearchCommand.COMMAND_WORD + " Alice");
         assertEquals(new SearchCommand(new ContactMatchesKeywordPredicate("Alice"), "Alice"), command);
     }
-  
+
     @Test
     public void parseCommand_listTags() throws Exception {
         assertTrue(parser.parseCommand(ListTagsCommand.COMMAND_WORD) instanceof ListTagsCommand);
