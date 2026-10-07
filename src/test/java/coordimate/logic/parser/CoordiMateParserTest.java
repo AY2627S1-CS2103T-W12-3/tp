@@ -24,7 +24,10 @@ import coordimate.logic.commands.FindCommand;
 import coordimate.logic.commands.HelpCommand;
 import coordimate.logic.commands.ListCommand;
 import coordimate.logic.commands.ListTagsCommand;
+import coordimate.logic.commands.MarkAttendanceCommand;
 import coordimate.logic.parser.exceptions.ParseException;
+import coordimate.model.event.AttendanceStatus;
+import coordimate.model.person.Name;
 import coordimate.model.person.NameContainsKeywordsPredicate;
 import coordimate.model.person.Person;
 import coordimate.testutil.EditPersonDescriptorBuilder;
@@ -101,6 +104,14 @@ public class CoordiMateParserTest {
     @Test
     public void parseCommand_listTags() throws Exception {
         assertTrue(parser.parseCommand(ListTagsCommand.COMMAND_WORD) instanceof ListTagsCommand);
+    }
+
+    @Test
+    public void parseCommand_markattendance() throws Exception {
+        MarkAttendanceCommand command = (MarkAttendanceCommand) parser.parseCommand(
+                MarkAttendanceCommand.COMMAND_WORD + " evn/Final Concert mem/Alice Tan att/present");
+        assertEquals(new MarkAttendanceCommand("Final Concert", new Name("Alice Tan"), AttendanceStatus.PRESENT),
+                command);
     }
 
     @Test
