@@ -9,6 +9,7 @@ import static java.util.Objects.requireNonNull;
 public class Role {
 
     public static final String MESSAGE_CONSTRAINTS = "Invalid role. Example: r/Logistics Lead";
+    public static final Role NOT_APPLICABLE = new Role("NA");
     private static final int MAX_LENGTH = 50;
 
     private final String value;

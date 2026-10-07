@@ -2,6 +2,7 @@ package coordimate.logic.commands;
 
 import static coordimate.logic.commands.CommandTestUtil.DESC_AMY;
 import static coordimate.logic.commands.CommandTestUtil.DESC_BOB;
+import static coordimate.logic.commands.CommandTestUtil.VALID_ADDRESS_BOB;
 import static coordimate.logic.commands.CommandTestUtil.VALID_NAME_BOB;
 import static coordimate.logic.commands.CommandTestUtil.VALID_PHONE_BOB;
 import static coordimate.logic.commands.CommandTestUtil.VALID_TAG_HUSBAND;
@@ -73,6 +74,21 @@ public class EditCommandTest {
         expectedModel.setPerson(lastPerson, editedPerson);
 
         assertCommandSuccess(editCommand, model, expectedMessage, expectedModel);
+    }
+
+    @Test
+    public void execute_editAddress_preservesExistingRole() {
+        Person originalPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+        Person contactWithRole = new PersonBuilder(originalPerson).withRole("Logistics").build();
+        model.setPerson(originalPerson, contactWithRole);
+        EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON,
+                new EditPersonDescriptorBuilder().withAddress(VALID_ADDRESS_BOB).build());
+        Person editedPerson = new PersonBuilder(contactWithRole).withAddress(VALID_ADDRESS_BOB).build();
+        Model expectedModel = new ModelManager(new CoordiMate(model.getCoordiMate()), new UserPrefs());
+        expectedModel.setPerson(contactWithRole, editedPerson);
+
+        assertCommandSuccess(editCommand, model,
+                String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson)), expectedModel);
     }
 
     @Test

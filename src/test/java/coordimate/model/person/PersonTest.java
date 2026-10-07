@@ -53,6 +53,10 @@ public class PersonTest {
         editedAlice = new PersonBuilder(ALICE).withPhone(VALID_PHONE_BOB).withEmail("ALICE@EXAMPLE.COM").build();
         assertTrue(ALICE.isSamePerson(editedAlice));
 
+        // changing the role does not create a new contact identity
+        editedAlice = new PersonBuilder(ALICE).withRole("Logistics").build();
+        assertTrue(ALICE.isSamePerson(editedAlice));
+
         // different phone and email are not duplicates, even when names match
         editedBob = new PersonBuilder(BOB).withPhone(ALICE.getPhone().toString())
                 .withEmail(ALICE.getEmail().toString()).build();
@@ -89,6 +93,10 @@ public class PersonTest {
         editedAlice = new PersonBuilder(ALICE).withEmail(VALID_EMAIL_BOB).build();
         assertFalse(ALICE.equals(editedAlice));
 
+        // different role -> returns false
+        editedAlice = new PersonBuilder(ALICE).withRole("Logistics").build();
+        assertFalse(ALICE.equals(editedAlice));
+
         // different address -> returns false
         editedAlice = new PersonBuilder(ALICE).withAddress(VALID_ADDRESS_BOB).build();
         assertFalse(ALICE.equals(editedAlice));
@@ -101,7 +109,8 @@ public class PersonTest {
     @Test
     public void toStringMethod() {
         String expected = Person.class.getCanonicalName() + "{name=" + ALICE.getName() + ", phone=" + ALICE.getPhone()
-                + ", email=" + ALICE.getEmail() + ", address=" + ALICE.getAddress() + ", tags=" + ALICE.getTags() + "}";
+                + ", email=" + ALICE.getEmail() + ", role=" + ALICE.getRole() + ", address=" + ALICE.getAddress()
+                + ", tags=" + ALICE.getTags() + "}";
         assertEquals(expected, ALICE.toString());
     }
 }

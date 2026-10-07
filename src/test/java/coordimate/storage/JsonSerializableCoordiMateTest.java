@@ -18,7 +18,9 @@ import coordimate.commons.util.JsonUtil;
 import coordimate.model.CoordiMate;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
+import coordimate.model.person.Person;
 import coordimate.model.tag.Tag;
+import coordimate.testutil.PersonBuilder;
 import coordimate.testutil.TypicalPersons;
 
 public class JsonSerializableCoordiMateTest {
@@ -37,6 +39,18 @@ public class JsonSerializableCoordiMateTest {
         CoordiMate coordiMateFromFile = dataFromFile.toModelType();
         CoordiMate typicalPersonsCoordiMate = TypicalPersons.getTypicalCoordiMate();
         assertEquals(coordiMateFromFile, typicalPersonsCoordiMate);
+    }
+
+    @Test
+    public void jsonRoundTrip_personRole_preserved() throws Exception {
+        CoordiMate source = new CoordiMate();
+        Person contact = new PersonBuilder().withRole("Logistics").build();
+        source.addPerson(contact);
+
+        String json = JsonUtil.toJsonString(new JsonSerializableCoordiMate(source));
+        CoordiMate restored = JsonUtil.fromJsonString(json, JsonSerializableCoordiMate.class).toModelType();
+
+        assertEquals(List.of(contact), restored.getPersonList());
     }
 
     @Test

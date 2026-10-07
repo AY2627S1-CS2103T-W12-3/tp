@@ -422,7 +422,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 1. EXCO member requests to delete a contact, identifying the contact by its displayed index, exact name, phone number, or email address.
 2. CoordiMate displays the matching contact and requests confirmation.
 3. EXCO member confirms the deletion.
-4. CoordiMate deletes the contact and confirms the deletion.
+4. CoordiMate deletes the selected contact, removes them from all event participant lists (including past events), deletes their attendance records, and confirms the deletion. Events and any other contacts with the same name remain unchanged.
 
     Use case ends.
 
@@ -451,12 +451,6 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * 3a. EXCO member declines the deletion.
 
   * 3a1. CoordiMate leaves the contact unchanged.
-
-    Use case ends.
-
-* 4a. The contact is assigned to a future event.
-
-  * 4a1. CoordiMate removes the contact from the event's active participant list and retains existing attendance records.
 
     Use case ends.
 

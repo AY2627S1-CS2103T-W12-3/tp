@@ -15,7 +15,10 @@ import coordimate.commons.exceptions.IllegalValueException;
 import coordimate.model.person.Address;
 import coordimate.model.person.Email;
 import coordimate.model.person.Name;
+import coordimate.model.person.Person;
 import coordimate.model.person.Phone;
+import coordimate.model.person.Role;
+import coordimate.testutil.PersonBuilder;
 
 public class JsonAdaptedPersonTest {
     private static final String INVALID_NAME = "R@chel";
@@ -36,6 +39,38 @@ public class JsonAdaptedPersonTest {
     public void toModelType_validPersonDetails_returnsPerson() throws Exception {
         JsonAdaptedPerson person = new JsonAdaptedPerson(BENSON);
         assertEquals(BENSON, person.toModelType());
+    }
+
+    @Test
+    public void toModelType_personWithRole_preservesRole() throws Exception {
+        Person contact = new PersonBuilder(BENSON).withRole("Logistics").build();
+        JsonAdaptedPerson person = new JsonAdaptedPerson(contact);
+
+        assertEquals(contact, person.toModelType());
+    }
+
+    @Test
+    public void toModelType_legacyPersonWithoutRole_usesNa() throws Exception {
+        JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS,
+                VALID_TAGS);
+
+        assertEquals(Role.NOT_APPLICABLE, person.toModelType().getRole());
+    }
+
+    @Test
+    public void toModelType_invalidRole_throwsIllegalValueException() {
+        JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS,
+                "invalid_role", VALID_TAGS);
+
+        assertThrows(IllegalValueException.class, Role.MESSAGE_CONSTRAINTS, person::toModelType);
+    }
+
+    @Test
+    public void toModelType_emptyRole_throwsIllegalValueException() {
+        JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS,
+                "", VALID_TAGS);
+
+        assertThrows(IllegalValueException.class, Role.MESSAGE_CONSTRAINTS, person::toModelType);
     }
 
     @Test
