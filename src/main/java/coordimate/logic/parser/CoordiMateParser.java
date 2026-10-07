@@ -21,8 +21,8 @@ import coordimate.logic.commands.ExitCommand;
 import coordimate.logic.commands.FindCommand;
 import coordimate.logic.commands.HelpCommand;
 import coordimate.logic.commands.ListCommand;
-import coordimate.logic.commands.SearchCommand;
 import coordimate.logic.commands.ListTagsCommand;
+import coordimate.logic.commands.SearchCommand;
 import coordimate.logic.parser.exceptions.ParseException;
 
 /**
