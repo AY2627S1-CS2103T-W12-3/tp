@@ -10,7 +10,6 @@ import coordimate.logic.commands.AddEventCommand;
 import coordimate.logic.commands.CommandResult;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.logic.parser.exceptions.ParseException;
-import coordimate.model.tag.Tag;
 import javafx.beans.binding.Bindings;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -58,7 +57,7 @@ public class MainWindow extends UiPart<Stage> {
     private StackPane eventListPanelPlaceholder;
 
     @FXML
-    private ListView<Tag> tagListView;
+    private ListView<String> tagListView;
 
     @FXML
     private TabPane views;
@@ -156,17 +155,16 @@ public class MainWindow extends UiPart<Stage> {
 
         eventListPanel = new EventListPanel(logic.getEventList());
         eventListPanelPlaceholder.getChildren().add(eventListPanel.getRoot());
-        tagListView.setItems(logic.getTagList());
+        TagListViewModel tagListViewModel = new TagListViewModel(logic.getTagList());
+        tagListView.setItems(tagListViewModel.getTagNames());
         contactsTab.textProperty().bind(Bindings.size(logic.getFilteredPersonList()).asString("Contacts (%d)"));
         eventsTab.textProperty().bind(Bindings.size(logic.getEventList()).asString("Events (%d)"));
-        tagsTab.textProperty().bind(Bindings.size(logic.getTagList()).asString("Tags (%d)"));
         contactsView.textProperty().bind(contactsTab.textProperty());
         eventsView.textProperty().bind(eventsTab.textProperty());
-        tagsView.textProperty().bind(tagsTab.textProperty());
+        tagsView.textProperty().bind(tagListViewModel.tagCountTextProperty());
         views.getSelectionModel().selectedItemProperty().addListener((observable, oldTab, tab) -> {
             contactsView.setSelected(tab == contactsTab);
             eventsView.setSelected(tab == eventsTab);
-            tagsView.setSelected(tab == tagsTab);
         });
 
         resultDisplay = new ResultDisplay();
