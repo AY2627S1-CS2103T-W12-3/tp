@@ -8,6 +8,8 @@ import coordimate.commons.util.ToStringBuilder;
 import coordimate.model.event.Event;
 import coordimate.model.person.Person;
 import coordimate.model.person.UniquePersonList;
+import coordimate.model.tag.Tag;
+import coordimate.model.tag.UniqueTagList;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
@@ -17,14 +19,23 @@ import javafx.collections.ObservableList;
  */
 public class CoordiMate implements ReadOnlyCoordiMate {
 
+    private static final List<Tag> DEFAULT_TAGS = List.of(
+            new Tag("EXCO"),
+            new Tag("Sponsor"),
+            new Tag("UniversityStaff"),
+            new Tag("Logistics"));
+
     private final UniquePersonList persons = new UniquePersonList();
+    private final UniqueTagList tags = new UniqueTagList();
     private final ObservableList<Event> events = FXCollections.observableArrayList();
     private final ObservableList<Event> unmodifiableEvents = FXCollections.unmodifiableObservableList(events);
 
     /**
      * Creates an empty contact and event store.
      */
-    public CoordiMate() {}
+    public CoordiMate() {
+        setTags(List.of());
+    }
 
     /**
      * Creates a CoordiMate using the people and events in {@code toBeCopied}.
@@ -45,12 +56,32 @@ public class CoordiMate implements ReadOnlyCoordiMate {
     }
 
     /**
+     * Replaces the saved tags while ensuring that every default tag remains available.
+     * Default tag names use their canonical capitalization.
+     */
+    public void setTags(List<Tag> tags) {
+        UniqueTagList replacement = new UniqueTagList();
+        replacement.setTags(DEFAULT_TAGS);
+
+        UniqueTagList suppliedTags = new UniqueTagList();
+        suppliedTags.setTags(tags);
+        for (Tag tag : suppliedTags) {
+            if (!replacement.contains(tag)) {
+                replacement.add(tag);
+            }
+        }
+
+        this.tags.setTags(replacement);
+    }
+
+    /**
      * Resets the existing data of this {@code CoordiMate} with {@code newData}.
      */
     public void resetData(ReadOnlyCoordiMate newData) {
         requireNonNull(newData);
 
         setPersons(newData.getPersonList());
+        setTags(newData.getTagList());
         setEvents(newData.getEventList());
     }
 
@@ -91,6 +122,28 @@ public class CoordiMate implements ReadOnlyCoordiMate {
     @Override
     public ObservableList<Event> getEventList() {
         return unmodifiableEvents;
+    }
+
+    //// tag-level operations
+
+    /**
+     * Returns true if a tag with the same name exists, ignoring case.
+     */
+    public boolean hasTag(Tag tag) {
+        requireNonNull(tag);
+        return tags.contains(tag);
+    }
+
+    /**
+     * Adds a tag whose name must not already exist, ignoring case.
+     */
+    public void addTag(Tag tag) {
+        tags.add(tag);
+    }
+
+    @Override
+    public ObservableList<Tag> getTagList() {
+        return tags.asUnmodifiableObservableList();
     }
 
     //// person-level operations
@@ -136,6 +189,7 @@ public class CoordiMate implements ReadOnlyCoordiMate {
     public String toString() {
         return new ToStringBuilder(this)
                 .add("persons", persons)
+                .add("tags", tags)
                 .add("events", events)
                 .toString();
     }
@@ -156,11 +210,13 @@ public class CoordiMate implements ReadOnlyCoordiMate {
             return false;
         }
 
-        return persons.equals(otherCoordiMate.persons) && events.equals(otherCoordiMate.events);
+        return persons.equals(otherCoordiMate.persons)
+                && tags.equals(otherCoordiMate.tags)
+                && events.equals(otherCoordiMate.events);
     }
 
     @Override
     public int hashCode() {
-        return java.util.Objects.hash(persons, events);
+        return java.util.Objects.hash(persons, tags, events);
     }
 }

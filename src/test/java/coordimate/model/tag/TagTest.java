@@ -1,6 +1,8 @@
 package coordimate.model.tag;
 
 import static coordimate.testutil.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
@@ -21,6 +23,16 @@ public class TagTest {
     public void isValidTagName() {
         // null tag name
         assertThrows(NullPointerException.class, () -> Tag.isValidTagName(null));
+    }
+
+    @Test
+    public void isSameTag() {
+        Tag tag = new Tag("EXCO");
+
+        assertTrue(tag.isSameTag(tag));
+        assertTrue(tag.isSameTag(new Tag("exco")));
+        assertFalse(tag.isSameTag(new Tag("Sponsor")));
+        assertFalse(tag.isSameTag(null));
     }
 
 }

@@ -21,6 +21,7 @@ import coordimate.model.Model;
 import coordimate.model.ReadOnlyCoordiMate;
 import coordimate.model.ReadOnlyUserPrefs;
 import coordimate.model.person.Person;
+import coordimate.model.tag.Tag;
 import coordimate.testutil.PersonBuilder;
 import javafx.collections.ObservableList;
 
@@ -96,6 +97,12 @@ public class AddCommandTest {
         public void addEvent(coordimate.model.event.Event event) {
             throw new AssertionError("This method should not be called.");
         }
+
+        @Override
+        public ObservableList<Tag> getTagList() {
+            throw new AssertionError("This method should not be called.");
+        }
+
         @Override
         public ReadOnlyUserPrefs getUserPrefs() {
             throw new AssertionError("This method should not be called.");

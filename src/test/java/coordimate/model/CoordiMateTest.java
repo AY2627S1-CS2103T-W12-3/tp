@@ -17,6 +17,8 @@ import org.junit.jupiter.api.Test;
 
 import coordimate.model.person.Person;
 import coordimate.model.person.exceptions.DuplicatePersonException;
+import coordimate.model.tag.Tag;
+import coordimate.model.tag.exceptions.DuplicateTagException;
 import coordimate.testutil.PersonBuilder;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -28,6 +30,8 @@ public class CoordiMateTest {
     @Test
     public void constructor() {
         assertEquals(List.of(), coordiMate.getPersonList());
+        assertEquals(List.of(new Tag("EXCO"), new Tag("Sponsor"), new Tag("UniversityStaff"),
+                new Tag("Logistics")), coordiMate.getTagList());
     }
 
     @Test
@@ -83,9 +87,63 @@ public class CoordiMateTest {
     }
 
     @Test
+    public void setTags_customTags_includesDefaultTagsAndCustomTags() {
+        Tag customTag = new Tag("Publicity");
+
+        coordiMate.setTags(List.of(customTag));
+
+        assertEquals(List.of(new Tag("EXCO"), new Tag("Sponsor"), new Tag("UniversityStaff"),
+                new Tag("Logistics"), customTag), coordiMate.getTagList());
+    }
+
+    @Test
+    public void setTags_defaultWithDifferentCase_usesCanonicalDefaultCapitalization() {
+        coordiMate.setTags(List.of(new Tag("exco")));
+
+        assertEquals(new Tag("EXCO"), coordiMate.getTagList().get(0));
+        assertEquals(4, coordiMate.getTagList().size());
+    }
+
+    @Test
+    public void setTags_duplicateNamesIgnoringCase_throwsDuplicateTagException() {
+        List<Tag> duplicateTags = List.of(new Tag("Publicity"), new Tag("publicity"));
+
+        assertThrows(DuplicateTagException.class, () -> coordiMate.setTags(duplicateTags));
+    }
+
+    @Test
+    public void hasTag_tagWithSameNameIgnoringCase_returnsTrue() {
+        assertTrue(coordiMate.hasTag(new Tag("exco")));
+    }
+
+    @Test
+    public void hasTag_nullTag_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> coordiMate.hasTag(null));
+    }
+
+    @Test
+    public void addTag_validTag_addsTag() {
+        Tag customTag = new Tag("Publicity");
+
+        coordiMate.addTag(customTag);
+
+        assertTrue(coordiMate.hasTag(customTag));
+    }
+
+    @Test
+    public void addTag_duplicateNameIgnoringCase_throwsDuplicateTagException() {
+        assertThrows(DuplicateTagException.class, () -> coordiMate.addTag(new Tag("exco")));
+    }
+
+    @Test
+    public void getTagList_modifyList_throwsUnsupportedOperationException() {
+        assertThrows(UnsupportedOperationException.class, () -> coordiMate.getTagList().remove(0));
+    }
+
+    @Test
     public void toStringMethod() {
         String expected = CoordiMate.class.getCanonicalName() + "{persons=" + coordiMate.getPersonList()
-                + ", events=" + coordiMate.getEventList() + "}";
+                + ", tags=" + coordiMate.getTagList() + ", events=" + coordiMate.getEventList() + "}";
         assertEquals(expected, coordiMate.toString());
     }
 
@@ -118,6 +176,11 @@ public class CoordiMateTest {
         @Override
         public ObservableList<Person> getPersonList() {
             return persons;
+        }
+
+        @Override
+        public ObservableList<Tag> getTagList() {
+            return FXCollections.emptyObservableList();
         }
 
         @Override

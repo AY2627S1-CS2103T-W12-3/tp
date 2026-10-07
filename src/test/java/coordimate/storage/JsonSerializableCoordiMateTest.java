@@ -15,6 +15,7 @@ import coordimate.commons.util.JsonUtil;
 import coordimate.model.CoordiMate;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
+import coordimate.model.tag.Tag;
 import coordimate.testutil.TypicalPersons;
 
 public class JsonSerializableCoordiMateTest {
@@ -56,6 +57,7 @@ public class JsonSerializableCoordiMateTest {
         CoordiMate restored = new JsonSerializableCoordiMate(source).toModelType();
         assertEquals(source.getPersonList(), restored.getPersonList());
         assertEquals(source.getEventList(), restored.getEventList());
+        assertEquals(source.getTagList(), restored.getTagList());
     }
 
     @Test
@@ -69,6 +71,42 @@ public class JsonSerializableCoordiMateTest {
     }
 
     @Test
+    public void toModelType_customTags_preservedDuringRoundTrip() throws Exception {
+        CoordiMate source = new CoordiMate();
+        source.addTag(new Tag("Publicity"));
+
+        CoordiMate restored = new JsonSerializableCoordiMate(source).toModelType();
+
+        assertEquals(source.getTagList(), restored.getTagList());
+    }
+
+    @Test
+    public void toModelType_missingTags_addsDefaultTags() throws Exception {
+        JsonSerializableCoordiMate data = new JsonSerializableCoordiMate(List.of(), List.of());
+
+        CoordiMate restored = data.toModelType();
+
+        assertEquals(new CoordiMate().getTagList(), restored.getTagList());
+    }
+
+    @Test
+    public void toModelType_duplicateTagNames_throwsIllegalValueException() {
+        List<JsonAdaptedTag> tags = List.of(new JsonAdaptedTag("Publicity"), new JsonAdaptedTag("publicity"));
+        JsonSerializableCoordiMate data = new JsonSerializableCoordiMate(List.of(), List.of(), tags);
+
+        assertThrows(IllegalValueException.class, JsonSerializableCoordiMate.MESSAGE_DUPLICATE_TAG,
+                data::toModelType);
+    }
+
+    @Test
+    public void toModelType_invalidTag_throwsIllegalValueException() {
+        JsonSerializableCoordiMate data = new JsonSerializableCoordiMate(List.of(), List.of(),
+                List.of(new JsonAdaptedTag("invalid tag")));
+
+        assertThrows(IllegalValueException.class, data::toModelType);
+    }
+
+    @Test
     public void toModelType_nullListEntries_throwsIllegalValueException() {
         JsonSerializableCoordiMate nullPerson = new JsonSerializableCoordiMate(
                 Arrays.asList((JsonAdaptedPerson) null), List.of());
@@ -77,6 +115,9 @@ public class JsonSerializableCoordiMateTest {
         JsonSerializableCoordiMate nullEvent = new JsonSerializableCoordiMate(List.of(),
                 Arrays.asList((JsonAdaptedEvent) null));
         assertThrows(IllegalValueException.class, "Events list must not contain null entries.", nullEvent::toModelType);
+        JsonSerializableCoordiMate nullTag = new JsonSerializableCoordiMate(List.of(), List.of(),
+                Arrays.asList((JsonAdaptedTag) null));
+        assertThrows(IllegalValueException.class, "Tags list must not contain null entries.", nullTag::toModelType);
     }
 
     @Test

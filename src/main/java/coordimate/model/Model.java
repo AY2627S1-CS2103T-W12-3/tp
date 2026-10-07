@@ -5,6 +5,7 @@ import java.util.function.Predicate;
 import coordimate.commons.core.GuiSettings;
 import coordimate.model.event.Event;
 import coordimate.model.person.Person;
+import coordimate.model.tag.Tag;
 import javafx.collections.ObservableList;
 
 /**
@@ -48,6 +49,11 @@ public interface Model {
      * Adds an event whose name must not already be in use.
      */
     void addEvent(Event event);
+
+    /**
+     * Returns an unmodifiable view of all saved tags.
+     */
+    ObservableList<Tag> getTagList();
 
     /**
      * Returns true if a person with the same identity as {@code person} exists in the CoordiMate.
