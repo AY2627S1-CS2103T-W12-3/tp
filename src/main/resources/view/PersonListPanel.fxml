@@ -1,8 +1,56 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
-  <ListView fx:id="personListView" VBox.vgrow="ALWAYS" />
-</VBox>
+<SplitPane fx:id="contactSplitPane" dividerPositions="0.5" styleClass="contact-workspace"
+           xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
+  <items>
+    <VBox minWidth="0" styleClass="contact-list-section">
+      <HBox alignment="CENTER_LEFT" spacing="10">
+        <Label text="CONTACT LIST" styleClass="section-heading" />
+        <Label fx:id="contactCount" id="contactCount" styleClass="detail-caption" />
+      </HBox>
+      <ListView fx:id="personListView" id="personListView" styleClass="contact-list" VBox.vgrow="ALWAYS" />
+    </VBox>
+    <VBox minWidth="0" styleClass="contact-details-section">
+      <Label text="CONTACT DETAILS" styleClass="section-heading" />
+      <Label fx:id="selectionHint" id="selectionHint" text="Select a contact to view details."
+             wrapText="true" styleClass="contact-selection-hint" />
+      <ScrollPane fx:id="detailsScroll" id="detailsScroll" fitToWidth="true"
+                  styleClass="contact-details-scroll" VBox.vgrow="ALWAYS">
+        <content>
+          <VBox spacing="16">
+            <HBox alignment="CENTER_LEFT" spacing="12">
+              <Label fx:id="selectedName" id="selectedName" wrapText="true" styleClass="contact-name" />
+              <Label fx:id="selectedIndex" id="selectedIndex" styleClass="detail-caption" />
+            </HBox>
+            <VBox spacing="14" styleClass="contact-details-card">
+              <VBox spacing="3">
+                <Label text="Phone" styleClass="detail-caption" />
+                <Label fx:id="phone" id="phone" wrapText="true" styleClass="detail-value" />
+              </VBox>
+              <VBox spacing="3">
+                <Label text="Email" styleClass="detail-caption" />
+                <Label fx:id="email" id="email" wrapText="true" styleClass="detail-value" />
+              </VBox>
+              <VBox spacing="3">
+                <Label text="Address" styleClass="detail-caption" />
+                <Label fx:id="address" id="address" wrapText="true" styleClass="detail-value" />
+              </VBox>
+              <VBox spacing="5">
+                <Label text="Tags" styleClass="detail-caption" />
+                <FlowPane fx:id="detailTags" id="detailTags" hgap="7" vgap="5" styleClass="contact-detail-tags" />
+              </VBox>
+            </VBox>
+          </VBox>
+        </content>
+      </ScrollPane>
+    </VBox>
+  </items>
+</SplitPane>

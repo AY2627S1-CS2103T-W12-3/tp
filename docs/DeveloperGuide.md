@@ -78,7 +78,9 @@ The `UI` component uses the JavaFX UI framework. The layouts of these UI parts a
 The `UI` component,
 
 * executes user commands using the `Logic` component.
-* listens for changes to `Model` data so that the UI can be updated with the modified data.
+* listens for changes to `Model` data so that the UI can be updated with the modified data. The Contacts view
+  displays the filtered contact list beside a details pane and clears the selection when the selected contact
+  leaves that list.
 * keeps a reference to the `Logic` component, because the `UI` relies on the `Logic` to execute commands.
 * depends on some classes in the `Model` component because it displays `Person` objects from the model.
 
