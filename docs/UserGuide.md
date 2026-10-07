@@ -312,18 +312,29 @@ Examples:
 
 ### Deleting a person: `delete`
 
-Deletes the specified person from CoordiMate.
+Finds a saved contact and asks for confirmation before deleting it.
 
-Format: `delete INDEX`
+Formats: `delete INDEX` · `delete n/NAME` · `delete p/PHONE` · `delete e/EMAIL`
 
-* Deletes the person at the specified `INDEX`.
-* The index refers to the index number shown in the displayed person list.
-* The index **must be a positive integer** 1, 2, 3, ...
-* The person is also removed from every event they are assigned to.
+* Supply exactly one identifier. `INDEX` is a positive integer in the currently displayed contact list.
+* Name matching is exact apart from letter case and surrounding spaces. Phone matching ignores spaces, hyphens, and
+  brackets. Email matching ignores letter case and surrounding spaces. These identifiers search all saved contacts,
+  including those hidden by a search or filter.
+* CoordiMate shows the contact's name, phone, email, and role, followed by `Confirm deletion? [y/N]`. Type exactly `y`
+  or `Y` to delete. `n`, `N`, Enter, or any other input cancels. A cancelling input is **not** run as a command; enter it
+  again if that was your intention.
+* A confirmed deletion removes the contact from all event member lists, including past events. The events and other
+  contacts remain saved. A cancelled deletion makes no changes.
+* A confirmed deletion is saved before it appears in the contact list. A corrupt data file or failed write leaves the
+  contact and events unchanged and reports a contact load or save error.
 
 Examples:
-* `list` followed by `delete 2` deletes the 2nd person in CoordiMate.
-* `find Betsy` followed by `delete 1` deletes the 1st person in the results of the `find` command.
+* `list` followed by `delete 2`, then `y`, deletes the 2nd displayed contact.
+* `find Betsy` followed by `delete 1`, then `Y`, deletes the 1st contact in the results.
+* `delete e/aisha@example.com`, then `y`, deletes that saved contact even if a filter hides it.
+
+On confirmation, feedback is `Contact deleted successfully: NAME.` Missing, invalid, unknown, repeated, and
+non-matching identifiers are rejected without opening a confirmation prompt.
 
 ### Clearing all entries: `clear`
 
@@ -380,7 +391,7 @@ Action     | Format, Examples
 **Add**    | `add n/NAME p/PHONE e/EMAIL r/ROLE [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [t/TAG]... [m/NOTE]`<br> e.g., `add n/James Ho p/22224444 e/jamesho@example.com r/Member t/friend`
 **Assign** | `assign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...`<br> e.g., `assign evn/Final Concert c/1 4 5`
 **Clear**  | `clear`
-**Delete** | `delete INDEX`<br> e.g., `delete 3`
+**Delete** | `delete INDEX` or `delete n/NAME`, `delete p/PHONE`, `delete e/EMAIL`; confirm with `y`<br> e.g., `delete 3`
 **Edit**   | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [t/TAG]... [at/TAG]... [rt/TAG]...`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
 **Find**   | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
 **List**   | `list`
