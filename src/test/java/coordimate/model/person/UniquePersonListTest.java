@@ -57,6 +57,27 @@ public class UniquePersonListTest {
     }
 
     @Test
+    public void add_sameNameWithDistinctPhoneAndEmail_succeeds() {
+        uniquePersonList.add(ALICE);
+        Person differentAlice = new PersonBuilder(BOB).withName(ALICE.getName().toString()).build();
+
+        uniquePersonList.add(differentAlice);
+
+        assertEquals(List.of(ALICE, differentAlice), uniquePersonList.asUnmodifiableObservableList());
+    }
+
+    @Test
+    public void add_normalizedPhoneOrEmailDuplicate_throwsDuplicatePersonException() {
+        uniquePersonList.add(ALICE);
+        Person samePhone = new PersonBuilder(BOB).withPhone("(9435) 1253").build();
+        Person sameEmail = new PersonBuilder(BOB).withEmail("ALICE@EXAMPLE.COM").build();
+
+        assertThrows(DuplicatePersonException.class, () -> uniquePersonList.add(samePhone));
+        assertThrows(DuplicatePersonException.class, () -> uniquePersonList.add(sameEmail));
+        assertEquals(List.of(ALICE), uniquePersonList.asUnmodifiableObservableList());
+    }
+
+    @Test
     public void setPerson_nullTargetPerson_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> uniquePersonList.setPerson(null, ALICE));
     }

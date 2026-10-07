@@ -10,10 +10,13 @@ import static coordimate.logic.commands.CommandTestUtil.assertCommandSuccess;
 import static coordimate.logic.commands.CommandTestUtil.showPersonAtIndex;
 import static coordimate.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static coordimate.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
+import static coordimate.testutil.TypicalPersons.BENSON;
 import static coordimate.testutil.TypicalPersons.getTypicalCoordiMate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -24,6 +27,8 @@ import coordimate.model.CoordiMate;
 import coordimate.model.Model;
 import coordimate.model.ModelManager;
 import coordimate.model.UserPrefs;
+import coordimate.model.event.Event;
+import coordimate.model.event.EventTime;
 import coordimate.model.person.Person;
 import coordimate.testutil.EditPersonDescriptorBuilder;
 import coordimate.testutil.PersonBuilder;
@@ -118,6 +123,30 @@ public class EditCommandTest {
                 new EditPersonDescriptorBuilder(personInList).build());
 
         assertCommandFailure(editCommand, model, EditCommand.MESSAGE_DUPLICATE_PERSON);
+    }
+
+    @Test
+    public void execute_sameNameWithDistinctPhoneAndEmail_success() {
+        Person originalPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+        Person editedPerson = new PersonBuilder(originalPerson).withName(BENSON.getName().toString()).build();
+        EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON,
+                new EditPersonDescriptorBuilder().withName(BENSON.getName().toString()).build());
+        Model expectedModel = new ModelManager(new CoordiMate(model.getCoordiMate()), new UserPrefs());
+        expectedModel.setPerson(originalPerson, editedPerson);
+
+        assertCommandSuccess(editCommand, model,
+                String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson)), expectedModel);
+    }
+
+    @Test
+    public void execute_renameConflictsWithEventMember_failureWithoutChanges() {
+        Person firstPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+        model.addEvent(new Event("Concert", new EventTime("08-08-2026"), new EventTime("08-08-2026"),
+                List.of(firstPerson.getName(), BENSON.getName())));
+        EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON,
+                new EditPersonDescriptorBuilder().withName(BENSON.getName().toString()).build());
+
+        assertCommandFailure(editCommand, model, EditCommand.MESSAGE_MEMBER_NAME_CONFLICT);
     }
 
     @Test

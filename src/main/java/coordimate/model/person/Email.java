@@ -3,6 +3,8 @@ package coordimate.model.person;
 import static coordimate.commons.util.AppUtil.checkArgument;
 import static java.util.Objects.requireNonNull;
 
+import java.util.Locale;
+
 /**
  * Represents a Person's email in the CoordiMate.
  * Guarantees: immutable; is valid as declared in {@link #isValidEmail(String)}
@@ -31,6 +33,13 @@ public class Email {
 
     public String getValue() {
         return value;
+    }
+
+    /**
+     * Returns the email without surrounding spaces or letter case for duplicate checks.
+     */
+    public String getNormalizedValue() {
+        return value.strip().toLowerCase(Locale.ROOT);
     }
 
     /**

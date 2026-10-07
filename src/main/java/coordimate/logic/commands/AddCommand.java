@@ -36,7 +36,8 @@ public class AddCommand extends Command {
             + PREFIX_TAG + "owesMoney";
 
     public static final String MESSAGE_SUCCESS = "New person added: %1$s";
-    public static final String MESSAGE_DUPLICATE_PERSON = "This person already exists in the CoordiMate.";
+    public static final String MESSAGE_DUPLICATE_PERSON = "A contact with this phone number or email already exists."
+            + "\nNo changes were made.";
 
     private final Person toAdd;
 

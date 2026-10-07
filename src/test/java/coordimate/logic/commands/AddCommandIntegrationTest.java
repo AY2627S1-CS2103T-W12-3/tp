@@ -45,4 +45,24 @@ public class AddCommandIntegrationTest {
                 AddCommand.MESSAGE_DUPLICATE_PERSON);
     }
 
+    @Test
+    public void execute_sameNameWithDistinctPhoneAndEmail_success() {
+        Person personInList = model.getCoordiMate().getPersonList().get(0);
+        Person differentPerson = new PersonBuilder().withName(personInList.getName().toString()).build();
+        Model expectedModel = new ModelManager(model.getCoordiMate(), new UserPrefs());
+        expectedModel.addPerson(differentPerson);
+
+        assertCommandSuccess(new AddCommand(differentPerson), model,
+                String.format(AddCommand.MESSAGE_SUCCESS, Messages.format(differentPerson)), expectedModel);
+    }
+
+    @Test
+    public void execute_normalizedPhoneOrEmailDuplicate_failure() {
+        Person samePhone = new PersonBuilder().withPhone("(9435) 1253").build();
+        Person sameEmail = new PersonBuilder().withEmail("ALICE@EXAMPLE.COM").build();
+
+        assertCommandFailure(new AddCommand(samePhone), model, AddCommand.MESSAGE_DUPLICATE_PERSON);
+        assertCommandFailure(new AddCommand(sameEmail), model, AddCommand.MESSAGE_DUPLICATE_PERSON);
+    }
+
 }

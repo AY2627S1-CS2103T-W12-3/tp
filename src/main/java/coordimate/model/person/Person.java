@@ -16,12 +16,12 @@ import coordimate.model.tag.Tag;
  */
 public class Person {
 
-    // Identity fields
-    private final Name name;
+    // Contact details used for duplicate checks
     private final Phone phone;
     private final Email email;
 
     // Data fields
+    private final Name name;
     private final Address address;
     private final Set<Tag> tags = new HashSet<>();
 
@@ -62,8 +62,8 @@ public class Person {
     }
 
     /**
-     * Returns true if both persons have the same name.
-     * This defines a weaker notion of equality between two persons.
+     * Returns true if either the normalised phone or email matches.
+     * Contacts with the same name alone are not duplicates.
      */
     public boolean isSamePerson(Person otherPerson) {
         if (otherPerson == this) {
@@ -71,7 +71,8 @@ public class Person {
         }
 
         return otherPerson != null
-                && otherPerson.getName().equals(getName());
+                && (phone.getNormalizedValue().equals(otherPerson.phone.getNormalizedValue())
+                || email.getNormalizedValue().equals(otherPerson.email.getNormalizedValue()));
     }
 
     /**

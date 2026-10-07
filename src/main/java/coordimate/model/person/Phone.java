@@ -32,6 +32,13 @@ public class Phone {
     }
 
     /**
+     * Returns the phone number without formatting separators for duplicate checks.
+     */
+    public String getNormalizedValue() {
+        return value.replace(" ", "").replace("-", "").replace("(", "").replace(")", "");
+    }
+
+    /**
      * Returns true if a given string is a valid phone number.
      */
     public static boolean isValidPhone(String test) {

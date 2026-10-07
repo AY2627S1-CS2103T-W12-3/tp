@@ -84,6 +84,9 @@ Format: `help`
 
 Adds a person to CoordiMate.
 
+Contacts may share a name, but a phone number or email address already used by another contact is rejected.
+Phone numbers are compared without spaces, hyphens, or brackets; email addresses are compared without regard to case.
+
 Format: `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [t/TAG]... `
 
 <box type="tip" seamless>
