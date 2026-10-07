@@ -3,11 +3,15 @@ package coordimate.storage;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
 import coordimate.commons.exceptions.IllegalValueException;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
+import coordimate.model.person.Name;
 
 public class JsonAdaptedEventTest {
     @Test
@@ -16,6 +20,37 @@ public class JsonAdaptedEventTest {
             Event expected = new Event("Concert", new EventTime(start), new EventTime("08-08-2026 18:00"));
             assertEquals(expected, new JsonAdaptedEvent(expected).toModelType());
             assertEquals(expected, new JsonAdaptedEvent("  Concert  ", start, "08-08-2026 18:00").toModelType());
+        }
+    }
+
+    @Test
+    public void toModelType_members_preservedInOrder() throws Exception {
+        Event expected = new Event("Concert", new EventTime("08-08-2026"), new EventTime("08-08-2026 18:00"),
+                List.of(new Name("Bernice Yu"), new Name("Alex Yeoh")));
+        assertEquals(expected, new JsonAdaptedEvent(expected).toModelType());
+        assertEquals(expected, new JsonAdaptedEvent("Concert", "08-08-2026", "08-08-2026 18:00",
+                List.of("Bernice Yu", "Alex Yeoh")).toModelType());
+    }
+
+    @Test
+    public void toModelType_missingMembers_noMembers() throws Exception {
+        Event expected = new Event("Concert", new EventTime("08-08-2026"), new EventTime("08-08-2026"));
+        assertEquals(expected, new JsonAdaptedEvent("Concert", "08-08-2026", "08-08-2026", null).toModelType());
+        assertEquals(expected, new JsonAdaptedEvent("Concert", "08-08-2026", "08-08-2026").toModelType());
+    }
+
+    @Test
+    public void toModelType_invalidMembers_throwsIllegalValueException() {
+        List<List<String>> invalidMembers = List.of(
+                Arrays.asList("Alex Yeoh", null), List.of("Alex Yeoh!"), List.of(""),
+                List.of("Alex Yeoh", "Bernice Yu", "Alex Yeoh"));
+        String[] messages = {
+            JsonAdaptedEvent.MESSAGE_NULL_MEMBER, Name.MESSAGE_CONSTRAINTS, Name.MESSAGE_CONSTRAINTS,
+            Event.MESSAGE_DUPLICATE_MEMBER
+        };
+        for (int i = 0; i < messages.length; i++) {
+            JsonAdaptedEvent event = new JsonAdaptedEvent("Concert", "08-08-2026", "08-08-2026", invalidMembers.get(i));
+            assertEquals(messages[i], assertThrows(IllegalValueException.class, event::toModelType).getMessage());
         }
     }
 
