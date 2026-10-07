@@ -19,12 +19,13 @@ import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.CoordiMate;
 import coordimate.model.ModelManager;
 import coordimate.model.ReadOnlyCoordiMate;
+import coordimate.model.tag.Tag;
 import coordimate.storage.JsonCoordiMateStorage;
 import coordimate.storage.JsonUserPrefsStorage;
 import coordimate.storage.StorageManager;
 
 public class AddCommandPersistenceTest {
-    private static final String COMMAND = "add n/New Contact p/82345678 e/new@example.com a/Somewhere";
+    private static final String COMMAND = "add n/New Contact p/82345678 e/new@example.com r/Logistics a/Somewhere";
 
     @TempDir
     public Path temporaryFolder;
@@ -33,13 +34,18 @@ public class AddCommandPersistenceTest {
     public void execute_validContact_savedAndReloaded() throws Exception {
         ModelManager model = new ModelManager();
         model.addPerson(AMY);
+        int initialTagCount = model.getTagList().size();
         model.updateFilteredPersonList(person -> false);
         JsonCoordiMateStorage storage = new JsonCoordiMateStorage(temporaryFolder.resolve("data.json"));
 
-        newLogic(model, storage).execute(COMMAND);
+        assertEquals("Contact saved successfully: New Contact",
+                newLogic(model, storage).execute(COMMAND + " t/Publicity t/EXCO").getFeedbackToUser());
 
         assertEquals(model.getCoordiMate(), storage.readCoordiMate().orElseThrow());
         assertEquals(2, model.getFilteredPersonList().size());
+        assertEquals(initialTagCount + 1, model.getTagList().size());
+        assertTrue(model.getTagList().contains(new Tag("Publicity")));
+        assertTrue(storage.readCoordiMate().orElseThrow().getTagList().contains(new Tag("Publicity")));
         assertEquals("New Contact", storage.readCoordiMate().orElseThrow().getPersonList().getLast().getName()
                 .getFullName());
     }

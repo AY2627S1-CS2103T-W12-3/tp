@@ -348,7 +348,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 **Main success scenario (MSS)**
 
 1. EXCO member requests to add a contact, providing the contact's name, phone number, email address, role, and any applicable optional details.
-2. CoordiMate adds the contact and confirms that the contact was saved.
+2. CoordiMate validates the supplied fields, registers any new custom tags, saves the contact, and confirms
+   that the contact was saved.
 
     Use case ends.
 

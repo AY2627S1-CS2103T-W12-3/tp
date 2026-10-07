@@ -31,7 +31,7 @@
 
    * `list` : Lists all contacts.
 
-   * `add n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01` : Adds a contact named `John Doe` to CoordiMate.
+   * `add n/John Doe p/98765432 e/johnd@example.com r/Member` : Adds a contact named `John Doe` to CoordiMate.
 
    * `delete 3` : Deletes the 3rd contact shown in the current list.
 
@@ -89,16 +89,24 @@ Contacts may share a name, but a phone number or email address already used by a
 Phone numbers are compared without spaces, hyphens, or brackets; email addresses are compared without regard to case.
 If the local contact data cannot be loaded or saved, CoordiMate reports an error and leaves the contact list unchanged.
 
-Format: `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [t/TAG]... `
+Format: `add n/NAME p/PHONE e/EMAIL r/ROLE [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [t/TAG]... [m/NOTE]`
+
+Name, phone, email, and role are required. Birthday uses `dd-MM-yyyy` and cannot be in the future.
+Address, organisation, and note are optional. An empty `b/`, `a/`, `o/`, or `m/` leaves that field unset,
+as does omitting it. Non-tag fields may appear only once; `t/TAG` may repeat. An empty `t/` clears the
+tags collected so far. A valid new tag is saved as a custom tag. Successful feedback is
+`Contact saved successfully: NAME`.
+Select the saved contact in the list to view all its details. Unset optional values are shown as
+`— (not specified)` in the details pane, but remain unset in storage.
 
 <box type="tip" seamless>
 
-**Tip:** A person can have any number of tags, including zero.
+**Tip:** A contact can have any number of tags, including zero. Parameters can be supplied in any order.
 </box>
 
 Examples:
-* `add n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01`
-* `add n/Betsy Crowe t/friend e/betsycrowe@example.com a/Newgate Prison p/1234567 t/criminal`
+* `add n/Aisha Tan p/+6591234567 e/aisha@example.com r/Logistics t/EXCO m/Handles venue bookings`
+* `add n/Mr Lim p/90801110 e/lim@example.com o/NUS Student Affairs r/University Staff t/UniversityStaff`
 
 ### Adding an event: `addevent`
 
@@ -338,7 +346,7 @@ _Details coming soon ..._
 
 Action     | Format, Examples
 -----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
-**Add**    | `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [t/TAG]... ` <br> e.g., `add n/James Ho p/22224444 e/jamesho@example.com a/123, Clementi Rd, 1234665 t/friend t/colleague`
+**Add**    | `add n/NAME p/PHONE e/EMAIL r/ROLE [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [t/TAG]... [m/NOTE]`<br> e.g., `add n/James Ho p/22224444 e/jamesho@example.com r/Member t/friend`
 **Assign** | `assign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...`<br> e.g., `assign evn/Final Concert c/1 4 5`
 **Clear**  | `clear`
 **Delete** | `delete INDEX`<br> e.g., `delete 3`

@@ -7,7 +7,6 @@ import static coordimate.testutil.TypicalPersons.getTypicalCoordiMate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import coordimate.logic.Messages;
 import coordimate.model.Model;
 import coordimate.model.ModelManager;
 import coordimate.model.UserPrefs;
@@ -34,7 +33,7 @@ public class AddCommandIntegrationTest {
         expectedModel.addPerson(validPerson);
 
         assertCommandSuccess(new AddCommand(validPerson), model,
-                String.format(AddCommand.MESSAGE_SUCCESS, Messages.format(validPerson)),
+                String.format(AddCommand.MESSAGE_SUCCESS, validPerson.getName()),
                 expectedModel);
     }
 
@@ -53,7 +52,7 @@ public class AddCommandIntegrationTest {
         expectedModel.addPerson(differentPerson);
 
         assertCommandSuccess(new AddCommand(differentPerson), model,
-                String.format(AddCommand.MESSAGE_SUCCESS, Messages.format(differentPerson)), expectedModel);
+                String.format(AddCommand.MESSAGE_SUCCESS, differentPerson.getName()), expectedModel);
     }
 
     @Test

@@ -173,7 +173,7 @@ public class LogicManagerTest {
 
         // Triggers the saveCoordiMate method by executing an add command
         String addCommand = AddCommand.COMMAND_WORD + NAME_DESC_AMY + PHONE_DESC_AMY
-                + EMAIL_DESC_AMY + ADDRESS_DESC_AMY;
+                + EMAIL_DESC_AMY + " r/NA" + ADDRESS_DESC_AMY;
         assertCommandFailure(addCommand, CommandException.class, expectedMessage);
     }
 }
