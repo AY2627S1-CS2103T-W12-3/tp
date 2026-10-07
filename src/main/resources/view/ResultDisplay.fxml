@@ -8,6 +8,6 @@
       xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
   <ImageView fx:id="feedbackIcon" fitWidth="18" fitHeight="18" preserveRatio="true" />
   <Label fx:id="resultDisplay" wrapText="true" styleClass="result-display"
-         HBox.hgrow="ALWAYS" minWidth="0" maxWidth="Infinity" />
+         HBox.hgrow="ALWAYS" minWidth="0" minHeight="-Infinity" maxWidth="Infinity" />
   <Label fx:id="feedbackStatus" text="Ready" styleClass="feedback-status" minWidth="-Infinity" />
 </HBox>

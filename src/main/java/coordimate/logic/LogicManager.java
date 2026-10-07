@@ -20,6 +20,7 @@ import coordimate.model.Model;
 import coordimate.model.ModelManager;
 import coordimate.model.event.Event;
 import coordimate.model.person.Person;
+import coordimate.model.tag.Tag;
 import coordimate.storage.Storage;
 import javafx.collections.ObservableList;
 
@@ -106,6 +107,11 @@ public class LogicManager implements Logic {
     @Override
     public ObservableList<Event> getEventList() {
         return model.getCoordiMate().getEventList();
+    }
+
+    @Override
+    public ObservableList<Tag> getTagList() {
+        return model.getTagList();
     }
 
     @Override

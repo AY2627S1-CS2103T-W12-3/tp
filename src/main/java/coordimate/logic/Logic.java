@@ -6,6 +6,7 @@ import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.logic.parser.exceptions.ParseException;
 import coordimate.model.event.Event;
 import coordimate.model.person.Person;
+import coordimate.model.tag.Tag;
 import javafx.collections.ObservableList;
 
 /**
@@ -31,6 +32,11 @@ public interface Logic {
      * Returns the live, unmodifiable event list in insertion order.
      */
     ObservableList<Event> getEventList();
+
+    /**
+     * Returns the live, unmodifiable list of saved tags.
+     */
+    ObservableList<Tag> getTagList();
 
     /**
      * Returns the user prefs' GUI settings.

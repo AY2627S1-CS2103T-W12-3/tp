@@ -24,6 +24,7 @@ import coordimate.logic.commands.FindCommand;
 import coordimate.logic.commands.HelpCommand;
 import coordimate.logic.commands.ListCommand;
 import coordimate.logic.commands.SearchCommand;
+import coordimate.logic.commands.ListTagsCommand;
 import coordimate.logic.parser.exceptions.ParseException;
 import coordimate.model.person.ContactMatchesKeywordPredicate;
 import coordimate.model.person.NameContainsKeywordsPredicate;
@@ -104,6 +105,11 @@ public class CoordiMateParserTest {
         SearchCommand command = (SearchCommand) parser.parseCommand(
                 SearchCommand.COMMAND_WORD + " Alice");
         assertEquals(new SearchCommand(new ContactMatchesKeywordPredicate("Alice"), "Alice"), command);
+    }
+  
+    @Test
+    public void parseCommand_listTags() throws Exception {
+        assertTrue(parser.parseCommand(ListTagsCommand.COMMAND_WORD) instanceof ListTagsCommand);
     }
 
     @Test
