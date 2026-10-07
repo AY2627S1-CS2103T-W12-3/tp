@@ -75,6 +75,15 @@ public class CoordiMateParserTest {
     }
 
     @Test
+    public void parseCommand_editByTarget() throws Exception {
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withRole("Logistics").build();
+
+        EditCommand command = (EditCommand) parser.parseCommand("edit target/alice@example.com r/Logistics");
+
+        assertEquals(new EditCommand("alice@example.com", descriptor), command);
+    }
+
+    @Test
     public void parseCommand_exit() throws Exception {
         assertTrue(parser.parseCommand(ExitCommand.COMMAND_WORD) instanceof ExitCommand);
         assertTrue(parser.parseCommand(ExitCommand.COMMAND_WORD + " 3") instanceof ExitCommand);

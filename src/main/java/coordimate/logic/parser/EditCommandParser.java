@@ -9,6 +9,7 @@ import static coordimate.logic.parser.CliSyntax.PREFIX_ORGANISATION;
 import static coordimate.logic.parser.CliSyntax.PREFIX_PHONE;
 import static coordimate.logic.parser.CliSyntax.PREFIX_ROLE;
 import static coordimate.logic.parser.CliSyntax.PREFIX_TAG;
+import static coordimate.logic.parser.CliSyntax.PREFIX_TARGET;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Collection;
@@ -36,9 +37,14 @@ public class EditCommandParser implements Parser<EditCommand> {
     public static final String MESSAGE_INVALID_INDEX = "Invalid contact index. Example: edit 2 r/President";
     public static final String MESSAGE_REPEATED_PARAMETER = "A parameter may only be specified once.";
     public static final String MESSAGE_UNKNOWN_PARAMETER = "Unknown parameter. Example: edit 2 r/Logistics";
+    public static final String MESSAGE_MULTIPLE_IDENTIFIERS =
+            "Specify either a contact index or target/IDENTIFIER, not both.";
+    public static final String MESSAGE_EMPTY_TARGET =
+            "Contact identifier must not be empty. Example: target/aisha@example.com";
 
     private static final Pattern PARAMETER_PATTERN = Pattern.compile("(?<!\\S)([A-Za-z]+/)");
-    private static final Set<String> ALLOWED_PREFIXES = Set.of("n/", "p/", "e/", "r/", "b/", "a/", "o/", "m/", "t/");
+    private static final Set<String> ALLOWED_PREFIXES =
+            Set.of("n/", "p/", "e/", "r/", "b/", "a/", "o/", "m/", "t/", "target/");
 
     /**
      * Parses the given {@code String} of arguments in the context of the EditCommand
@@ -50,18 +56,27 @@ public class EditCommandParser implements Parser<EditCommand> {
         requireNonNull(args);
         rejectUnknownParameters(args);
         ArgumentMultimap argMultimap =
-                ArgumentTokenizer.tokenize(args, PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL, PREFIX_ROLE,
-                        PREFIX_BIRTHDAY, PREFIX_ADDRESS, PREFIX_ORGANISATION, PREFIX_NOTE, PREFIX_TAG);
-
-        Index index;
-
-        try {
-            index = ParserUtil.parseIndex(argMultimap.getPreamble());
-        } catch (ParseException pe) {
-            throw new ParseException(MESSAGE_INVALID_INDEX, pe);
-        }
+                ArgumentTokenizer.tokenize(" " + args, PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL, PREFIX_ROLE,
+                        PREFIX_BIRTHDAY, PREFIX_ADDRESS, PREFIX_ORGANISATION, PREFIX_NOTE, PREFIX_TAG, PREFIX_TARGET);
 
         rejectRepeatedParameters(argMultimap);
+        Index index = null;
+        String targetIdentifier = null;
+        if (argMultimap.getValue(PREFIX_TARGET).isPresent()) {
+            if (!argMultimap.getPreamble().isEmpty()) {
+                throw new ParseException(MESSAGE_MULTIPLE_IDENTIFIERS);
+            }
+            targetIdentifier = argMultimap.getValue(PREFIX_TARGET).orElseThrow();
+            if (targetIdentifier.isEmpty()) {
+                throw new ParseException(MESSAGE_EMPTY_TARGET);
+            }
+        } else {
+            try {
+                index = ParserUtil.parseIndex(argMultimap.getPreamble());
+            } catch (ParseException pe) {
+                throw new ParseException(MESSAGE_INVALID_INDEX, pe);
+            }
+        }
 
         EditPersonDescriptor editPersonDescriptor = new EditPersonDescriptor();
 
@@ -112,7 +127,9 @@ public class EditCommandParser implements Parser<EditCommand> {
             throw new ParseException(EditCommand.MESSAGE_NOT_EDITED);
         }
 
-        return new EditCommand(index, editPersonDescriptor);
+        return targetIdentifier == null
+                ? new EditCommand(index, editPersonDescriptor)
+                : new EditCommand(targetIdentifier, editPersonDescriptor);
     }
 
     private static void rejectUnknownParameters(String args) throws ParseException {
@@ -130,7 +147,8 @@ public class EditCommandParser implements Parser<EditCommand> {
                 || arguments.getAllValues(PREFIX_BIRTHDAY).size() > 1
                 || arguments.getAllValues(PREFIX_ADDRESS).size() > 1
                 || arguments.getAllValues(PREFIX_ORGANISATION).size() > 1
-                || arguments.getAllValues(PREFIX_NOTE).size() > 1) {
+                || arguments.getAllValues(PREFIX_NOTE).size() > 1
+                || arguments.getAllValues(PREFIX_TARGET).size() > 1) {
             throw new ParseException(MESSAGE_REPEATED_PARAMETER);
         }
     }

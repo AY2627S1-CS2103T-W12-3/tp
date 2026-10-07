@@ -9,6 +9,7 @@ import static coordimate.logic.parser.CliSyntax.PREFIX_ORGANISATION;
 import static coordimate.logic.parser.CliSyntax.PREFIX_PHONE;
 import static coordimate.logic.parser.CliSyntax.PREFIX_ROLE;
 import static coordimate.logic.parser.CliSyntax.PREFIX_TAG;
+import static coordimate.logic.parser.CliSyntax.PREFIX_TARGET;
 import static coordimate.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 import static java.util.Objects.requireNonNull;
 
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import coordimate.commons.core.index.Index;
 import coordimate.commons.util.CollectionUtil;
@@ -44,10 +46,9 @@ public class EditCommand extends Command {
 
     public static final String COMMAND_WORD = "edit";
 
-    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Edits the details of the person identified "
-            + "by the index number used in the displayed person list. "
+    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Edits the details of a saved contact. "
             + "Existing values will be overwritten by the input values.\n"
-            + "Parameters: INDEX (must be a positive integer) "
+            + "Parameters: INDEX or " + PREFIX_TARGET + "IDENTIFIER "
             + "[" + PREFIX_NAME + "NAME] "
             + "[" + PREFIX_PHONE + "PHONE] "
             + "[" + PREFIX_EMAIL + "EMAIL] "
@@ -68,8 +69,15 @@ public class EditCommand extends Command {
             "This update conflicts with another saved contact. No changes were made.";
     public static final String MESSAGE_MEMBER_NAME_CONFLICT =
             "Cannot rename this contact because an event already has a member with that name. No changes were made.";
+    public static final String MESSAGE_NO_MATCH =
+            "No contact matches that identifier. Use an exact saved name, phone number, or email address.";
+    public static final String MESSAGE_AMBIGUOUS_MATCH = "Multiple contacts match that identifier:\n%1$s\n"
+            + "Retry with a unique phone or email, or a displayed index if shown.";
+    public static final String MESSAGE_INVALID_INDEX =
+            "No contact exists at index %1$d. Please use an index from the current list.";
 
     private final Index index;
+    private final String targetIdentifier;
     private final EditPersonDescriptor editPersonDescriptor;
 
     /**
@@ -83,19 +91,29 @@ public class EditCommand extends Command {
         requireNonNull(editPersonDescriptor);
 
         this.index = index;
+        targetIdentifier = null;
+        this.editPersonDescriptor = new EditPersonDescriptor(editPersonDescriptor);
+    }
+
+    /**
+     * Creates a command that identifies a saved contact by exact name, phone, or email.
+     */
+    public EditCommand(String targetIdentifier, EditPersonDescriptor editPersonDescriptor) {
+        requireNonNull(targetIdentifier);
+        requireNonNull(editPersonDescriptor);
+        if (targetIdentifier.isBlank()) {
+            throw new IllegalArgumentException("Contact identifier must not be blank.");
+        }
+
+        index = null;
+        this.targetIdentifier = targetIdentifier.strip();
         this.editPersonDescriptor = new EditPersonDescriptor(editPersonDescriptor);
     }
 
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
-        List<Person> lastShownPersons = model.getFilteredPersonList();
-
-        if (index.getZeroBased() >= lastShownPersons.size()) {
-            throw new CommandException(Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
-        }
-
-        Person personToEdit = lastShownPersons.get(index.getZeroBased());
+        Person personToEdit = resolvePersonToEdit(model);
         Person editedPerson = createEditedPerson(personToEdit, editPersonDescriptor);
 
         boolean duplicatesAnotherPerson = model.getCoordiMate().getPersonList().stream()
@@ -111,6 +129,47 @@ public class EditCommand extends Command {
         }
         model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
         return new CommandResult(String.format(MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson)));
+    }
+
+    private Person resolvePersonToEdit(Model model) throws CommandException {
+        List<Person> displayedPersons = model.getFilteredPersonList();
+        if (index != null) {
+            if (index.getZeroBased() >= displayedPersons.size()) {
+                throw new CommandException(String.format(MESSAGE_INVALID_INDEX, index.getOneBased()));
+            }
+            return displayedPersons.get(index.getZeroBased());
+        }
+        return resolveTarget(targetIdentifier, model.getCoordiMate().getPersonList(), displayedPersons);
+    }
+
+    /**
+     * Finds a contact across all saved contacts, independently of the displayed list.
+     */
+    static Person resolveTarget(String identifier, List<Person> savedPersons, List<Person> displayedPersons)
+            throws CommandException {
+        String trimmedIdentifier = identifier.strip();
+        String normalizedPhone = trimmedIdentifier.replace(" ", "").replace("-", "")
+                .replace("(", "").replace(")", "");
+        List<Person> matches = savedPersons.stream().filter(person ->
+                person.getName().getFullName().equalsIgnoreCase(trimmedIdentifier)
+                || person.getEmail().getValue().equalsIgnoreCase(trimmedIdentifier)
+                || person.getPhone().getNormalizedValue().equals(normalizedPhone)).toList();
+        if (matches.isEmpty()) {
+            throw new CommandException(MESSAGE_NO_MATCH);
+        }
+        if (matches.size() > 1) {
+            String matchDetails = matches.stream().map(person -> formatMatch(person, displayedPersons))
+                    .collect(Collectors.joining("\n"));
+            throw new CommandException(String.format(MESSAGE_AMBIGUOUS_MATCH, matchDetails));
+        }
+        return matches.getFirst();
+    }
+
+    private static String formatMatch(Person person, List<Person> displayedPersons) {
+        String details = "- " + person.getName() + " | Phone: " + person.getPhone()
+                + " | Email: " + person.getEmail();
+        int displayedIndex = displayedPersons.indexOf(person);
+        return displayedIndex < 0 ? details : details + " | Current-list index: " + (displayedIndex + 1);
     }
 
     /**
@@ -149,7 +208,8 @@ public class EditCommand extends Command {
             return false;
         }
 
-        return index.equals(otherEditCommand.index)
+        return Objects.equals(index, otherEditCommand.index)
+                && Objects.equals(targetIdentifier, otherEditCommand.targetIdentifier)
                 && editPersonDescriptor.equals(otherEditCommand.editPersonDescriptor);
     }
 
@@ -157,6 +217,7 @@ public class EditCommand extends Command {
     public String toString() {
         return new ToStringBuilder(this)
                 .add("index", index)
+                .add("targetIdentifier", targetIdentifier)
                 .add("editPersonDescriptor", editPersonDescriptor)
                 .toString();
     }

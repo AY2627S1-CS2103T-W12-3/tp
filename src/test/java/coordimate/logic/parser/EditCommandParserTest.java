@@ -167,7 +167,28 @@ public class EditCommandParserTest {
     @Test
     public void parse_unknownParameter_failure() {
         assertParseFailure(parser, "1 r/Logistics x/value", EditCommandParser.MESSAGE_UNKNOWN_PARAMETER);
-        assertParseFailure(parser, "1 target/Alice r/Logistics", EditCommandParser.MESSAGE_UNKNOWN_PARAMETER);
+        assertParseFailure(parser, "1 id/Alice r/Logistics", EditCommandParser.MESSAGE_UNKNOWN_PARAMETER);
+    }
+
+    @Test
+    public void parse_targetIdentifier_success() {
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withRole("Logistics").build();
+
+        assertParseSuccess(parser, "target/Alice Pauline r/Logistics",
+                new EditCommand("Alice Pauline", descriptor));
+        assertParseSuccess(parser, "target/alice@example.com r/Logistics",
+                new EditCommand("alice@example.com", descriptor));
+        assertParseSuccess(parser, "target/(9435) 1253 r/Logistics",
+                new EditCommand("(9435) 1253", descriptor));
+    }
+
+    @Test
+    public void parse_invalidTargetIdentifier_failure() {
+        assertParseFailure(parser, "target/ r/Logistics", EditCommandParser.MESSAGE_EMPTY_TARGET);
+        assertParseFailure(parser, "1 target/Alice r/Logistics", EditCommandParser.MESSAGE_MULTIPLE_IDENTIFIERS);
+        assertParseFailure(parser, "target/Alice target/Bob r/Logistics",
+                EditCommandParser.MESSAGE_REPEATED_PARAMETER);
+        assertParseFailure(parser, "target/Alice", EditCommand.MESSAGE_NOT_EDITED);
     }
 
     @Test
