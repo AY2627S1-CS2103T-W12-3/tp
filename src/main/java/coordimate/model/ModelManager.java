@@ -90,6 +90,18 @@ public class ModelManager implements Model {
     }
 
     @Override
+    public boolean hasTag(Tag tag) {
+        requireNonNull(tag);
+        return coordiMate.hasTag(tag);
+    }
+
+    @Override
+    public void addTag(Tag tag) {
+        requireNonNull(tag);
+        coordiMate.addTag(tag);
+    }
+
+    @Override
     public void setEvent(Event target, Event editedEvent) {
         coordiMate.setEvent(target, editedEvent);
     }

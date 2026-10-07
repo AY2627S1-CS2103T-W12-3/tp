@@ -154,6 +154,8 @@ public class ParserUtilTest {
     @Test
     public void parseTag_invalidValue_throwsParseException() {
         assertThrows(ParseException.class, () -> ParserUtil.parseTag(INVALID_TAG));
+        assertThrows(ParseException.class, () ->
+                ParserUtil.parseTag("1234567890123456789012345678901"));
     }
 
     @Test
