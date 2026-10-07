@@ -27,7 +27,6 @@ import java.util.stream.Collectors;
 import coordimate.commons.core.index.Index;
 import coordimate.commons.util.CollectionUtil;
 import coordimate.commons.util.ToStringBuilder;
-import coordimate.logic.Messages;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.Model;
 import coordimate.model.event.MemberNameConflictException;
@@ -67,7 +66,7 @@ public class EditCommand extends Command {
             + PREFIX_PHONE + "91234567 "
             + PREFIX_EMAIL + "johndoe@example.com";
 
-    public static final String MESSAGE_EDIT_PERSON_SUCCESS = "Edited person: %1$s";
+    public static final String MESSAGE_EDIT_PERSON_SUCCESS = "Contact updated successfully:\n%1$s";
     public static final String MESSAGE_NOT_EDITED =
             "Please provide at least one field or tag operation to edit. Example: edit 2 r/Logistics";
     public static final String MESSAGE_DUPLICATE_PERSON =
@@ -141,7 +140,15 @@ public class EditCommand extends Command {
             }
         }
         model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
-        return new CommandResult(String.format(MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson)));
+        return new CommandResult(successMessage(editedPerson));
+    }
+
+    static String successMessage(Person person) {
+        String details = "Name: " + person.getName()
+                + "\nPhone: " + person.getPhone()
+                + "\nEmail: " + person.getEmail()
+                + "\nRole: " + person.getRole();
+        return String.format(MESSAGE_EDIT_PERSON_SUCCESS, details);
     }
 
     private Person resolvePersonToEdit(Model model) throws CommandException {

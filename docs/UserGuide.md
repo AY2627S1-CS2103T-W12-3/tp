@@ -272,6 +272,18 @@ Or: `edit target/IDENTIFIER [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [
 * An edit is saved to the local data file before it appears in the contact list. If the file cannot be read or written,
   the edit is not applied. A failed write reports `Contact could not be saved. No changes were made.`; invalid stored
   data reports `Contact data could not be loaded. Please check the local data file.`
+* On success, `edit` confirms the updated name, phone, email, and role. The selected contact's details pane shows its
+  current optional fields and tags.
+
+Successful feedback example:
+
+```text
+Contact updated successfully:
+Name: Aisha Tan
+Phone: +6598765432
+Email: aisha@example.com
+Role: President
+```
 
 Examples:
 *  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st person to be `91234567` and `johndoe@example.com` respectively.

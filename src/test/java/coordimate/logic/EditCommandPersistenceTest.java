@@ -42,7 +42,11 @@ public class EditCommandPersistenceTest {
         model.updateFilteredPersonList(person -> person.equals(BENSON));
         JsonCoordiMateStorage storage = new JsonCoordiMateStorage(temporaryFolder.resolve("data.json"));
 
-        assertTrue(newLogic(model, storage).execute(EDIT).getFeedbackToUser().contains("Benson Tan"));
+        assertEquals("Contact updated successfully:\n"
+                + "Name: Benson Tan\n"
+                + "Phone: 98765432\n"
+                + "Email: johnd@example.com\n"
+                + "Role: NA", newLogic(model, storage).execute(EDIT).getFeedbackToUser());
 
         ReadOnlyCoordiMate saved = storage.readCoordiMate().orElseThrow();
         assertEquals(model.getCoordiMate(), saved);

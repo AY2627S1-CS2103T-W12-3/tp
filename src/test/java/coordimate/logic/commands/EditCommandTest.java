@@ -24,7 +24,6 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import coordimate.commons.core.index.Index;
-import coordimate.logic.Messages;
 import coordimate.logic.commands.EditCommand.EditPersonDescriptor;
 import coordimate.logic.commands.EditCommand.TagOperation;
 import coordimate.logic.commands.EditCommand.TagOperationType;
@@ -56,12 +55,21 @@ public class EditCommandTest {
     }
 
     @Test
+    public void successMessage_includesUpdatedContactDetails() {
+        assertEquals("Contact updated successfully:\n"
+                + "Name: Alice Pauline\n"
+                + "Phone: 94351253\n"
+                + "Email: alice@example.com\n"
+                + "Role: NA", EditCommand.successMessage(ALICE));
+    }
+
+    @Test
     public void execute_allFieldsSpecifiedUnfilteredList_success() {
         Person editedPerson = new PersonBuilder().build();
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder(editedPerson).build();
         EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, descriptor);
 
-        String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson));
+        String expectedMessage = EditCommand.successMessage(editedPerson);
 
         Model expectedModel = new ModelManager(new CoordiMate(model.getCoordiMate()), new UserPrefs());
         expectedModel.setPerson(model.getFilteredPersonList().get(0), editedPerson);
@@ -82,7 +90,7 @@ public class EditCommandTest {
                 .withPhone(VALID_PHONE_BOB).withTags(VALID_TAG_HUSBAND).build();
         EditCommand editCommand = new EditCommand(indexLastPerson, descriptor);
 
-        String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson));
+        String expectedMessage = EditCommand.successMessage(editedPerson);
 
         Model expectedModel = new ModelManager(new CoordiMate(model.getCoordiMate()), new UserPrefs());
         expectedModel.setPerson(lastPerson, editedPerson);
@@ -104,7 +112,7 @@ public class EditCommandTest {
         expectedModel.setPerson(contactWithDetails, editedPerson);
 
         assertCommandSuccess(editCommand, model,
-                String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson)), expectedModel);
+                EditCommand.successMessage(editedPerson), expectedModel);
     }
 
     @Test
@@ -122,7 +130,7 @@ public class EditCommandTest {
         expectedModel.setPerson(contactWithDetails, editedPerson);
 
         assertCommandSuccess(editCommand, model,
-                String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson)), expectedModel);
+                EditCommand.successMessage(editedPerson), expectedModel);
     }
 
     @Test
@@ -140,7 +148,7 @@ public class EditCommandTest {
         expectedModel.setPerson(contactWithDetails, editedPerson);
 
         assertCommandSuccess(editCommand, model,
-                String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson)), expectedModel);
+                EditCommand.successMessage(editedPerson), expectedModel);
     }
 
     @Test
@@ -162,9 +170,9 @@ public class EditCommandTest {
         Person editedPerson = new PersonBuilder(contactWithoutAddress).withName("Alice Tan").build();
         Model expectedModel = new ModelManager(new CoordiMate(model.getCoordiMate()), new UserPrefs());
         expectedModel.setPerson(contactWithoutAddress, editedPerson);
-        String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson));
+        String expectedMessage = EditCommand.successMessage(editedPerson);
 
-        assertTrue(expectedMessage.contains("— (not specified)"));
+        assertTrue(editedPerson.getAddress().isEmpty());
         assertCommandSuccess(editCommand, model, expectedMessage, expectedModel);
     }
 
@@ -173,7 +181,7 @@ public class EditCommandTest {
         EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON, new EditPersonDescriptor());
         Person editedPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
 
-        String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson));
+        String expectedMessage = EditCommand.successMessage(editedPerson);
 
         Model expectedModel = new ModelManager(new CoordiMate(model.getCoordiMate()), new UserPrefs());
         expectedModel.setPerson(editedPerson, editedPerson);
@@ -191,7 +199,7 @@ public class EditCommandTest {
         expectedModel.setPerson(original, edited);
 
         assertCommandSuccess(new EditCommand(INDEX_FIRST_PERSON, descriptor), model,
-                String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(edited)), expectedModel);
+                EditCommand.successMessage(edited), expectedModel);
         assertTrue(model.getTagList().stream().anyMatch(tag -> tag.isSameTag(new Tag("Alumni2026"))));
     }
 
@@ -208,7 +216,7 @@ public class EditCommandTest {
         expectedModel.setPerson(original, edited);
 
         assertCommandSuccess(new EditCommand(INDEX_FIRST_PERSON, descriptor), model,
-                String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(edited)), expectedModel);
+                EditCommand.successMessage(edited), expectedModel);
         assertTrue(model.getTagList().stream().anyMatch(tag -> tag.isSameTag(new Tag("friends"))));
     }
 
@@ -223,7 +231,7 @@ public class EditCommandTest {
         expectedModel.setPerson(original, edited);
 
         assertCommandSuccess(new EditCommand(INDEX_FIRST_PERSON, descriptor), model,
-                String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(edited)), expectedModel);
+                EditCommand.successMessage(edited), expectedModel);
     }
 
     @Test
@@ -237,7 +245,7 @@ public class EditCommandTest {
         expectedModel.registerTag(new Tag("Alumni2026"));
 
         assertCommandSuccess(new EditCommand(INDEX_FIRST_PERSON, descriptor), model,
-                String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(original)), expectedModel);
+                EditCommand.successMessage(original), expectedModel);
         assertTrue(model.getTagList().stream().anyMatch(tag -> tag.isSameTag(new Tag("Alumni2026"))));
     }
 
@@ -250,7 +258,7 @@ public class EditCommandTest {
         expectedModel.setPerson(original, edited);
 
         assertCommandSuccess(new EditCommand(INDEX_FIRST_PERSON, descriptor), model,
-                String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(edited)), expectedModel);
+                EditCommand.successMessage(edited), expectedModel);
         assertTrue(model.getTagList().stream().anyMatch(tag -> tag.isSameTag(new Tag("Alumni2026"))));
     }
 
@@ -264,7 +272,7 @@ public class EditCommandTest {
         expectedModel.setPerson(original, original);
 
         assertCommandSuccess(new EditCommand(INDEX_FIRST_PERSON, descriptor), model,
-                String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(original)), expectedModel);
+                EditCommand.successMessage(original), expectedModel);
     }
 
     @Test
@@ -276,7 +284,7 @@ public class EditCommandTest {
         EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON,
                 new EditPersonDescriptorBuilder().withName(VALID_NAME_BOB).build());
 
-        String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson));
+        String expectedMessage = EditCommand.successMessage(editedPerson);
 
         Model expectedModel = new ModelManager(new CoordiMate(model.getCoordiMate()), new UserPrefs());
         expectedModel.setPerson(model.getFilteredPersonList().get(0), editedPerson);
@@ -308,7 +316,7 @@ public class EditCommandTest {
         expectedModel.setPerson(ALICE, editedPerson);
 
         assertCommandSuccess(editCommand, model,
-                String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson)), expectedModel);
+                EditCommand.successMessage(editedPerson), expectedModel);
     }
 
     @Test
@@ -396,7 +404,7 @@ public class EditCommandTest {
         expectedModel.setPerson(ALICE, renamedAlice);
 
         assertCommandSuccess(editCommand, model,
-                String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(renamedAlice)), expectedModel);
+                EditCommand.successMessage(renamedAlice), expectedModel);
         assertEquals(List.of(new Event("Concert", eventTime, eventTime,
                 List.of(BENSON.getName(), renamedAlice.getName())),
                 new Event("Fair", eventTime, eventTime, List.of(renamedAlice.getName(), BENSON.getName())),
