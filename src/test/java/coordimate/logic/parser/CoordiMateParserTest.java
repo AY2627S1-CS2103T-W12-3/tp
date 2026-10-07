@@ -12,7 +12,9 @@ import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 
+import coordimate.commons.core.index.Index;
 import coordimate.logic.commands.AddCommand;
+import coordimate.logic.commands.AssignCommand;
 import coordimate.logic.commands.ClearCommand;
 import coordimate.logic.commands.DeleteCommand;
 import coordimate.logic.commands.EditCommand;
@@ -37,6 +39,14 @@ public class CoordiMateParserTest {
         Person person = new PersonBuilder().build();
         AddCommand command = (AddCommand) parser.parseCommand(PersonUtil.getAddCommand(person));
         assertEquals(new AddCommand(person), command);
+    }
+
+    @Test
+    public void parseCommand_assign() throws Exception {
+        AssignCommand command = (AssignCommand) parser.parseCommand(
+                AssignCommand.COMMAND_WORD + " evn/Final Concert c/1 3");
+        assertEquals(new AssignCommand("Final Concert", List.of(INDEX_FIRST_PERSON, Index.fromOneBased(3))),
+                command);
     }
 
     @Test

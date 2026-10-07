@@ -2,6 +2,7 @@ package coordimate.storage;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -12,6 +13,7 @@ import coordimate.commons.exceptions.IllegalValueException;
 import coordimate.model.CoordiMate;
 import coordimate.model.ReadOnlyCoordiMate;
 import coordimate.model.event.Event;
+import coordimate.model.person.Name;
 import coordimate.model.person.Person;
 
 /**
@@ -22,6 +24,7 @@ class JsonSerializableCoordiMate {
 
     public static final String MESSAGE_DUPLICATE_PERSON = "Persons list contains duplicate person(s).";
     public static final String MESSAGE_DUPLICATE_EVENT = "Events list contains duplicate event name(s).";
+    public static final String MESSAGE_UNKNOWN_MEMBER = "Event members must refer to existing contacts.";
 
     private final List<JsonAdaptedPerson> persons = new ArrayList<>();
     private final List<JsonAdaptedEvent> events = new ArrayList<>();
@@ -68,6 +71,7 @@ class JsonSerializableCoordiMate {
             }
             coordiMate.addPerson(person);
         }
+        Set<Name> contactNames = coordiMate.getPersonList().stream().map(Person::getName).collect(Collectors.toSet());
         for (JsonAdaptedEvent jsonAdaptedEvent : events) {
             if (jsonAdaptedEvent == null) {
                 throw new IllegalValueException("Events list must not contain null entries.");
@@ -75,6 +79,9 @@ class JsonSerializableCoordiMate {
             Event event = jsonAdaptedEvent.toModelType();
             if (coordiMate.hasEvent(event)) {
                 throw new IllegalValueException(MESSAGE_DUPLICATE_EVENT);
+            }
+            if (!contactNames.containsAll(event.getMembers())) {
+                throw new IllegalValueException(MESSAGE_UNKNOWN_MEMBER);
             }
             coordiMate.addEvent(event);
         }

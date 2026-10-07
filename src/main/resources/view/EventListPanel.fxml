@@ -30,6 +30,10 @@
           <Label text="Duration" styleClass="detail-caption" />
           <Label fx:id="duration" wrapText="true" styleClass="detail-value" />
         </VBox>
+        <VBox spacing="5">
+          <Label fx:id="memberCount" text="Members" styleClass="detail-caption" />
+          <Label fx:id="members" wrapText="true" styleClass="detail-value" />
+        </VBox>
       </VBox>
       <Label fx:id="selectionHint" text="Add an event with addevent to see its details here."
              wrapText="true" styleClass="detail-caption" />

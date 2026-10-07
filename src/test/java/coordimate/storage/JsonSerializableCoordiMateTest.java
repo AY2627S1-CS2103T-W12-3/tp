@@ -1,6 +1,9 @@
 package coordimate.storage;
 
 import static coordimate.testutil.Assert.assertThrows;
+import static coordimate.testutil.TypicalPersons.ALICE;
+import static coordimate.testutil.TypicalPersons.BENSON;
+import static coordimate.testutil.TypicalPersons.CARL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.nio.file.Path;
@@ -23,6 +26,8 @@ public class JsonSerializableCoordiMateTest {
     private static final Path TYPICAL_PERSONS_FILE = TEST_DATA_FOLDER.resolve("typicalPersonsCoordiMate.json");
     private static final Path INVALID_PERSON_FILE = TEST_DATA_FOLDER.resolve("invalidPersonCoordiMate.json");
     private static final Path DUPLICATE_PERSON_FILE = TEST_DATA_FOLDER.resolve("duplicatePersonCoordiMate.json");
+    private static final Path EVENT_MEMBERS_FILE = TEST_DATA_FOLDER.resolve("eventMembersCoordiMate.json");
+    private static final Path UNKNOWN_MEMBER_FILE = TEST_DATA_FOLDER.resolve("unknownMemberCoordiMate.json");
 
     @Test
     public void toModelType_typicalPersonsFile_success() throws Exception {
@@ -56,6 +61,34 @@ public class JsonSerializableCoordiMateTest {
         CoordiMate restored = new JsonSerializableCoordiMate(source).toModelType();
         assertEquals(source.getPersonList(), restored.getPersonList());
         assertEquals(source.getEventList(), restored.getEventList());
+    }
+
+    @Test
+    public void toModelType_eventMembersFile_membersLoadedAndMissingFieldIsEmpty() throws Exception {
+        CoordiMate coordiMate = JsonUtil.readJsonFile(EVENT_MEMBERS_FILE, JsonSerializableCoordiMate.class)
+                .get().toModelType();
+        List<Event> expected = List.of(
+                new Event("Final Concert", new EventTime("08-08-2026 15:00"), new EventTime("08-08-2026 18:00"),
+                        List.of(BENSON.getName(), ALICE.getName())),
+                new Event("Student Life Fair", new EventTime("09-10-2026"), new EventTime("10-10-2026")));
+        assertEquals(expected, coordiMate.getEventList());
+    }
+
+    @Test
+    public void toModelType_eventMembers_preservedDuringRoundTrip() throws Exception {
+        CoordiMate source = TypicalPersons.getTypicalCoordiMate();
+        source.addEvent(new Event("Concert", new EventTime("08-08-2026"), new EventTime("08-08-2026 18:00"),
+                List.of(CARL.getName(), ALICE.getName())));
+        CoordiMate restored = new JsonSerializableCoordiMate(source).toModelType();
+        assertEquals(source, restored);
+    }
+
+    @Test
+    public void toModelType_unknownMember_throwsIllegalValueException() throws Exception {
+        JsonSerializableCoordiMate dataFromFile = JsonUtil.readJsonFile(UNKNOWN_MEMBER_FILE,
+                JsonSerializableCoordiMate.class).get();
+        assertThrows(IllegalValueException.class, JsonSerializableCoordiMate.MESSAGE_UNKNOWN_MEMBER,
+                dataFromFile::toModelType);
     }
 
     @Test

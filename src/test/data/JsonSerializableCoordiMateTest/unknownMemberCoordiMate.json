@@ -1,0 +1,16 @@
+{
+  "_comment": "Event member does not match any saved contact",
+  "persons" : [ {
+    "name" : "Alice Pauline",
+    "phone" : "94351253",
+    "email" : "alice@example.com",
+    "address" : "123, Jurong West Ave 6, #08-111",
+    "tags" : [ "friends" ]
+  } ],
+  "events" : [ {
+    "name" : "Final Concert",
+    "startTime" : "08-08-2026 15:00",
+    "endTime" : "08-08-2026 18:00",
+    "members" : [ "Alice Pauline", "Benson Meier" ]
+  } ]
+}

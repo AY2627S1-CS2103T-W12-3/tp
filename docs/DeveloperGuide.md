@@ -125,6 +125,7 @@ How the parsing works:
 The `Model` component,
 
 * stores CoordiMate data, including all `Person` objects (which are contained in a `UniquePersonList` object).
+* stores all `Event` objects. Each `Event` records its assigned members as an ordered list of contact `Name`s. `CoordiMate` keeps these lists in sync with the contacts: deleting a contact removes their name from every event, and renaming a contact updates it.
 * stores the `Person` objects selected by the current filter, such as search results, in a separate _filtered_ list. It exposes this list as an unmodifiable `ObservableList<Person>` that the UI can observe and bind to, so the UI updates when the list changes.
 * stores a `UserPrefs` object that represents the user’s preferences (currently, just the GUI settings). This is exposed to the outside as a `ReadOnlyUserPrefs` object.
 * does not depend on any of the other three components (as the `Model` represents data entities of the domain, they should make sense on their own without depending on other components)
@@ -488,23 +489,31 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **MSS**
 
-1. The Exco member assigns one or more contacts to an event using the `assign` command, specifying the event ID and contact IDs.
+1. The Exco member assigns one or more contacts to an event using the `assign` command, specifying the event name and the displayed indexes of the contacts.
 2. CoordiMate verifies the event and contacts, then associates the contacts with the event.
 3. CoordiMate confirms how many members were assigned.
 4. The use case ends.
 
 **Extensions**
 
-* 1a. The event ID or a contact ID is invalid.
-  * 1a1. CoordiMate displays the relevant error.
-  * 1a2. The Exco member corrects the ID and retries step 1.
+* 1a. No saved event has the given name, or a contact index is invalid.
+  * 1a1. CoordiMate displays the relevant error and assigns no contacts.
+  * 1a2. The Exco member corrects the event name or index and retries step 1.
 
-* 1b. No contact IDs are provided.
-  * 1b1. CoordiMate reports that at least one member must be specified.
-  * 1b2. The Exco member provides one or more contact IDs and retries step 1.
+* 1b. No contact indexes are provided.
+  * 1b1. CoordiMate reports that at least one contact must be specified.
+  * 1b2. The Exco member provides one or more contact indexes and retries step 1.
 
-* 2a. A contact is already assigned, or the same contact ID appears more than once.
+* 2a. A contact is already assigned, or the same contact index appears more than once.
   * 2a1. CoordiMate avoids creating duplicate assignments and reports the number of newly assigned members.
+
+* 2b. Every specified contact is already assigned.
+  * 2b1. CoordiMate reports that no changes were made.
+  * The use case ends.
+
+* 2c. CoordiMate cannot save the assignment to the local data file.
+  * 2c1. CoordiMate displays the relevant error and assigns no contacts.
+  * The use case ends.
 
 **Use case: Record event attendance**
 
@@ -575,7 +584,6 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * **Displayed index**: The number shown beside a contact in the currently displayed list, used to identify that contact in commands.
 * **Duplicate contact**: A contact with the same normalised phone number or email address as another saved contact. Contacts with the same name are not considered duplicates.
 * **Event**: An activity organised by the CCA, such as a concert or fair, with a unique name, a start date/time and an end date/time.
-* **Event ID**: The number that identifies an event in commands such as `assign`.
 * **Event lead**: An EXCO member who is in charge of organising a particular event.
 * **EXCO (Executive Committee)**: The group of students elected to lead and run a CCA.
 * **External contact**: A contact from outside the CCA, such as a sponsor, university staff member, or EXCO member of a collaborating CCA.
@@ -640,6 +648,44 @@ testers are expected to do more *exploratory* testing.
       Expected: Similar to previous.
 
 1. _{ more test cases … }_
+
+### Assigning members to an event
+
+1. Assigning contacts while all persons are being shown
+
+   1. Prerequisites: List all persons using the `list` command, with at least 3 persons in the list. Create an event using `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`. Select it in the **Events** tab.
+
+   1. Test case: `assign evn/Final Concert c/1 2`<br>
+      Expected: The status message shows `Assigned 2 member(s) to Final Concert.` The event's details list the 1st and 2nd persons under **Members (2)**.
+
+   1. Test case: `assign evn/final concert c/2 3`<br>
+      Expected: Only the 3rd person is added. The status message also shows `1 contact(s) were already assigned.`
+
+   1. Test case: `assign evn/Final Concert c/1`<br>
+      Expected: No change. The status message shows that all specified contacts are already assigned.
+
+   1. Test case: `assign evn/Gala c/1`<br>
+      Expected: No change. The status message shows `Event Gala does not exist.`
+
+   1. Other incorrect assign commands to try: `assign evn/Final Concert c/0`, `assign evn/Final Concert c/x` (where x is larger than the list size), `assign evn/Final Concert c/1 c/2`, `assign evn/Final Concert`<br>
+      Expected: No change. The status message shows error details.
+
+1. Assigning contacts from a filtered list
+
+   1. Prerequisites: The `Final Concert` event exists. Use `find` so that the displayed list starts with a person who is not first in the full list.
+
+   1. Test case: `assign evn/Final Concert c/1`<br>
+      Expected: The 1st person in the filtered list, not the full list, is added to the event's members.
+
+1. Keeping members in sync with contacts
+
+   1. Prerequisites: The `Final Concert` event has at least one member.
+
+   1. Test case: `edit` a member to change their name, using `n/`.<br>
+      Expected: The event's members show the new name in the same position.
+
+   1. Test case: `delete` a member.<br>
+      Expected: The person is removed from the event's members. Closing and relaunching the app keeps the data.
 
 ### Saving data
 
