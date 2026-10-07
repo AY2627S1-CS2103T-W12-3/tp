@@ -374,6 +374,12 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
     Use case ends.
 
+* 2b. CoordiMate cannot load the local data file because it is invalid or corrupted.
+
+  * 2b1. CoordiMate informs the EXCO member that the contact data could not be loaded and makes no changes.
+
+    Use case ends.
+
 **Use case: Find contacts**
 
 **System:** CoordiMate

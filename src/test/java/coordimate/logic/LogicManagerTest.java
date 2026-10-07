@@ -7,7 +7,6 @@ import static coordimate.logic.commands.CommandTestUtil.EMAIL_DESC_AMY;
 import static coordimate.logic.commands.CommandTestUtil.NAME_DESC_AMY;
 import static coordimate.logic.commands.CommandTestUtil.PHONE_DESC_AMY;
 import static coordimate.testutil.Assert.assertThrows;
-import static coordimate.testutil.TypicalPersons.AMY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
@@ -27,12 +26,10 @@ import coordimate.model.Model;
 import coordimate.model.ModelManager;
 import coordimate.model.ReadOnlyCoordiMate;
 import coordimate.model.UserPrefs;
-import coordimate.model.person.Person;
 import coordimate.model.tag.Tag;
 import coordimate.storage.JsonCoordiMateStorage;
 import coordimate.storage.JsonUserPrefsStorage;
 import coordimate.storage.StorageManager;
-import coordimate.testutil.PersonBuilder;
 
 public class LogicManagerTest {
     private static final IOException DUMMY_IO_EXCEPTION = new IOException("dummy IO exception");
@@ -73,14 +70,12 @@ public class LogicManagerTest {
 
     @Test
     public void execute_storageThrowsIoException_throwsCommandException() {
-        assertCommandFailureForExceptionFromStorage(DUMMY_IO_EXCEPTION, String.format(
-                LogicManager.FILE_OPS_ERROR_FORMAT, DUMMY_IO_EXCEPTION.getMessage()));
+        assertCommandFailureForExceptionFromStorage(DUMMY_IO_EXCEPTION, AddCommand.MESSAGE_SAVE_ERROR);
     }
 
     @Test
     public void execute_storageThrowsAdException_throwsCommandException() {
-        assertCommandFailureForExceptionFromStorage(DUMMY_AD_EXCEPTION, String.format(
-                LogicManager.FILE_OPS_PERMISSION_ERROR_FORMAT, DUMMY_AD_EXCEPTION.getMessage()));
+        assertCommandFailureForExceptionFromStorage(DUMMY_AD_EXCEPTION, AddCommand.MESSAGE_SAVE_ERROR);
     }
 
     @Test
@@ -179,9 +174,6 @@ public class LogicManagerTest {
         // Triggers the saveCoordiMate method by executing an add command
         String addCommand = AddCommand.COMMAND_WORD + NAME_DESC_AMY + PHONE_DESC_AMY
                 + EMAIL_DESC_AMY + ADDRESS_DESC_AMY;
-        Person expectedPerson = new PersonBuilder(AMY).withTags().build();
-        ModelManager expectedModel = new ModelManager();
-        expectedModel.addPerson(expectedPerson);
-        assertCommandFailure(addCommand, CommandException.class, expectedMessage, expectedModel);
+        assertCommandFailure(addCommand, CommandException.class, expectedMessage);
     }
 }

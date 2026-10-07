@@ -38,6 +38,9 @@ public class AddCommand extends Command {
     public static final String MESSAGE_SUCCESS = "New person added: %1$s";
     public static final String MESSAGE_DUPLICATE_PERSON = "A contact with this phone number or email already exists."
             + "\nNo changes were made.";
+    public static final String MESSAGE_SAVE_ERROR = "Contact could not be saved. No changes were made.";
+    public static final String MESSAGE_LOAD_ERROR =
+            "Contact data could not be loaded. Please check the local data file.";
 
     private final Person toAdd;
 
