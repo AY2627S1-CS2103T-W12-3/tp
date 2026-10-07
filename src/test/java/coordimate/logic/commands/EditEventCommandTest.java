@@ -12,6 +12,7 @@ import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.ModelManager;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
+import coordimate.model.person.Name;
 
 public class EditEventCommandTest {
     private final Event concert = new Event("Final Concert",
@@ -34,6 +35,19 @@ public class EditEventCommandTest {
                     new EditEventCommand("Final Concert", name, start, end).execute(model).getFeedbackToUser());
             assertEquals(List.of(expected, fair), model.getCoordiMate().getEventList());
         }
+    }
+
+    @Test
+    public void execute_eventWithMembers_retainsMembers() throws Exception {
+        List<Name> members = List.of(new Name("Bernice Yu"), new Name("Alex Yeoh"));
+        Event staffed = new Event(concert.getName(), concert.getStartTime(), concert.getEndTime(), members);
+        ModelManager model = new ModelManager();
+        model.addEvent(staffed);
+        EventTime end = new EventTime("08-08-2026 19:00");
+        new EditEventCommand("Final Concert", null, null, end).execute(model);
+        new EditEventCommand("final concert", "Grand Concert", null, null).execute(model);
+        assertEquals(List.of(new Event("Grand Concert", concert.getStartTime(), end, members)),
+                model.getCoordiMate().getEventList());
     }
 
     @Test
