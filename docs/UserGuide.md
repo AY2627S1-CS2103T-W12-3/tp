@@ -98,7 +98,7 @@ Creates an event and saves it to the local data file.
 Format: `addevent evn/EVENT_NAME st/START_TIME et/END_TIME`
 
 Each parameter must appear once. Event names must contain a non-whitespace character;
-leading and trailing whitespace is removed. Names are case-sensitive and must be unique.
+leading and trailing whitespace is removed. Names must be unique, ignoring case.
 Different events may share the same start and end times.
 
 Start and end times use `dd-MM-yyyy`, optionally followed by `HH:mm` in 24-hour format.
@@ -126,6 +126,44 @@ correct it, then press Enter or click **Retry**.
 
 If saving fails, no event is added. If the existing data file is invalid, the command
 reports a load error and leaves the file untouched.
+
+### Editing an event: `editevent`
+
+Edits the name, start time, and/or end time of an existing event and saves the changes.
+
+Format: `editevent evn/EVENT_NAME [nevn/NEW_EVENT_NAME] [st/NEW_START_TIME] [et/NEW_END_TIME]`
+
+`EVENT_NAME` must match the saved name, ignoring case. Leading and trailing whitespace
+is removed. Lookup capitalization does not change the saved display name; `nevn/`
+sets the new display name using the supplied capitalization.
+Provide at least one field to edit; omitted fields
+keep their existing values. Each parameter may appear only once.
+
+The new name must contain a non-whitespace character and must not duplicate another
+event's name, ignoring case. Start and end times use `dd-MM-yyyy [HH:mm]`; a date is
+required and a 24-hour time is optional. The updated start must not be after the
+updated end, using the same ordering rules as `addevent`.
+
+Examples:
+
+* `editevent evn/Final Concert st/08-08-2026 16:00 et/08-08-2026 19:00`
+* `editevent evn/Student Life Fair nevn/NUS Student Life Fair et/10-10-2026`
+* `editevent evn/CCA MEETING nevn/CCA MEETING` changes the display name of `CCA Meeting` to `CCA MEETING`.
+
+Success: `Edited Event NUS Student Life Fair. Start Time: 09-10-2026. End Time: 10-10-2026.`
+
+| Condition | Error message |
+|---|---|
+| No saved event has the supplied name, ignoring case. | `Event {EVENT_NAME} does not exist.` |
+| The new event name is empty. | `New event name must not be empty.` |
+| A new time is empty, invalid, or incorrectly formatted. | `New start time and/or new end time are formatted as dd-MM-yyyy [HH:mm]. Time of day is optional. Example: 17-09-2026 16:30` |
+| The new name duplicates another event. | `This update conflicts with another saved event. No changes were made.` |
+| No field is provided to edit. | `Please provide at least one field to edit.` |
+| A parameter is repeated. | `Each parameter may only be specified once.` |
+| An unknown parameter is used. | `Unknown parameter. Example: edit 2 r/Logistics` |
+| The updated start is after the updated end. | `Start time must not be after end time.` |
+
+If saving fails, the event and existing data file remain unchanged.
 
 ### Listing all persons: `list`
 

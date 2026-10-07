@@ -10,6 +10,7 @@ import coordimate.commons.exceptions.DataLoadingException;
 import coordimate.logic.commands.AddEventCommand;
 import coordimate.logic.commands.Command;
 import coordimate.logic.commands.CommandResult;
+import coordimate.logic.commands.EditEventCommand;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.logic.parser.CoordiMateParser;
 import coordimate.logic.parser.exceptions.ParseException;
@@ -49,8 +50,8 @@ public class LogicManager implements Logic {
         logger.info("----------------[USER COMMAND][" + commandText + "]");
 
         Command command = coordiMateParser.parseCommand(commandText);
-        if (command instanceof AddEventCommand) {
-            return executeAddEvent(command);
+        if (command instanceof AddEventCommand || command instanceof EditEventCommand) {
+            return executeEventCommand(command);
         }
         CommandResult commandResult = command.execute(model);
 
@@ -69,7 +70,7 @@ public class LogicManager implements Logic {
      * Saves an event on a copy of the model and commits it only after storage succeeds.
      * Rejects the command if existing data cannot be loaded or the new data cannot be saved.
      */
-    private CommandResult executeAddEvent(Command command) throws CommandException {
+    private CommandResult executeEventCommand(Command command) throws CommandException {
         try {
             storage.readCoordiMate();
         } catch (DataLoadingException e) {
@@ -80,7 +81,9 @@ public class LogicManager implements Logic {
         try {
             storage.saveCoordiMate(candidate.getCoordiMate());
         } catch (IOException e) {
-            throw new CommandException(AddEventCommand.MESSAGE_SAVE_ERROR, e);
+            String message = command instanceof EditEventCommand
+                    ? EditEventCommand.MESSAGE_SAVE_ERROR : AddEventCommand.MESSAGE_SAVE_ERROR;
+            throw new CommandException(message, e);
         }
         model.setCoordiMate(candidate.getCoordiMate());
         return result;

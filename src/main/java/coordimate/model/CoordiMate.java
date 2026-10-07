@@ -119,6 +119,24 @@ public class CoordiMate implements ReadOnlyCoordiMate {
         events.add(event);
     }
 
+    /**
+     * Replaces the target in place after checking the new name for duplicates.
+     */
+    public void setEvent(Event target, Event editedEvent) {
+        requireNonNull(target);
+        requireNonNull(editedEvent);
+        int index = events.indexOf(target);
+        if (index < 0) {
+            throw new IllegalArgumentException("Event does not exist.");
+        }
+        for (int i = 0; i < events.size(); i++) {
+            if (i != index && editedEvent.isSameEvent(events.get(i))) {
+                throw new IllegalArgumentException("An event with this name already exists.");
+            }
+        }
+        events.set(index, editedEvent);
+    }
+
     @Override
     public ObservableList<Event> getEventList() {
         return unmodifiableEvents;

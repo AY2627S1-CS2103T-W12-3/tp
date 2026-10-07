@@ -14,6 +14,7 @@ import coordimate.logic.commands.ClearCommand;
 import coordimate.logic.commands.Command;
 import coordimate.logic.commands.DeleteCommand;
 import coordimate.logic.commands.EditCommand;
+import coordimate.logic.commands.EditEventCommand;
 import coordimate.logic.commands.ExitCommand;
 import coordimate.logic.commands.FindCommand;
 import coordimate.logic.commands.HelpCommand;
@@ -56,6 +57,7 @@ public class CoordiMateParser {
             case AddCommand.COMMAND_WORD -> new AddCommandParser().parse(arguments);
             case AddEventCommand.COMMAND_WORD -> new AddEventCommandParser().parse(arguments);
             case EditCommand.COMMAND_WORD -> new EditCommandParser().parse(arguments);
+            case EditEventCommand.COMMAND_WORD -> new EditEventCommandParser().parse(arguments);
             case DeleteCommand.COMMAND_WORD -> new DeleteCommandParser().parse(arguments);
             case ClearCommand.COMMAND_WORD -> new ClearCommand();
             case FindCommand.COMMAND_WORD -> new FindCommandParser().parse(arguments);

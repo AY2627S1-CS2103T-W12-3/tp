@@ -56,6 +56,11 @@ public interface Model {
     ObservableList<Tag> getTagList();
 
     /**
+     * Replaces an existing event without duplicating another event's name.
+     */
+    void setEvent(Event target, Event editedEvent);
+
+    /**
      * Returns true if a person with the same identity as {@code person} exists in the CoordiMate.
      */
     boolean hasPerson(Person person);
