@@ -35,6 +35,7 @@ import coordimate.model.ModelManager;
 import coordimate.model.UserPrefs;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
+import coordimate.model.person.Name;
 import coordimate.model.person.Person;
 import coordimate.model.tag.Tag;
 import coordimate.testutil.EditPersonDescriptorBuilder;
@@ -360,6 +361,60 @@ public class EditCommandTest {
                 new EditPersonDescriptorBuilder().withName("  bEnSoN mEiEr  ").build());
 
         assertCommandFailure(editCommand, model, EditCommand.MESSAGE_DUPLICATE_PERSON);
+    }
+
+    @Test
+    public void execute_normalizedPhoneMatchesAnotherContact_noChanges() {
+        EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON,
+                new EditPersonDescriptorBuilder().withPhone("9876 5432").withTags("Alumni2026").build());
+
+        assertCommandFailure(editCommand, model, EditCommand.MESSAGE_DUPLICATE_PERSON);
+        assertFalse(model.getTagList().stream().anyMatch(tag -> tag.isSameTag(new Tag("Alumni2026"))));
+    }
+
+    @Test
+    public void execute_caseInsensitiveEmailMatchesAnotherContact_noChanges() {
+        EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON,
+                new EditPersonDescriptorBuilder().withEmail("JOHND@EXAMPLE.COM").build());
+
+        assertCommandFailure(editCommand, model, EditCommand.MESSAGE_DUPLICATE_PERSON);
+    }
+
+    @Test
+    public void execute_renameContact_updatesEveryAssignedEventInPlace() {
+        EventTime eventTime = new EventTime("08-08-2026");
+        model.addEvent(new Event("Concert", eventTime, eventTime,
+                List.of(BENSON.getName(), ALICE.getName())));
+        model.addEvent(new Event("Fair", eventTime, eventTime,
+                List.of(ALICE.getName(), BENSON.getName())));
+        model.addEvent(new Event("Meeting", eventTime, eventTime,
+                List.of(BENSON.getName())));
+        Person renamedAlice = new PersonBuilder(ALICE).withName("Alice Tan").build();
+        EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON,
+                new EditPersonDescriptorBuilder().withName("Alice Tan").build());
+        Model expectedModel = new ModelManager(new CoordiMate(model.getCoordiMate()), new UserPrefs());
+        expectedModel.setPerson(ALICE, renamedAlice);
+
+        assertCommandSuccess(editCommand, model,
+                String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(renamedAlice)), expectedModel);
+        assertEquals(List.of(new Event("Concert", eventTime, eventTime,
+                List.of(BENSON.getName(), renamedAlice.getName())),
+                new Event("Fair", eventTime, eventTime, List.of(renamedAlice.getName(), BENSON.getName())),
+                new Event("Meeting", eventTime, eventTime, List.of(BENSON.getName()))),
+                model.getCoordiMate().getEventList());
+    }
+
+    @Test
+    public void execute_renameConflictsWithEventMember_noChanges() {
+        EventTime eventTime = new EventTime("08-08-2026");
+        model.addEvent(new Event("Concert", eventTime, eventTime, List.of(ALICE.getName())));
+        model.addEvent(new Event("Fair", eventTime, eventTime,
+                List.of(ALICE.getName(), new Name("Ghost Member"))));
+        EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON,
+                new EditPersonDescriptorBuilder().withName("Ghost Member").withTags("Alumni2026").build());
+
+        assertCommandFailure(editCommand, model, EditCommand.MESSAGE_MEMBER_NAME_CONFLICT);
+        assertFalse(model.getTagList().stream().anyMatch(tag -> tag.isSameTag(new Tag("Alumni2026"))));
     }
 
     @Test

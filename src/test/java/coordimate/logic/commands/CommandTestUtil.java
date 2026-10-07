@@ -5,8 +5,8 @@ import static coordimate.logic.parser.CliSyntax.PREFIX_EMAIL;
 import static coordimate.logic.parser.CliSyntax.PREFIX_NAME;
 import static coordimate.logic.parser.CliSyntax.PREFIX_PHONE;
 import static coordimate.logic.parser.CliSyntax.PREFIX_TAG;
-import static coordimate.testutil.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
@@ -106,7 +106,8 @@ public class CommandTestUtil {
         CoordiMate expectedCoordiMate = new CoordiMate(actualModel.getCoordiMate());
         List<Person> expectedFilteredList = new ArrayList<>(actualModel.getFilteredPersonList());
 
-        assertThrows(CommandException.class, expectedMessage, () -> command.execute(actualModel));
+        CommandException exception = assertThrows(CommandException.class, () -> command.execute(actualModel));
+        assertEquals(expectedMessage, exception.getMessage());
         assertEquals(expectedCoordiMate, actualModel.getCoordiMate());
         assertEquals(expectedFilteredList, actualModel.getFilteredPersonList());
     }
