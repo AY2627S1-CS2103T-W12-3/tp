@@ -139,21 +139,19 @@ public class CoordiMateTest {
     }
 
     @Test
-    public void setTags_customTags_includesDefaultTagsAndCustomTags() {
+    public void setTags_customTags_replacesDefaultTags() {
         Tag customTag = new Tag("Publicity");
 
         coordiMate.setTags(List.of(customTag));
 
-        assertEquals(List.of(new Tag("EXCO"), new Tag("Sponsor"), new Tag("UniversityStaff"),
-                new Tag("Logistics"), customTag), coordiMate.getTagList());
+        assertEquals(List.of(customTag), coordiMate.getTagList());
     }
 
     @Test
-    public void setTags_defaultWithDifferentCase_usesCanonicalDefaultCapitalization() {
+    public void setTags_defaultWithDifferentCase_preservesSuppliedCapitalization() {
         coordiMate.setTags(List.of(new Tag("exco")));
 
-        assertEquals(new Tag("EXCO"), coordiMate.getTagList().get(0));
-        assertEquals(4, coordiMate.getTagList().size());
+        assertEquals(List.of(new Tag("exco")), coordiMate.getTagList());
     }
 
     @Test
@@ -185,6 +183,52 @@ public class CoordiMateTest {
     @Test
     public void addTag_duplicateNameIgnoringCase_throwsDuplicateTagException() {
         assertThrows(DuplicateTagException.class, () -> coordiMate.addTag(new Tag("exco")));
+    }
+
+    @Test
+    public void setTag_customTag_replacesTagInListAndContacts() {
+        Tag publicity = new Tag("Publicity");
+        Tag media = new Tag("Media");
+        Person taggedAlice = new PersonBuilder(ALICE).withTags("Publicity", "EXCO").build();
+        Person taggedBenson = new PersonBuilder(BENSON).withTags("Publicity").build();
+        coordiMate.addTag(publicity);
+        coordiMate.addPerson(taggedAlice);
+        coordiMate.addPerson(taggedBenson);
+
+        coordiMate.setTag(new Tag("publicity"), media);
+
+        assertEquals(List.of(new Tag("EXCO"), new Tag("Sponsor"), new Tag("UniversityStaff"),
+                new Tag("Logistics"), media), coordiMate.getTagList());
+        assertEquals(List.of("EXCO", "Media"), coordiMate.getPersonList().get(0).getTags().stream()
+                .map(Tag::getTagName).sorted().toList());
+        assertEquals(List.of(media), coordiMate.getPersonList().get(1).getTags().stream().toList());
+    }
+
+    @Test
+    public void setTag_defaultTag_replacesTagInListAndContacts() {
+        Tag committee = new Tag("Committee");
+        Person taggedAlice = new PersonBuilder(ALICE).withTags("EXCO").build();
+        coordiMate.addPerson(taggedAlice);
+
+        coordiMate.setTag(new Tag("exco"), committee);
+
+        assertEquals(List.of(committee, new Tag("Sponsor"), new Tag("UniversityStaff"),
+                new Tag("Logistics")), coordiMate.getTagList());
+        assertEquals(List.of(committee), coordiMate.getPersonList().get(0).getTags().stream().toList());
+        assertEquals(coordiMate, new CoordiMate(coordiMate));
+    }
+
+    @Test
+    public void setTag_invalidArguments_throwsException() {
+        Tag publicity = new Tag("Publicity");
+        Tag media = new Tag("Media");
+        coordiMate.addTag(publicity);
+        coordiMate.addTag(media);
+
+        assertThrows(NullPointerException.class, () -> coordiMate.setTag(null, media));
+        assertThrows(NullPointerException.class, () -> coordiMate.setTag(publicity, null));
+        assertThrows(IllegalArgumentException.class, () -> coordiMate.setTag(new Tag("Missing"), new Tag("New")));
+        assertThrows(IllegalArgumentException.class, () -> coordiMate.setTag(publicity, media));
     }
 
     @Test

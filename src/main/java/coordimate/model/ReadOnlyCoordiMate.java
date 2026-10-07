@@ -18,7 +18,7 @@ public interface ReadOnlyCoordiMate {
 
     /**
      * Returns an unmodifiable view of the saved tags.
-     * This list contains every default tag and does not contain duplicate tag names.
+     * This list does not contain duplicate tag names.
      */
     ObservableList<Tag> getTagList();
 

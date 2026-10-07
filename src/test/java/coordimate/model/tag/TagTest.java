@@ -15,14 +15,21 @@ public class TagTest {
 
     @Test
     public void constructor_invalidTagName_throwsIllegalArgumentException() {
-        String invalidTagName = "";
-        assertThrows(IllegalArgumentException.class, () -> new Tag(invalidTagName));
+        assertThrows(IllegalArgumentException.class, () -> new Tag(""));
+        assertThrows(IllegalArgumentException.class, () -> new Tag("Publicity Team"));
+        assertThrows(IllegalArgumentException.class, () -> new Tag("1234567890123456789012345678901"));
     }
 
     @Test
     public void isValidTagName() {
         // null tag name
         assertThrows(NullPointerException.class, () -> Tag.isValidTagName(null));
+
+        assertFalse(Tag.isValidTagName(""));
+        assertFalse(Tag.isValidTagName("Publicity Team"));
+        assertFalse(Tag.isValidTagName("1234567890123456789012345678901"));
+        assertTrue(Tag.isValidTagName("Publicity"));
+        assertTrue(Tag.isValidTagName("123456789012345678901234567890"));
     }
 
     @Test

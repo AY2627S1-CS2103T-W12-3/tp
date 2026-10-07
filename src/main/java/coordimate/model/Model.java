@@ -56,6 +56,21 @@ public interface Model {
     ObservableList<Tag> getTagList();
 
     /**
+     * Returns true if a tag with the same name as {@code tag} exists, ignoring case.
+     */
+    boolean hasTag(Tag tag);
+
+    /**
+     * Adds a tag whose name must not already exist, ignoring case.
+     */
+    void addTag(Tag tag);
+
+    /**
+     * Replaces {@code target} with {@code editedTag} in the saved tag list and on every contact.
+     */
+    void setTag(Tag target, Tag editedTag);
+
+    /**
      * Replaces an existing event without duplicating another event's name.
      */
     void setEvent(Event target, Event editedEvent);

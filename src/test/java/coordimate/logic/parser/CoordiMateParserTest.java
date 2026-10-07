@@ -19,6 +19,7 @@ import coordimate.logic.commands.ClearCommand;
 import coordimate.logic.commands.DeleteCommand;
 import coordimate.logic.commands.EditCommand;
 import coordimate.logic.commands.EditCommand.EditPersonDescriptor;
+import coordimate.logic.commands.EditTagCommand;
 import coordimate.logic.commands.ExitCommand;
 import coordimate.logic.commands.FindCommand;
 import coordimate.logic.commands.HelpCommand;
@@ -29,6 +30,7 @@ import coordimate.logic.parser.exceptions.ParseException;
 import coordimate.model.person.ContactMatchesKeywordPredicate;
 import coordimate.model.person.NameContainsKeywordsPredicate;
 import coordimate.model.person.Person;
+import coordimate.model.tag.Tag;
 import coordimate.testutil.EditPersonDescriptorBuilder;
 import coordimate.testutil.PersonBuilder;
 import coordimate.testutil.PersonUtil;
@@ -72,6 +74,12 @@ public class CoordiMateParserTest {
         EditCommand command = (EditCommand) parser.parseCommand(EditCommand.COMMAND_WORD + " "
                 + INDEX_FIRST_PERSON.getOneBased() + " " + PersonUtil.getEditPersonDescriptorDetails(descriptor));
         assertEquals(new EditCommand(INDEX_FIRST_PERSON, descriptor), command);
+    }
+
+    @Test
+    public void parseCommand_editTag() throws Exception {
+        assertEquals(new EditTagCommand("Media", new Tag("Publicity")),
+                parser.parseCommand(EditTagCommand.COMMAND_WORD + " Media t/Publicity"));
     }
 
     @Test
