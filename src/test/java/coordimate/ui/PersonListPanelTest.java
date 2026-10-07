@@ -18,6 +18,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import coordimate.model.person.Person;
+import coordimate.testutil.PersonBuilder;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -68,6 +69,26 @@ public class PersonListPanelTest {
             assertEquals("311, Clementi Ave 2, #02-25", getLabel(root, "address").getText());
             FlowPane tags = (FlowPane) root.lookup("#detailTags");
             assertEquals(2, tags.getChildren().size());
+        });
+    }
+
+    @Test
+    public void contactWithoutAddress_showsPlaceholderOnlyInDetails() throws Exception {
+        runOnJavaFxThread(() -> {
+            Person contact = new PersonBuilder(ALICE).withoutAddress().build();
+            Region root = new PersonListPanel(FXCollections.observableArrayList(contact)).getRoot();
+            new Scene(root);
+            root.applyCss();
+            getList(root).getSelectionModel().select(contact);
+
+            assertEquals("— (not specified)", getLabel(root, "address").getText());
+
+            Region card = new PersonCard(contact, 1).getRoot();
+            new Scene(card);
+            card.applyCss();
+            Label cardAddress = (Label) card.lookup("#address");
+            assertFalse(cardAddress.isVisible());
+            assertFalse(cardAddress.isManaged());
         });
     }
 

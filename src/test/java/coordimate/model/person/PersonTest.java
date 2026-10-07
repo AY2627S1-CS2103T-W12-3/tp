@@ -25,6 +25,22 @@ public class PersonTest {
     }
 
     @Test
+    public void optionalDetails_presentAndAbsent() {
+        assertTrue(ALICE.getBirthday().isEmpty());
+        assertTrue(ALICE.getAddress().isPresent());
+        assertTrue(ALICE.getOrganisation().isEmpty());
+        assertTrue(ALICE.getNote().isEmpty());
+
+        assertTrue(new PersonBuilder(ALICE).withoutAddress().build().getAddress().isEmpty());
+
+        Person contact = new PersonBuilder(ALICE).withBirthday("18-06-2004")
+                .withOrganisation("NUS Student Affairs").withNote("Handles venue bookings").build();
+        assertEquals("18-06-2004", contact.getBirthday().orElseThrow().getValue());
+        assertEquals("NUS Student Affairs", contact.getOrganisation().orElseThrow().getValue());
+        assertEquals("Handles venue bookings", contact.getNote().orElseThrow().getValue());
+    }
+
+    @Test
     public void isSamePerson() {
         // same object -> returns true
         assertTrue(ALICE.isSamePerson(ALICE));
@@ -97,9 +113,15 @@ public class PersonTest {
         editedAlice = new PersonBuilder(ALICE).withRole("Logistics").build();
         assertFalse(ALICE.equals(editedAlice));
 
+        // different optional details -> returns false
+        assertFalse(ALICE.equals(new PersonBuilder(ALICE).withBirthday("18-06-2004").build()));
+        assertFalse(ALICE.equals(new PersonBuilder(ALICE).withOrganisation("NUS Student Affairs").build()));
+        assertFalse(ALICE.equals(new PersonBuilder(ALICE).withNote("Handles venue bookings").build()));
+
         // different address -> returns false
         editedAlice = new PersonBuilder(ALICE).withAddress(VALID_ADDRESS_BOB).build();
         assertFalse(ALICE.equals(editedAlice));
+        assertFalse(ALICE.equals(new PersonBuilder(ALICE).withoutAddress().build()));
 
         // different tags -> returns false
         editedAlice = new PersonBuilder(ALICE).withTags(VALID_TAG_HUSBAND).build();
@@ -109,8 +131,8 @@ public class PersonTest {
     @Test
     public void toStringMethod() {
         String expected = Person.class.getCanonicalName() + "{name=" + ALICE.getName() + ", phone=" + ALICE.getPhone()
-                + ", email=" + ALICE.getEmail() + ", role=" + ALICE.getRole() + ", address=" + ALICE.getAddress()
-                + ", tags=" + ALICE.getTags() + "}";
+                + ", email=" + ALICE.getEmail() + ", role=" + ALICE.getRole() + ", birthday=null, address="
+                + ALICE.getAddress().orElseThrow() + ", organisation=null, note=null, tags=" + ALICE.getTags() + "}";
         assertEquals(expected, ALICE.toString());
     }
 }

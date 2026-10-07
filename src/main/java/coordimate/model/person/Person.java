@@ -5,6 +5,7 @@ import static coordimate.commons.util.CollectionUtil.requireAllNonNull;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import coordimate.commons.util.ToStringBuilder;
@@ -23,7 +24,10 @@ public class Person {
     // Data fields
     private final Name name;
     private final Role role;
+    private final Birthday birthday;
     private final Address address;
+    private final Organisation organisation;
+    private final Note note;
     private final Set<Tag> tags = new HashSet<>();
 
     /**
@@ -37,12 +41,23 @@ public class Person {
      * Creates a person with a required role and a defensive copy of the tags.
      */
     public Person(Name name, Phone phone, Email email, Role role, Address address, Set<Tag> tags) {
-        requireAllNonNull(name, phone, email, role, address, tags);
+        this(name, phone, email, role, null, address, null, null, tags);
+    }
+
+    /**
+     * Creates a person with optional birthday, organisation, and note details.
+     */
+    public Person(Name name, Phone phone, Email email, Role role, Birthday birthday, Address address,
+            Organisation organisation, Note note, Set<Tag> tags) {
+        requireAllNonNull(name, phone, email, role, tags);
         this.name = name;
         this.phone = phone;
         this.email = email;
         this.role = role;
+        this.birthday = birthday;
         this.address = address;
+        this.organisation = organisation;
+        this.note = note;
         this.tags.addAll(tags);
     }
 
@@ -62,8 +77,20 @@ public class Person {
         return role;
     }
 
-    public Address getAddress() {
-        return address;
+    public Optional<Birthday> getBirthday() {
+        return Optional.ofNullable(birthday);
+    }
+
+    public Optional<Address> getAddress() {
+        return Optional.ofNullable(address);
+    }
+
+    public Optional<Organisation> getOrganisation() {
+        return Optional.ofNullable(organisation);
+    }
+
+    public Optional<Note> getNote() {
+        return Optional.ofNullable(note);
     }
 
     /**
@@ -107,14 +134,17 @@ public class Person {
                 && phone.equals(otherPerson.phone)
                 && email.equals(otherPerson.email)
                 && role.equals(otherPerson.role)
-                && address.equals(otherPerson.address)
+                && Objects.equals(birthday, otherPerson.birthday)
+                && Objects.equals(address, otherPerson.address)
+                && Objects.equals(organisation, otherPerson.organisation)
+                && Objects.equals(note, otherPerson.note)
                 && tags.equals(otherPerson.tags);
     }
 
     @Override
     public int hashCode() {
         // use this method for custom fields hashing instead of implementing your own
-        return Objects.hash(name, phone, email, role, address, tags);
+        return Objects.hash(name, phone, email, role, birthday, address, organisation, note, tags);
     }
 
     @Override
@@ -124,7 +154,10 @@ public class Person {
                 .add("phone", phone)
                 .add("email", email)
                 .add("role", role)
+                .add("birthday", birthday)
                 .add("address", address)
+                .add("organisation", organisation)
+                .add("note", note)
                 .add("tags", tags)
                 .toString();
     }

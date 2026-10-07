@@ -2,6 +2,7 @@ package coordimate.ui;
 
 import java.util.Comparator;
 
+import coordimate.model.person.Address;
 import coordimate.model.person.Person;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
@@ -112,7 +113,7 @@ public class PersonListPanel extends UiPart<Region> {
         selectedIndex.setText("Index: " + (personListView.getItems().indexOf(person) + 1));
         phone.setText(person.getPhone().getValue());
         email.setText(person.getEmail().getValue());
-        address.setText(person.getAddress().getValue());
+        address.setText(person.getAddress().map(Address::getValue).orElse("— (not specified)"));
         detailTags.getChildren().clear();
         person.getTags().stream()
                 .sorted(Comparator.comparing(tag -> tag.getTagName()))

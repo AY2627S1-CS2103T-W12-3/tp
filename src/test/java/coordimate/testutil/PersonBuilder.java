@@ -4,8 +4,11 @@ import java.util.HashSet;
 import java.util.Set;
 
 import coordimate.model.person.Address;
+import coordimate.model.person.Birthday;
 import coordimate.model.person.Email;
 import coordimate.model.person.Name;
+import coordimate.model.person.Note;
+import coordimate.model.person.Organisation;
 import coordimate.model.person.Person;
 import coordimate.model.person.Phone;
 import coordimate.model.person.Role;
@@ -27,7 +30,10 @@ public class PersonBuilder {
     private Phone phone;
     private Email email;
     private Role role;
+    private Birthday birthday;
     private Address address;
+    private Organisation organisation;
+    private Note note;
     private Set<Tag> tags;
 
     /**
@@ -50,7 +56,10 @@ public class PersonBuilder {
         phone = personToCopy.getPhone();
         email = personToCopy.getEmail();
         role = personToCopy.getRole();
-        address = personToCopy.getAddress();
+        birthday = personToCopy.getBirthday().orElse(null);
+        address = personToCopy.getAddress().orElse(null);
+        organisation = personToCopy.getOrganisation().orElse(null);
+        note = personToCopy.getNote().orElse(null);
         tags = new HashSet<>(personToCopy.getTags());
     }
 
@@ -79,6 +88,14 @@ public class PersonBuilder {
     }
 
     /**
+     * Leaves the contact without an address.
+     */
+    public PersonBuilder withoutAddress() {
+        address = null;
+        return this;
+    }
+
+    /**
      * Sets the {@code Phone} of the {@code Person} that we are building.
      */
     public PersonBuilder withPhone(String phone) {
@@ -102,8 +119,32 @@ public class PersonBuilder {
         return this;
     }
 
+    /**
+     * Sets the contact's birthday.
+     */
+    public PersonBuilder withBirthday(String birthday) {
+        this.birthday = new Birthday(birthday);
+        return this;
+    }
+
+    /**
+     * Sets the contact's organisation.
+     */
+    public PersonBuilder withOrganisation(String organisation) {
+        this.organisation = new Organisation(organisation);
+        return this;
+    }
+
+    /**
+     * Sets the contact's note.
+     */
+    public PersonBuilder withNote(String note) {
+        this.note = new Note(note);
+        return this;
+    }
+
     public Person build() {
-        return new Person(name, phone, email, role, address, tags);
+        return new Person(name, phone, email, role, birthday, address, organisation, note, tags);
     }
 
 }
