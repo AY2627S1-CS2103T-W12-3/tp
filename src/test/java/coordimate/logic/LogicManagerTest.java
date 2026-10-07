@@ -28,6 +28,7 @@ import coordimate.model.ModelManager;
 import coordimate.model.ReadOnlyCoordiMate;
 import coordimate.model.UserPrefs;
 import coordimate.model.person.Person;
+import coordimate.model.tag.Tag;
 import coordimate.storage.JsonCoordiMateStorage;
 import coordimate.storage.JsonUserPrefsStorage;
 import coordimate.storage.StorageManager;
@@ -85,6 +86,13 @@ public class LogicManagerTest {
     @Test
     public void getFilteredPersonList_modifyList_throwsUnsupportedOperationException() {
         assertThrows(UnsupportedOperationException.class, () -> logic.getFilteredPersonList().remove(0));
+    }
+
+    @Test
+    public void getTagList_returnsUnmodifiableDefaultTags() {
+        assertEquals(model.getTagList(), logic.getTagList());
+        assertEquals(new Tag("EXCO"), logic.getTagList().get(0));
+        assertThrows(UnsupportedOperationException.class, () -> logic.getTagList().remove(0));
     }
 
     /**
