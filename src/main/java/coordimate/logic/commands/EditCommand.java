@@ -72,6 +72,9 @@ public class EditCommand extends Command {
             "Please provide at least one field or tag operation to edit. Example: edit 2 r/Logistics";
     public static final String MESSAGE_DUPLICATE_PERSON =
             "This update conflicts with another saved contact. No changes were made.";
+    public static final String MESSAGE_SAVE_ERROR = "Contact could not be saved. No changes were made.";
+    public static final String MESSAGE_LOAD_ERROR =
+            "Contact data could not be loaded. Please check the local data file.";
     public static final String MESSAGE_MEMBER_NAME_CONFLICT =
             "Cannot rename this contact because an event already has a member with that name. No changes were made.";
     public static final String MESSAGE_NO_MATCH =

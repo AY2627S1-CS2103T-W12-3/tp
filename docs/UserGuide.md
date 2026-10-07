@@ -269,6 +269,9 @@ Or: `edit target/IDENTIFIER [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [
 * Tag matching ignores case. Adding an existing tag or removing an absent tag has no effect. A valid new tag named by `t/` or `at/` is saved as a custom tag. Empty `at/` and `rt/` values are invalid.
 * If the person's name changes, events they are assigned to show the new name.
 * A new name already used by another contact, ignoring case and surrounding spaces, is rejected.
+* An edit is saved to the local data file before it appears in the contact list. If the file cannot be read or written,
+  the edit is not applied. A failed write reports `Contact could not be saved. No changes were made.`; invalid stored
+  data reports `Contact data could not be loaded. Please check the local data file.`
 
 Examples:
 *  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st person to be `91234567` and `johndoe@example.com` respectively.
