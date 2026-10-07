@@ -94,6 +94,51 @@ public class EditCommandTest {
     }
 
     @Test
+    public void execute_editExpandedFields_preservesUnspecifiedDetails() {
+        Person originalPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+        Person contactWithDetails = new PersonBuilder(originalPerson).withBirthday("18-06-2004")
+                .withAddress("21 Kent Ridge Road").withNote("Original note").build();
+        model.setPerson(originalPerson, contactWithDetails);
+        EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON,
+                new EditPersonDescriptorBuilder().withRole("Logistics Lead")
+                        .withOrganisation("NUS Student Affairs").withNote("New note").build());
+        Person editedPerson = new PersonBuilder(contactWithDetails).withRole("Logistics Lead")
+                .withOrganisation("NUS Student Affairs").withNote("New note").build();
+        Model expectedModel = new ModelManager(new CoordiMate(model.getCoordiMate()), new UserPrefs());
+        expectedModel.setPerson(contactWithDetails, editedPerson);
+
+        assertCommandSuccess(editCommand, model,
+                String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson)), expectedModel);
+    }
+
+    @Test
+    public void execute_clearOptionalDetails_removesOnlySelectedValues() {
+        Person originalPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+        Person contactWithDetails = new PersonBuilder(originalPerson).withBirthday("18-06-2004")
+                .withOrganisation("NUS Student Affairs").withNote("Original note").build();
+        model.setPerson(originalPerson, contactWithDetails);
+        EditCommand editCommand = new EditCommand(INDEX_FIRST_PERSON,
+                new EditPersonDescriptorBuilder().withoutBirthday().withoutAddress()
+                        .withoutOrganisation().withoutNote().build());
+        Person editedPerson = new PersonBuilder(contactWithDetails).withoutBirthday().withoutAddress()
+                .withoutOrganisation().withoutNote().build();
+        Model expectedModel = new ModelManager(new CoordiMate(model.getCoordiMate()), new UserPrefs());
+        expectedModel.setPerson(contactWithDetails, editedPerson);
+
+        assertCommandSuccess(editCommand, model,
+                String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson)), expectedModel);
+    }
+
+    @Test
+    public void descriptorCopy_preservesClearOperations() {
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withoutBirthday().withoutAddress()
+                .withoutOrganisation().withoutNote().build();
+
+        assertEquals(descriptor, new EditPersonDescriptor(descriptor));
+        assertTrue(descriptor.isAnyFieldEdited());
+    }
+
+    @Test
     public void execute_editName_preservesUnsetAddress() {
         Person originalPerson = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
         Person contactWithoutAddress = new PersonBuilder(originalPerson).withoutAddress().build();

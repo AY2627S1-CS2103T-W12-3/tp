@@ -1,9 +1,13 @@
 package coordimate.logic.commands;
 
 import static coordimate.logic.parser.CliSyntax.PREFIX_ADDRESS;
+import static coordimate.logic.parser.CliSyntax.PREFIX_BIRTHDAY;
 import static coordimate.logic.parser.CliSyntax.PREFIX_EMAIL;
 import static coordimate.logic.parser.CliSyntax.PREFIX_NAME;
+import static coordimate.logic.parser.CliSyntax.PREFIX_NOTE;
+import static coordimate.logic.parser.CliSyntax.PREFIX_ORGANISATION;
 import static coordimate.logic.parser.CliSyntax.PREFIX_PHONE;
+import static coordimate.logic.parser.CliSyntax.PREFIX_ROLE;
 import static coordimate.logic.parser.CliSyntax.PREFIX_TAG;
 import static coordimate.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 import static java.util.Objects.requireNonNull;
@@ -23,10 +27,14 @@ import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.Model;
 import coordimate.model.event.MemberNameConflictException;
 import coordimate.model.person.Address;
+import coordimate.model.person.Birthday;
 import coordimate.model.person.Email;
 import coordimate.model.person.Name;
+import coordimate.model.person.Note;
+import coordimate.model.person.Organisation;
 import coordimate.model.person.Person;
 import coordimate.model.person.Phone;
+import coordimate.model.person.Role;
 import coordimate.model.tag.Tag;
 
 /**
@@ -43,14 +51,19 @@ public class EditCommand extends Command {
             + "[" + PREFIX_NAME + "NAME] "
             + "[" + PREFIX_PHONE + "PHONE] "
             + "[" + PREFIX_EMAIL + "EMAIL] "
+            + "[" + PREFIX_ROLE + "ROLE] "
+            + "[" + PREFIX_BIRTHDAY + "BIRTHDAY] "
             + "[" + PREFIX_ADDRESS + "ADDRESS] "
+            + "[" + PREFIX_ORGANISATION + "ORGANISATION] "
+            + "[" + PREFIX_NOTE + "NOTE] "
             + "[" + PREFIX_TAG + "TAG]...\n"
             + "Example: " + COMMAND_WORD + " 1 "
             + PREFIX_PHONE + "91234567 "
             + PREFIX_EMAIL + "johndoe@example.com";
 
     public static final String MESSAGE_EDIT_PERSON_SUCCESS = "Edited person: %1$s";
-    public static final String MESSAGE_NOT_EDITED = "At least one field to edit must be provided.";
+    public static final String MESSAGE_NOT_EDITED =
+            "Please provide at least one field or tag operation to edit. Example: edit 2 r/Logistics";
     public static final String MESSAGE_DUPLICATE_PERSON =
             "This update conflicts with another saved contact. No changes were made.";
     public static final String MESSAGE_MEMBER_NAME_CONFLICT =
@@ -110,12 +123,19 @@ public class EditCommand extends Command {
         Name updatedName = editPersonDescriptor.getName().orElse(personToEdit.getName());
         Phone updatedPhone = editPersonDescriptor.getPhone().orElse(personToEdit.getPhone());
         Email updatedEmail = editPersonDescriptor.getEmail().orElse(personToEdit.getEmail());
-        Address updatedAddress = editPersonDescriptor.getAddress().orElse(personToEdit.getAddress().orElse(null));
+        Role updatedRole = editPersonDescriptor.getRole().orElse(personToEdit.getRole());
+        Birthday updatedBirthday = editPersonDescriptor.isBirthdayEdited()
+                ? editPersonDescriptor.getBirthday().orElse(null) : personToEdit.getBirthday().orElse(null);
+        Address updatedAddress = editPersonDescriptor.isAddressEdited()
+                ? editPersonDescriptor.getAddress().orElse(null) : personToEdit.getAddress().orElse(null);
+        Organisation updatedOrganisation = editPersonDescriptor.isOrganisationEdited()
+                ? editPersonDescriptor.getOrganisation().orElse(null) : personToEdit.getOrganisation().orElse(null);
+        Note updatedNote = editPersonDescriptor.isNoteEdited()
+                ? editPersonDescriptor.getNote().orElse(null) : personToEdit.getNote().orElse(null);
         Set<Tag> updatedTags = editPersonDescriptor.getTags().orElse(personToEdit.getTags());
 
-        return new Person(updatedName, updatedPhone, updatedEmail, personToEdit.getRole(),
-                personToEdit.getBirthday().orElse(null), updatedAddress, personToEdit.getOrganisation().orElse(null),
-                personToEdit.getNote().orElse(null), updatedTags);
+        return new Person(updatedName, updatedPhone, updatedEmail, updatedRole,
+                updatedBirthday, updatedAddress, updatedOrganisation, updatedNote, updatedTags);
     }
 
     @Override
@@ -142,14 +162,21 @@ public class EditCommand extends Command {
     }
 
     /**
-     * Stores the details to edit the person with. Each non-empty field value will replace the
-     * corresponding field value of the person.
+     * Stores the details to edit the person with. Optional fields distinguish omission from clearing.
      */
     public static class EditPersonDescriptor {
         private Name name;
         private Phone phone;
         private Email email;
+        private Role role;
+        private Birthday birthday;
+        private boolean isBirthdayEdited;
         private Address address;
+        private boolean isAddressEdited;
+        private Organisation organisation;
+        private boolean isOrganisationEdited;
+        private Note note;
+        private boolean isNoteEdited;
         private Set<Tag> tags;
 
         /**
@@ -165,7 +192,19 @@ public class EditCommand extends Command {
             setName(toCopy.name);
             setPhone(toCopy.phone);
             setEmail(toCopy.email);
-            setAddress(toCopy.address);
+            setRole(toCopy.role);
+            if (toCopy.isBirthdayEdited) {
+                setBirthday(toCopy.birthday);
+            }
+            if (toCopy.isAddressEdited) {
+                setAddress(toCopy.address);
+            }
+            if (toCopy.isOrganisationEdited) {
+                setOrganisation(toCopy.organisation);
+            }
+            if (toCopy.isNoteEdited) {
+                setNote(toCopy.note);
+            }
             setTags(toCopy.tags);
         }
 
@@ -173,7 +212,8 @@ public class EditCommand extends Command {
          * Returns true if at least one field is edited.
          */
         public boolean isAnyFieldEdited() {
-            return CollectionUtil.isAnyNonNull(name, phone, email, address, tags);
+            return CollectionUtil.isAnyNonNull(name, phone, email, role, tags)
+                    || isBirthdayEdited || isAddressEdited || isOrganisationEdited || isNoteEdited;
         }
 
         public void setName(Name name) {
@@ -200,12 +240,64 @@ public class EditCommand extends Command {
             return Optional.ofNullable(email);
         }
 
+        public void setRole(Role role) {
+            this.role = role;
+        }
+
+        public Optional<Role> getRole() {
+            return Optional.ofNullable(role);
+        }
+
+        public void setBirthday(Birthday birthday) {
+            this.birthday = birthday;
+            isBirthdayEdited = true;
+        }
+
+        public Optional<Birthday> getBirthday() {
+            return Optional.ofNullable(birthday);
+        }
+
+        public boolean isBirthdayEdited() {
+            return isBirthdayEdited;
+        }
+
         public void setAddress(Address address) {
             this.address = address;
+            isAddressEdited = true;
         }
 
         public Optional<Address> getAddress() {
             return Optional.ofNullable(address);
+        }
+
+        public boolean isAddressEdited() {
+            return isAddressEdited;
+        }
+
+        public void setOrganisation(Organisation organisation) {
+            this.organisation = organisation;
+            isOrganisationEdited = true;
+        }
+
+        public Optional<Organisation> getOrganisation() {
+            return Optional.ofNullable(organisation);
+        }
+
+        public boolean isOrganisationEdited() {
+            return isOrganisationEdited;
+        }
+
+        public void setNote(Note note) {
+            this.note = note;
+            isNoteEdited = true;
+        }
+
+        public Optional<Note> getNote() {
+            return Optional.ofNullable(note);
+        }
+
+        public boolean isNoteEdited() {
+            return isNoteEdited;
         }
 
         /**
@@ -239,7 +331,15 @@ public class EditCommand extends Command {
             return Objects.equals(name, otherEditPersonDescriptor.name)
                     && Objects.equals(phone, otherEditPersonDescriptor.phone)
                     && Objects.equals(email, otherEditPersonDescriptor.email)
+                    && Objects.equals(role, otherEditPersonDescriptor.role)
+                    && isBirthdayEdited == otherEditPersonDescriptor.isBirthdayEdited
+                    && Objects.equals(birthday, otherEditPersonDescriptor.birthday)
+                    && isAddressEdited == otherEditPersonDescriptor.isAddressEdited
                     && Objects.equals(address, otherEditPersonDescriptor.address)
+                    && isOrganisationEdited == otherEditPersonDescriptor.isOrganisationEdited
+                    && Objects.equals(organisation, otherEditPersonDescriptor.organisation)
+                    && isNoteEdited == otherEditPersonDescriptor.isNoteEdited
+                    && Objects.equals(note, otherEditPersonDescriptor.note)
                     && Objects.equals(tags, otherEditPersonDescriptor.tags);
         }
 
@@ -249,7 +349,15 @@ public class EditCommand extends Command {
                     .add("name", name)
                     .add("phone", phone)
                     .add("email", email)
+                    .add("role", role)
+                    .add("birthdayEdited", isBirthdayEdited)
+                    .add("birthday", birthday)
+                    .add("addressEdited", isAddressEdited)
                     .add("address", address)
+                    .add("organisationEdited", isOrganisationEdited)
+                    .add("organisation", organisation)
+                    .add("noteEdited", isNoteEdited)
+                    .add("note", note)
                     .add("tags", tags)
                     .toString();
         }
