@@ -10,9 +10,11 @@ import coordimate.logic.commands.AddEventCommand;
 import coordimate.logic.commands.CommandResult;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.logic.parser.exceptions.ParseException;
+import coordimate.model.tag.Tag;
 import javafx.beans.binding.Bindings;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.ListView;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
@@ -56,6 +58,9 @@ public class MainWindow extends UiPart<Stage> {
     private StackPane eventListPanelPlaceholder;
 
     @FXML
+    private ListView<Tag> tagListView;
+
+    @FXML
     private TabPane views;
 
     @FXML
@@ -65,10 +70,16 @@ public class MainWindow extends UiPart<Stage> {
     private Tab eventsTab;
 
     @FXML
+    private Tab tagsTab;
+
+    @FXML
     private ToggleButton contactsView;
 
     @FXML
     private ToggleButton eventsView;
+
+    @FXML
+    private ToggleButton tagsView;
 
     @FXML
     private StackPane resultDisplayPlaceholder;
@@ -145,13 +156,17 @@ public class MainWindow extends UiPart<Stage> {
 
         eventListPanel = new EventListPanel(logic.getEventList());
         eventListPanelPlaceholder.getChildren().add(eventListPanel.getRoot());
+        tagListView.setItems(logic.getTagList());
         contactsTab.textProperty().bind(Bindings.size(logic.getFilteredPersonList()).asString("Contacts (%d)"));
         eventsTab.textProperty().bind(Bindings.size(logic.getEventList()).asString("Events (%d)"));
+        tagsTab.textProperty().bind(Bindings.size(logic.getTagList()).asString("Tags (%d)"));
         contactsView.textProperty().bind(contactsTab.textProperty());
         eventsView.textProperty().bind(eventsTab.textProperty());
+        tagsView.textProperty().bind(tagsTab.textProperty());
         views.getSelectionModel().selectedItemProperty().addListener((observable, oldTab, tab) -> {
             contactsView.setSelected(tab == contactsTab);
             eventsView.setSelected(tab == eventsTab);
+            tagsView.setSelected(tab == tagsTab);
         });
 
         resultDisplay = new ResultDisplay();
@@ -227,6 +242,15 @@ public class MainWindow extends UiPart<Stage> {
     }
 
     /**
+     * Selects the tags tab and its view button.
+     */
+    @FXML
+    private void showTags() {
+        views.getSelectionModel().select(tagsTab);
+        tagsView.setSelected(true);
+    }
+
+    /**
      * Executes the command and returns the result.
      *
      * @see coordimate.logic.Logic#execute(String)
@@ -244,6 +268,10 @@ public class MainWindow extends UiPart<Stage> {
 
             if (commandResult.shouldShowHelp()) {
                 handleHelp();
+            }
+
+            if (commandResult.shouldShowTags()) {
+                showTags();
             }
 
             if (commandResult.shouldExit()) {

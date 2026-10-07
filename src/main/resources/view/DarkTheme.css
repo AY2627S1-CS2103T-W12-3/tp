@@ -394,6 +394,24 @@
     -fx-padding: 8;
 }
 
+.tag-workspace {
+    -fx-background-color: #383838;
+    -fx-padding: 18;
+}
+
+.tag-list {
+    -fx-background-color: #383838;
+    -fx-border-color: #515658;
+    -fx-border-radius: 4;
+}
+
+.tag-list .list-cell {
+    -fx-padding: 12 16;
+    -fx-font-family: "Segoe UI Semibold";
+    -fx-font-size: 14px;
+    -fx-text-fill: white;
+}
+
 .event-workspace {
     -fx-background-color: #383838;
     -fx-padding: 0;

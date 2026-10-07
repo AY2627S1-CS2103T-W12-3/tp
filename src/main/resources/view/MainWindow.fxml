@@ -5,6 +5,8 @@
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.ToggleButton?>
@@ -45,6 +47,8 @@
                           onAction="#showContacts" styleClass="view-button" maxWidth="Infinity" />
             <ToggleButton fx:id="eventsView" text="Events" toggleGroup="$viewToggleGroup"
                           onAction="#showEvents" styleClass="view-button" maxWidth="Infinity" />
+            <ToggleButton fx:id="tagsView" text="Tags" toggleGroup="$viewToggleGroup"
+                          onAction="#showTags" styleClass="view-button" maxWidth="Infinity" />
           </VBox>
           <TabPane fx:id="views" tabClosingPolicy="UNAVAILABLE" styleClass="workspace-tabs"
                    HBox.hgrow="ALWAYS" minWidth="0" minHeight="0">
@@ -53,6 +57,13 @@
             </Tab>
             <Tab fx:id="eventsTab" text="Events">
               <StackPane fx:id="eventListPanelPlaceholder" styleClass="workspace-content" />
+            </Tab>
+            <Tab fx:id="tagsTab" text="Tags">
+              <VBox spacing="12" styleClass="tag-workspace">
+                <Label text="Saved tags" styleClass="section-heading" />
+                <ListView fx:id="tagListView" VBox.vgrow="ALWAYS" minWidth="0" minHeight="0"
+                          accessibleText="All saved tags." styleClass="tag-list" />
+              </VBox>
             </Tab>
           </TabPane>
         </HBox>
