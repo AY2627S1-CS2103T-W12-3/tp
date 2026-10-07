@@ -3,6 +3,7 @@ package coordimate.ui;
 import java.util.Comparator;
 
 import coordimate.model.person.Person;
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -64,22 +65,33 @@ public class PersonListPanel extends UiPart<Region> {
     public PersonListPanel(ObservableList<Person> persons) {
         super(FXML);
         persons.addListener((ListChangeListener<Person>) change -> {
-            if (selectedPerson != null && !persons.contains(selectedPerson)) {
-                personListView.getSelectionModel().clearSelection();
-            } else if (selectedPerson != null) {
-                selectedIndex.setText("Index: " + (persons.indexOf(selectedPerson) + 1));
+            if (selectedPerson != null) {
+                Person previouslySelected = selectedPerson;
+                Platform.runLater(() -> restoreSelection(persons, previouslySelected));
             }
         });
         personListView.setItems(persons);
         personListView.setCellFactory(listView -> new PersonListViewCell());
         personListView.setPlaceholder(new Label("No contacts found."));
-        contactCount.textProperty().bind(Bindings.size(persons).asString("%d contacts"));
+        contactCount.textProperty().bind(Bindings.size(persons).asString("Records: %d"));
         personListView.getSelectionModel().selectedItemProperty().addListener((observable, oldPerson, person) ->
                 showDetails(person));
         contactSplitPane.widthProperty().addListener((observable, oldWidth, width) ->
                 contactSplitPane.setOrientation(width.doubleValue() < VERTICAL_LAYOUT_WIDTH
                         ? Orientation.VERTICAL : Orientation.HORIZONTAL));
         showDetails(null);
+    }
+
+    /**
+     * Reconciles selection after the list view has processed a change to its items.
+     */
+    private void restoreSelection(ObservableList<Person> persons, Person previouslySelected) {
+        if (persons.contains(previouslySelected)) {
+            personListView.getSelectionModel().select(previouslySelected);
+            selectedIndex.setText("Index: " + (persons.indexOf(previouslySelected) + 1));
+        } else {
+            personListView.getSelectionModel().clearSelection();
+        }
     }
 
     /**
