@@ -39,6 +39,10 @@
 
    * `exit` : Exits the app.
 
+   In the Contacts view, select a contact from the displayed list to see their phone number, email address,
+   address, and tags in the details pane. The number beside a contact is its index in the currently displayed list.
+   If a list change hides the selected contact, the details pane clears.
+
 1. Refer to the [Features](#features) section below for details of each command.
 
 --------------------------------------------------------------------------------------------------------------------

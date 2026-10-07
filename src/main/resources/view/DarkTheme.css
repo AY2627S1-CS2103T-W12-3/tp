@@ -400,6 +400,66 @@
     -fx-border-width: 0;
 }
 
+.contact-workspace {
+    -fx-background-color: #383838;
+    -fx-padding: 0;
+    -fx-border-width: 0;
+}
+
+.contact-workspace:horizontal > .split-pane-divider {
+    -fx-background-color: #383838;
+    -fx-border-color: transparent transparent transparent #515658;
+}
+
+.contact-workspace:vertical > .split-pane-divider {
+    -fx-background-color: #383838;
+    -fx-border-color: #515658 transparent transparent transparent;
+}
+
+.contact-list-section, .contact-details-section {
+    -fx-padding: 16;
+    -fx-spacing: 12;
+    -fx-background-color: #383838;
+}
+
+.contact-list .list-cell {
+    -fx-padding: 4 0;
+}
+
+.contact-name {
+    -fx-font-family: "Segoe UI Semibold";
+    -fx-font-size: 22px;
+    -fx-text-fill: white;
+    -fx-opacity: 1;
+}
+
+.contact-details-card {
+    -fx-padding: 18;
+    -fx-background-color: #3c3e3f;
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
+    -fx-border-color: #515658;
+}
+
+.contact-details-scroll, .contact-details-scroll > .viewport {
+    -fx-background-color: #383838;
+    -fx-padding: 0;
+}
+
+.contact-selection-hint {
+    -fx-padding: 16 0;
+    -fx-font-family: "Segoe UI";
+    -fx-font-size: 13px;
+    -fx-text-fill: #d0d0d0;
+}
+
+.contact-detail-tags .label {
+    -fx-text-fill: white;
+    -fx-background-color: #3e7b91;
+    -fx-padding: 2 6;
+    -fx-background-radius: 3;
+}
+
 .event-workspace:vertical > .split-pane-divider {
     -fx-background-color: #383838;
     -fx-border-color: #515658 transparent transparent transparent;

@@ -22,7 +22,12 @@ src/test/data/sandbox/
 docs/_site/
 
 # AI Agents
-AGENTS.md
+.agents/skills/coordimate-code-review/SKILL.md
+/AGENTS.md
+/.agents/skills/coordimate-code-review/
+/.agents/skills/coordimate-project/
+/docs/source-material/
+/docs/ui-mockups/
 CLAUDE.md
 /.claude/
 /.codex/
