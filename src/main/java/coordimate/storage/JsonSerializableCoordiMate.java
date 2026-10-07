@@ -15,6 +15,8 @@ import coordimate.model.ReadOnlyCoordiMate;
 import coordimate.model.event.Event;
 import coordimate.model.person.Name;
 import coordimate.model.person.Person;
+import coordimate.model.tag.Tag;
+import coordimate.model.tag.exceptions.DuplicateTagException;
 
 /**
  * An Immutable CoordiMate that is serializable to JSON format.
@@ -24,17 +26,20 @@ class JsonSerializableCoordiMate {
 
     public static final String MESSAGE_DUPLICATE_PERSON = "Persons list contains duplicate person(s).";
     public static final String MESSAGE_DUPLICATE_EVENT = "Events list contains duplicate event name(s).";
+    public static final String MESSAGE_DUPLICATE_TAG = "Tags list contains duplicate tag name(s).";
     public static final String MESSAGE_UNKNOWN_MEMBER = "Event members must refer to existing contacts.";
 
     private final List<JsonAdaptedPerson> persons = new ArrayList<>();
     private final List<JsonAdaptedEvent> events = new ArrayList<>();
+    private final List<JsonAdaptedTag> tags = new ArrayList<>();
 
     /**
      * Constructs a {@code JsonSerializableCoordiMate} with the given people and optional events.
      */
     @JsonCreator
     public JsonSerializableCoordiMate(@JsonProperty("persons") List<JsonAdaptedPerson> persons,
-            @JsonProperty("events") List<JsonAdaptedEvent> events) {
+            @JsonProperty("events") List<JsonAdaptedEvent> events,
+            @JsonProperty("tags") List<JsonAdaptedTag> tags) {
         if (persons == null) {
             throw new IllegalArgumentException("Persons list must be present.");
         }
@@ -42,6 +47,16 @@ class JsonSerializableCoordiMate {
         if (events != null) {
             this.events.addAll(events);
         }
+        if (tags != null) {
+            this.tags.addAll(tags);
+        }
+    }
+
+    /**
+     * Constructs a serializable CoordiMate without an explicit tag list.
+     */
+    public JsonSerializableCoordiMate(List<JsonAdaptedPerson> persons, List<JsonAdaptedEvent> events) {
+        this(persons, events, null);
     }
 
     /**
@@ -52,6 +67,7 @@ class JsonSerializableCoordiMate {
     public JsonSerializableCoordiMate(ReadOnlyCoordiMate source) {
         persons.addAll(source.getPersonList().stream().map(JsonAdaptedPerson::new).collect(Collectors.toList()));
         events.addAll(source.getEventList().stream().map(JsonAdaptedEvent::new).collect(Collectors.toList()));
+        tags.addAll(source.getTagList().stream().map(JsonAdaptedTag::new).collect(Collectors.toList()));
     }
 
     /**
@@ -70,6 +86,18 @@ class JsonSerializableCoordiMate {
                 throw new IllegalValueException(MESSAGE_DUPLICATE_PERSON);
             }
             coordiMate.addPerson(person);
+        }
+        List<Tag> modelTags = new ArrayList<>();
+        for (JsonAdaptedTag jsonAdaptedTag : tags) {
+            if (jsonAdaptedTag == null) {
+                throw new IllegalValueException("Tags list must not contain null entries.");
+            }
+            modelTags.add(jsonAdaptedTag.toModelType());
+        }
+        try {
+            coordiMate.setTags(modelTags);
+        } catch (DuplicateTagException duplicateTagException) {
+            throw new IllegalValueException(MESSAGE_DUPLICATE_TAG);
         }
         Set<Name> contactNames = coordiMate.getPersonList().stream().map(Person::getName).collect(Collectors.toSet());
         for (JsonAdaptedEvent jsonAdaptedEvent : events) {

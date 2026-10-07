@@ -10,6 +10,7 @@ import coordimate.commons.core.GuiSettings;
 import coordimate.commons.core.LogsCenter;
 import coordimate.model.event.Event;
 import coordimate.model.person.Person;
+import coordimate.model.tag.Tag;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 
@@ -81,6 +82,11 @@ public class ModelManager implements Model {
     @Override
     public void addEvent(Event event) {
         coordiMate.addEvent(event);
+    }
+
+    @Override
+    public ObservableList<Tag> getTagList() {
+        return coordiMate.getTagList();
     }
 
     @Override

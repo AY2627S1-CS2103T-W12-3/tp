@@ -30,6 +30,17 @@ public class Tag {
     }
 
     /**
+     * Returns true if both tags have the same name, ignoring case.
+     */
+    public boolean isSameTag(Tag otherTag) {
+        if (otherTag == this) {
+            return true;
+        }
+
+        return otherTag != null && tagName.equalsIgnoreCase(otherTag.tagName);
+    }
+
+    /**
      * Returns true if a given string is a valid tag name.
      */
     public static boolean isValidTagName(String test) {

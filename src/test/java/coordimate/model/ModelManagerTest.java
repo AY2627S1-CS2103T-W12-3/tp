@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 
 import coordimate.commons.core.GuiSettings;
 import coordimate.model.person.NameContainsKeywordsPredicate;
+import coordimate.model.tag.Tag;
 import coordimate.testutil.CoordiMateBuilder;
 
 public class ModelManagerTest {
@@ -71,6 +72,12 @@ public class ModelManagerTest {
     @Test
     public void getFilteredPersonList_modifyList_throwsUnsupportedOperationException() {
         assertThrows(UnsupportedOperationException.class, () -> modelManager.getFilteredPersonList().remove(0));
+    }
+
+    @Test
+    public void getTagList_returnsDefaultTags() {
+        assertEquals(List.of(new Tag("EXCO"), new Tag("Sponsor"), new Tag("UniversityStaff"),
+                new Tag("Logistics")), modelManager.getTagList());
     }
 
     @Test
