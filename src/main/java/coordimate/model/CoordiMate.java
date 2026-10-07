@@ -111,6 +111,16 @@ public class CoordiMate implements ReadOnlyCoordiMate {
         return unmodifiableEvents;
     }
 
+    /**
+     * Removes an existing event and notifies observers of the event list.
+     */
+    public void removeEvent(Event target) {
+        requireNonNull(target);
+        if (!events.remove(target)) {
+            throw new IllegalArgumentException("Event does not exist.");
+        }
+    }
+
     //// person-level operations
 
     /**

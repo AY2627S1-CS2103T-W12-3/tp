@@ -10,6 +10,7 @@ import coordimate.commons.exceptions.DataLoadingException;
 import coordimate.logic.commands.AddEventCommand;
 import coordimate.logic.commands.Command;
 import coordimate.logic.commands.CommandResult;
+import coordimate.logic.commands.DeleteEventCommand;
 import coordimate.logic.commands.EditEventCommand;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.logic.parser.CoordiMateParser;
@@ -50,7 +51,8 @@ public class LogicManager implements Logic {
         logger.info("----------------[USER COMMAND][" + commandText + "]");
 
         Command command = coordiMateParser.parseCommand(commandText);
-        if (command instanceof AddEventCommand || command instanceof EditEventCommand) {
+        if (command instanceof AddEventCommand || command instanceof EditEventCommand
+                || command instanceof DeleteEventCommand) {
             return executeEventCommand(command);
         }
         CommandResult commandResult = command.execute(model);
@@ -81,7 +83,8 @@ public class LogicManager implements Logic {
         try {
             storage.saveCoordiMate(candidate.getCoordiMate());
         } catch (IOException e) {
-            String message = command instanceof EditEventCommand
+            String message = command instanceof DeleteEventCommand ? DeleteEventCommand.MESSAGE_SAVE_ERROR
+                    : command instanceof EditEventCommand
                     ? EditEventCommand.MESSAGE_SAVE_ERROR : AddEventCommand.MESSAGE_SAVE_ERROR;
             throw new CommandException(message, e);
         }

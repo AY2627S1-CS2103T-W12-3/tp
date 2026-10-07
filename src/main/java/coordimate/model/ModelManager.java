@@ -89,6 +89,11 @@ public class ModelManager implements Model {
     }
 
     @Override
+    public void deleteEvent(Event target) {
+        coordiMate.removeEvent(target);
+    }
+
+    @Override
     public boolean hasPerson(Person person) {
         requireNonNull(person);
         return coordiMate.hasPerson(person);
