@@ -3,15 +3,19 @@ package coordimate.ui;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.stream.Collectors;
 
 import coordimate.model.event.Event;
+import coordimate.model.person.Name;
 import javafx.beans.binding.Bindings;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.geometry.Orientation;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.MultipleSelectionModel;
 import javafx.scene.control.SplitPane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
@@ -48,7 +52,15 @@ public class EventListPanel extends UiPart<Region> {
     private Label duration;
 
     @FXML
+    private Label memberCount;
+
+    @FXML
+    private Label members;
+
+    @FXML
     private Label selectionHint;
+
+    private int lastSelectedIndex = -1;
 
     /**
      * Observes saved events and stacks the panes when the window is narrow.
@@ -61,11 +73,29 @@ public class EventListPanel extends UiPart<Region> {
         eventCount.textProperty().bind(Bindings.size(events).asString("Events (%d)"));
         eventListView.getSelectionModel().selectedItemProperty().addListener((observable, oldEvent, event) ->
                 showDetails(event));
+        eventListView.getSelectionModel().selectedIndexProperty().addListener((observable, oldIndex, index) -> {
+            if (index.intValue() >= 0) {
+                lastSelectedIndex = index.intValue();
+            }
+        });
+        events.addListener((ListChangeListener<Event>) change -> keepSelectionAfterChange());
         eventSplitPane.widthProperty().addListener((observable, oldWidth, width) ->
                 eventSplitPane.setOrientation(width.doubleValue() < 680
                 ? Orientation.VERTICAL : Orientation.HORIZONTAL));
         showDetails(null);
         eventListView.getSelectionModel().selectFirst();
+    }
+
+    /**
+     * Keeps an event selected after the list changes, since the list view clears its selection when
+     * events are replaced, and refreshes the details so they show the updated event.
+     */
+    private void keepSelectionAfterChange() {
+        MultipleSelectionModel<Event> selection = eventListView.getSelectionModel();
+        if (selection.getSelectedIndex() < 0 && !eventListView.getItems().isEmpty()) {
+            selection.select(Math.max(0, Math.min(lastSelectedIndex, eventListView.getItems().size() - 1)));
+        }
+        showDetails(selection.getSelectedItem());
     }
 
     /**
@@ -77,7 +107,7 @@ public class EventListPanel extends UiPart<Region> {
     }
 
     /**
-     * Shows the isSelected event's details, or a selection hint when no event is isSelected.
+     * Shows the selected event's details, or a selection hint when no event is selected.
      */
     private void showDetails(Event event) {
         boolean isSelected = event != null;
@@ -85,12 +115,24 @@ public class EventListPanel extends UiPart<Region> {
         eventDetails.setManaged(isSelected);
         selectionHint.setVisible(!isSelected);
         selectionHint.setManaged(!isSelected);
-        selectedName.setText(isSelected ? event.getName() : "No event isSelected");
+        selectedName.setText(isSelected ? event.getName() : "No event selected");
         if (isSelected) {
             startTime.setText(event.getStartTime().toString());
             endTime.setText(event.getEndTime().toString());
             duration.setText(formatDuration(event));
+            memberCount.setText("Members (" + event.getMembers().size() + ")");
+            members.setText(formatMembers(event));
         }
+    }
+
+    /**
+     * Returns the event's member names, one per line in assignment order, or a hint when it has none.
+     */
+    private String formatMembers(Event event) {
+        if (event.getMembers().isEmpty()) {
+            return "No members assigned yet. Assign contacts with assign.";
+        }
+        return event.getMembers().stream().map(Name::toString).collect(Collectors.joining("\n"));
     }
 
     /**
