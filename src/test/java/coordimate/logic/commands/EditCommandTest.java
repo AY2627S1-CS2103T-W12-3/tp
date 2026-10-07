@@ -26,6 +26,8 @@ import org.junit.jupiter.api.Test;
 import coordimate.commons.core.index.Index;
 import coordimate.logic.Messages;
 import coordimate.logic.commands.EditCommand.EditPersonDescriptor;
+import coordimate.logic.commands.EditCommand.TagOperation;
+import coordimate.logic.commands.EditCommand.TagOperationType;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.CoordiMate;
 import coordimate.model.Model;
@@ -34,6 +36,7 @@ import coordimate.model.UserPrefs;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
 import coordimate.model.person.Person;
+import coordimate.model.tag.Tag;
 import coordimate.testutil.EditPersonDescriptorBuilder;
 import coordimate.testutil.PersonBuilder;
 
@@ -172,8 +175,95 @@ public class EditCommandTest {
         String expectedMessage = String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson));
 
         Model expectedModel = new ModelManager(new CoordiMate(model.getCoordiMate()), new UserPrefs());
+        expectedModel.setPerson(editedPerson, editedPerson);
 
         assertCommandSuccess(editCommand, model, expectedMessage, expectedModel);
+    }
+
+    @Test
+    public void execute_addCustomTag_registersTagAndRetainsExistingTags() {
+        Person original = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+        EditPersonDescriptor descriptor = new EditPersonDescriptor();
+        descriptor.addTagOperation(new TagOperation(TagOperationType.ADD, new Tag("Alumni2026")));
+        Person edited = new PersonBuilder(original).withTags("friends", "Alumni2026").build();
+        Model expectedModel = new ModelManager(new CoordiMate(model.getCoordiMate()), new UserPrefs());
+        expectedModel.setPerson(original, edited);
+
+        assertCommandSuccess(new EditCommand(INDEX_FIRST_PERSON, descriptor), model,
+                String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(edited)), expectedModel);
+        assertTrue(model.getTagList().stream().anyMatch(tag -> tag.isSameTag(new Tag("Alumni2026"))));
+    }
+
+    @Test
+    public void execute_removeTag_keepsTagInRegistry() {
+        CoordiMate savedData = new CoordiMate(model.getCoordiMate());
+        savedData.addTag(new Tag("friends"));
+        model = new ModelManager(savedData, new UserPrefs());
+        Person original = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+        EditPersonDescriptor descriptor = new EditPersonDescriptor();
+        descriptor.addTagOperation(new TagOperation(TagOperationType.REMOVE, new Tag("FRIENDS")));
+        Person edited = new PersonBuilder(original).withTags().build();
+        Model expectedModel = new ModelManager(new CoordiMate(model.getCoordiMate()), new UserPrefs());
+        expectedModel.setPerson(original, edited);
+
+        assertCommandSuccess(new EditCommand(INDEX_FIRST_PERSON, descriptor), model,
+                String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(edited)), expectedModel);
+        assertTrue(model.getTagList().stream().anyMatch(tag -> tag.isSameTag(new Tag("friends"))));
+    }
+
+    @Test
+    public void execute_tagOperations_applyInCommandOrder() {
+        Person original = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+        EditPersonDescriptor descriptor = new EditPersonDescriptor();
+        descriptor.addTagOperation(new TagOperation(TagOperationType.REMOVE, new Tag("friends")));
+        descriptor.addTagOperation(new TagOperation(TagOperationType.ADD, new Tag("FRIENDS")));
+        Person edited = new PersonBuilder(original).withTags("FRIENDS").build();
+        Model expectedModel = new ModelManager(new CoordiMate(model.getCoordiMate()), new UserPrefs());
+        expectedModel.setPerson(original, edited);
+
+        assertCommandSuccess(new EditCommand(INDEX_FIRST_PERSON, descriptor), model,
+                String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(edited)), expectedModel);
+    }
+
+    @Test
+    public void execute_addThenRemoveSameTag_leavesTagAbsent() {
+        Person original = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+        EditPersonDescriptor descriptor = new EditPersonDescriptor();
+        descriptor.addTagOperation(new TagOperation(TagOperationType.ADD, new Tag("Alumni2026")));
+        descriptor.addTagOperation(new TagOperation(TagOperationType.REMOVE, new Tag("alumni2026")));
+        Model expectedModel = new ModelManager(new CoordiMate(model.getCoordiMate()), new UserPrefs());
+        expectedModel.setPerson(original, original);
+        expectedModel.registerTag(new Tag("Alumni2026"));
+
+        assertCommandSuccess(new EditCommand(INDEX_FIRST_PERSON, descriptor), model,
+                String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(original)), expectedModel);
+        assertTrue(model.getTagList().stream().anyMatch(tag -> tag.isSameTag(new Tag("Alumni2026"))));
+    }
+
+    @Test
+    public void execute_replaceTags_createsCustomTagAndRemovesOldTags() {
+        Person original = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withTags("Alumni2026").build();
+        Person edited = new PersonBuilder(original).withTags("Alumni2026").build();
+        Model expectedModel = new ModelManager(new CoordiMate(model.getCoordiMate()), new UserPrefs());
+        expectedModel.setPerson(original, edited);
+
+        assertCommandSuccess(new EditCommand(INDEX_FIRST_PERSON, descriptor), model,
+                String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(edited)), expectedModel);
+        assertTrue(model.getTagList().stream().anyMatch(tag -> tag.isSameTag(new Tag("Alumni2026"))));
+    }
+
+    @Test
+    public void execute_addExistingTagAndRemoveAbsentTag_noDuplicateOrNewTag() {
+        Person original = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+        EditPersonDescriptor descriptor = new EditPersonDescriptor();
+        descriptor.addTagOperation(new TagOperation(TagOperationType.ADD, new Tag("FRIENDS")));
+        descriptor.addTagOperation(new TagOperation(TagOperationType.REMOVE, new Tag("Absent")));
+        Model expectedModel = new ModelManager(new CoordiMate(model.getCoordiMate()), new UserPrefs());
+        expectedModel.setPerson(original, original);
+
+        assertCommandSuccess(new EditCommand(INDEX_FIRST_PERSON, descriptor), model,
+                String.format(EditCommand.MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(original)), expectedModel);
     }
 
     @Test

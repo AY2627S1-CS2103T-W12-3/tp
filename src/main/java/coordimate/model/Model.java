@@ -55,6 +55,9 @@ public interface Model {
      */
     ObservableList<Tag> getTagList();
 
+    /** Registers a tag for future use if its name is not already saved. */
+    void registerTag(Tag tag);
+
     /**
      * Replaces an existing event without duplicating another event's name.
      */

@@ -1,20 +1,21 @@
 package coordimate.logic.parser;
 
 import static coordimate.logic.parser.CliSyntax.PREFIX_ADDRESS;
+import static coordimate.logic.parser.CliSyntax.PREFIX_ADD_TAG;
 import static coordimate.logic.parser.CliSyntax.PREFIX_BIRTHDAY;
 import static coordimate.logic.parser.CliSyntax.PREFIX_EMAIL;
 import static coordimate.logic.parser.CliSyntax.PREFIX_NAME;
 import static coordimate.logic.parser.CliSyntax.PREFIX_NOTE;
 import static coordimate.logic.parser.CliSyntax.PREFIX_ORGANISATION;
 import static coordimate.logic.parser.CliSyntax.PREFIX_PHONE;
+import static coordimate.logic.parser.CliSyntax.PREFIX_REMOVE_TAG;
 import static coordimate.logic.parser.CliSyntax.PREFIX_ROLE;
 import static coordimate.logic.parser.CliSyntax.PREFIX_TAG;
 import static coordimate.logic.parser.CliSyntax.PREFIX_TARGET;
 import static java.util.Objects.requireNonNull;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Optional;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -22,6 +23,9 @@ import java.util.regex.Pattern;
 import coordimate.commons.core.index.Index;
 import coordimate.logic.commands.EditCommand;
 import coordimate.logic.commands.EditCommand.EditPersonDescriptor;
+import coordimate.logic.commands.EditCommand.TagOperation;
+import coordimate.logic.commands.EditCommand.TagOperationType;
+import coordimate.logic.parser.ArgumentMultimap.PrefixedValue;
 import coordimate.logic.parser.exceptions.ParseException;
 import coordimate.model.person.Birthday;
 import coordimate.model.person.Note;
@@ -41,10 +45,12 @@ public class EditCommandParser implements Parser<EditCommand> {
             "Specify either a contact index or target/IDENTIFIER, not both.";
     public static final String MESSAGE_EMPTY_TARGET =
             "Contact identifier must not be empty. Example: target/aisha@example.com";
+    public static final String MESSAGE_CONFLICTING_TAG_OPERATIONS =
+            "Use either t/ to replace tags, or at/ and rt/ to add or remove them, not both.";
 
     private static final Pattern PARAMETER_PATTERN = Pattern.compile("(?<!\\S)([A-Za-z]+/)");
     private static final Set<String> ALLOWED_PREFIXES =
-            Set.of("n/", "p/", "e/", "r/", "b/", "a/", "o/", "m/", "t/", "target/");
+            Set.of("n/", "p/", "e/", "r/", "b/", "a/", "o/", "m/", "t/", "at/", "rt/", "target/");
 
     /**
      * Parses the given {@code String} of arguments in the context of the EditCommand
@@ -57,7 +63,8 @@ public class EditCommandParser implements Parser<EditCommand> {
         rejectUnknownParameters(args);
         ArgumentMultimap argMultimap =
                 ArgumentTokenizer.tokenize(" " + args, PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL, PREFIX_ROLE,
-                        PREFIX_BIRTHDAY, PREFIX_ADDRESS, PREFIX_ORGANISATION, PREFIX_NOTE, PREFIX_TAG, PREFIX_TARGET);
+                        PREFIX_BIRTHDAY, PREFIX_ADDRESS, PREFIX_ORGANISATION, PREFIX_NOTE,
+                        PREFIX_TAG, PREFIX_ADD_TAG, PREFIX_REMOVE_TAG, PREFIX_TARGET);
 
         rejectRepeatedParameters(argMultimap);
         Index index = null;
@@ -121,7 +128,7 @@ public class EditCommandParser implements Parser<EditCommand> {
             }
             editPersonDescriptor.setNote(note.isEmpty() ? null : new Note(note));
         }
-        parseTagsForEdit(argMultimap.getAllValues(PREFIX_TAG)).ifPresent(editPersonDescriptor::setTags);
+        parseTagEdits(argMultimap, editPersonDescriptor);
 
         if (!editPersonDescriptor.isAnyFieldEdited()) {
             throw new ParseException(EditCommand.MESSAGE_NOT_EDITED);
@@ -153,19 +160,37 @@ public class EditCommandParser implements Parser<EditCommand> {
         }
     }
 
-    /**
-     * Parses {@code Collection<String> tags} into a {@code Set<Tag>} if {@code tags} is non-empty.
-     * If {@code tags} contains only one element which is an empty string, it will be parsed into a
-     * {@code Set<Tag>} containing zero tags.
-     */
-    private Optional<Set<Tag>> parseTagsForEdit(Collection<String> tags) throws ParseException {
-        assert tags != null;
-
-        if (tags.isEmpty()) {
-            return Optional.empty();
+    private static void parseTagEdits(ArgumentMultimap arguments, EditPersonDescriptor descriptor)
+            throws ParseException {
+        List<String> replacements = arguments.getAllValues(PREFIX_TAG);
+        if (!replacements.isEmpty()
+                && (!arguments.getAllValues(PREFIX_ADD_TAG).isEmpty()
+                || !arguments.getAllValues(PREFIX_REMOVE_TAG).isEmpty())) {
+            throw new ParseException(MESSAGE_CONFLICTING_TAG_OPERATIONS);
         }
-        Collection<String> tagNames = tags.size() == 1 && tags.contains("") ? Collections.emptySet() : tags;
-        return Optional.of(ParserUtil.parseTags(tagNames));
+        if (!replacements.isEmpty()) {
+            Set<Tag> replacementTags = new HashSet<>();
+            for (String value : replacements) {
+                if (value.isEmpty()) {
+                    replacementTags.clear();
+                    continue;
+                }
+                Tag tag = ParserUtil.parseTag(value);
+                if (replacementTags.stream().noneMatch(tag::isSameTag)) {
+                    replacementTags.add(tag);
+                }
+            }
+            descriptor.setTags(replacementTags);
+        }
+        for (PrefixedValue argument : arguments.getArgumentsInOrder()) {
+            if (argument.prefix().equals(PREFIX_ADD_TAG)) {
+                descriptor.addTagOperation(
+                        new TagOperation(TagOperationType.ADD, ParserUtil.parseTag(argument.value())));
+            } else if (argument.prefix().equals(PREFIX_REMOVE_TAG)) {
+                descriptor.addTagOperation(
+                        new TagOperation(TagOperationType.REMOVE, ParserUtil.parseTag(argument.value())));
+            }
+        }
     }
 
 }

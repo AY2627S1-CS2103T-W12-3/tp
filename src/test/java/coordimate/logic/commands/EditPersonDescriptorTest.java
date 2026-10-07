@@ -84,7 +84,7 @@ public class EditPersonDescriptorTest {
                 + editPersonDescriptor.getOrganisation().orElse(null) + ", noteEdited="
                 + editPersonDescriptor.isNoteEdited() + ", note="
                 + editPersonDescriptor.getNote().orElse(null) + ", tags="
-                + editPersonDescriptor.getTags().orElse(null) + "}";
+                + editPersonDescriptor.getTags().orElse(null) + ", tagOperations=[]}";
         assertEquals(expected, editPersonDescriptor.toString());
     }
 }

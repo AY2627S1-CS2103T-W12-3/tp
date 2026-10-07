@@ -1,18 +1,21 @@
 package coordimate.logic.commands;
 
 import static coordimate.logic.parser.CliSyntax.PREFIX_ADDRESS;
+import static coordimate.logic.parser.CliSyntax.PREFIX_ADD_TAG;
 import static coordimate.logic.parser.CliSyntax.PREFIX_BIRTHDAY;
 import static coordimate.logic.parser.CliSyntax.PREFIX_EMAIL;
 import static coordimate.logic.parser.CliSyntax.PREFIX_NAME;
 import static coordimate.logic.parser.CliSyntax.PREFIX_NOTE;
 import static coordimate.logic.parser.CliSyntax.PREFIX_ORGANISATION;
 import static coordimate.logic.parser.CliSyntax.PREFIX_PHONE;
+import static coordimate.logic.parser.CliSyntax.PREFIX_REMOVE_TAG;
 import static coordimate.logic.parser.CliSyntax.PREFIX_ROLE;
 import static coordimate.logic.parser.CliSyntax.PREFIX_TAG;
 import static coordimate.logic.parser.CliSyntax.PREFIX_TARGET;
 import static coordimate.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 import static java.util.Objects.requireNonNull;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -57,7 +60,9 @@ public class EditCommand extends Command {
             + "[" + PREFIX_ADDRESS + "ADDRESS] "
             + "[" + PREFIX_ORGANISATION + "ORGANISATION] "
             + "[" + PREFIX_NOTE + "NOTE] "
-            + "[" + PREFIX_TAG + "TAG]...\n"
+            + "[" + PREFIX_TAG + "TAG]... "
+            + "[" + PREFIX_ADD_TAG + "TAG]... "
+            + "[" + PREFIX_REMOVE_TAG + "TAG]...\n"
             + "Example: " + COMMAND_WORD + " 1 "
             + PREFIX_PHONE + "91234567 "
             + PREFIX_EMAIL + "johndoe@example.com";
@@ -114,7 +119,7 @@ public class EditCommand extends Command {
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
         Person personToEdit = resolvePersonToEdit(model);
-        Person editedPerson = createEditedPerson(personToEdit, editPersonDescriptor);
+        Person editedPerson = createEditedPerson(personToEdit, editPersonDescriptor, model.getTagList());
 
         boolean duplicatesAnotherPerson = model.getCoordiMate().getPersonList().stream()
                 .anyMatch(person -> !person.equals(personToEdit) && person.isSamePerson(editedPerson));
@@ -126,6 +131,11 @@ public class EditCommand extends Command {
             model.setPerson(personToEdit, editedPerson);
         } catch (MemberNameConflictException e) {
             throw new CommandException(MESSAGE_MEMBER_NAME_CONFLICT, e);
+        }
+        for (TagOperation operation : editPersonDescriptor.getTagOperations()) {
+            if (operation.type() == TagOperationType.ADD) {
+                model.registerTag(operation.tag());
+            }
         }
         model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
         return new CommandResult(String.format(MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson)));
@@ -176,7 +186,8 @@ public class EditCommand extends Command {
      * Creates and returns a {@code Person} with the details of {@code personToEdit}
      * edited with {@code editPersonDescriptor}.
      */
-    private static Person createEditedPerson(Person personToEdit, EditPersonDescriptor editPersonDescriptor) {
+    private static Person createEditedPerson(Person personToEdit, EditPersonDescriptor editPersonDescriptor,
+            List<Tag> savedTags) {
         assert personToEdit != null;
 
         Name updatedName = editPersonDescriptor.getName().orElse(personToEdit.getName());
@@ -191,10 +202,54 @@ public class EditCommand extends Command {
                 ? editPersonDescriptor.getOrganisation().orElse(null) : personToEdit.getOrganisation().orElse(null);
         Note updatedNote = editPersonDescriptor.isNoteEdited()
                 ? editPersonDescriptor.getNote().orElse(null) : personToEdit.getNote().orElse(null);
-        Set<Tag> updatedTags = editPersonDescriptor.getTags().orElse(personToEdit.getTags());
+        Set<Tag> updatedTags = createUpdatedTags(personToEdit, editPersonDescriptor, savedTags);
 
         return new Person(updatedName, updatedPhone, updatedEmail, updatedRole,
                 updatedBirthday, updatedAddress, updatedOrganisation, updatedNote, updatedTags);
+    }
+
+    private static Set<Tag> createUpdatedTags(Person personToEdit, EditPersonDescriptor descriptor,
+            List<Tag> savedTags) {
+        Set<Tag> updatedTags = new HashSet<>();
+        if (descriptor.getTags().isPresent()) {
+            for (Tag tag : descriptor.getTags().orElseThrow()) {
+                Tag canonicalTag = findSavedTag(tag, savedTags);
+                if (updatedTags.stream().noneMatch(canonicalTag::isSameTag)) {
+                    updatedTags.add(canonicalTag);
+                }
+            }
+        } else {
+            updatedTags.addAll(personToEdit.getTags());
+        }
+        for (TagOperation operation : descriptor.getTagOperations()) {
+            Tag tag = operation.tag();
+            if (operation.type() == TagOperationType.ADD) {
+                if (updatedTags.stream().noneMatch(tag::isSameTag)) {
+                    updatedTags.add(findSavedTag(tag, savedTags));
+                }
+            } else {
+                updatedTags.removeIf(tag::isSameTag);
+            }
+        }
+        return updatedTags;
+    }
+
+    private static Tag findSavedTag(Tag requested, List<Tag> savedTags) {
+        return savedTags.stream().filter(requested::isSameTag).findFirst().orElse(requested);
+    }
+
+    /** The effect of an {@code at/} or {@code rt/} argument. */
+    public enum TagOperationType {
+        ADD, REMOVE
+    }
+
+    /** A tag operation in command order. */
+    public record TagOperation(TagOperationType type, Tag tag) {
+        /** Creates an operation with a non-null type and tag. */
+        public TagOperation {
+            requireNonNull(type);
+            requireNonNull(tag);
+        }
     }
 
     @Override
@@ -239,6 +294,7 @@ public class EditCommand extends Command {
         private Note note;
         private boolean isNoteEdited;
         private Set<Tag> tags;
+        private final List<TagOperation> tagOperations = new ArrayList<>();
 
         /**
          * Creates a descriptor with no fields selected for editing.
@@ -267,6 +323,7 @@ public class EditCommand extends Command {
                 setNote(toCopy.note);
             }
             setTags(toCopy.tags);
+            tagOperations.addAll(toCopy.tagOperations);
         }
 
         /**
@@ -274,7 +331,8 @@ public class EditCommand extends Command {
          */
         public boolean isAnyFieldEdited() {
             return CollectionUtil.isAnyNonNull(name, phone, email, role, tags)
-                    || isBirthdayEdited || isAddressEdited || isOrganisationEdited || isNoteEdited;
+                    || isBirthdayEdited || isAddressEdited || isOrganisationEdited || isNoteEdited
+                    || !tagOperations.isEmpty();
         }
 
         public void setName(Name name) {
@@ -378,6 +436,16 @@ public class EditCommand extends Command {
             return (tags != null) ? Optional.of(Collections.unmodifiableSet(tags)) : Optional.empty();
         }
 
+        /** Adds a tag operation after the preceding operations. */
+        public void addTagOperation(TagOperation operation) {
+            tagOperations.add(requireNonNull(operation));
+        }
+
+        /** Returns tag operations in their original command order. */
+        public List<TagOperation> getTagOperations() {
+            return List.copyOf(tagOperations);
+        }
+
         @Override
         public boolean equals(Object other) {
             if (other == this) {
@@ -401,7 +469,8 @@ public class EditCommand extends Command {
                     && Objects.equals(organisation, otherEditPersonDescriptor.organisation)
                     && isNoteEdited == otherEditPersonDescriptor.isNoteEdited
                     && Objects.equals(note, otherEditPersonDescriptor.note)
-                    && Objects.equals(tags, otherEditPersonDescriptor.tags);
+                    && Objects.equals(tags, otherEditPersonDescriptor.tags)
+                    && tagOperations.equals(otherEditPersonDescriptor.tagOperations);
         }
 
         @Override
@@ -420,6 +489,7 @@ public class EditCommand extends Command {
                     .add("noteEdited", isNoteEdited)
                     .add("note", note)
                     .add("tags", tags)
+                    .add("tagOperations", tagOperations)
                     .toString();
         }
     }

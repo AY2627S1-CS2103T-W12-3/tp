@@ -33,6 +33,8 @@ import org.junit.jupiter.api.Test;
 import coordimate.commons.core.index.Index;
 import coordimate.logic.commands.EditCommand;
 import coordimate.logic.commands.EditCommand.EditPersonDescriptor;
+import coordimate.logic.commands.EditCommand.TagOperation;
+import coordimate.logic.commands.EditCommand.TagOperationType;
 import coordimate.model.person.Address;
 import coordimate.model.person.Birthday;
 import coordimate.model.person.Email;
@@ -91,12 +93,6 @@ public class EditCommandParserTest {
 
         // invalid phone followed by valid email
         assertParseFailure(parser, "1" + INVALID_PHONE_DESC + EMAIL_DESC_AMY, Phone.MESSAGE_CONSTRAINTS);
-
-        // while parsing {@code PREFIX_TAG} alone will reset the tags of the {@code Person} being edited,
-        // parsing it together with a valid tag results in error
-        assertParseFailure(parser, "1" + TAG_DESC_FRIEND + TAG_DESC_HUSBAND + TAG_EMPTY, Tag.MESSAGE_CONSTRAINTS);
-        assertParseFailure(parser, "1" + TAG_DESC_FRIEND + TAG_EMPTY + TAG_DESC_HUSBAND, Tag.MESSAGE_CONSTRAINTS);
-        assertParseFailure(parser, "1" + TAG_EMPTY + TAG_DESC_FRIEND + TAG_DESC_HUSBAND, Tag.MESSAGE_CONSTRAINTS);
 
         // multiple invalid values, but only the first invalid value is captured
         assertParseFailure(parser, "1" + INVALID_NAME_DESC + INVALID_EMAIL_DESC + VALID_ADDRESS_AMY + VALID_PHONE_AMY,
@@ -264,5 +260,41 @@ public class EditCommandParserTest {
         EditCommand expectedCommand = new EditCommand(targetIndex, descriptor);
 
         assertParseSuccess(parser, userInput, expectedCommand);
+    }
+
+    @Test
+    public void parse_replacementTags_emptyValueClearsPrecedingTags() {
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withTags().build();
+        assertParseSuccess(parser, "1 t/Friend t/Husband t/", new EditCommand(INDEX_FIRST_PERSON, descriptor));
+
+        descriptor = new EditPersonDescriptorBuilder().withTags("Husband").build();
+        assertParseSuccess(parser, "1 t/Friend t/ t/Husband", new EditCommand(INDEX_FIRST_PERSON, descriptor));
+    }
+
+    @Test
+    public void parse_replacementTags_caseInsensitiveDuplicatesIgnored() {
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withTags("Friend").build();
+        assertParseSuccess(parser, "1 t/Friend t/friend", new EditCommand(INDEX_FIRST_PERSON, descriptor));
+    }
+
+    @Test
+    public void parse_addAndRemoveTags_preservesCommandOrder() {
+        EditPersonDescriptor descriptor = new EditPersonDescriptor();
+        descriptor.addTagOperation(new TagOperation(TagOperationType.ADD, new Tag("Sponsor")));
+        descriptor.addTagOperation(new TagOperation(TagOperationType.REMOVE, new Tag("Logistics")));
+        descriptor.addTagOperation(new TagOperation(TagOperationType.ADD, new Tag("EXCO")));
+
+        assertParseSuccess(parser, "1 at/Sponsor rt/Logistics at/EXCO",
+                new EditCommand(INDEX_FIRST_PERSON, descriptor));
+    }
+
+    @Test
+    public void parse_invalidTagOperations_failure() {
+        assertParseFailure(parser, "1 at/", Tag.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, "1 rt/", Tag.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, "1 at/*", Tag.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, "1 rt/*", Tag.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, "1 t/Friend at/Sponsor", EditCommandParser.MESSAGE_CONFLICTING_TAG_OPERATIONS);
+        assertParseFailure(parser, "1 rt/Friend t/", EditCommandParser.MESSAGE_CONFLICTING_TAG_OPERATIONS);
     }
 }

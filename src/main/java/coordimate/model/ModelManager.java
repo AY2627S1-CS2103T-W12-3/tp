@@ -90,6 +90,14 @@ public class ModelManager implements Model {
     }
 
     @Override
+    public void registerTag(Tag tag) {
+        requireNonNull(tag);
+        if (!coordiMate.hasTag(tag)) {
+            coordiMate.addTag(tag);
+        }
+    }
+
+    @Override
     public void setEvent(Event target, Event editedEvent) {
         coordiMate.setEvent(target, editedEvent);
     }
@@ -114,9 +122,7 @@ public class ModelManager implements Model {
     public void addPerson(Person person) {
         coordiMate.addPerson(person);
         for (Tag tag : person.getTags()) {
-            if (!coordiMate.hasTag(tag)) {
-                coordiMate.addTag(tag);
-            }
+            registerTag(tag);
         }
         updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
     }
@@ -126,6 +132,9 @@ public class ModelManager implements Model {
         requireAllNonNull(target, editedPerson);
 
         coordiMate.setPerson(target, editedPerson);
+        for (Tag tag : editedPerson.getTags()) {
+            registerTag(tag);
+        }
     }
 
     //=========== Filtered Person List Accessors =============================================================
