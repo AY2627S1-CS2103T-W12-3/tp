@@ -3,6 +3,9 @@ package coordimate.ui;
 import java.util.Comparator;
 
 import coordimate.model.person.Address;
+import coordimate.model.person.Birthday;
+import coordimate.model.person.Note;
+import coordimate.model.person.Organisation;
 import coordimate.model.person.Person;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
@@ -24,6 +27,7 @@ import javafx.scene.layout.Region;
 public class PersonListPanel extends UiPart<Region> {
     private static final String FXML = "PersonListPanel.fxml";
     private static final double VERTICAL_LAYOUT_WIDTH = 560;
+    private static final String NOT_SPECIFIED = "— (not specified)";
 
     @FXML
     private SplitPane contactSplitPane;
@@ -53,7 +57,19 @@ public class PersonListPanel extends UiPart<Region> {
     private Label email;
 
     @FXML
+    private Label role;
+
+    @FXML
+    private Label birthday;
+
+    @FXML
     private Label address;
+
+    @FXML
+    private Label organisation;
+
+    @FXML
+    private Label note;
 
     @FXML
     private FlowPane detailTags;
@@ -113,7 +129,11 @@ public class PersonListPanel extends UiPart<Region> {
         selectedIndex.setText("Index: " + (personListView.getItems().indexOf(person) + 1));
         phone.setText(person.getPhone().getValue());
         email.setText(person.getEmail().getValue());
-        address.setText(person.getAddress().map(Address::getValue).orElse("— (not specified)"));
+        role.setText(person.getRole().getValue());
+        birthday.setText(person.getBirthday().map(Birthday::getValue).orElse(NOT_SPECIFIED));
+        address.setText(person.getAddress().map(Address::getValue).orElse(NOT_SPECIFIED));
+        organisation.setText(person.getOrganisation().map(Organisation::getValue).orElse(NOT_SPECIFIED));
+        note.setText(person.getNote().map(Note::getValue).orElse(NOT_SPECIFIED));
         detailTags.getChildren().clear();
         person.getTags().stream()
                 .sorted(Comparator.comparing(tag -> tag.getTagName()))
