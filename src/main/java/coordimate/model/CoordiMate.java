@@ -3,9 +3,11 @@ package coordimate.model;
 import static java.util.Objects.requireNonNull;
 
 import java.util.List;
+import java.util.Objects;
 
 import coordimate.commons.util.ToStringBuilder;
 import coordimate.model.event.Event;
+import coordimate.model.person.Name;
 import coordimate.model.person.Person;
 import coordimate.model.person.UniquePersonList;
 import coordimate.model.tag.Tag;
@@ -164,6 +166,16 @@ public class CoordiMate implements ReadOnlyCoordiMate {
         return tags.asUnmodifiableObservableList();
     }
 
+    /**
+     * Removes an existing event and notifies observers of the event list.
+     */
+    public void removeEvent(Event target) {
+        requireNonNull(target);
+        if (!events.remove(target)) {
+            throw new IllegalArgumentException("Event does not exist.");
+        }
+    }
+
     //// person-level operations
 
     /**
@@ -186,19 +198,43 @@ public class CoordiMate implements ReadOnlyCoordiMate {
      * Replaces the given person {@code target} in the list with {@code editedPerson}.
      * {@code target} must exist in the CoordiMate.
      * The person identity of {@code editedPerson} must not be the same as another existing person in the CoordiMate.
+     * Events that list {@code target} as a member are updated to the edited name.
      */
     public void setPerson(Person target, Person editedPerson) {
         requireNonNull(editedPerson);
 
         persons.setPerson(target, editedPerson);
+        if (!target.getName().equals(editedPerson.getName())) {
+            replaceMemberInEvents(target.getName(), editedPerson.getName());
+        }
     }
 
     /**
      * Removes {@code key} from this {@code CoordiMate}.
      * {@code key} must exist in the CoordiMate.
+     * {@code key} is also removed from the members of every event.
      */
     public void removePerson(Person key) {
         persons.remove(key);
+        replaceMemberInEvents(key.getName(), null);
+    }
+
+    /**
+     * Replaces {@code oldName} with {@code newName} in every event that lists it as a member,
+     * keeping each member's position. Removes {@code oldName} instead if {@code newName} is null.
+     */
+    private void replaceMemberInEvents(Name oldName, Name newName) {
+        for (int i = 0; i < events.size(); i++) {
+            Event event = events.get(i);
+            if (!event.hasMember(oldName)) {
+                continue;
+            }
+            List<Name> members = event.getMembers().stream()
+                    .map(member -> member.equals(oldName) ? newName : member)
+                    .filter(Objects::nonNull)
+                    .toList();
+            events.set(i, new Event(event.getName(), event.getStartTime(), event.getEndTime(), members));
+        }
     }
 
     //// util methods

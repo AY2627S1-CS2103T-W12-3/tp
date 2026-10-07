@@ -4,6 +4,8 @@ import static coordimate.logic.commands.CommandTestUtil.VALID_ADDRESS_BOB;
 import static coordimate.logic.commands.CommandTestUtil.VALID_TAG_HUSBAND;
 import static coordimate.testutil.Assert.assertThrows;
 import static coordimate.testutil.TypicalPersons.ALICE;
+import static coordimate.testutil.TypicalPersons.BENSON;
+import static coordimate.testutil.TypicalPersons.CARL;
 import static coordimate.testutil.TypicalPersons.getTypicalCoordiMate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -15,6 +17,9 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import coordimate.model.event.Event;
+import coordimate.model.event.EventTime;
+import coordimate.model.person.Name;
 import coordimate.model.person.Person;
 import coordimate.model.person.exceptions.DuplicatePersonException;
 import coordimate.model.tag.Tag;
@@ -79,6 +84,53 @@ public class CoordiMateTest {
         Person editedAlice = new PersonBuilder(ALICE).withAddress(VALID_ADDRESS_BOB).withTags(VALID_TAG_HUSBAND)
                 .build();
         assertTrue(coordiMate.hasPerson(editedAlice));
+    }
+
+    @Test
+    public void removePerson_assignedContact_removedFromEveryEvent() {
+        addContactsAndEvents();
+        coordiMate.removePerson(ALICE);
+        assertEquals(List.of(event("Concert", BENSON.getName(), CARL.getName()),
+                event("Fair", CARL.getName()), event("Meeting")), coordiMate.getEventList());
+    }
+
+    @Test
+    public void setPerson_renamedContact_renamedInEveryEventInPlace() {
+        addContactsAndEvents();
+        Person renamedAlice = new PersonBuilder(ALICE).withName("Alice Tan").build();
+        coordiMate.setPerson(ALICE, renamedAlice);
+        assertEquals(List.of(event("Concert", BENSON.getName(), renamedAlice.getName(), CARL.getName()),
+                event("Fair", CARL.getName(), renamedAlice.getName()), event("Meeting")), coordiMate.getEventList());
+    }
+
+    @Test
+    public void setPerson_nameUnchanged_eventsUnchanged() {
+        addContactsAndEvents();
+        List<Event> before = List.copyOf(coordiMate.getEventList());
+        coordiMate.setPerson(ALICE, new PersonBuilder(ALICE).withAddress(VALID_ADDRESS_BOB).build());
+        assertEquals(before, coordiMate.getEventList());
+    }
+
+    @Test
+    public void setPerson_duplicateName_eventsUnchanged() {
+        addContactsAndEvents();
+        List<Event> before = List.copyOf(coordiMate.getEventList());
+        Person aliceAsBenson = new PersonBuilder(ALICE).withName(BENSON.getName().toString()).build();
+        assertThrows(DuplicatePersonException.class, () -> coordiMate.setPerson(ALICE, aliceAsBenson));
+        assertEquals(before, coordiMate.getEventList());
+    }
+
+    private void addContactsAndEvents() {
+        coordiMate.addPerson(ALICE);
+        coordiMate.addPerson(BENSON);
+        coordiMate.addPerson(CARL);
+        coordiMate.addEvent(event("Concert", BENSON.getName(), ALICE.getName(), CARL.getName()));
+        coordiMate.addEvent(event("Fair", CARL.getName(), ALICE.getName()));
+        coordiMate.addEvent(event("Meeting"));
+    }
+
+    private static Event event(String name, Name... members) {
+        return new Event(name, new EventTime("08-08-2026"), new EventTime("08-08-2026"), List.of(members));
     }
 
     @Test

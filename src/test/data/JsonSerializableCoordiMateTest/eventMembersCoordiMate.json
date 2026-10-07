@@ -1,0 +1,26 @@
+{
+  "_comment": "One event with members, and one event saved before members existed (no members field)",
+  "persons" : [ {
+    "name" : "Alice Pauline",
+    "phone" : "94351253",
+    "email" : "alice@example.com",
+    "address" : "123, Jurong West Ave 6, #08-111",
+    "tags" : [ "friends" ]
+  }, {
+    "name" : "Benson Meier",
+    "phone" : "98765432",
+    "email" : "johnd@example.com",
+    "address" : "311, Clementi Ave 2, #02-25",
+    "tags" : [ "owesMoney", "friends" ]
+  } ],
+  "events" : [ {
+    "name" : "Final Concert",
+    "startTime" : "08-08-2026 15:00",
+    "endTime" : "08-08-2026 18:00",
+    "members" : [ "Benson Meier", "Alice Pauline" ]
+  }, {
+    "name" : "Student Life Fair",
+    "startTime" : "09-10-2026",
+    "endTime" : "10-10-2026"
+  } ]
+}

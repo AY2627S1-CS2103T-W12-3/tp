@@ -61,6 +61,11 @@ public interface Model {
     void setEvent(Event target, Event editedEvent);
 
     /**
+     * Deletes an event that exists in the CoordiMate.
+     */
+    void deleteEvent(Event target);
+
+    /**
      * Returns true if a person with the same identity as {@code person} exists in the CoordiMate.
      */
     boolean hasPerson(Person person);

@@ -6,11 +6,60 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
+
+import coordimate.model.person.Name;
 
 public class EventTest {
     private final EventTime date = new EventTime("08-08-2026");
     private final EventTime time = new EventTime("08-08-2026 15:00");
+    private final Name alex = new Name("Alex Yeoh");
+    private final Name bernice = new Name("Bernice Yu");
+
+    @Test
+    public void constructor_noMembers_emptyMemberList() {
+        Event event = new Event("Concert", date, time);
+        assertEquals(List.of(), event.getMembers());
+        assertFalse(event.hasMember(alex));
+        assertEquals(event, new Event("Concert", date, time, List.of()));
+    }
+
+    @Test
+    public void constructor_members_preservesOrderAndCannotBeModified() {
+        List<Name> source = new ArrayList<>(List.of(bernice, alex));
+        Event event = new Event("Concert", date, time, source);
+        source.clear();
+        assertEquals(List.of(bernice, alex), event.getMembers());
+        assertTrue(event.hasMember(alex));
+        assertFalse(event.hasMember(new Name("Charlotte Oliveiro")));
+        assertThrows(UnsupportedOperationException.class, () -> event.getMembers().add(alex));
+        assertThrows(NullPointerException.class, () -> event.hasMember(null));
+    }
+
+    @Test
+    public void constructor_invalidMembers_rejected() {
+        assertThrows(NullPointerException.class, () -> new Event("Concert", date, time, null));
+        assertThrows(NullPointerException.class, () -> new Event("Concert", date, time, Arrays.asList(alex, null)));
+        assertEquals(Event.MESSAGE_DUPLICATE_MEMBER, assertThrows(IllegalArgumentException.class, () ->
+                new Event("Concert", date, time, List.of(alex, bernice, alex))).getMessage());
+    }
+
+    @Test
+    public void identity_differentMembers_sameEventButNotEqual() {
+        Event event = new Event("Concert", date, time, List.of(alex, bernice));
+        Event reordered = new Event("Concert", date, time, List.of(bernice, alex));
+        Event noMembers = new Event("Concert", date, time);
+        assertTrue(event.isSameEvent(reordered));
+        assertTrue(event.isSameEvent(noMembers));
+        assertNotEquals(event, reordered);
+        assertNotEquals(event, noMembers);
+        assertEquals(event, new Event("Concert", date, time, List.of(alex, bernice)));
+        assertEquals(event.hashCode(), new Event("Concert", date, time, List.of(alex, bernice)).hashCode());
+    }
 
     @Test
     public void constructor_nameIsTrimmed_emptyNameRejected() {

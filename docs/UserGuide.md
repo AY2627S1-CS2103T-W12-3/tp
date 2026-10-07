@@ -117,7 +117,7 @@ Examples:
 Success: `Created Event Student Life Fair. Start Time: 09-10-2026. End Time: 10-10-2026.`
 
 Use the **Events** tab on the left to browse saved events. Selecting an event shows its
-start time, end time, and duration. A successful `addevent` opens this tab and selects
+start time, end time, duration, and members. A successful `addevent` opens this tab and selects
 the new event. At narrower window sizes, the list appears above the details.
 
 Command feedback appears above the input at the bottom of the window. Rejected commands
@@ -165,6 +165,63 @@ Success: `Edited Event NUS Student Life Fair. Start Time: 09-10-2026. End Time: 
 
 If saving fails, the event and existing data file remain unchanged.
 
+### Deleting an event: `deleteevent`
+
+Deletes the event with the supplied name, ignoring capitalization. Internal spacing
+must match the existing event name.
+
+Format: `deleteevent evn/EVENT_NAME`
+
+Examples:
+
+* `deleteevent evn/Final Concert`
+* `deleteevent evn/Student Life Fair`
+
+Success: `Deleted Event Final Concert.`
+
+If the event does not exist, the command reports `Event {EVENT_NAME} does not exist.`
+An unknown parameter reports `Unknown parameter. Example: deleteevent evn/Logistics Meeting`.
+If saving fails, the event and existing data file remain unchanged.
+
+### Assigning members to an event: `assign`
+
+Assigns one or more contacts to an existing event as members and saves the change.
+
+Format: `assign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...`
+
+* `EVENT_NAME` must match a saved event name, ignoring case. Leading and trailing whitespace is removed.
+* `CONTACT_INDEX` refers to the index number shown in the displayed person list. Separate several indexes with spaces. Each index **must be a positive integer** 1, 2, 3, ...
+* Each parameter may appear only once.
+* All indexes are checked before any change is made. If any index is invalid, no contacts are assigned.
+* Contacts who are already assigned to the event are skipped, and an index repeated in the same command is counted once.
+* New members are added after the existing members, in the order given.
+
+Selecting the event in the **Events** tab shows its members under **Members**.
+
+Examples:
+
+* `assign evn/Final Concert c/2` assigns the 2nd person in the displayed list to `Final Concert`.
+* `assign evn/student life fair c/1 4 5` assigns the 1st, 4th and 5th persons to `Student Life Fair`.
+* `find Bernice` followed by `assign evn/Final Concert c/1` assigns the 1st person in the results of the `find` command.
+
+Success: `Assigned 2 member(s) to Final Concert.`
+
+If some contacts were already assigned: `Assigned 1 member(s) to Final Concert. 1 contact(s) were already assigned.`
+
+| Condition | Error message |
+|---|---|
+| No saved event has the supplied name, ignoring case. | `Event {EVENT_NAME} does not exist.` |
+| An index is larger than the displayed person list. | `Contact {CONTACT_INDEX} does not exist in the displayed list.` |
+| An index is not a positive integer. | `Contact indexes must be positive integers separated by spaces. Example: c/1 3 5` |
+| Every specified contact is already assigned. | `All specified contacts are already assigned to {EVENT_NAME}. No changes were made.` |
+| The event name is empty. | `Event name must not be empty.` |
+| `c/` has no indexes. | `Please specify at least one contact to assign.` |
+| `evn/` or `c/` is missing. | `Invalid command format!` followed by the command format |
+| A parameter is repeated. | `Each parameter may only be specified once.` |
+| An unknown parameter is used. | `Unknown parameter. Example: assign evn/Final Concert c/2 3` |
+
+If saving fails, no contacts are assigned and the existing data file remains unchanged.
+
 ### Listing all persons: `list`
 
 Shows a list of all persons in CoordiMate.
@@ -182,6 +239,7 @@ Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]... `
 * Existing values will be updated to the input values.
 * When editing tags, all of the person's existing tags are removed; adding tags is not cumulative.
 * To remove all of a person's tags, enter `t/` without a tag after it.
+* If the person's name changes, events they are assigned to show the new name.
 
 Examples:
 *  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st person to be `91234567` and `johndoe@example.com` respectively.
@@ -213,6 +271,7 @@ Format: `delete INDEX`
 * Deletes the person at the specified `INDEX`.
 * The index refers to the index number shown in the displayed person list.
 * The index **must be a positive integer** 1, 2, 3, ...
+* The person is also removed from every event they are assigned to.
 
 Examples:
 * `list` followed by `delete 2` deletes the 2nd person in CoordiMate.
@@ -242,6 +301,7 @@ CoordiMate data is saved automatically as a JSON file `[JAR file location]/data/
 
 **Caution:**
 If your changes make the data file invalid, CoordiMate starts with an empty dataset at the next run. The invalid file remains on disk until you run a command (CoordiMate saves after every command). Still, we recommend backing up the file before editing it.<br>
+Each name in an event's `members` list must exactly match the name of a saved person, or the data file is invalid.<br>
 Furthermore, certain edits can cause CoordiMate to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </box>
 
@@ -270,6 +330,7 @@ _Details coming soon ..._
 Action     | Format, Examples
 -----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 **Add**    | `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [t/TAG]... ` <br> e.g., `add n/James Ho p/22224444 e/jamesho@example.com a/123, Clementi Rd, 1234665 t/friend t/colleague`
+**Assign** | `assign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...`<br> e.g., `assign evn/Final Concert c/1 4 5`
 **Clear**  | `clear`
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
 **Edit**   | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [t/TAG]... `<br> e.g.,`edit 2 n/James Lee e/jameslee@example.com`
