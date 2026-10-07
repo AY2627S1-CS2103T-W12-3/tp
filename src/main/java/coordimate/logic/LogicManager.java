@@ -14,6 +14,7 @@ import coordimate.logic.commands.AddEventCommand;
 import coordimate.logic.commands.AssignCommand;
 import coordimate.logic.commands.Command;
 import coordimate.logic.commands.CommandResult;
+import coordimate.logic.commands.DeleteCommand;
 import coordimate.logic.commands.DeleteEventCommand;
 import coordimate.logic.commands.EditCommand;
 import coordimate.logic.commands.EditEventCommand;
@@ -37,11 +38,14 @@ public class LogicManager implements Logic {
     public static final String FILE_OPS_PERMISSION_ERROR_FORMAT =
             "Could not save data to file %s due to insufficient permissions to write to the file or the folder.";
 
+    public static final String MESSAGE_DELETE_CANCELLED = "Deletion cancelled. No changes were made.";
+
     private final Logger logger = LogsCenter.getLogger(LogicManager.class);
 
     private final Model model;
     private final Storage storage;
     private final CoordiMateParser coordiMateParser;
+    private Person pendingDelete;
 
     /**
      * Constructs a {@code LogicManager} with the given {@code Model} and {@code Storage}.
@@ -56,7 +60,25 @@ public class LogicManager implements Logic {
     public CommandResult execute(String commandText) throws CommandException, ParseException {
         logger.info("----------------[USER COMMAND][" + commandText + "]");
 
+        if (pendingDelete != null) {
+            Person target = pendingDelete;
+            pendingDelete = null;
+            return commandText.equals("y") || commandText.equals("Y")
+                    ? executeAtomicCommand(DeleteCommand.forResolvedPerson(target))
+                    : new CommandResult(MESSAGE_DELETE_CANCELLED);
+        }
+
         Command command = coordiMateParser.parseCommand(commandText);
+        if (command instanceof DeleteCommand deleteCommand) {
+            try {
+                storage.readCoordiMate();
+            } catch (DataLoadingException e) {
+                throw new CommandException(DeleteCommand.MESSAGE_LOAD_ERROR, e);
+            }
+            Person target = deleteCommand.resolvePerson(model);
+            pendingDelete = target;
+            return new CommandResult(DeleteCommand.confirmationPrompt(target));
+        }
         if (command instanceof AddCommand || command instanceof EditCommand || command instanceof AddEventCommand
                 || command instanceof EditEventCommand || command instanceof AssignCommand
                 || command instanceof DeleteEventCommand) {
@@ -87,6 +109,7 @@ public class LogicManager implements Logic {
             String message = switch (command) {
                 case AddCommand _ -> AddCommand.MESSAGE_LOAD_ERROR;
                 case EditCommand _ -> EditCommand.MESSAGE_LOAD_ERROR;
+                case DeleteCommand _ -> DeleteCommand.MESSAGE_LOAD_ERROR;
                 default -> AddEventCommand.MESSAGE_LOAD_ERROR;
             };
             throw new CommandException(message, e);
@@ -100,6 +123,7 @@ public class LogicManager implements Logic {
             String message = switch (command) {
                 case AddCommand _ -> AddCommand.MESSAGE_SAVE_ERROR;
                 case EditCommand _ -> EditCommand.MESSAGE_SAVE_ERROR;
+                case DeleteCommand _ -> DeleteCommand.MESSAGE_SAVE_ERROR;
                 case EditEventCommand _ -> EditEventCommand.MESSAGE_SAVE_ERROR;
                 case AssignCommand _ -> AssignCommand.MESSAGE_SAVE_ERROR;
                 case DeleteEventCommand _ -> DeleteEventCommand.MESSAGE_SAVE_ERROR;
@@ -112,6 +136,11 @@ public class LogicManager implements Logic {
             model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
         }
         return result;
+    }
+
+    @Override
+    public boolean isAwaitingDeleteConfirmation() {
+        return pendingDelete != null;
     }
 
     @Override

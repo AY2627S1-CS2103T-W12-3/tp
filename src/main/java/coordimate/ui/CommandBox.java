@@ -1,5 +1,7 @@
 package coordimate.ui;
 
+import java.util.function.BooleanSupplier;
+
 import coordimate.logic.commands.CommandResult;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.logic.parser.exceptions.ParseException;
@@ -18,6 +20,7 @@ public class CommandBox extends UiPart<Region> {
     private static final String FXML = "CommandBox.fxml";
 
     private final CommandExecutor commandExecutor;
+    private final BooleanSupplier isAwaitingDeleteConfirmation;
 
     @FXML
     private TextField commandTextField;
@@ -28,9 +31,10 @@ public class CommandBox extends UiPart<Region> {
     /**
      * Creates a {@code CommandBox} with the given {@code CommandExecutor}.
      */
-    public CommandBox(CommandExecutor commandExecutor) {
+    public CommandBox(CommandExecutor commandExecutor, BooleanSupplier isAwaitingDeleteConfirmation) {
         super(FXML);
         this.commandExecutor = commandExecutor;
+        this.isAwaitingDeleteConfirmation = isAwaitingDeleteConfirmation;
         // calls #setStyleToDefault() whenever there is a change to the text of the command box.
         commandTextField.textProperty().addListener((unused1, unused2, unused3) -> setStyleToDefault());
     }
@@ -41,7 +45,7 @@ public class CommandBox extends UiPart<Region> {
     @FXML
     private void handleCommandEntered() {
         String commandText = commandTextField.getText();
-        if (commandText.isBlank()) {
+        if (commandText.isBlank() && !isAwaitingDeleteConfirmation.getAsBoolean()) {
             return;
         }
 

@@ -41,7 +41,11 @@ public class PersonListPanelTest {
     public static void startJavaFx() throws InterruptedException {
         Assumptions.assumeFalse(GraphicsEnvironment.isHeadless(), "JavaFX UI tests require a display");
         CountDownLatch started = new CountDownLatch(1);
-        Platform.startup(started::countDown);
+        try {
+            Platform.startup(started::countDown);
+        } catch (IllegalStateException alreadyRunning) {
+            Platform.runLater(started::countDown);
+        }
         assertTrue(started.await(10, TimeUnit.SECONDS));
     }
 
