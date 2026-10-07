@@ -232,6 +232,27 @@ Shows a list of all persons in CoordiMate.
 
 Format: `list`
 
+### Deleting a tag: `deletetag`
+
+Deletes an existing tag and removes it from every contact to which it is assigned.
+
+Format: `deletetag t/TAG`
+
+Examples:
+
+* `deletetag t/ProductionCrew`
+* `deletetag t/Publicity`
+
+The tag name is matched case-insensitively.
+
+Success: `{TAG_NAME} successfully deleted.`
+
+| Condition | Error message |
+|---|---|
+| The `t/` prefix is missing. | `No prefix given.` |
+| No tag name is provided. | `No tag name given.` |
+| The specified tag does not exist. | `No such tag exists: {TAG_NAME}.` |
+
 ### Editing a person: `edit`
 
 Edits an existing person in CoordiMate.
@@ -337,6 +358,7 @@ Action     | Format, Examples
 **Assign** | `assign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...`<br> e.g., `assign evn/Final Concert c/1 4 5`
 **Clear**  | `clear`
 **Delete** | `delete INDEX`<br> e.g., `delete 3`
+**Delete tag** | `deletetag t/TAG`<br> e.g., `deletetag t/Publicity`
 **Edit**   | `edit INDEX [n/NAME] [p/PHONE_NUMBER] [e/EMAIL] [a/ADDRESS] [t/TAG]... `<br> e.g.,`edit 2 n/James Lee e/jameslee@example.com`
 **Find**   | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
 **List**   | `list`

@@ -90,6 +90,12 @@ public class ModelManager implements Model {
     }
 
     @Override
+    public void deleteTag(Tag target) {
+        requireNonNull(target);
+        coordiMate.removeTag(target);
+    }
+
+    @Override
     public void setEvent(Event target, Event editedEvent) {
         coordiMate.setEvent(target, editedEvent);
     }

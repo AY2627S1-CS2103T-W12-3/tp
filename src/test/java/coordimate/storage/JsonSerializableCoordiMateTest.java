@@ -123,6 +123,16 @@ public class JsonSerializableCoordiMateTest {
     }
 
     @Test
+    public void toModelType_deletedTags_preservedDuringRoundTrip() throws Exception {
+        CoordiMate source = new CoordiMate();
+        source.getTagList().stream().toList().forEach(source::removeTag);
+
+        CoordiMate restored = new JsonSerializableCoordiMate(source).toModelType();
+
+        assertEquals(List.of(), restored.getTagList());
+    }
+
+    @Test
     public void toModelType_duplicateTagNames_throwsIllegalValueException() {
         List<JsonAdaptedTag> tags = List.of(new JsonAdaptedTag("Publicity"), new JsonAdaptedTag("publicity"));
         JsonSerializableCoordiMate data = new JsonSerializableCoordiMate(List.of(), List.of(), tags);

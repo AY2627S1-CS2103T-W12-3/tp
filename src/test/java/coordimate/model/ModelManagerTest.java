@@ -81,6 +81,11 @@ public class ModelManagerTest {
     }
 
     @Test
+    public void deleteTag_null_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> modelManager.deleteTag(null));
+    }
+
+    @Test
     public void equals() {
         CoordiMate coordiMate = new CoordiMateBuilder().withPerson(ALICE).withPerson(BENSON).build();
         CoordiMate differentCoordiMate = new CoordiMate();

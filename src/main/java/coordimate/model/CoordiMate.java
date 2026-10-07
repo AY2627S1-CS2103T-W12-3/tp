@@ -4,6 +4,8 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import coordimate.commons.util.ToStringBuilder;
 import coordimate.model.event.Event;
@@ -36,7 +38,7 @@ public class CoordiMate implements ReadOnlyCoordiMate {
      * Creates an empty contact and event store.
      */
     public CoordiMate() {
-        setTags(List.of());
+        tags.setTags(DEFAULT_TAGS);
     }
 
     /**
@@ -58,22 +60,10 @@ public class CoordiMate implements ReadOnlyCoordiMate {
     }
 
     /**
-     * Replaces the saved tags while ensuring that every default tag remains available.
-     * Default tag names use their canonical capitalization.
+     * Replaces the saved tags.
      */
     public void setTags(List<Tag> tags) {
-        UniqueTagList replacement = new UniqueTagList();
-        replacement.setTags(DEFAULT_TAGS);
-
-        UniqueTagList suppliedTags = new UniqueTagList();
-        suppliedTags.setTags(tags);
-        for (Tag tag : suppliedTags) {
-            if (!replacement.contains(tag)) {
-                replacement.add(tag);
-            }
-        }
-
-        this.tags.setTags(replacement);
+        this.tags.setTags(tags);
     }
 
     /**
@@ -161,6 +151,25 @@ public class CoordiMate implements ReadOnlyCoordiMate {
         tags.add(tag);
     }
 
+    /**
+     * Removes {@code target} from the saved tag list and from every contact that uses it.
+     */
+    public void removeTag(Tag target) {
+        requireNonNull(target);
+        if (!hasTag(target)) {
+            throw new IllegalArgumentException("Tag does not exist.");
+        }
+
+        List<Tag> remainingTags = tags.asUnmodifiableObservableList().stream()
+                .filter(tag -> !tag.isSameTag(target))
+                .toList();
+        List<Person> updatedPersons = persons.asUnmodifiableObservableList().stream()
+                .map(person -> removeTagFromPerson(person, target))
+                .toList();
+        tags.setTags(remainingTags);
+        persons.setPersons(updatedPersons);
+    }
+
     @Override
     public ObservableList<Tag> getTagList() {
         return tags.asUnmodifiableObservableList();
@@ -235,6 +244,19 @@ public class CoordiMate implements ReadOnlyCoordiMate {
                     .toList();
             events.set(i, new Event(event.getName(), event.getStartTime(), event.getEndTime(), members));
         }
+    }
+
+    /**
+     * Returns a copy of {@code person} without {@code target}, or the original person if it does not use the tag.
+     */
+    private Person removeTagFromPerson(Person person, Tag target) {
+        if (person.getTags().stream().noneMatch(tag -> tag.isSameTag(target))) {
+            return person;
+        }
+        Set<Tag> remainingTags = person.getTags().stream()
+                .filter(tag -> !tag.isSameTag(target))
+                .collect(Collectors.toSet());
+        return new Person(person.getName(), person.getPhone(), person.getEmail(), person.getAddress(), remainingTags);
     }
 
     //// util methods

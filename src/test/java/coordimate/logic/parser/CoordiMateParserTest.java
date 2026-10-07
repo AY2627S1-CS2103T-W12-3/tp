@@ -17,6 +17,7 @@ import coordimate.logic.commands.AddCommand;
 import coordimate.logic.commands.AssignCommand;
 import coordimate.logic.commands.ClearCommand;
 import coordimate.logic.commands.DeleteCommand;
+import coordimate.logic.commands.DeleteTagCommand;
 import coordimate.logic.commands.EditCommand;
 import coordimate.logic.commands.EditCommand.EditPersonDescriptor;
 import coordimate.logic.commands.ExitCommand;
@@ -63,6 +64,12 @@ public class CoordiMateParserTest {
         DeleteCommand command = (DeleteCommand) parser.parseCommand(
                 DeleteCommand.COMMAND_WORD + " " + INDEX_FIRST_PERSON.getOneBased());
         assertEquals(new DeleteCommand(INDEX_FIRST_PERSON), command);
+    }
+
+    @Test
+    public void parseCommand_deleteTag() throws Exception {
+        assertEquals(new DeleteTagCommand("Publicity"),
+                parser.parseCommand(DeleteTagCommand.COMMAND_WORD + " t/Publicity"));
     }
 
     @Test

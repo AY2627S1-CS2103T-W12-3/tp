@@ -56,6 +56,11 @@ public interface Model {
     ObservableList<Tag> getTagList();
 
     /**
+     * Deletes {@code target} and removes it from every contact that uses it.
+     */
+    void deleteTag(Tag target);
+
+    /**
      * Replaces an existing event without duplicating another event's name.
      */
     void setEvent(Event target, Event editedEvent);
