@@ -8,6 +8,7 @@ import coordimate.commons.core.GuiSettings;
 import coordimate.commons.core.LogsCenter;
 import coordimate.commons.exceptions.DataLoadingException;
 import coordimate.logic.commands.AddEventCommand;
+import coordimate.logic.commands.AssignCommand;
 import coordimate.logic.commands.Command;
 import coordimate.logic.commands.CommandResult;
 import coordimate.logic.commands.EditEventCommand;
@@ -50,7 +51,8 @@ public class LogicManager implements Logic {
         logger.info("----------------[USER COMMAND][" + commandText + "]");
 
         Command command = coordiMateParser.parseCommand(commandText);
-        if (command instanceof AddEventCommand || command instanceof EditEventCommand) {
+        if (command instanceof AddEventCommand || command instanceof EditEventCommand
+                || command instanceof AssignCommand) {
             return executeEventCommand(command);
         }
         CommandResult commandResult = command.execute(model);
@@ -68,6 +70,7 @@ public class LogicManager implements Logic {
 
     /**
      * Saves an event on a copy of the model and commits it only after storage succeeds.
+     * The copy shows the same contacts as the displayed list, so contact indexes refer to the same contacts.
      * Rejects the command if existing data cannot be loaded or the new data cannot be saved.
      */
     private CommandResult executeEventCommand(Command command) throws CommandException {
@@ -77,12 +80,16 @@ public class LogicManager implements Logic {
             throw new CommandException(AddEventCommand.MESSAGE_LOAD_ERROR, e);
         }
         Model candidate = new ModelManager(model.getCoordiMate(), model.getUserPrefs());
+        candidate.updateFilteredPersonList(model.getFilteredPersonList()::contains);
         CommandResult result = command.execute(candidate);
         try {
             storage.saveCoordiMate(candidate.getCoordiMate());
         } catch (IOException e) {
-            String message = command instanceof EditEventCommand
-                    ? EditEventCommand.MESSAGE_SAVE_ERROR : AddEventCommand.MESSAGE_SAVE_ERROR;
+            String message = switch (command) {
+                case EditEventCommand _ -> EditEventCommand.MESSAGE_SAVE_ERROR;
+                case AssignCommand _ -> AssignCommand.MESSAGE_SAVE_ERROR;
+                default -> AddEventCommand.MESSAGE_SAVE_ERROR;
+            };
             throw new CommandException(message, e);
         }
         model.setCoordiMate(candidate.getCoordiMate());
