@@ -21,7 +21,8 @@ import coordimate.model.event.EventTime;
  * Parses event edits while rejecting unknown or repeated parameters.
  */
 public class EditEventCommandParser implements Parser<EditEventCommand> {
-    public static final String MESSAGE_UNKNOWN_PARAMETER = "Unknown parameter. Example: editevent evn/Final Concert st/08-08-2026 16:00";
+    public static final String MESSAGE_UNKNOWN_PARAMETER = "Unknown parameter. "
+            + "Example: editevent evn/Final Concert st/08-08-2026 16:00";
     public static final String MESSAGE_REPEATED_PARAMETER = "Each parameter may only be specified once.";
 
     private static final Pattern PARAMETER_PATTERN = Pattern.compile("(?<!\\S)([A-Za-z]+/|/[A-Za-z]+)");
