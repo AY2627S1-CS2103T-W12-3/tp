@@ -211,8 +211,10 @@ public class CoordiMateTest {
     public void setTag_customTag_replacesTagInListAndContacts() {
         Tag publicity = new Tag("Publicity");
         Tag media = new Tag("Media");
-        Person taggedAlice = new PersonBuilder(ALICE).withTags("Publicity", "EXCO").build();
-        Person taggedBenson = new PersonBuilder(BENSON).withTags("Publicity").build();
+        Person taggedAlice = new PersonBuilder(ALICE).withRole("Logistics").withBirthday("18-06-2004")
+                .withOrganisation("NUS Student Affairs").withNote("Handles venue bookings")
+                .withTags("Publicity", "EXCO").build();
+        Person taggedBenson = new PersonBuilder(BENSON).withoutAddress().withTags("Publicity").build();
         coordiMate.addTag(publicity);
         coordiMate.addPerson(taggedAlice);
         coordiMate.addPerson(taggedBenson);
@@ -224,6 +226,10 @@ public class CoordiMateTest {
         assertEquals(List.of("EXCO", "Media"), coordiMate.getPersonList().get(0).getTags().stream()
                 .map(Tag::getTagName).sorted().toList());
         assertEquals(List.of(media), coordiMate.getPersonList().get(1).getTags().stream().toList());
+        assertEquals(new PersonBuilder(taggedAlice).withTags("Media", "EXCO").build(),
+                coordiMate.getPersonList().get(0));
+        assertEquals(new PersonBuilder(taggedBenson).withTags("Media").build(),
+                coordiMate.getPersonList().get(1));
     }
 
     @Test
