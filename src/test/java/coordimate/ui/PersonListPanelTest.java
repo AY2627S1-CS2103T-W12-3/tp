@@ -170,6 +170,56 @@ public class PersonListPanelTest {
         runOnJavaFxThread(() -> assertEquals("Records: 0", getLabel(fixture.root(), "contactCount").getText()));
     }
 
+    @Test
+    public void replaceSelectedContact_showsUpdatedDetails() throws Exception {
+        PanelFixture fixture = callOnJavaFxThread(() -> {
+            ObservableList<Person> persons = FXCollections.observableArrayList(ALICE, BENSON);
+            FilteredList<Person> displayedPersons = new FilteredList<>(persons);
+            Region root = new PersonListPanel(displayedPersons).getRoot();
+            new Scene(root);
+            root.applyCss();
+            ListView<Person> list = getList(root);
+            list.getSelectionModel().select(BENSON);
+            return new PanelFixture(persons, displayedPersons, root, list);
+        });
+        Person updatedBenson = new PersonBuilder(BENSON).withName("Benson Tan")
+                .withRole("President").withoutAddress().withNote("Updated note")
+                .withTags().build();
+
+        runOnJavaFxThread(() -> fixture.persons().setAll(ALICE, updatedBenson));
+
+        runOnJavaFxThread(() -> {
+            assertEquals(updatedBenson, fixture.list().getSelectionModel().getSelectedItem());
+            assertEquals("Benson Tan", getLabel(fixture.root(), "selectedName").getText());
+            assertEquals("Index: 2", getLabel(fixture.root(), "selectedIndex").getText());
+            assertEquals("President", getLabel(fixture.root(), "role").getText());
+            assertEquals("Updated note", getLabel(fixture.root(), "note").getText());
+            assertEquals("— (not specified)", getLabel(fixture.root(), "address").getText());
+            assertTrue(((FlowPane) fixture.root().lookup("#detailTags")).getChildren().isEmpty());
+        });
+    }
+
+    @Test
+    public void removeSelectedContact_clearsSelectionInsteadOfSelectingNextContact() throws Exception {
+        PanelFixture fixture = callOnJavaFxThread(() -> {
+            ObservableList<Person> persons = FXCollections.observableArrayList(ALICE, BENSON);
+            FilteredList<Person> displayedPersons = new FilteredList<>(persons);
+            Region root = new PersonListPanel(displayedPersons).getRoot();
+            new Scene(root);
+            root.applyCss();
+            ListView<Person> list = getList(root);
+            list.getSelectionModel().select(ALICE);
+            return new PanelFixture(persons, displayedPersons, root, list);
+        });
+
+        runOnJavaFxThread(() -> fixture.persons().setAll(BENSON));
+
+        runOnJavaFxThread(() -> {
+            assertNull(fixture.list().getSelectionModel().getSelectedItem());
+            assertTrue(getHint(fixture.root()).isVisible());
+        });
+    }
+
     private static ListView<Person> getList(Region root) {
         @SuppressWarnings("unchecked")
         ListView<Person> list = (ListView<Person>) root.lookup("#personListView");

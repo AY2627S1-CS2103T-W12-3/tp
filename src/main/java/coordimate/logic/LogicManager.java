@@ -15,6 +15,7 @@ import coordimate.logic.commands.AssignCommand;
 import coordimate.logic.commands.Command;
 import coordimate.logic.commands.CommandResult;
 import coordimate.logic.commands.DeleteEventCommand;
+import coordimate.logic.commands.EditCommand;
 import coordimate.logic.commands.EditEventCommand;
 import coordimate.logic.commands.MarkAttendanceCommand;
 import coordimate.logic.commands.exceptions.CommandException;
@@ -57,7 +58,8 @@ public class LogicManager implements Logic {
         logger.info("----------------[USER COMMAND][" + commandText + "]");
 
         Command command = coordiMateParser.parseCommand(commandText);
-        if (command instanceof AddCommand || command instanceof AddEventCommand
+
+        if (command instanceof AddCommand || command instanceof EditCommand || command instanceof AddEventCommand
                 || command instanceof EditEventCommand || command instanceof AssignCommand
                 || command instanceof DeleteEventCommand || command instanceof MarkAttendanceCommand) {
             return executeAtomicCommand(command);
@@ -84,8 +86,11 @@ public class LogicManager implements Logic {
         try {
             storage.readCoordiMate();
         } catch (DataLoadingException e) {
-            String message = command instanceof AddCommand
-                    ? AddCommand.MESSAGE_LOAD_ERROR : AddEventCommand.MESSAGE_LOAD_ERROR;
+            String message = switch (command) {
+                case AddCommand _ -> AddCommand.MESSAGE_LOAD_ERROR;
+                case EditCommand _ -> EditCommand.MESSAGE_LOAD_ERROR;
+                default -> AddEventCommand.MESSAGE_LOAD_ERROR;
+            };
             throw new CommandException(message, e);
         }
         Model candidate = new ModelManager(model.getCoordiMate(), model.getUserPrefs());
@@ -96,6 +101,7 @@ public class LogicManager implements Logic {
         } catch (IOException e) {
             String message = switch (command) {
                 case AddCommand _ -> AddCommand.MESSAGE_SAVE_ERROR;
+                case EditCommand _ -> EditCommand.MESSAGE_SAVE_ERROR;
                 case EditEventCommand _ -> EditEventCommand.MESSAGE_SAVE_ERROR;
                 case AssignCommand _ -> AssignCommand.MESSAGE_SAVE_ERROR;
                 case DeleteEventCommand _ -> DeleteEventCommand.MESSAGE_SAVE_ERROR;
@@ -105,7 +111,7 @@ public class LogicManager implements Logic {
             throw new CommandException(message, e);
         }
         model.setCoordiMate(candidate.getCoordiMate());
-        if (command instanceof AddCommand) {
+        if (command instanceof AddCommand || command instanceof EditCommand) {
             model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
         }
         return result;

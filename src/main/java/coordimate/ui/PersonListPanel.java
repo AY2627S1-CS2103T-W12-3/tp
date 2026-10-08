@@ -11,6 +11,7 @@ import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
 import javafx.geometry.Orientation;
 import javafx.scene.control.Label;
@@ -84,7 +85,8 @@ public class PersonListPanel extends UiPart<Region> {
         persons.addListener((ListChangeListener<Person>) change -> {
             if (selectedPerson != null) {
                 Person previouslySelected = selectedPerson;
-                Platform.runLater(() -> restoreSelection(persons, previouslySelected));
+                Person replacement = findReplacement(change, previouslySelected);
+                Platform.runLater(() -> restoreSelection(persons, previouslySelected, replacement));
             }
         });
         personListView.setItems(persons);
@@ -102,13 +104,33 @@ public class PersonListPanel extends UiPart<Region> {
     /**
      * Reconciles selection after the list view has processed a change to its items.
      */
-    private void restoreSelection(ObservableList<Person> persons, Person previouslySelected) {
+    private Person findReplacement(ListChangeListener.Change<? extends Person> change, Person previouslySelected) {
+        while (change.next()) {
+            if (change.wasReplaced() && change.getRemovedSize() == change.getAddedSize()) {
+                int offset = change.getRemoved().indexOf(previouslySelected);
+                if (offset >= 0 && offset < change.getAddedSize()) {
+                    return change.getAddedSubList().get(offset);
+                }
+            }
+        }
+        return null;
+    }
+
+    private void restoreSelection(ObservableList<Person> persons, Person previouslySelected, Person replacement) {
         if (persons.contains(previouslySelected)) {
             personListView.getSelectionModel().select(previouslySelected);
             selectedIndex.setText("Index: " + (persons.indexOf(previouslySelected) + 1));
+        } else if (replacement != null && !isStillInSource(persons, previouslySelected)
+                && persons.contains(replacement)) {
+            personListView.getSelectionModel().select(replacement);
         } else {
             personListView.getSelectionModel().clearSelection();
         }
+    }
+
+    private boolean isStillInSource(ObservableList<Person> persons, Person previouslySelected) {
+        return persons instanceof FilteredList<?> filteredPersons
+                && filteredPersons.getSource().contains(previouslySelected);
     }
 
     /**

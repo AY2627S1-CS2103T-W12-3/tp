@@ -57,7 +57,23 @@ public class PersonUtil {
         descriptor.getName().ifPresent(name -> sb.append(PREFIX_NAME).append(name.getFullName()).append(" "));
         descriptor.getPhone().ifPresent(phone -> sb.append(PREFIX_PHONE).append(phone.getValue()).append(" "));
         descriptor.getEmail().ifPresent(email -> sb.append(PREFIX_EMAIL).append(email.getValue()).append(" "));
-        descriptor.getAddress().ifPresent(address -> sb.append(PREFIX_ADDRESS).append(address.getValue()).append(" "));
+        descriptor.getRole().ifPresent(role -> sb.append(PREFIX_ROLE).append(role.getValue()).append(" "));
+        if (descriptor.isBirthdayEdited()) {
+            sb.append(PREFIX_BIRTHDAY).append(descriptor.getBirthday().map(birthday -> birthday.getValue())
+                    .orElse("")).append(" ");
+        }
+        if (descriptor.isAddressEdited()) {
+            sb.append(PREFIX_ADDRESS).append(descriptor.getAddress().map(address -> address.getValue())
+                    .orElse("")).append(" ");
+        }
+        if (descriptor.isOrganisationEdited()) {
+            sb.append(PREFIX_ORGANISATION).append(descriptor.getOrganisation()
+                    .map(organisation -> organisation.getValue()).orElse("")).append(" ");
+        }
+        if (descriptor.isNoteEdited()) {
+            sb.append(PREFIX_NOTE).append(descriptor.getNote().map(note -> note.getValue())
+                    .orElse("")).append(" ");
+        }
         if (descriptor.getTags().isPresent()) {
             Set<Tag> tags = descriptor.getTags().get();
             if (tags.isEmpty()) {

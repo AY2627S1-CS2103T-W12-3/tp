@@ -93,6 +93,12 @@ public class CoordiMateParserTest {
     public void parseCommand_editTag() throws Exception {
         assertEquals(new EditTagCommand("Media", new Tag("Publicity")),
                 parser.parseCommand(EditTagCommand.COMMAND_WORD + " Media t/Publicity"));
+    public void parseCommand_editByTarget() throws Exception {
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withRole("Logistics").build();
+
+        EditCommand command = (EditCommand) parser.parseCommand("edit target/alice@example.com r/Logistics");
+
+        assertEquals(new EditCommand("alice@example.com", descriptor), command);
     }
 
     @Test

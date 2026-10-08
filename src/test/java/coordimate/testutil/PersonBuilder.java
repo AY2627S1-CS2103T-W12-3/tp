@@ -127,6 +127,12 @@ public class PersonBuilder {
         return this;
     }
 
+    /** Leaves the contact without a birthday. */
+    public PersonBuilder withoutBirthday() {
+        birthday = null;
+        return this;
+    }
+
     /**
      * Sets the contact's organisation.
      */
@@ -135,11 +141,23 @@ public class PersonBuilder {
         return this;
     }
 
+    /** Leaves the contact without an organisation. */
+    public PersonBuilder withoutOrganisation() {
+        organisation = null;
+        return this;
+    }
+
     /**
      * Sets the contact's note.
      */
     public PersonBuilder withNote(String note) {
         this.note = new Note(note);
+        return this;
+    }
+
+    /** Leaves the contact without a note. */
+    public PersonBuilder withoutNote() {
+        note = null;
         return this;
     }
 

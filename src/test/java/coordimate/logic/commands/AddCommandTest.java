@@ -103,6 +103,10 @@ public class AddCommandTest {
         }
 
         @Override
+        public void registerTag(Tag tag) {
+            throw new AssertionError("This method should not be called.");
+        }
+
         public boolean hasTag(Tag tag) {
             throw new AssertionError("This method should not be called.");
         }
