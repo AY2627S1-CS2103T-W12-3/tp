@@ -210,7 +210,7 @@ Assigns one or more contacts to an existing event as members and saves the chang
 Format: `assign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...`
 
 * `EVENT_NAME` must match a saved event name, ignoring case. Leading and trailing whitespace is removed.
-* `CONTACT_INDEX` refers to the index number shown in the displayed person list. Separate several indexes with spaces. Each index **must be a positive integer** 1, 2, 3, ...
+* `CONTACT_INDEX` refers to the index number shown in the displayed person list. If the list is filtered (e.g. after `find`), the index refers to the filtered list. Use `list` to show everyone again. Separate several indexes with spaces. Each index **must be a positive integer** 1, 2, 3, ...
 * Each parameter may appear only once.
 * All indexes are checked before any change is made. If any index is invalid, no contacts are assigned.
 * Contacts who are already assigned to the event are skipped, and an index repeated in the same command is counted once.
@@ -249,7 +249,7 @@ Removes one or more members from an existing event and saves the change. The con
 Format: `unassign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...`
 
 * `EVENT_NAME` must match a saved event name, ignoring case. Leading and trailing whitespace is removed.
-* `CONTACT_INDEX` refers to the index number shown in the displayed person list, as in `assign`. Separate several indexes with spaces. Each index **must be a positive integer** 1, 2, 3, ...
+* `CONTACT_INDEX` refers to the index number shown in the displayed person list, as in `assign`. If the list is filtered (e.g. after `find`), the index refers to the filtered list. Use `list` to show everyone again. Separate several indexes with spaces. Each index **must be a positive integer** 1, 2, 3, ...
 * Each parameter may appear only once.
 * All indexes are checked before any change is made. If any index is invalid, no members are removed.
 * Contacts who are not assigned to the event are skipped, and an index repeated in the same command is counted once.
