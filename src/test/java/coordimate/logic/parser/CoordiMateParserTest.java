@@ -20,13 +20,18 @@ import coordimate.logic.commands.DeleteCommand;
 import coordimate.logic.commands.EditCommand;
 import coordimate.logic.commands.EditCommand.EditPersonDescriptor;
 import coordimate.logic.commands.ExitCommand;
+import coordimate.logic.commands.FilterCommand;
 import coordimate.logic.commands.FindCommand;
 import coordimate.logic.commands.HelpCommand;
 import coordimate.logic.commands.ListCommand;
 import coordimate.logic.commands.ListTagsCommand;
 import coordimate.logic.commands.MarkAttendanceCommand;
+import coordimate.logic.commands.SearchCommand;
 import coordimate.logic.parser.exceptions.ParseException;
 import coordimate.model.event.AttendanceStatus;
+import coordimate.model.person.ContactMatchesKeywordPredicate;
+import coordimate.model.person.FilterCriterion;
+import coordimate.model.person.FilterField;
 import coordimate.model.person.Name;
 import coordimate.model.person.NameContainsKeywordsPredicate;
 import coordimate.model.person.Person;
@@ -82,6 +87,13 @@ public class CoordiMateParserTest {
     }
 
     @Test
+    public void parseCommand_filter() throws Exception {
+        FilterCommand command = (FilterCommand) parser.parseCommand(
+                FilterCommand.COMMAND_WORD + " tag/friend");
+        assertEquals(new FilterCommand(List.of(new FilterCriterion(FilterField.TAG, "friend"))), command);
+    }
+
+    @Test
     public void parseCommand_find() throws Exception {
         List<String> keywords = List.of("foo", "bar", "baz");
         FindCommand command = (FindCommand) parser.parseCommand(
@@ -99,6 +111,13 @@ public class CoordiMateParserTest {
     public void parseCommand_list() throws Exception {
         assertTrue(parser.parseCommand(ListCommand.COMMAND_WORD) instanceof ListCommand);
         assertTrue(parser.parseCommand(ListCommand.COMMAND_WORD + " 3") instanceof ListCommand);
+    }
+
+    @Test
+    public void parseCommand_search() throws Exception {
+        SearchCommand command = (SearchCommand) parser.parseCommand(
+                SearchCommand.COMMAND_WORD + " Alice");
+        assertEquals(new SearchCommand(new ContactMatchesKeywordPredicate("Alice"), "Alice"), command);
     }
 
     @Test
