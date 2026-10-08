@@ -95,6 +95,9 @@ public class ModelManager implements Model {
         if (!coordiMate.hasTag(tag)) {
             coordiMate.addTag(tag);
         }
+    }
+
+    @Override
     public boolean hasTag(Tag tag) {
         requireNonNull(tag);
         return coordiMate.hasTag(tag);
