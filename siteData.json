@@ -118,6 +118,8 @@
         "deleting-an-event-deleteevent": "Deleting an event: deleteevent",
         "assigning-members-to-an-event-assign": "Assigning members to an event: assign",
         "listing-all-persons-list": "Listing all persons: list",
+        "creating-a-tag-newtag": "Creating a tag: newtag",
+        "listing-all-tags-listtags": "Listing all tags: listtags",
         "editing-a-person-edit": "Editing a person: edit",
         "locating-persons-by-name-find": "Locating persons by name: find",
         "deleting-a-person-delete": "Deleting a person: delete",
