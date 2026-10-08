@@ -19,13 +19,24 @@ public class CommandResult {
     /** The application should exit. */
     private final boolean shouldExit;
 
+    /** The tags view should be shown. */
+    private final boolean shouldShowTags;
+
     /**
      * Constructs a {@code CommandResult} with the specified fields.
      */
     public CommandResult(String feedbackToUser, boolean shouldShowHelp, boolean shouldExit) {
+        this(feedbackToUser, shouldShowHelp, shouldExit, false);
+    }
+
+    /**
+     * Constructs a {@code CommandResult} with the specified fields.
+     */
+    public CommandResult(String feedbackToUser, boolean shouldShowHelp, boolean shouldExit, boolean shouldShowTags) {
         this.feedbackToUser = requireNonNull(feedbackToUser);
         this.shouldShowHelp = shouldShowHelp;
         this.shouldExit = shouldExit;
+        this.shouldShowTags = shouldShowTags;
     }
 
     /**
@@ -54,6 +65,13 @@ public class CommandResult {
         return shouldExit;
     }
 
+    /**
+     * Returns true if the command requests that the tags view be shown.
+     */
+    public boolean shouldShowTags() {
+        return shouldShowTags;
+    }
+
     @Override
     public boolean equals(Object other) {
         if (other == this) {
@@ -67,12 +85,13 @@ public class CommandResult {
 
         return feedbackToUser.equals(otherCommandResult.feedbackToUser)
                 && shouldShowHelp == otherCommandResult.shouldShowHelp
-                && shouldExit == otherCommandResult.shouldExit;
+                && shouldExit == otherCommandResult.shouldExit
+                && shouldShowTags == otherCommandResult.shouldShowTags;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(feedbackToUser, shouldShowHelp, shouldExit);
+        return Objects.hash(feedbackToUser, shouldShowHelp, shouldExit, shouldShowTags);
     }
 
     @Override
@@ -81,6 +100,7 @@ public class CommandResult {
                 .add("feedbackToUser", feedbackToUser)
                 .add("showHelp", shouldShowHelp)
                 .add("exit", shouldExit)
+                .add("showTags", shouldShowTags)
                 .toString();
     }
 
