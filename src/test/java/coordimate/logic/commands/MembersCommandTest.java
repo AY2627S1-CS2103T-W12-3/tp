@@ -32,23 +32,31 @@ public class MembersCommandTest {
 
     @Test
     public void execute_eventWithMembers_listsMembersInContactListOrder() throws Exception {
-        assertEquals("Listed 2 member(s) of Final Concert.",
+        assertEquals("Listed 2 member(s) of Final Concert. Use list to show all contacts.",
                 new MembersCommand("Final Concert").execute(model).getFeedbackToUser());
         assertEquals(List.of(ALICE, CARL), model.getFilteredPersonList());
     }
 
     @Test
     public void execute_differentCaseEventName_usesSavedName() throws Exception {
-        assertEquals("Listed 2 member(s) of Final Concert.",
+        assertEquals("Listed 2 member(s) of Final Concert. Use list to show all contacts.",
                 new MembersCommand("fINAL cONCERT").execute(model).getFeedbackToUser());
         assertEquals(List.of(ALICE, CARL), model.getFilteredPersonList());
     }
 
     @Test
     public void execute_eventWithoutMembers_emptyList() throws Exception {
-        assertEquals("Empty Event has no members assigned.",
+        assertEquals("Empty Event has no members assigned. Use list to show all contacts.",
                 new MembersCommand("empty event").execute(model).getFeedbackToUser());
         assertEquals(List.of(), model.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_success_showsContactsView() throws Exception {
+        assertEquals(new CommandResult("Listed 2 member(s) of Final Concert. Use list to show all contacts.",
+                false, false, false, true), new MembersCommand("Final Concert").execute(model));
+        assertEquals(new CommandResult("Empty Event has no members assigned. Use list to show all contacts.",
+                false, false, false, true), new MembersCommand("Empty Event").execute(model));
     }
 
     @Test

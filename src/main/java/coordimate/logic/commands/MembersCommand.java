@@ -13,8 +13,9 @@ import coordimate.model.event.EventMembersPredicate;
 public class MembersCommand extends Command {
     public static final String COMMAND_WORD = "members";
     public static final String MESSAGE_USAGE = "members evn/EVENT_NAME";
-    public static final String MESSAGE_SUCCESS = "Listed %d member(s) of %s.";
-    public static final String MESSAGE_NO_MEMBERS = "%s has no members assigned.";
+    public static final String MESSAGE_SHOW_ALL_HINT = " Use list to show all contacts.";
+    public static final String MESSAGE_SUCCESS = "Listed %d member(s) of %s." + MESSAGE_SHOW_ALL_HINT;
+    public static final String MESSAGE_NO_MEMBERS = "%s has no members assigned." + MESSAGE_SHOW_ALL_HINT;
 
     private final String eventName;
 
@@ -36,7 +37,7 @@ public class MembersCommand extends Command {
         String message = memberCount == 0
                 ? String.format(MESSAGE_NO_MEMBERS, target.getName())
                 : String.format(MESSAGE_SUCCESS, memberCount, target.getName());
-        return new CommandResult(message);
+        return new CommandResult(message, false, false, false, true);
     }
 
     @Override
