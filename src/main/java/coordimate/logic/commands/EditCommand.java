@@ -21,6 +21,7 @@ import coordimate.commons.util.ToStringBuilder;
 import coordimate.logic.Messages;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.Model;
+import coordimate.model.event.MemberNameConflictException;
 import coordimate.model.person.Address;
 import coordimate.model.person.Email;
 import coordimate.model.person.Name;
@@ -50,7 +51,10 @@ public class EditCommand extends Command {
 
     public static final String MESSAGE_EDIT_PERSON_SUCCESS = "Edited person: %1$s";
     public static final String MESSAGE_NOT_EDITED = "At least one field to edit must be provided.";
-    public static final String MESSAGE_DUPLICATE_PERSON = "This person already exists in the CoordiMate.";
+    public static final String MESSAGE_DUPLICATE_PERSON =
+            "This update conflicts with another saved contact. No changes were made.";
+    public static final String MESSAGE_MEMBER_NAME_CONFLICT =
+            "Cannot rename this contact because an event already has a member with that name. No changes were made.";
 
     private final Index index;
     private final EditPersonDescriptor editPersonDescriptor;
@@ -81,11 +85,17 @@ public class EditCommand extends Command {
         Person personToEdit = lastShownPersons.get(index.getZeroBased());
         Person editedPerson = createEditedPerson(personToEdit, editPersonDescriptor);
 
-        if (!personToEdit.isSamePerson(editedPerson) && model.hasPerson(editedPerson)) {
+        boolean duplicatesAnotherPerson = model.getCoordiMate().getPersonList().stream()
+                .anyMatch(person -> !person.equals(personToEdit) && person.isSamePerson(editedPerson));
+        if (duplicatesAnotherPerson) {
             throw new CommandException(MESSAGE_DUPLICATE_PERSON);
         }
 
-        model.setPerson(personToEdit, editedPerson);
+        try {
+            model.setPerson(personToEdit, editedPerson);
+        } catch (MemberNameConflictException e) {
+            throw new CommandException(MESSAGE_MEMBER_NAME_CONFLICT, e);
+        }
         model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
         return new CommandResult(String.format(MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson)));
     }
@@ -100,10 +110,12 @@ public class EditCommand extends Command {
         Name updatedName = editPersonDescriptor.getName().orElse(personToEdit.getName());
         Phone updatedPhone = editPersonDescriptor.getPhone().orElse(personToEdit.getPhone());
         Email updatedEmail = editPersonDescriptor.getEmail().orElse(personToEdit.getEmail());
-        Address updatedAddress = editPersonDescriptor.getAddress().orElse(personToEdit.getAddress());
+        Address updatedAddress = editPersonDescriptor.getAddress().orElse(personToEdit.getAddress().orElse(null));
         Set<Tag> updatedTags = editPersonDescriptor.getTags().orElse(personToEdit.getTags());
 
-        return new Person(updatedName, updatedPhone, updatedEmail, updatedAddress, updatedTags);
+        return new Person(updatedName, updatedPhone, updatedEmail, personToEdit.getRole(),
+                personToEdit.getBirthday().orElse(null), updatedAddress, personToEdit.getOrganisation().orElse(null),
+                personToEdit.getNote().orElse(null), updatedTags);
     }
 
     @Override

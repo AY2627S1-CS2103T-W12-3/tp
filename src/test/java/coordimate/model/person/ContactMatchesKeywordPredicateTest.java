@@ -53,6 +53,14 @@ public class ContactMatchesKeywordPredicateTest {
     }
 
     @Test
+    public void test_noAddress_doesNotMatchAddressKeyword() {
+        Person person = new PersonBuilder().withoutAddress().build();
+
+        assertFalse(new ContactMatchesKeywordPredicate("Jurong").test(person));
+        assertTrue(new ContactMatchesKeywordPredicate("Amy").test(person));
+    }
+
+    @Test
     public void test_noFieldContainsKeyword_returnsFalse() {
         Person person = new PersonBuilder().withName("Alice Pauline").withPhone("94351253")
                 .withEmail("alice@example.com").withAddress("123, Jurong West Ave 6, #08-111").build();

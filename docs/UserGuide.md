@@ -31,7 +31,7 @@
 
    * `list` : Lists all contacts.
 
-   * `add n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01` : Adds a contact named `John Doe` to CoordiMate.
+   * `add n/John Doe p/98765432 e/johnd@example.com r/Member` : Adds a contact named `John Doe` to CoordiMate.
 
    * `delete 3` : Deletes the 3rd contact shown in the current list.
 
@@ -40,8 +40,9 @@
    * `exit` : Exits the app.
 
    In the Contacts view, select a contact from the displayed list to see their phone number, email address,
-   address, and tags in the details pane. The number beside a contact is its index in the currently displayed list.
-   If a list change hides the selected contact, the details pane clears.
+   role, birthday, address, organisation, tags, and note in the details pane. The number beside a contact is
+   its index in the currently displayed list. If a list change hides the selected contact, the details pane clears.
+   Unset optional fields show `— (not specified)`; a contact with no tags shows no tag chips.
 
 1. Refer to the [Features](#features) section below for details of each command.
 
@@ -84,16 +85,31 @@ Format: `help`
 
 Adds a person to CoordiMate.
 
-Format: `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [t/TAG]... `
+Contact names must be unique after trimming surrounding spaces and ignoring case.
+An add is also rejected if its phone number or email address is already used by another contact.
+Phone numbers are compared without spaces, hyphens, or brackets; email addresses are compared without regard to case.
+For any duplicate, CoordiMate reports `A contact with this name, phone number, or email already exists.`
+and makes no changes.
+If the local contact data cannot be loaded or saved, CoordiMate reports an error and leaves the contact list unchanged.
+
+Format: `add n/NAME p/PHONE e/EMAIL r/ROLE [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [t/TAG]... [m/NOTE]`
+
+Name, phone, email, and role are required. Birthday uses `dd-MM-yyyy` and cannot be in the future.
+Address, organisation, and note are optional. An empty `b/`, `a/`, `o/`, or `m/` leaves that field unset,
+as does omitting it. Non-tag fields may appear only once; `t/TAG` may repeat. An empty `t/` clears the
+tags collected so far. A valid new tag is saved as a custom tag. Successful feedback is
+`Contact saved successfully: NAME`.
+Select the saved contact in the list to view all its details. Unset optional values are shown as
+`— (not specified)` in the details pane, but remain unset in storage.
 
 <box type="tip" seamless>
 
-**Tip:** A person can have any number of tags, including zero.
+**Tip:** A contact can have any number of tags, including zero. Parameters can be supplied in any order.
 </box>
 
 Examples:
-* `add n/John Doe p/98765432 e/johnd@example.com a/John street, block 123, #01-01`
-* `add n/Betsy Crowe t/friend e/betsycrowe@example.com a/Newgate Prison p/1234567 t/criminal`
+* `add n/Aisha Tan p/+6591234567 e/aisha@example.com r/Logistics t/EXCO m/Handles venue bookings`
+* `add n/Mr Lim p/90801110 e/lim@example.com o/NUS Student Affairs r/University Staff t/UniversityStaff`
 
 ### Adding an event: `addevent`
 
@@ -261,6 +277,40 @@ Success for `edittag Media t/Publicity`: `Media successfully renamed to Publicit
 | The new tag matches the current tag, ignoring capitalization. | `{NEW_TAG} is the same as {OLD_TAG}.` |
 | The new tag already exists. | `This tag already exists.` |
 
+### Creating a tag: `newtag`
+
+Creates a custom tag and opens the Tags view. Tag names must contain 1 to 30 alphanumeric characters without spaces.
+Leading and trailing whitespace is trimmed. Tag names preserve their capitalization, but are unique regardless of
+capitalization.
+
+Format: `newtag t/TAG`
+
+Examples:
+
+* `newtag t/ProductionCrew`
+* `newtag t/Publicity`
+
+If a tag named `Publicity` already exists, commands such as `newtag t/publicity` are rejected as duplicates.
+
+Success: `Created tag: Publicity.`
+
+| Condition | Error message |
+|---|---|
+| No parameters are supplied. | `No parameters given.` |
+| The `t/` prefix is missing. | `No prefix given.` |
+| More than one `t/` prefix is supplied. | `Multiple tag names given.` |
+| Text appears before `t/`. | `Unknown parameters given.` |
+| The tag name is empty. | `Tag name cannot be empty.` |
+| The tag name contains spaces, symbols, or punctuation. | `Tag names should be alphanumeric with no spaces.` |
+| The tag name exceeds 30 characters. | `Tag names should not exceed 30 characters.` |
+| The tag name already exists, ignoring capitalization. | `This tag already exists.` |
+
+### Listing all tags: `listtags`
+
+Shows every default and custom tag in the Tags view.
+
+Format: `listtags`
+
 ### Editing a person: `edit`
 
 Edits an existing person in CoordiMate.
@@ -273,6 +323,7 @@ Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [a/ADDRESS] [t/TAG]... `
 * When editing tags, all of the person's existing tags are removed; adding tags is not cumulative.
 * To remove all of a person's tags, enter `t/` without a tag after it.
 * If the person's name changes, events they are assigned to show the new name.
+* A new name already used by another contact, ignoring case and surrounding spaces, is rejected.
 
 Examples:
 *  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st person to be `91234567` and `johndoe@example.com` respectively.
@@ -362,7 +413,7 @@ _Details coming soon ..._
 
 Action     | Format, Examples
 -----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
-**Add**    | `add n/NAME p/PHONE_NUMBER e/EMAIL a/ADDRESS [t/TAG]... ` <br> e.g., `add n/James Ho p/22224444 e/jamesho@example.com a/123, Clementi Rd, 1234665 t/friend t/colleague`
+**Add**    | `add n/NAME p/PHONE e/EMAIL r/ROLE [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [t/TAG]... [m/NOTE]`<br> e.g., `add n/James Ho p/22224444 e/jamesho@example.com r/Member t/friend`
 **Assign** | `assign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...`<br> e.g., `assign evn/Final Concert c/1 4 5`
 **Clear**  | `clear`
 **Delete** | `delete INDEX`<br> e.g., `delete 3`

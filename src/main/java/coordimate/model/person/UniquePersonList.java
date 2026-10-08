@@ -13,10 +13,8 @@ import javafx.collections.ObservableList;
 
 /**
  * A list of persons that enforces uniqueness between its elements and does not allow nulls.
- * A person is considered unique by comparing using {@code Person#isSamePerson(Person)}. As such, adding and updating of
- * persons uses Person#isSamePerson(Person) for equality so as to ensure that the person being added or updated is
- * unique in terms of identity in the UniquePersonList. However, the removal of a person uses Person#equals(Object) so
- * as to ensure that the person with exactly the same fields will be removed.
+ * Contacts must have distinct names (ignoring case), normalised phone numbers, and email addresses.
+ * Removal uses {@code Person#equals(Object)} so the exact contact is removed.
  *
  * Supports a minimal set of list operations.
  *
@@ -61,8 +59,10 @@ public class UniquePersonList implements Iterable<Person> {
             throw new PersonNotFoundException();
         }
 
-        if (!target.isSamePerson(editedPerson) && contains(editedPerson)) {
-            throw new DuplicatePersonException();
+        for (int i = 0; i < internalPersons.size(); i++) {
+            if (i != index && internalPersons.get(i).isSamePerson(editedPerson)) {
+                throw new DuplicatePersonException();
+            }
         }
 
         internalPersons.set(index, editedPerson);

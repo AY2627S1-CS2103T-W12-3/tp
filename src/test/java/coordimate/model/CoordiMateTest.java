@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
+import coordimate.model.event.MemberNameConflictException;
 import coordimate.model.person.Name;
 import coordimate.model.person.Person;
 import coordimate.model.person.exceptions.DuplicatePersonException;
@@ -87,6 +88,15 @@ public class CoordiMateTest {
     }
 
     @Test
+    public void addPerson_sameNameWithDifferentPhoneAndEmail_throwsDuplicatePersonException() {
+        coordiMate.addPerson(ALICE);
+        Person differentAlice = new PersonBuilder(BENSON).withName(ALICE.getName().toString()).build();
+        assertThrows(DuplicatePersonException.class, () -> coordiMate.addPerson(differentAlice));
+
+        assertEquals(List.of(ALICE), coordiMate.getPersonList());
+    }
+
+    @Test
     public void removePerson_assignedContact_removedFromEveryEvent() {
         addContactsAndEvents();
         coordiMate.removePerson(ALICE);
@@ -112,12 +122,24 @@ public class CoordiMateTest {
     }
 
     @Test
-    public void setPerson_duplicateName_eventsUnchanged() {
+    public void setPerson_duplicatePhone_eventsUnchanged() {
+        addContactsAndEvents();
+        List<Event> before = List.copyOf(coordiMate.getEventList());
+        Person aliceWithBensonPhone = new PersonBuilder(ALICE).withPhone(BENSON.getPhone().toString()).build();
+        assertThrows(DuplicatePersonException.class, () -> coordiMate.setPerson(ALICE, aliceWithBensonPhone));
+        assertEquals(before, coordiMate.getEventList());
+        assertEquals(List.of(ALICE, BENSON, CARL), coordiMate.getPersonList());
+    }
+
+    @Test
+    public void setPerson_renameConflictsWithEventMember_noChanges() {
         addContactsAndEvents();
         List<Event> before = List.copyOf(coordiMate.getEventList());
         Person aliceAsBenson = new PersonBuilder(ALICE).withName(BENSON.getName().toString()).build();
-        assertThrows(DuplicatePersonException.class, () -> coordiMate.setPerson(ALICE, aliceAsBenson));
+
+        assertThrows(MemberNameConflictException.class, () -> coordiMate.setPerson(ALICE, aliceAsBenson));
         assertEquals(before, coordiMate.getEventList());
+        assertEquals(List.of(ALICE, BENSON, CARL), coordiMate.getPersonList());
     }
 
     private void addContactsAndEvents() {

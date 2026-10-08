@@ -13,16 +13,19 @@ import coordimate.logic.commands.AddEventCommand;
 import coordimate.logic.commands.AssignCommand;
 import coordimate.logic.commands.ClearCommand;
 import coordimate.logic.commands.Command;
+import coordimate.logic.commands.CreateTagCommand;
 import coordimate.logic.commands.DeleteCommand;
 import coordimate.logic.commands.DeleteEventCommand;
 import coordimate.logic.commands.EditCommand;
 import coordimate.logic.commands.EditEventCommand;
 import coordimate.logic.commands.EditTagCommand;
 import coordimate.logic.commands.ExitCommand;
+import coordimate.logic.commands.FilterCommand;
 import coordimate.logic.commands.FindCommand;
 import coordimate.logic.commands.HelpCommand;
 import coordimate.logic.commands.ListCommand;
 import coordimate.logic.commands.ListTagsCommand;
+import coordimate.logic.commands.MarkAttendanceCommand;
 import coordimate.logic.commands.SearchCommand;
 import coordimate.logic.parser.exceptions.ParseException;
 
@@ -68,10 +71,13 @@ public class CoordiMateParser {
             case DeleteCommand.COMMAND_WORD -> new DeleteCommandParser().parse(arguments);
             case DeleteEventCommand.COMMAND_WORD -> new DeleteEventCommandParser().parse(arguments);
             case ClearCommand.COMMAND_WORD -> new ClearCommand();
+            case CreateTagCommand.COMMAND_WORD -> new CreateTagCommandParser().parse(arguments);
             case FindCommand.COMMAND_WORD -> new FindCommandParser().parse(arguments);
+            case FilterCommand.COMMAND_WORD -> new FilterCommandParser().parse(arguments);
             case ListCommand.COMMAND_WORD -> new ListCommand();
             case SearchCommand.COMMAND_WORD -> new SearchCommandParser().parse(arguments);
             case ListTagsCommand.COMMAND_WORD -> new ListTagsCommandParser().parse(arguments);
+            case MarkAttendanceCommand.COMMAND_WORD -> new MarkAttendanceCommandParser().parse(arguments);
             case ExitCommand.COMMAND_WORD -> new ExitCommand();
             case HelpCommand.COMMAND_WORD -> new HelpCommand();
             default -> {

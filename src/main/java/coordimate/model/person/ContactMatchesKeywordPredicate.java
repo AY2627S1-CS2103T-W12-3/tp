@@ -32,7 +32,8 @@ public class ContactMatchesKeywordPredicate implements Predicate<Person> {
         return person.getName().getFullName().toLowerCase().contains(lowerKeyword)
                 || person.getPhone().getValue().toLowerCase().contains(lowerKeyword)
                 || person.getEmail().getValue().toLowerCase().contains(lowerKeyword)
-                || person.getAddress().getValue().toLowerCase().contains(lowerKeyword);
+                || person.getAddress().map(address -> address.getValue().toLowerCase().contains(lowerKeyword))
+                        .orElse(false);
     }
 
     @Override

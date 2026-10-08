@@ -28,6 +28,12 @@ public class TagTest {
         assertFalse(Tag.isValidTagName(""));
         assertFalse(Tag.isValidTagName("Publicity Team"));
         assertFalse(Tag.isValidTagName("1234567890123456789012345678901"));
+        // invalid tag names
+        assertFalse(Tag.isValidTagName(""));
+        assertFalse(Tag.isValidTagName("Publicity Team"));
+        assertFalse(Tag.isValidTagName("1234567890123456789012345678901"));
+
+        // valid tag names
         assertTrue(Tag.isValidTagName("Publicity"));
         assertTrue(Tag.isValidTagName("123456789012345678901234567890"));
     }

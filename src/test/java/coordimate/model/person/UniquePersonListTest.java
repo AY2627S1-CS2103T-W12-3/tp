@@ -57,6 +57,26 @@ public class UniquePersonListTest {
     }
 
     @Test
+    public void add_sameNameWithDistinctPhoneAndEmail_throwsDuplicatePersonException() {
+        uniquePersonList.add(ALICE);
+        Person differentAlice = new PersonBuilder(BOB).withName("  aLiCe pAuLiNe  ").build();
+
+        assertThrows(DuplicatePersonException.class, () -> uniquePersonList.add(differentAlice));
+        assertEquals(List.of(ALICE), uniquePersonList.asUnmodifiableObservableList());
+    }
+
+    @Test
+    public void add_normalizedPhoneOrEmailDuplicate_throwsDuplicatePersonException() {
+        uniquePersonList.add(ALICE);
+        Person samePhone = new PersonBuilder(BOB).withPhone("(9435) 1253").build();
+        Person sameEmail = new PersonBuilder(BOB).withEmail("ALICE@EXAMPLE.COM").build();
+
+        assertThrows(DuplicatePersonException.class, () -> uniquePersonList.add(samePhone));
+        assertThrows(DuplicatePersonException.class, () -> uniquePersonList.add(sameEmail));
+        assertEquals(List.of(ALICE), uniquePersonList.asUnmodifiableObservableList());
+    }
+
+    @Test
     public void setPerson_nullTargetPerson_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> uniquePersonList.setPerson(null, ALICE));
     }
@@ -158,6 +178,13 @@ public class UniquePersonListTest {
     public void setPersons_listWithDuplicatePersons_throwsDuplicatePersonException() {
         List<Person> listWithDuplicatePersons = List.of(ALICE, ALICE);
         assertThrows(DuplicatePersonException.class, () -> uniquePersonList.setPersons(listWithDuplicatePersons));
+    }
+
+    @Test
+    public void setPersons_listWithDuplicateNames_throwsDuplicatePersonException() {
+        Person differentAlice = new PersonBuilder(BOB).withName("alice pauline").build();
+        assertThrows(DuplicatePersonException.class, () ->
+                uniquePersonList.setPersons(List.of(ALICE, differentAlice)));
     }
 
     @Test

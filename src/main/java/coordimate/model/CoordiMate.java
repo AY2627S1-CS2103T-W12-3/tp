@@ -2,6 +2,7 @@ package coordimate.model;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -9,6 +10,7 @@ import java.util.stream.Collectors;
 
 import coordimate.commons.util.ToStringBuilder;
 import coordimate.model.event.Event;
+import coordimate.model.event.MemberNameConflictException;
 import coordimate.model.person.Name;
 import coordimate.model.person.Person;
 import coordimate.model.person.UniquePersonList;
@@ -218,9 +220,13 @@ public class CoordiMate implements ReadOnlyCoordiMate {
     public void setPerson(Person target, Person editedPerson) {
         requireNonNull(editedPerson);
 
-        persons.setPerson(target, editedPerson);
+        List<Event> updatedEvents = null;
         if (!target.getName().equals(editedPerson.getName())) {
-            replaceMemberInEvents(target.getName(), editedPerson.getName());
+            updatedEvents = getEventsWithReplacedMember(target.getName(), editedPerson.getName());
+        }
+        persons.setPerson(target, editedPerson);
+        if (updatedEvents != null) {
+            events.setAll(updatedEvents);
         }
     }
 
@@ -230,26 +236,32 @@ public class CoordiMate implements ReadOnlyCoordiMate {
      * {@code key} is also removed from the members of every event.
      */
     public void removePerson(Person key) {
+        List<Event> updatedEvents = getEventsWithReplacedMember(key.getName(), null);
         persons.remove(key);
-        replaceMemberInEvents(key.getName(), null);
+        events.setAll(updatedEvents);
     }
 
     /**
-     * Replaces {@code oldName} with {@code newName} in every event that lists it as a member,
-     * keeping each member's position. Removes {@code oldName} instead if {@code newName} is null.
+     * Prepares event rosters with {@code oldName} replaced by {@code newName}, keeping each member's position.
+     * Removes {@code oldName} instead if {@code newName} is null.
      */
-    private void replaceMemberInEvents(Name oldName, Name newName) {
-        for (int i = 0; i < events.size(); i++) {
-            Event event = events.get(i);
+    private List<Event> getEventsWithReplacedMember(Name oldName, Name newName) {
+        List<Event> updatedEvents = new ArrayList<>();
+        for (Event event : events) {
             if (!event.hasMember(oldName)) {
+                updatedEvents.add(event);
                 continue;
+            }
+            if (newName != null && event.hasMember(newName)) {
+                throw new MemberNameConflictException();
             }
             List<Name> members = event.getMembers().stream()
                     .map(member -> member.equals(oldName) ? newName : member)
                     .filter(Objects::nonNull)
                     .toList();
-            events.set(i, new Event(event.getName(), event.getStartTime(), event.getEndTime(), members));
+            updatedEvents.add(new Event(event.getName(), event.getStartTime(), event.getEndTime(), members));
         }
+        return updatedEvents;
     }
 
     /**

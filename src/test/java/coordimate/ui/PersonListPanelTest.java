@@ -18,6 +18,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import coordimate.model.person.Person;
+import coordimate.testutil.PersonBuilder;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -65,9 +66,57 @@ public class PersonListPanelTest {
             assertEquals("Index: 2", getLabel(root, "selectedIndex").getText());
             assertEquals("98765432", getLabel(root, "phone").getText());
             assertEquals("johnd@example.com", getLabel(root, "email").getText());
+            assertEquals("NA", getLabel(root, "role").getText());
             assertEquals("311, Clementi Ave 2, #02-25", getLabel(root, "address").getText());
             FlowPane tags = (FlowPane) root.lookup("#detailTags");
             assertEquals(2, tags.getChildren().size());
+        });
+    }
+
+    @Test
+    public void contactWithAllDetails_showsSavedValues() throws Exception {
+        runOnJavaFxThread(() -> {
+            Person contact = new PersonBuilder(ALICE).withRole("Logistics Lead")
+                    .withBirthday("18-06-2004").withAddress("21 Kent Ridge Road, #03-12")
+                    .withOrganisation("NUS Student Affairs").withNote("Handles venue bookings")
+                    .withTags("EXCO", "Logistics").build();
+            Region root = new PersonListPanel(FXCollections.observableArrayList(contact)).getRoot();
+            new Scene(root);
+            root.applyCss();
+            getList(root).getSelectionModel().select(contact);
+
+            assertEquals("Logistics Lead", getLabel(root, "role").getText());
+            assertEquals("18-06-2004", getLabel(root, "birthday").getText());
+            assertEquals("21 Kent Ridge Road, #03-12", getLabel(root, "address").getText());
+            assertEquals("NUS Student Affairs", getLabel(root, "organisation").getText());
+            assertEquals("Handles venue bookings", getLabel(root, "note").getText());
+            assertTrue(getLabel(root, "note").isWrapText());
+            FlowPane tags = (FlowPane) root.lookup("#detailTags");
+            assertEquals(2, tags.getChildren().size());
+        });
+    }
+
+    @Test
+    public void contactWithoutOptionalFields_showsPlaceholdersOnlyInDetails() throws Exception {
+        runOnJavaFxThread(() -> {
+            Person contact = new PersonBuilder(ALICE).withoutAddress().withTags().build();
+            Region root = new PersonListPanel(FXCollections.observableArrayList(contact)).getRoot();
+            new Scene(root);
+            root.applyCss();
+            getList(root).getSelectionModel().select(contact);
+
+            assertEquals("— (not specified)", getLabel(root, "birthday").getText());
+            assertEquals("— (not specified)", getLabel(root, "address").getText());
+            assertEquals("— (not specified)", getLabel(root, "organisation").getText());
+            assertEquals("— (not specified)", getLabel(root, "note").getText());
+            assertTrue(((FlowPane) root.lookup("#detailTags")).getChildren().isEmpty());
+
+            Region card = new PersonCard(contact, 1).getRoot();
+            new Scene(card);
+            card.applyCss();
+            Label cardAddress = (Label) card.lookup("#address");
+            assertFalse(cardAddress.isVisible());
+            assertFalse(cardAddress.isManaged());
         });
     }
 
