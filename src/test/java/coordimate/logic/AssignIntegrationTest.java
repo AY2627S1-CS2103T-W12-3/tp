@@ -67,6 +67,7 @@ public class AssignIntegrationTest {
         logic.execute(ADD);
         logic.execute("assign evn/Final Concert c/1 2");
         logic.execute("delete 1");
+        logic.execute("y");
         ReadOnlyCoordiMate saved = storage.readCoordiMate().orElseThrow();
         assertEquals(List.of(BENSON.getName()), saved.getEventList().getFirst().getMembers());
     }

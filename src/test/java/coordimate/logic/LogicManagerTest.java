@@ -1,6 +1,5 @@
 package coordimate.logic;
 
-import static coordimate.logic.Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX;
 import static coordimate.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
 import static coordimate.logic.commands.CommandTestUtil.ADDRESS_DESC_AMY;
 import static coordimate.logic.commands.CommandTestUtil.EMAIL_DESC_AMY;
@@ -19,6 +18,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import coordimate.logic.commands.AddCommand;
 import coordimate.logic.commands.CommandResult;
+import coordimate.logic.commands.DeleteCommand;
 import coordimate.logic.commands.ListCommand;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.logic.parser.exceptions.ParseException;
@@ -59,7 +59,7 @@ public class LogicManagerTest {
     @Test
     public void execute_commandExecutionError_throwsCommandException() {
         String deleteCommand = "delete 9";
-        assertCommandException(deleteCommand, MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
+        assertCommandException(deleteCommand, String.format(DeleteCommand.MESSAGE_INVALID_INDEX, 9));
     }
 
     @Test

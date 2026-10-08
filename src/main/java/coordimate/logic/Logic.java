@@ -23,6 +23,9 @@ public interface Logic {
      */
     CommandResult execute(String commandText) throws CommandException, ParseException;
 
+    /** Returns whether the next input will answer a contact deletion prompt. */
+    boolean isAwaitingDeleteConfirmation();
+
     /**
      * Returns an unmodifiable view of the filtered list of persons.
      */

@@ -431,7 +431,9 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 1. EXCO member requests to delete a contact, identifying the contact by its displayed index, exact name, phone number, or email address.
 2. CoordiMate displays the matching contact and requests confirmation.
 3. EXCO member confirms the deletion.
-4. CoordiMate deletes the selected contact, removes them from all event participant lists (including past events), deletes their attendance records, and confirms the deletion. Events and other contacts remain unchanged.
+4. CoordiMate saves a candidate model without the selected contact or their assignments in any event roster, then
+   updates the live model and confirms the deletion. Events and other contacts remain unchanged. Attendance records
+   are not yet represented in the MVP data model.
 
     Use case ends.
 
@@ -459,7 +461,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * 3a. EXCO member declines the deletion.
 
-  * 3a1. CoordiMate leaves the contact unchanged.
+  * 3a1. CoordiMate leaves the contact unchanged. Only `y` or `Y` confirms; any other input cancels and is consumed.
 
     Use case ends.
 
