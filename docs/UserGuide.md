@@ -248,6 +248,26 @@ Shows a list of all persons in CoordiMate.
 
 Format: `list`
 
+### Deleting a tag: `deletetag`
+
+Deletes an existing tag and removes it from every contact to which it is assigned.
+
+Format: `deletetag t/TAG`
+
+Examples:
+
+* `deletetag t/ProductionCrew`
+* `deletetag t/Publicity`
+
+The tag name is matched case-insensitively.
+
+Success: `{TAG_NAME} successfully deleted.`
+
+| Condition | Error message |
+|---|---|
+| The `t/` prefix is missing. | `No prefix given.` |
+| No tag name is provided. | `No tag name given.` |
+| The specified tag does not exist. | `No such tag exists: {TAG_NAME}.` |
 ### Editing a tag: `edittag`
 
 Renames an existing tag, including a default tag, and updates it wherever it is applied across contacts.
@@ -454,8 +474,9 @@ Action     | Format, Examples
 **Add**    | `add n/NAME p/PHONE e/EMAIL r/ROLE [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [t/TAG]... [m/NOTE]`<br> e.g., `add n/James Ho p/22224444 e/jamesho@example.com r/Member t/friend`
 **Assign** | `assign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...`<br> e.g., `assign evn/Final Concert c/1 4 5`
 **Clear**  | `clear`
-**Delete** | `delete INDEX` or `delete n/NAME`, `delete p/PHONE`, `delete e/EMAIL`; confirm with `y`<br> e.g., `delete 3`
-**Edit**   | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [t/TAG]... [at/TAG]... [rt/TAG]...`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
+**Delete tag** | `deletetag t/TAG`<br> e.g., `deletetag t/Publicity`
+**Delete contacts** | `delete INDEX` or `delete n/NAME`, `delete p/PHONE`, `delete e/EMAIL`; confirm with `y`<br> e.g., `delete 3`
+**Edit contacts**   | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [t/TAG]... [at/TAG]... [rt/TAG]...`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
 **Find**   | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
 **List**   | `list`
 **Help**   | `help`

@@ -81,6 +81,11 @@ public class ModelManagerTest {
     }
 
     @Test
+    public void deleteTag_null_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> modelManager.deleteTag(null));
+    }
+
+    @Test
     public void tagOperations_nullArguments_throwNullPointerException() {
         assertThrows(NullPointerException.class, () -> modelManager.hasTag(null));
         assertThrows(NullPointerException.class, () -> modelManager.addTag(null));

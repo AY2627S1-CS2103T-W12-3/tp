@@ -62,11 +62,11 @@ public class CoordiMate implements ReadOnlyCoordiMate {
     }
 
     /**
-     * Replaces the saved tags. An empty replacement restores the initial default tags.
+     * Replaces the saved tags, including with an empty list.
      */
     public void setTags(List<Tag> tags) {
         requireNonNull(tags);
-        this.tags.setTags(tags.isEmpty() ? DEFAULT_TAGS : tags);
+        this.tags.setTags(tags);
     }
 
     /**
@@ -152,6 +152,25 @@ public class CoordiMate implements ReadOnlyCoordiMate {
      */
     public void addTag(Tag tag) {
         tags.add(tag);
+    }
+
+    /**
+     * Removes {@code target} from the saved tag list and from every contact that uses it.
+     */
+    public void removeTag(Tag target) {
+        requireNonNull(target);
+        if (!hasTag(target)) {
+            throw new IllegalArgumentException("Tag does not exist.");
+        }
+
+        List<Tag> remainingTags = tags.asUnmodifiableObservableList().stream()
+                .filter(tag -> !tag.isSameTag(target))
+                .toList();
+        List<Person> updatedPersons = persons.asUnmodifiableObservableList().stream()
+                .map(person -> removeTagFromPerson(person, target))
+                .toList();
+        tags.setTags(remainingTags);
+        persons.setPersons(updatedPersons);
     }
 
     /**
@@ -277,6 +296,21 @@ public class CoordiMate implements ReadOnlyCoordiMate {
         return new Person(person.getName(), person.getPhone(), person.getEmail(), person.getRole(),
                 person.getBirthday().orElse(null), person.getAddress().orElse(null),
                 person.getOrganisation().orElse(null), person.getNote().orElse(null), editedTags);
+    }
+
+    /**
+     * Returns a copy of {@code person} without {@code target}, or the original person if it does not use the tag.
+     */
+    private Person removeTagFromPerson(Person person, Tag target) {
+        if (person.getTags().stream().noneMatch(tag -> tag.isSameTag(target))) {
+            return person;
+        }
+        Set<Tag> remainingTags = person.getTags().stream()
+                .filter(tag -> !tag.isSameTag(target))
+                .collect(Collectors.toSet());
+        return new Person(person.getName(), person.getPhone(), person.getEmail(), person.getRole(),
+                person.getBirthday().orElse(null), person.getAddress().orElse(null),
+                person.getOrganisation().orElse(null), person.getNote().orElse(null), remainingTags);
     }
 
     //// util methods

@@ -32,6 +32,7 @@ class JsonSerializableCoordiMate {
     private final List<JsonAdaptedPerson> persons = new ArrayList<>();
     private final List<JsonAdaptedEvent> events = new ArrayList<>();
     private final List<JsonAdaptedTag> tags = new ArrayList<>();
+    private final boolean hasTagData;
 
     /**
      * Constructs a {@code JsonSerializableCoordiMate} with the given people and optional events.
@@ -50,6 +51,7 @@ class JsonSerializableCoordiMate {
         if (tags != null) {
             this.tags.addAll(tags);
         }
+        hasTagData = tags != null;
     }
 
     /**
@@ -68,6 +70,7 @@ class JsonSerializableCoordiMate {
         persons.addAll(source.getPersonList().stream().map(JsonAdaptedPerson::new).collect(Collectors.toList()));
         events.addAll(source.getEventList().stream().map(JsonAdaptedEvent::new).collect(Collectors.toList()));
         tags.addAll(source.getTagList().stream().map(JsonAdaptedTag::new).collect(Collectors.toList()));
+        hasTagData = true;
     }
 
     /**
@@ -94,10 +97,12 @@ class JsonSerializableCoordiMate {
             }
             modelTags.add(jsonAdaptedTag.toModelType());
         }
-        try {
-            coordiMate.setTags(modelTags);
-        } catch (DuplicateTagException duplicateTagException) {
-            throw new IllegalValueException(MESSAGE_DUPLICATE_TAG);
+        if (hasTagData) {
+            try {
+                coordiMate.setTags(modelTags);
+            } catch (DuplicateTagException duplicateTagException) {
+                throw new IllegalValueException(MESSAGE_DUPLICATE_TAG);
+            }
         }
         Set<Name> contactNames = coordiMate.getPersonList().stream().map(Person::getName).collect(Collectors.toSet());
         for (JsonAdaptedEvent jsonAdaptedEvent : events) {
