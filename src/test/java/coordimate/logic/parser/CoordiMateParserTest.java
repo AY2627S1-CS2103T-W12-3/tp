@@ -29,6 +29,7 @@ import coordimate.logic.commands.HelpCommand;
 import coordimate.logic.commands.ListCommand;
 import coordimate.logic.commands.ListTagsCommand;
 import coordimate.logic.commands.MarkAttendanceCommand;
+import coordimate.logic.commands.MembersCommand;
 import coordimate.logic.commands.SearchCommand;
 import coordimate.logic.commands.UnassignCommand;
 import coordimate.logic.parser.exceptions.ParseException;
@@ -69,6 +70,12 @@ public class CoordiMateParserTest {
                 UnassignCommand.COMMAND_WORD + " evn/Final Concert c/1 3");
         assertEquals(new UnassignCommand("Final Concert", List.of(INDEX_FIRST_PERSON, Index.fromOneBased(3))),
                 command);
+    }
+
+    @Test
+    public void parseCommand_members() throws Exception {
+        assertEquals(new MembersCommand("Final Concert"),
+                parser.parseCommand(MembersCommand.COMMAND_WORD + " evn/Final Concert"));
     }
 
     @Test
