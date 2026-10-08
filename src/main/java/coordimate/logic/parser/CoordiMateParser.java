@@ -28,6 +28,7 @@ import coordimate.logic.commands.ListCommand;
 import coordimate.logic.commands.ListTagsCommand;
 import coordimate.logic.commands.MarkAttendanceCommand;
 import coordimate.logic.commands.SearchCommand;
+import coordimate.logic.commands.UnassignCommand;
 import coordimate.logic.parser.exceptions.ParseException;
 
 /**
@@ -69,6 +70,7 @@ public class CoordiMateParser {
             case EditEventCommand.COMMAND_WORD -> new EditEventCommandParser().parse(arguments);
             case EditTagCommand.COMMAND_WORD -> new EditTagCommandParser().parse(arguments);
             case AssignCommand.COMMAND_WORD -> new AssignCommandParser().parse(arguments);
+            case UnassignCommand.COMMAND_WORD -> new UnassignCommandParser().parse(arguments);
             case DeleteCommand.COMMAND_WORD -> new DeleteCommandParser().parse(arguments);
             case DeleteEventCommand.COMMAND_WORD -> new DeleteEventCommandParser().parse(arguments);
             case DeleteTagCommand.COMMAND_WORD -> new DeleteTagCommandParser().parse(arguments);
