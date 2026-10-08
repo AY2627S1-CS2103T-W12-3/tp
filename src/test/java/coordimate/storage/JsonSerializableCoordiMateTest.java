@@ -18,7 +18,9 @@ import coordimate.commons.util.JsonUtil;
 import coordimate.model.CoordiMate;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
+import coordimate.model.person.Person;
 import coordimate.model.tag.Tag;
+import coordimate.testutil.PersonBuilder;
 import coordimate.testutil.TypicalPersons;
 
 public class JsonSerializableCoordiMateTest {
@@ -40,6 +42,43 @@ public class JsonSerializableCoordiMateTest {
     }
 
     @Test
+    public void jsonRoundTrip_personRole_preserved() throws Exception {
+        CoordiMate source = new CoordiMate();
+        Person contact = new PersonBuilder().withRole("Logistics").build();
+        source.addPerson(contact);
+
+        String json = JsonUtil.toJsonString(new JsonSerializableCoordiMate(source));
+        CoordiMate restored = JsonUtil.fromJsonString(json, JsonSerializableCoordiMate.class).toModelType();
+
+        assertEquals(List.of(contact), restored.getPersonList());
+    }
+
+    @Test
+    public void jsonRoundTrip_optionalContactDetails_preserved() throws Exception {
+        CoordiMate source = new CoordiMate();
+        Person contact = new PersonBuilder().withBirthday("18-06-2004")
+                .withOrganisation("NUS Student Affairs").withNote("Handles venue bookings").build();
+        source.addPerson(contact);
+
+        String json = JsonUtil.toJsonString(new JsonSerializableCoordiMate(source));
+        CoordiMate restored = JsonUtil.fromJsonString(json, JsonSerializableCoordiMate.class).toModelType();
+
+        assertEquals(List.of(contact), restored.getPersonList());
+    }
+
+    @Test
+    public void jsonRoundTrip_contactWithoutAddress_remainsUnset() throws Exception {
+        CoordiMate source = new CoordiMate();
+        Person contact = new PersonBuilder().withoutAddress().build();
+        source.addPerson(contact);
+
+        String json = JsonUtil.toJsonString(new JsonSerializableCoordiMate(source));
+        CoordiMate restored = JsonUtil.fromJsonString(json, JsonSerializableCoordiMate.class).toModelType();
+
+        assertEquals(List.of(contact), restored.getPersonList());
+    }
+
+    @Test
     public void toModelType_invalidPersonFile_throwsIllegalValueException() throws Exception {
         JsonSerializableCoordiMate dataFromFile = JsonUtil.readJsonFile(INVALID_PERSON_FILE,
                 JsonSerializableCoordiMate.class).get();
@@ -52,6 +91,16 @@ public class JsonSerializableCoordiMateTest {
                 JsonSerializableCoordiMate.class).get();
         assertThrows(IllegalValueException.class, JsonSerializableCoordiMate.MESSAGE_DUPLICATE_PERSON,
                 dataFromFile::toModelType);
+    }
+
+    @Test
+    public void toModelType_duplicateNamesIgnoringCase_throwsIllegalValueException() {
+        Person differentAlice = new PersonBuilder(BENSON).withName("  aLiCe pAuLiNe  ").build();
+        JsonSerializableCoordiMate data = new JsonSerializableCoordiMate(
+                List.of(new JsonAdaptedPerson(ALICE), new JsonAdaptedPerson(differentAlice)), List.of());
+
+        assertThrows(IllegalValueException.class, JsonSerializableCoordiMate.MESSAGE_DUPLICATE_PERSON,
+                data::toModelType);
     }
 
     @Test
@@ -107,6 +156,16 @@ public class JsonSerializableCoordiMateTest {
     public void toModelType_customTags_preservedDuringRoundTrip() throws Exception {
         CoordiMate source = new CoordiMate();
         source.addTag(new Tag("Publicity"));
+
+        CoordiMate restored = new JsonSerializableCoordiMate(source).toModelType();
+
+        assertEquals(source.getTagList(), restored.getTagList());
+    }
+
+    @Test
+    public void toModelType_renamedDefaultTag_preservedDuringRoundTrip() throws Exception {
+        CoordiMate source = new CoordiMate();
+        source.setTag(new Tag("EXCO"), new Tag("Committee"));
 
         CoordiMate restored = new JsonSerializableCoordiMate(source).toModelType();
 

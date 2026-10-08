@@ -93,6 +93,29 @@ public class ModelManager implements Model {
     public void deleteTag(Tag target) {
         requireNonNull(target);
         coordiMate.removeTag(target);
+    public void registerTag(Tag tag) {
+        requireNonNull(tag);
+        if (!coordiMate.hasTag(tag)) {
+            coordiMate.addTag(tag);
+        }
+    }
+
+    @Override
+    public boolean hasTag(Tag tag) {
+        requireNonNull(tag);
+        return coordiMate.hasTag(tag);
+    }
+
+    @Override
+    public void addTag(Tag tag) {
+        requireNonNull(tag);
+        coordiMate.addTag(tag);
+    }
+
+    @Override
+    public void setTag(Tag target, Tag editedTag) {
+        requireAllNonNull(target, editedTag);
+        coordiMate.setTag(target, editedTag);
     }
 
     @Override
@@ -119,6 +142,9 @@ public class ModelManager implements Model {
     @Override
     public void addPerson(Person person) {
         coordiMate.addPerson(person);
+        for (Tag tag : person.getTags()) {
+            registerTag(tag);
+        }
         updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
     }
 
@@ -127,6 +153,9 @@ public class ModelManager implements Model {
         requireAllNonNull(target, editedPerson);
 
         coordiMate.setPerson(target, editedPerson);
+        for (Tag tag : editedPerson.getTags()) {
+            registerTag(tag);
+        }
     }
 
     //=========== Filtered Person List Accessors =============================================================

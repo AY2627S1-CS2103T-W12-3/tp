@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import coordimate.logic.parser.Prefix;
+import coordimate.model.person.Address;
 import coordimate.model.person.Person;
 
 /**
@@ -42,7 +43,7 @@ public class Messages {
                 .append("; Email: ")
                 .append(person.getEmail())
                 .append("; Address: ")
-                .append(person.getAddress())
+                .append(person.getAddress().map(Address::toString).orElse("— (not specified)"))
                 .append("; Tags: ");
         person.getTags().forEach(builder::append);
         return builder.toString();

@@ -3,33 +3,20 @@ package coordimate.model.person;
 import static coordimate.commons.util.AppUtil.checkArgument;
 import static java.util.Objects.requireNonNull;
 
+import java.util.Locale;
+
 /**
  * Represents a Person's email in the CoordiMate.
  * Guarantees: immutable; is valid as declared in {@link #isValidEmail(String)}
  */
 public class Email {
 
-    public static final String MESSAGE_CONSTRAINTS = "Emails should be of the format local-part@domain "
-            + "and adhere to the following constraints:\n"
-            + "1. The local-part should only contain alphanumeric characters and these special characters, excluding "
-            + "the parentheses, (" + Email.SPECIAL_CHARACTERS + "). The local-part may not start or end with any "
-            + "special characters.\n"
-            + "2. The local-part is followed by an '@' and then a domain name. The domain name is made up of domain "
-            + "labels separated by periods.\n"
-            + "The domain name must:\n"
-            + "    - end with a domain label at least 2 characters long\n"
-            + "    - have each domain label start and end with alphanumeric characters\n"
-            + "    - have each domain label consist of alphanumeric characters, separated only by hyphens, if any.";
-    public static final String VALIDATION_REGEX = Email.LOCAL_PART_REGEX + "@" + Email.DOMAIN_REGEX;
+    public static final String MESSAGE_CONSTRAINTS = "Invalid email. Example: e/aish@example.com";
 
-    private static final String SPECIAL_CHARACTERS = "+_.-";
-    private static final String ALPHANUMERIC_NO_UNDERSCORE = "[^\\W_]+"; // alphanumeric characters except underscore
-    private static final String LOCAL_PART_REGEX = "^" + ALPHANUMERIC_NO_UNDERSCORE + "([" + SPECIAL_CHARACTERS + "]"
-            + ALPHANUMERIC_NO_UNDERSCORE + ")*";
-    private static final String DOMAIN_PART_REGEX = ALPHANUMERIC_NO_UNDERSCORE
-            + "(-" + ALPHANUMERIC_NO_UNDERSCORE + ")*";
-    private static final String DOMAIN_LAST_PART_REGEX = "(" + DOMAIN_PART_REGEX + "){2,}$"; // At least two chars
-    private static final String DOMAIN_REGEX = "(" + DOMAIN_PART_REGEX + "\\.)*" + DOMAIN_LAST_PART_REGEX;
+    private static final String LOCAL_PART_REGEX = "[A-Za-z0-9_%+-](?:[A-Za-z0-9._%+-]*[A-Za-z0-9_%+-])?";
+    private static final String DOMAIN_LABEL_REGEX = "[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?";
+    private static final String VALIDATION_REGEX = LOCAL_PART_REGEX + "@(?:" + DOMAIN_LABEL_REGEX
+            + "\\.)+[A-Za-z]{2,}";
 
     private final String value;
 
@@ -49,10 +36,18 @@ public class Email {
     }
 
     /**
+     * Returns the email without surrounding spaces or letter case for duplicate checks.
+     */
+    public String getNormalizedValue() {
+        return value.strip().toLowerCase(Locale.ROOT);
+    }
+
+    /**
      * Returns true if a given string is a valid email.
      */
     public static boolean isValidEmail(String test) {
-        return test.matches(VALIDATION_REGEX);
+        requireNonNull(test);
+        return test.matches(VALIDATION_REGEX) && !test.substring(0, test.indexOf('@')).contains("..");
     }
 
     @Override

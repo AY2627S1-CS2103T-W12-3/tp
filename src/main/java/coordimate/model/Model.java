@@ -55,6 +55,24 @@ public interface Model {
      */
     ObservableList<Tag> getTagList();
 
+    /** Registers a tag for future use if its name is not already saved. */
+    void registerTag(Tag tag);
+
+    /**
+     * Returns true if a tag with the same name as {@code tag} exists, ignoring case.
+     */
+    boolean hasTag(Tag tag);
+
+    /**
+     * Adds a tag whose name must not already exist, ignoring case.
+     */
+    void addTag(Tag tag);
+
+    /**
+     * Replaces {@code target} with {@code editedTag} in the saved tag list and on every contact.
+     */
+    void setTag(Tag target, Tag editedTag);
+
     /**
      * Deletes {@code target} and removes it from every contact that uses it.
      */

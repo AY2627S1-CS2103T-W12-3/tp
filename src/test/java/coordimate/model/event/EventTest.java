@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
@@ -155,5 +156,70 @@ public class EventTest {
             assertEquals(start, new Event("Concert", start, end).getStartTime());
         }
         assertThrows(NullPointerException.class, () -> date.isAfter(null));
+    }
+
+    @Test
+    public void constructor_noAttendance_emptyAttendanceRecord() {
+        Event event = new Event("Concert", date, time, List.of(alex));
+        assertEquals(Map.of(), event.getAttendanceRecord());
+        assertTrue(event.getAttendance(alex).isEmpty());
+    }
+
+    @Test
+    public void constructor_attendanceForUnassignedMember_rejected() {
+        Map<Name, AttendanceStatus> attendance = Map.of(bernice, AttendanceStatus.PRESENT);
+        assertEquals(Event.MESSAGE_UNASSIGNED_ATTENDANCE, assertThrows(IllegalArgumentException.class, () ->
+                new Event("Concert", date, time, List.of(alex), attendance)).getMessage());
+    }
+
+    @Test
+    public void constructor_attendanceForAssignedMembers_accepted() {
+        Map<Name, AttendanceStatus> attendance = Map.of(alex, AttendanceStatus.PRESENT,
+                bernice, AttendanceStatus.ABSENT);
+        Event event = new Event("Concert", date, time, List.of(alex, bernice), attendance);
+        assertEquals(AttendanceStatus.PRESENT, event.getAttendance(alex).get());
+        assertEquals(AttendanceStatus.ABSENT, event.getAttendance(bernice).get());
+    }
+
+    @Test
+    public void withAttendance_assignedMember_returnsUpdatedCopy() {
+        Event event = new Event("Concert", date, time, List.of(alex, bernice));
+        Event updated = event.withAttendance(alex, AttendanceStatus.PRESENT);
+
+        assertTrue(event.getAttendance(alex).isEmpty());
+        assertEquals(AttendanceStatus.PRESENT, updated.getAttendance(alex).get());
+        assertTrue(updated.getAttendance(bernice).isEmpty());
+        assertEquals(List.of(alex, bernice), updated.getMembers());
+    }
+
+    @Test
+    public void withAttendance_overwritesPreviousStatus() {
+        Event event = new Event("Concert", date, time, List.of(alex))
+                .withAttendance(alex, AttendanceStatus.ABSENT);
+        Event updated = event.withAttendance(alex, AttendanceStatus.PRESENT);
+        assertEquals(AttendanceStatus.PRESENT, updated.getAttendance(alex).get());
+    }
+
+    @Test
+    public void withAttendance_unassignedMember_throwsIllegalArgumentException() {
+        Event event = new Event("Concert", date, time, List.of(alex));
+        assertEquals(Event.MESSAGE_UNASSIGNED_ATTENDANCE, assertThrows(IllegalArgumentException.class, () ->
+                event.withAttendance(bernice, AttendanceStatus.PRESENT)).getMessage());
+    }
+
+    @Test
+    public void withAttendance_nullArguments_throwsNullPointerException() {
+        Event event = new Event("Concert", date, time, List.of(alex));
+        assertThrows(NullPointerException.class, () -> event.withAttendance(null, AttendanceStatus.PRESENT));
+        assertThrows(NullPointerException.class, () -> event.withAttendance(alex, null));
+    }
+
+    @Test
+    public void equals_differentAttendance_notEqual() {
+        Event event = new Event("Concert", date, time, List.of(alex));
+        Event withAttendance = event.withAttendance(alex, AttendanceStatus.PRESENT);
+        assertNotEquals(event, withAttendance);
+        assertEquals(withAttendance, new Event("Concert", date, time, List.of(alex))
+                .withAttendance(alex, AttendanceStatus.PRESENT));
     }
 }

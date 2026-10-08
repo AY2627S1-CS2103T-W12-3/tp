@@ -9,13 +9,8 @@ import static java.util.Objects.requireNonNull;
  */
 public class Address {
 
-    public static final String MESSAGE_CONSTRAINTS = "Addresses can take any values, and should not be blank";
-
-    /*
-     * The first character of the address must not be a whitespace,
-     * otherwise " " (a blank string) becomes a valid input.
-     */
-    public static final String VALIDATION_REGEX = "[^\\s].*";
+    public static final String MESSAGE_CONSTRAINTS = "Invalid address. Example: a/21 Kent Ridge Road, #03-12";
+    private static final int MAX_LENGTH = 200;
 
     private final String value;
 
@@ -38,7 +33,7 @@ public class Address {
      * Returns true if a given string is a valid address.
      */
     public static boolean isValidAddress(String test) {
-        return test.matches(VALIDATION_REGEX);
+        return PrintableText.isValid(test, MAX_LENGTH);
     }
 
     @Override

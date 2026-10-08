@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
+import coordimate.model.event.MemberNameConflictException;
 import coordimate.model.person.Name;
 import coordimate.model.person.Person;
 import coordimate.model.person.exceptions.DuplicatePersonException;
@@ -87,6 +88,15 @@ public class CoordiMateTest {
     }
 
     @Test
+    public void addPerson_sameNameWithDifferentPhoneAndEmail_throwsDuplicatePersonException() {
+        coordiMate.addPerson(ALICE);
+        Person differentAlice = new PersonBuilder(BENSON).withName(ALICE.getName().toString()).build();
+        assertThrows(DuplicatePersonException.class, () -> coordiMate.addPerson(differentAlice));
+
+        assertEquals(List.of(ALICE), coordiMate.getPersonList());
+    }
+
+    @Test
     public void removePerson_assignedContact_removedFromEveryEvent() {
         addContactsAndEvents();
         coordiMate.removePerson(ALICE);
@@ -112,12 +122,24 @@ public class CoordiMateTest {
     }
 
     @Test
-    public void setPerson_duplicateName_eventsUnchanged() {
+    public void setPerson_duplicatePhone_eventsUnchanged() {
+        addContactsAndEvents();
+        List<Event> before = List.copyOf(coordiMate.getEventList());
+        Person aliceWithBensonPhone = new PersonBuilder(ALICE).withPhone(BENSON.getPhone().toString()).build();
+        assertThrows(DuplicatePersonException.class, () -> coordiMate.setPerson(ALICE, aliceWithBensonPhone));
+        assertEquals(before, coordiMate.getEventList());
+        assertEquals(List.of(ALICE, BENSON, CARL), coordiMate.getPersonList());
+    }
+
+    @Test
+    public void setPerson_renameConflictsWithEventMember_noChanges() {
         addContactsAndEvents();
         List<Event> before = List.copyOf(coordiMate.getEventList());
         Person aliceAsBenson = new PersonBuilder(ALICE).withName(BENSON.getName().toString()).build();
-        assertThrows(DuplicatePersonException.class, () -> coordiMate.setPerson(ALICE, aliceAsBenson));
+
+        assertThrows(MemberNameConflictException.class, () -> coordiMate.setPerson(ALICE, aliceAsBenson));
         assertEquals(before, coordiMate.getEventList());
+        assertEquals(List.of(ALICE, BENSON, CARL), coordiMate.getPersonList());
     }
 
     private void addContactsAndEvents() {
@@ -203,6 +225,55 @@ public class CoordiMateTest {
     public void removeTag_invalidArguments_throwsException() {
         assertThrows(NullPointerException.class, () -> coordiMate.removeTag(null));
         assertThrows(IllegalArgumentException.class, () -> coordiMate.removeTag(new Tag("Missing")));
+    public void setTag_customTag_replacesTagInListAndContacts() {
+        Tag publicity = new Tag("Publicity");
+        Tag media = new Tag("Media");
+        Person taggedAlice = new PersonBuilder(ALICE).withRole("Logistics").withBirthday("18-06-2004")
+                .withOrganisation("NUS Student Affairs").withNote("Handles venue bookings")
+                .withTags("Publicity", "EXCO").build();
+        Person taggedBenson = new PersonBuilder(BENSON).withoutAddress().withTags("Publicity").build();
+        coordiMate.addTag(publicity);
+        coordiMate.addPerson(taggedAlice);
+        coordiMate.addPerson(taggedBenson);
+
+        coordiMate.setTag(new Tag("publicity"), media);
+
+        assertEquals(List.of(new Tag("EXCO"), new Tag("Sponsor"), new Tag("UniversityStaff"),
+                new Tag("Logistics"), media), coordiMate.getTagList());
+        assertEquals(List.of("EXCO", "Media"), coordiMate.getPersonList().get(0).getTags().stream()
+                .map(Tag::getTagName).sorted().toList());
+        assertEquals(List.of(media), coordiMate.getPersonList().get(1).getTags().stream().toList());
+        assertEquals(new PersonBuilder(taggedAlice).withTags("Media", "EXCO").build(),
+                coordiMate.getPersonList().get(0));
+        assertEquals(new PersonBuilder(taggedBenson).withTags("Media").build(),
+                coordiMate.getPersonList().get(1));
+    }
+
+    @Test
+    public void setTag_defaultTag_replacesTagInListAndContacts() {
+        Tag committee = new Tag("Committee");
+        Person taggedAlice = new PersonBuilder(ALICE).withTags("EXCO").build();
+        coordiMate.addPerson(taggedAlice);
+
+        coordiMate.setTag(new Tag("exco"), committee);
+
+        assertEquals(List.of(committee, new Tag("Sponsor"), new Tag("UniversityStaff"),
+                new Tag("Logistics")), coordiMate.getTagList());
+        assertEquals(List.of(committee), coordiMate.getPersonList().get(0).getTags().stream().toList());
+        assertEquals(coordiMate, new CoordiMate(coordiMate));
+    }
+
+    @Test
+    public void setTag_invalidArguments_throwsException() {
+        Tag publicity = new Tag("Publicity");
+        Tag media = new Tag("Media");
+        coordiMate.addTag(publicity);
+        coordiMate.addTag(media);
+
+        assertThrows(NullPointerException.class, () -> coordiMate.setTag(null, media));
+        assertThrows(NullPointerException.class, () -> coordiMate.setTag(publicity, null));
+        assertThrows(IllegalArgumentException.class, () -> coordiMate.setTag(new Tag("Missing"), new Tag("New")));
+        assertThrows(IllegalArgumentException.class, () -> coordiMate.setTag(publicity, media));
     }
 
     @Test

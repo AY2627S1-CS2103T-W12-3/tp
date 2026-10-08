@@ -48,6 +48,17 @@ public class EditPersonDescriptorTest {
         editedAmy = new EditPersonDescriptorBuilder(DESC_AMY).withEmail(VALID_EMAIL_BOB).build();
         assertFalse(DESC_AMY.equals(editedAmy));
 
+        // different role or optional-field edit -> returns false
+        editedAmy = new EditPersonDescriptorBuilder(DESC_AMY).withRole("Logistics").build();
+        assertFalse(DESC_AMY.equals(editedAmy));
+        editedAmy = new EditPersonDescriptorBuilder(DESC_AMY).withBirthday("18-06-2004").build();
+        assertFalse(DESC_AMY.equals(editedAmy));
+        editedAmy = new EditPersonDescriptorBuilder(DESC_AMY).withOrganisation("NUS Student Affairs").build();
+        assertFalse(DESC_AMY.equals(editedAmy));
+        editedAmy = new EditPersonDescriptorBuilder(DESC_AMY).withNote("Handles venue bookings").build();
+        assertFalse(DESC_AMY.equals(editedAmy));
+        assertFalse(new EditPersonDescriptor().equals(new EditPersonDescriptorBuilder().withoutNote().build()));
+
         // different address -> returns false
         editedAmy = new EditPersonDescriptorBuilder(DESC_AMY).withAddress(VALID_ADDRESS_BOB).build();
         assertFalse(DESC_AMY.equals(editedAmy));
@@ -63,9 +74,17 @@ public class EditPersonDescriptorTest {
         String expected = EditPersonDescriptor.class.getCanonicalName() + "{name="
                 + editPersonDescriptor.getName().orElse(null) + ", phone="
                 + editPersonDescriptor.getPhone().orElse(null) + ", email="
-                + editPersonDescriptor.getEmail().orElse(null) + ", address="
-                + editPersonDescriptor.getAddress().orElse(null) + ", tags="
-                + editPersonDescriptor.getTags().orElse(null) + "}";
+                + editPersonDescriptor.getEmail().orElse(null) + ", role="
+                + editPersonDescriptor.getRole().orElse(null) + ", birthdayEdited="
+                + editPersonDescriptor.isBirthdayEdited() + ", birthday="
+                + editPersonDescriptor.getBirthday().orElse(null) + ", addressEdited="
+                + editPersonDescriptor.isAddressEdited() + ", address="
+                + editPersonDescriptor.getAddress().orElse(null) + ", organisationEdited="
+                + editPersonDescriptor.isOrganisationEdited() + ", organisation="
+                + editPersonDescriptor.getOrganisation().orElse(null) + ", noteEdited="
+                + editPersonDescriptor.isNoteEdited() + ", note="
+                + editPersonDescriptor.getNote().orElse(null) + ", tags="
+                + editPersonDescriptor.getTags().orElse(null) + ", tagOperations=[]}";
         assertEquals(expected, editPersonDescriptor.toString());
     }
 }

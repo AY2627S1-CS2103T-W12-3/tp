@@ -79,8 +79,9 @@ The `UI` component,
 
 * executes user commands using the `Logic` component.
 * listens for changes to `Model` data so that the UI can be updated with the modified data. The Contacts view
-  displays the filtered contact list beside a details pane and clears the selection when the selected contact
-  leaves that list.
+  displays the filtered contact list beside a details pane, follows a selected contact when an edit replaces that
+  list entry, and clears the selection when the contact leaves the list. The details pane displays all saved contact
+  fields, showing a placeholder for unset optional fields and no tag chips for an empty tag set.
 * keeps a reference to the `Logic` component, because the `UI` relies on the `Logic` to execute commands.
 * depends on some classes in the `Model` component because it displays `Person` objects from the model.
 
@@ -348,7 +349,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 **Main success scenario (MSS)**
 
 1. EXCO member requests to add a contact, providing the contact's name, phone number, email address, role, and any applicable optional details.
-2. CoordiMate adds the contact and confirms that the contact was saved.
+2. CoordiMate validates the supplied fields, registers any new custom tags, saves the contact, and confirms
+   that the contact was saved.
 
     Use case ends.
 
@@ -362,7 +364,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
     Steps 1a1-1a2 are repeated until the contact details are valid.<br>
     Use case resumes from step 2.
 
-* 1b. A contact with the same normalised phone number or email address already exists.
+* 1b. A contact with the same name (ignoring case and surrounding spaces), normalised phone number,
+  or email address already exists.
 
   * 1b1. CoordiMate informs the EXCO member that the contact already exists and makes no changes.
 
@@ -371,6 +374,12 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * 2a. CoordiMate cannot write to the local data file.
 
   * 2a1. CoordiMate informs the EXCO member that the contact could not be saved and makes no changes.
+
+    Use case ends.
+
+* 2b. CoordiMate cannot load the local data file because it is invalid or corrupted.
+
+  * 2b1. CoordiMate informs the EXCO member that the contact data could not be loaded and makes no changes.
 
     Use case ends.
 
@@ -422,7 +431,9 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 1. EXCO member requests to delete a contact, identifying the contact by its displayed index, exact name, phone number, or email address.
 2. CoordiMate displays the matching contact and requests confirmation.
 3. EXCO member confirms the deletion.
-4. CoordiMate deletes the contact and confirms the deletion.
+4. CoordiMate saves a candidate model without the selected contact or their assignments in any event roster, then
+   updates the live model and confirms the deletion. Events and other contacts remain unchanged. Attendance records
+   are not yet represented in the MVP data model.
 
     Use case ends.
 
@@ -450,13 +461,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * 3a. EXCO member declines the deletion.
 
-  * 3a1. CoordiMate leaves the contact unchanged.
-
-    Use case ends.
-
-* 4a. The contact is assigned to a future event.
-
-  * 4a1. CoordiMate removes the contact from the event's active participant list and retains existing attendance records.
+  * 3a1. CoordiMate leaves the contact unchanged. Only `y` or `Y` confirms; any other input cancels and is consumed.
 
     Use case ends.
 
@@ -584,7 +589,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * **Custom tag**: A tag created by the user, to categorise contacts in ways not covered by the default tags.
 * **Default tag**: A tag that is available without the user creating it: `EXCO`, `Sponsor`, `UniversityStaff` and `Logistics`.
 * **Displayed index**: The number shown beside a contact in the currently displayed list, used to identify that contact in commands.
-* **Duplicate contact**: A contact with the same normalised phone number or email address as another saved contact. Contacts with the same name are not considered duplicates.
+* **Duplicate contact**: A contact with the same name (ignoring case and surrounding spaces), normalised phone number, or email address as another saved contact.
 * **Event**: An activity organised by the CCA, such as a concert or fair, with a unique name, a start date/time and an end date/time.
 * **Event lead**: An EXCO member who is in charge of organising a particular event.
 * **EXCO (Executive Committee)**: The group of students elected to lead and run a CCA.

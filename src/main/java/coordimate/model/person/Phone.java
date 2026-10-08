@@ -10,9 +10,10 @@ import static java.util.Objects.requireNonNull;
 public class Phone {
 
 
-    public static final String MESSAGE_CONSTRAINTS =
-            "Phone numbers should only contain digits, and should be at least 3 digits long";
-    public static final String VALIDATION_REGEX = "\\d{3,}";
+    public static final String MESSAGE_CONSTRAINTS = "Invalid phone number. Example: p/+6591234567";
+    private static final String VALIDATION_REGEX = "\\+?[0-9() -]+";
+    private static final int MIN_DIGITS = 7;
+    private static final int MAX_DIGITS = 15;
     private final String value;
 
     /**
@@ -23,7 +24,7 @@ public class Phone {
     public Phone(String phone) {
         requireNonNull(phone);
         checkArgument(isValidPhone(phone), MESSAGE_CONSTRAINTS);
-        value = phone;
+        value = phone.strip();
     }
 
     public String getValue() {
@@ -31,10 +32,26 @@ public class Phone {
     }
 
     /**
+     * Returns the phone number without formatting separators for duplicate checks.
+     */
+    public String getNormalizedValue() {
+        return value.replace(" ", "").replace("-", "").replace("(", "").replace(")", "");
+    }
+
+    /**
      * Returns true if a given string is a valid phone number.
      */
     public static boolean isValidPhone(String test) {
-        return test.matches(VALIDATION_REGEX);
+        requireNonNull(test);
+        String trimmedPhone = test.strip();
+        long digitCount = trimmedPhone.chars().filter(character -> character >= '0' && character <= '9').count();
+        return test.codePoints().allMatch(Phone::isAllowedCharacter)
+                && trimmedPhone.matches(VALIDATION_REGEX) && digitCount >= MIN_DIGITS && digitCount <= MAX_DIGITS;
+    }
+
+    private static boolean isAllowedCharacter(int codePoint) {
+        return (codePoint >= '0' && codePoint <= '9') || codePoint == '+' || codePoint == ' '
+                || codePoint == '-' || codePoint == '(' || codePoint == ')';
     }
 
     @Override

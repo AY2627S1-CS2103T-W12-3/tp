@@ -5,7 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
+
+import coordimate.logic.parser.ArgumentMultimap.PrefixedValue;
 
 public class ArgumentTokenizerTest {
 
@@ -124,6 +128,18 @@ public class ArgumentTokenizerTest {
         assertArgumentPresent(argMultimap, pSlash, "pSlash value");
         assertArgumentPresent(argMultimap, dashT, "dashT-Value", "another dashT value", "");
         assertArgumentPresent(argMultimap, hatQ, "", "");
+    }
+
+    @Test
+    public void tokenize_argumentsInOrder_preservesInterleavedPrefixes() {
+        Prefix addTag = new Prefix("at/");
+        Prefix removeTag = new Prefix("rt/");
+        ArgumentMultimap arguments = ArgumentTokenizer.tokenize("1 at/EXCO rt/Logistics at/Sponsor",
+                addTag, removeTag);
+
+        assertEquals(List.of(new PrefixedValue(new Prefix(""), "1"), new PrefixedValue(addTag, "EXCO"),
+                new PrefixedValue(removeTag, "Logistics"), new PrefixedValue(addTag, "Sponsor")),
+                arguments.getArgumentsInOrder());
     }
 
     @Test

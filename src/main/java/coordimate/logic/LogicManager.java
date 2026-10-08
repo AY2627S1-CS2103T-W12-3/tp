@@ -1,5 +1,7 @@
 package coordimate.logic;
 
+import static coordimate.model.Model.PREDICATE_SHOW_ALL_PERSONS;
+
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.util.logging.Logger;
@@ -7,12 +9,16 @@ import java.util.logging.Logger;
 import coordimate.commons.core.GuiSettings;
 import coordimate.commons.core.LogsCenter;
 import coordimate.commons.exceptions.DataLoadingException;
+import coordimate.logic.commands.AddCommand;
 import coordimate.logic.commands.AddEventCommand;
 import coordimate.logic.commands.AssignCommand;
 import coordimate.logic.commands.Command;
 import coordimate.logic.commands.CommandResult;
+import coordimate.logic.commands.DeleteCommand;
 import coordimate.logic.commands.DeleteEventCommand;
+import coordimate.logic.commands.EditCommand;
 import coordimate.logic.commands.EditEventCommand;
+import coordimate.logic.commands.MarkAttendanceCommand;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.logic.parser.CoordiMateParser;
 import coordimate.logic.parser.exceptions.ParseException;
@@ -33,11 +39,14 @@ public class LogicManager implements Logic {
     public static final String FILE_OPS_PERMISSION_ERROR_FORMAT =
             "Could not save data to file %s due to insufficient permissions to write to the file or the folder.";
 
+    public static final String MESSAGE_DELETE_CANCELLED = "Deletion cancelled. No changes were made.";
+
     private final Logger logger = LogsCenter.getLogger(LogicManager.class);
 
     private final Model model;
     private final Storage storage;
     private final CoordiMateParser coordiMateParser;
+    private Person pendingDelete;
 
     /**
      * Constructs a {@code LogicManager} with the given {@code Model} and {@code Storage}.
@@ -52,10 +61,30 @@ public class LogicManager implements Logic {
     public CommandResult execute(String commandText) throws CommandException, ParseException {
         logger.info("----------------[USER COMMAND][" + commandText + "]");
 
+        if (pendingDelete != null) {
+            Person target = pendingDelete;
+            pendingDelete = null;
+            return commandText.equals("y") || commandText.equals("Y")
+                    ? executeAtomicCommand(DeleteCommand.forResolvedPerson(target))
+                    : new CommandResult(MESSAGE_DELETE_CANCELLED);
+        }
+
         Command command = coordiMateParser.parseCommand(commandText);
-        if (command instanceof AddEventCommand || command instanceof EditEventCommand
-                || command instanceof AssignCommand || command instanceof DeleteEventCommand) {
-            return executeEventCommand(command);
+        if (command instanceof DeleteCommand deleteCommand) {
+            try {
+                storage.readCoordiMate();
+            } catch (DataLoadingException e) {
+                throw new CommandException(DeleteCommand.MESSAGE_LOAD_ERROR, e);
+            }
+            Person target = deleteCommand.resolvePerson(model);
+            pendingDelete = target;
+            return new CommandResult(DeleteCommand.confirmationPrompt(target));
+        }
+
+        if (command instanceof AddCommand || command instanceof EditCommand || command instanceof AddEventCommand
+                || command instanceof EditEventCommand || command instanceof AssignCommand
+                || command instanceof DeleteEventCommand || command instanceof MarkAttendanceCommand) {
+            return executeAtomicCommand(command);
         }
         CommandResult commandResult = command.execute(model);
 
@@ -71,15 +100,21 @@ public class LogicManager implements Logic {
     }
 
     /**
-     * Saves an event on a copy of the model and commits it only after storage succeeds.
+     * Executes a command on a copy of the model and commits it only after storage succeeds.
      * The copy shows the same contacts as the displayed list, so contact indexes refer to the same contacts.
      * Rejects the command if existing data cannot be loaded or the new data cannot be saved.
      */
-    private CommandResult executeEventCommand(Command command) throws CommandException {
+    private CommandResult executeAtomicCommand(Command command) throws CommandException {
         try {
             storage.readCoordiMate();
         } catch (DataLoadingException e) {
-            throw new CommandException(AddEventCommand.MESSAGE_LOAD_ERROR, e);
+            String message = switch (command) {
+                case AddCommand _ -> AddCommand.MESSAGE_LOAD_ERROR;
+                case EditCommand _ -> EditCommand.MESSAGE_LOAD_ERROR;
+                case DeleteCommand _ -> DeleteCommand.MESSAGE_LOAD_ERROR;
+                default -> AddEventCommand.MESSAGE_LOAD_ERROR;
+            };
+            throw new CommandException(message, e);
         }
         Model candidate = new ModelManager(model.getCoordiMate(), model.getUserPrefs());
         candidate.updateFilteredPersonList(model.getFilteredPersonList()::contains);
@@ -88,15 +123,27 @@ public class LogicManager implements Logic {
             storage.saveCoordiMate(candidate.getCoordiMate());
         } catch (IOException e) {
             String message = switch (command) {
+                case AddCommand _ -> AddCommand.MESSAGE_SAVE_ERROR;
+                case EditCommand _ -> EditCommand.MESSAGE_SAVE_ERROR;
+                case DeleteCommand _ -> DeleteCommand.MESSAGE_SAVE_ERROR;
                 case EditEventCommand _ -> EditEventCommand.MESSAGE_SAVE_ERROR;
                 case AssignCommand _ -> AssignCommand.MESSAGE_SAVE_ERROR;
                 case DeleteEventCommand _ -> DeleteEventCommand.MESSAGE_SAVE_ERROR;
+                case MarkAttendanceCommand _ -> MarkAttendanceCommand.MESSAGE_SAVE_ERROR;
                 default -> AddEventCommand.MESSAGE_SAVE_ERROR;
             };
             throw new CommandException(message, e);
         }
         model.setCoordiMate(candidate.getCoordiMate());
+        if (command instanceof AddCommand || command instanceof EditCommand) {
+            model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
+        }
         return result;
+    }
+
+    @Override
+    public boolean isAwaitingDeleteConfirmation() {
+        return pendingDelete != null;
     }
 
     @Override

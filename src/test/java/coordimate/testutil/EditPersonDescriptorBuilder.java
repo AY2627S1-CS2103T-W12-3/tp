@@ -6,10 +6,14 @@ import java.util.stream.Stream;
 
 import coordimate.logic.commands.EditCommand.EditPersonDescriptor;
 import coordimate.model.person.Address;
+import coordimate.model.person.Birthday;
 import coordimate.model.person.Email;
 import coordimate.model.person.Name;
+import coordimate.model.person.Note;
+import coordimate.model.person.Organisation;
 import coordimate.model.person.Person;
 import coordimate.model.person.Phone;
+import coordimate.model.person.Role;
 import coordimate.model.tag.Tag;
 
 /**
@@ -35,7 +39,11 @@ public class EditPersonDescriptorBuilder {
         descriptor.setName(person.getName());
         descriptor.setPhone(person.getPhone());
         descriptor.setEmail(person.getEmail());
-        descriptor.setAddress(person.getAddress());
+        descriptor.setRole(person.getRole());
+        person.getBirthday().ifPresent(descriptor::setBirthday);
+        person.getAddress().ifPresent(descriptor::setAddress);
+        person.getOrganisation().ifPresent(descriptor::setOrganisation);
+        person.getNote().ifPresent(descriptor::setNote);
         descriptor.setTags(person.getTags());
     }
 
@@ -68,6 +76,54 @@ public class EditPersonDescriptorBuilder {
      */
     public EditPersonDescriptorBuilder withAddress(String address) {
         descriptor.setAddress(new Address(address));
+        return this;
+    }
+
+    /** Sets the role to edit. */
+    public EditPersonDescriptorBuilder withRole(String role) {
+        descriptor.setRole(new Role(role));
+        return this;
+    }
+
+    /** Sets the birthday to edit. */
+    public EditPersonDescriptorBuilder withBirthday(String birthday) {
+        descriptor.setBirthday(new Birthday(birthday));
+        return this;
+    }
+
+    /** Marks the birthday for clearing. */
+    public EditPersonDescriptorBuilder withoutBirthday() {
+        descriptor.setBirthday(null);
+        return this;
+    }
+
+    /** Marks the address for clearing. */
+    public EditPersonDescriptorBuilder withoutAddress() {
+        descriptor.setAddress(null);
+        return this;
+    }
+
+    /** Sets the organisation to edit. */
+    public EditPersonDescriptorBuilder withOrganisation(String organisation) {
+        descriptor.setOrganisation(new Organisation(organisation));
+        return this;
+    }
+
+    /** Marks the organisation for clearing. */
+    public EditPersonDescriptorBuilder withoutOrganisation() {
+        descriptor.setOrganisation(null);
+        return this;
+    }
+
+    /** Sets the note to edit. */
+    public EditPersonDescriptorBuilder withNote(String note) {
+        descriptor.setNote(new Note(note));
+        return this;
+    }
+
+    /** Marks the note for clearing. */
+    public EditPersonDescriptorBuilder withoutNote() {
+        descriptor.setNote(null);
         return this;
     }
 

@@ -84,6 +84,23 @@ public class ModelManagerTest {
     public void deleteTag_null_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> modelManager.deleteTag(null));
     }
+  
+    @Test
+    public void tagOperations_nullArguments_throwNullPointerException() {
+        assertThrows(NullPointerException.class, () -> modelManager.hasTag(null));
+        assertThrows(NullPointerException.class, () -> modelManager.addTag(null));
+        assertThrows(NullPointerException.class, () -> modelManager.setTag(null, new Tag("Media")));
+        assertThrows(NullPointerException.class, () -> modelManager.setTag(new Tag("Publicity"), null));
+    }
+
+    @Test
+    public void addTag_validTag_addsTag() {
+        Tag publicity = new Tag("Publicity");
+
+        modelManager.addTag(publicity);
+
+        assertTrue(modelManager.hasTag(publicity));
+    }
 
     @Test
     public void equals() {
