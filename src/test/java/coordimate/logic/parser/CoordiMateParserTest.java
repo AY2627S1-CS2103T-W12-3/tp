@@ -20,13 +20,19 @@ import coordimate.logic.commands.DeleteCommand;
 import coordimate.logic.commands.EditCommand;
 import coordimate.logic.commands.EditCommand.EditPersonDescriptor;
 import coordimate.logic.commands.ExitCommand;
+import coordimate.logic.commands.FilterCommand;
 import coordimate.logic.commands.FindCommand;
 import coordimate.logic.commands.HelpCommand;
 import coordimate.logic.commands.ListCommand;
 import coordimate.logic.commands.ListTagsCommand;
+import coordimate.logic.commands.MarkAttendanceCommand;
 import coordimate.logic.commands.SearchCommand;
 import coordimate.logic.parser.exceptions.ParseException;
+import coordimate.model.event.AttendanceStatus;
 import coordimate.model.person.ContactMatchesKeywordPredicate;
+import coordimate.model.person.FilterCriterion;
+import coordimate.model.person.FilterField;
+import coordimate.model.person.Name;
 import coordimate.model.person.NameContainsKeywordsPredicate;
 import coordimate.model.person.Person;
 import coordimate.testutil.EditPersonDescriptorBuilder;
@@ -90,6 +96,13 @@ public class CoordiMateParserTest {
     }
 
     @Test
+    public void parseCommand_filter() throws Exception {
+        FilterCommand command = (FilterCommand) parser.parseCommand(
+                FilterCommand.COMMAND_WORD + " tag/friend");
+        assertEquals(new FilterCommand(List.of(new FilterCriterion(FilterField.TAG, "friend"))), command);
+    }
+
+    @Test
     public void parseCommand_find() throws Exception {
         List<String> keywords = List.of("foo", "bar", "baz");
         FindCommand command = (FindCommand) parser.parseCommand(
@@ -119,6 +132,14 @@ public class CoordiMateParserTest {
     @Test
     public void parseCommand_listTags() throws Exception {
         assertTrue(parser.parseCommand(ListTagsCommand.COMMAND_WORD) instanceof ListTagsCommand);
+    }
+
+    @Test
+    public void parseCommand_markattendance() throws Exception {
+        MarkAttendanceCommand command = (MarkAttendanceCommand) parser.parseCommand(
+                MarkAttendanceCommand.COMMAND_WORD + " evn/Final Concert mem/Alice Tan att/present");
+        assertEquals(new MarkAttendanceCommand("Final Concert", new Name("Alice Tan"), AttendanceStatus.PRESENT),
+                command);
     }
 
     @Test
