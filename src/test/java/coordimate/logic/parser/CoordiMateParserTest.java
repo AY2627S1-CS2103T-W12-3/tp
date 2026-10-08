@@ -16,6 +16,7 @@ import coordimate.commons.core.index.Index;
 import coordimate.logic.commands.AddCommand;
 import coordimate.logic.commands.AssignCommand;
 import coordimate.logic.commands.ClearCommand;
+import coordimate.logic.commands.CreateTagCommand;
 import coordimate.logic.commands.DeleteCommand;
 import coordimate.logic.commands.EditCommand;
 import coordimate.logic.commands.EditCommand.EditPersonDescriptor;
@@ -35,6 +36,7 @@ import coordimate.model.person.FilterField;
 import coordimate.model.person.Name;
 import coordimate.model.person.NameContainsKeywordsPredicate;
 import coordimate.model.person.Person;
+import coordimate.model.tag.Tag;
 import coordimate.testutil.EditPersonDescriptorBuilder;
 import coordimate.testutil.PersonBuilder;
 import coordimate.testutil.PersonUtil;
@@ -62,6 +64,12 @@ public class CoordiMateParserTest {
     public void parseCommand_clear() throws Exception {
         assertTrue(parser.parseCommand(ClearCommand.COMMAND_WORD) instanceof ClearCommand);
         assertTrue(parser.parseCommand(ClearCommand.COMMAND_WORD + " 3") instanceof ClearCommand);
+    }
+
+    @Test
+    public void parseCommand_createTag() throws Exception {
+        assertEquals(new CreateTagCommand(new Tag("Publicity")),
+                parser.parseCommand(CreateTagCommand.COMMAND_WORD + " t/Publicity"));
     }
 
     @Test
