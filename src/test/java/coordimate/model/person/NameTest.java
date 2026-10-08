@@ -1,6 +1,7 @@
 package coordimate.model.person;
 
 import static coordimate.testutil.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -27,15 +28,26 @@ public class NameTest {
         // invalid name
         assertFalse(Name.isValidName("")); // empty string
         assertFalse(Name.isValidName(" ")); // spaces only
-        assertFalse(Name.isValidName("^")); // only non-alphanumeric characters
-        assertFalse(Name.isValidName("peter*")); // contains non-alphanumeric characters
+        assertFalse(Name.isValidName("12345")); // must contain a letter
+        assertFalse(Name.isValidName("-.")); // punctuation alone is not a name
+        assertFalse(Name.isValidName("peter*")); // unsupported punctuation
+        assertFalse(Name.isValidName("Peter\tJack")); // tabs are not spaces
+        assertFalse(Name.isValidName("\tPeter")); // control characters are not trimmed as spaces
+        assertFalse(Name.isValidName("a".repeat(81))); // too long
 
         // valid name
-        assertTrue(Name.isValidName("peter jack")); // alphabets only
-        assertTrue(Name.isValidName("12345")); // numbers only
-        assertTrue(Name.isValidName("peter the 2nd")); // alphanumeric characters
+        assertTrue(Name.isValidName("A")); // minimum length
+        assertTrue(Name.isValidName("a".repeat(80))); // maximum length
+        assertTrue(Name.isValidName("peter jack")); // letters and spaces
+        assertTrue(Name.isValidName("Anne-Marie O'Neil Jr.")); // supported punctuation
+        assertTrue(Name.isValidName("José Tan")); // Unicode letters
         assertTrue(Name.isValidName("Capital Tan")); // with capital letters
-        assertTrue(Name.isValidName("David Roger Jackson Ray Jr 2nd")); // long names
+        assertTrue(Name.isValidName("  Alice Tan  ")); // surrounding spaces are trimmed
+    }
+
+    @Test
+    public void constructor_surroundingSpaces_trimmed() {
+        assertEquals("Alice Tan", new Name("  Alice Tan  ").getFullName());
     }
 
     @Test

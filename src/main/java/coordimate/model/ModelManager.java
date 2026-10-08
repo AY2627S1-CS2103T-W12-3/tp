@@ -113,6 +113,11 @@ public class ModelManager implements Model {
     @Override
     public void addPerson(Person person) {
         coordiMate.addPerson(person);
+        for (Tag tag : person.getTags()) {
+            if (!coordiMate.hasTag(tag)) {
+                coordiMate.addTag(tag);
+            }
+        }
         updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
     }
 

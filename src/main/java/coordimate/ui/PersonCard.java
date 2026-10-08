@@ -2,6 +2,7 @@ package coordimate.ui;
 
 import java.util.Comparator;
 
+import coordimate.model.person.Address;
 import coordimate.model.person.Person;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
@@ -49,7 +50,10 @@ public class PersonCard extends UiPart<Region> {
         id.setText(displayedIndex + ". ");
         name.setText(person.getName().getFullName());
         phone.setText(person.getPhone().getValue());
-        address.setText(person.getAddress().getValue());
+        boolean hasAddress = person.getAddress().isPresent();
+        address.setText(person.getAddress().map(Address::getValue).orElse(""));
+        address.setVisible(hasAddress);
+        address.setManaged(hasAddress);
         email.setText(person.getEmail().getValue());
         person.getTags().stream()
                 .sorted(Comparator.comparing(tag -> tag.getTagName()))

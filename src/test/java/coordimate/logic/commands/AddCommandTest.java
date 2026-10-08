@@ -14,7 +14,6 @@ import java.util.function.Predicate;
 import org.junit.jupiter.api.Test;
 
 import coordimate.commons.core.GuiSettings;
-import coordimate.logic.Messages;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.CoordiMate;
 import coordimate.model.Model;
@@ -39,7 +38,7 @@ public class AddCommandTest {
 
         CommandResult commandResult = new AddCommand(validPerson).execute(modelStub);
 
-        assertEquals(String.format(AddCommand.MESSAGE_SUCCESS, Messages.format(validPerson)),
+        assertEquals(String.format(AddCommand.MESSAGE_SUCCESS, validPerson.getName()),
                 commandResult.getFeedbackToUser());
         assertEquals(List.of(validPerson), modelStub.personsAdded);
     }

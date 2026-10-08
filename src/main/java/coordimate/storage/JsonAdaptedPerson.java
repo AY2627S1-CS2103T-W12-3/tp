@@ -11,10 +11,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import coordimate.commons.exceptions.IllegalValueException;
 import coordimate.model.person.Address;
+import coordimate.model.person.Birthday;
 import coordimate.model.person.Email;
 import coordimate.model.person.Name;
+import coordimate.model.person.Note;
+import coordimate.model.person.Organisation;
 import coordimate.model.person.Person;
 import coordimate.model.person.Phone;
+import coordimate.model.person.Role;
 import coordimate.model.tag.Tag;
 
 /**
@@ -27,7 +31,11 @@ class JsonAdaptedPerson {
     private final String name;
     private final String phone;
     private final String email;
+    private final String role;
+    private final String birthday;
     private final String address;
+    private final String organisation;
+    private final String note;
     private final List<JsonAdaptedTag> tags = new ArrayList<>();
 
     /**
@@ -36,14 +44,36 @@ class JsonAdaptedPerson {
     @JsonCreator
     public JsonAdaptedPerson(@JsonProperty("name") String name, @JsonProperty("phone") String phone,
             @JsonProperty("email") String email, @JsonProperty("address") String address,
+            @JsonProperty("role") String role, @JsonProperty("birthday") String birthday,
+            @JsonProperty("organisation") String organisation, @JsonProperty("note") String note,
             @JsonProperty("tags") List<JsonAdaptedTag> tags) {
         this.name = name;
         this.phone = phone;
         this.email = email;
+        this.role = role;
+        this.birthday = birthday;
         this.address = address;
+        this.organisation = organisation;
+        this.note = note;
         if (tags != null) {
             this.tags.addAll(tags);
         }
+    }
+
+    /**
+     * Creates a person record without the newer optional details.
+     */
+    public JsonAdaptedPerson(String name, String phone, String email, String address, String role,
+            List<JsonAdaptedTag> tags) {
+        this(name, phone, email, address, role, null, null, null, tags);
+    }
+
+    /**
+     * Creates a legacy person record without a role or optional details.
+     */
+    public JsonAdaptedPerson(String name, String phone, String email, String address,
+            List<JsonAdaptedTag> tags) {
+        this(name, phone, email, address, null, tags);
     }
 
     /**
@@ -53,7 +83,11 @@ class JsonAdaptedPerson {
         name = source.getName().getFullName();
         phone = source.getPhone().getValue();
         email = source.getEmail().getValue();
-        address = source.getAddress().getValue();
+        role = source.getRole().getValue();
+        birthday = source.getBirthday().map(Birthday::getValue).orElse(null);
+        address = source.getAddress().map(Address::getValue).orElse(null);
+        organisation = source.getOrganisation().map(Organisation::getValue).orElse(null);
+        note = source.getNote().map(Note::getValue).orElse(null);
         tags.addAll(source.getTags().stream()
                 .map(JsonAdaptedTag::new)
                 .collect(Collectors.toList()));
@@ -94,16 +128,35 @@ class JsonAdaptedPerson {
         }
         final Email modelEmail = new Email(email);
 
-        if (address == null) {
-            throw new IllegalValueException(String.format(MISSING_FIELD_MESSAGE_FORMAT, Address.class.getSimpleName()));
+        // Existing AB3 data has no role; assign the agreed legacy value on load.
+        if (role != null && !Role.isValidRole(role)) {
+            throw new IllegalValueException(Role.MESSAGE_CONSTRAINTS);
         }
-        if (!Address.isValidAddress(address)) {
+        final Role modelRole = role == null ? Role.NOT_APPLICABLE : new Role(role);
+
+        if (birthday != null && !Birthday.isValidBirthday(birthday)) {
+            throw new IllegalValueException(Birthday.MESSAGE_CONSTRAINTS);
+        }
+        final Birthday modelBirthday = birthday == null ? null : new Birthday(birthday);
+
+        if (address != null && !Address.isValidAddress(address)) {
             throw new IllegalValueException(Address.MESSAGE_CONSTRAINTS);
         }
-        final Address modelAddress = new Address(address);
+        final Address modelAddress = address == null ? null : new Address(address);
+
+        if (organisation != null && !Organisation.isValidOrganisation(organisation)) {
+            throw new IllegalValueException(Organisation.MESSAGE_CONSTRAINTS);
+        }
+        final Organisation modelOrganisation = organisation == null ? null : new Organisation(organisation);
+
+        if (note != null && !Note.isValidNote(note)) {
+            throw new IllegalValueException(Note.MESSAGE_CONSTRAINTS);
+        }
+        final Note modelNote = note == null ? null : new Note(note);
 
         final Set<Tag> modelTags = new HashSet<>(personTags);
-        return new Person(modelName, modelPhone, modelEmail, modelAddress, modelTags);
+        return new Person(modelName, modelPhone, modelEmail, modelRole, modelBirthday, modelAddress,
+                modelOrganisation, modelNote, modelTags);
     }
 
 }
