@@ -248,6 +248,40 @@ Shows a list of all persons in CoordiMate.
 
 Format: `list`
 
+### Creating a tag: `newtag`
+
+Creates a custom tag and opens the Tags view. Tag names must contain 1 to 30 alphanumeric characters without spaces.
+Leading and trailing whitespace is trimmed. Tag names preserve their capitalization, but are unique regardless of
+capitalization.
+
+Format: `newtag t/TAG`
+
+Examples:
+
+* `newtag t/ProductionCrew`
+* `newtag t/Publicity`
+
+If a tag named `Publicity` already exists, commands such as `newtag t/publicity` are rejected as duplicates.
+
+Success: `Created tag: Publicity.`
+
+| Condition | Error message |
+|---|---|
+| No parameters are supplied. | `No parameters given.` |
+| The `t/` prefix is missing. | `No prefix given.` |
+| More than one `t/` prefix is supplied. | `Multiple tag names given.` |
+| Text appears before `t/`. | `Unknown parameters given.` |
+| The tag name is empty. | `Tag name cannot be empty.` |
+| The tag name contains spaces, symbols, or punctuation. | `Tag names should be alphanumeric with no spaces.` |
+| The tag name exceeds 30 characters. | `Tag names should not exceed 30 characters.` |
+| The tag name already exists, ignoring capitalization. | `This tag already exists.` |
+
+### Listing all tags: `listtags`
+
+Shows every default and custom tag in the Tags view.
+
+Format: `listtags`
+
 ### Editing a person: `edit`
 
 Edits an existing person in CoordiMate.
