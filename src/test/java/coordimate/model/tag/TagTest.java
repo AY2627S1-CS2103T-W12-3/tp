@@ -25,6 +25,9 @@ public class TagTest {
         // null tag name
         assertThrows(NullPointerException.class, () -> Tag.isValidTagName(null));
 
+        assertFalse(Tag.isValidTagName(""));
+        assertFalse(Tag.isValidTagName("Publicity Team"));
+        assertFalse(Tag.isValidTagName("1234567890123456789012345678901"));
         // invalid tag names
         assertFalse(Tag.isValidTagName(""));
         assertFalse(Tag.isValidTagName("Publicity Team"));

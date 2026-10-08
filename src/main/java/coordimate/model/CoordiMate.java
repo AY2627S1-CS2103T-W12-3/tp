@@ -5,6 +5,8 @@ import static java.util.Objects.requireNonNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import coordimate.commons.util.ToStringBuilder;
 import coordimate.model.event.Event;
@@ -38,7 +40,7 @@ public class CoordiMate implements ReadOnlyCoordiMate {
      * Creates an empty contact and event store.
      */
     public CoordiMate() {
-        setTags(List.of());
+        tags.setTags(DEFAULT_TAGS);
     }
 
     /**
@@ -60,22 +62,11 @@ public class CoordiMate implements ReadOnlyCoordiMate {
     }
 
     /**
-     * Replaces the saved tags while ensuring that every default tag remains available.
-     * Default tag names use their canonical capitalization.
+     * Replaces the saved tags. An empty replacement restores the initial default tags.
      */
     public void setTags(List<Tag> tags) {
-        UniqueTagList replacement = new UniqueTagList();
-        replacement.setTags(DEFAULT_TAGS);
-
-        UniqueTagList suppliedTags = new UniqueTagList();
-        suppliedTags.setTags(tags);
-        for (Tag tag : suppliedTags) {
-            if (!replacement.contains(tag)) {
-                replacement.add(tag);
-            }
-        }
-
-        this.tags.setTags(replacement);
+        requireNonNull(tags);
+        this.tags.setTags(tags.isEmpty() ? DEFAULT_TAGS : tags);
     }
 
     /**
@@ -163,6 +154,30 @@ public class CoordiMate implements ReadOnlyCoordiMate {
         tags.add(tag);
     }
 
+    /**
+     * Replaces {@code target} with {@code editedTag} in the saved tag list and on every contact.
+     * {@code target} must exist, and {@code editedTag} must not already exist.
+     */
+    public void setTag(Tag target, Tag editedTag) {
+        requireNonNull(target);
+        requireNonNull(editedTag);
+        if (!hasTag(target)) {
+            throw new IllegalArgumentException("Tag does not exist.");
+        }
+        if (hasTag(editedTag)) {
+            throw new IllegalArgumentException("Tag already exists.");
+        }
+
+        List<Tag> editedTags = tags.asUnmodifiableObservableList().stream()
+                .map(tag -> tag.isSameTag(target) ? editedTag : tag)
+                .toList();
+        List<Person> editedPersons = persons.asUnmodifiableObservableList().stream()
+                .map(person -> replaceTag(person, target, editedTag))
+                .toList();
+        tags.setTags(editedTags);
+        persons.setPersons(editedPersons);
+    }
+
     @Override
     public ObservableList<Tag> getTagList() {
         return tags.asUnmodifiableObservableList();
@@ -247,6 +262,21 @@ public class CoordiMate implements ReadOnlyCoordiMate {
             updatedEvents.add(new Event(event.getName(), event.getStartTime(), event.getEndTime(), members));
         }
         return updatedEvents;
+    }
+
+    /**
+     * Returns a copy of {@code person} with {@code target} replaced by {@code editedTag}.
+     */
+    private Person replaceTag(Person person, Tag target, Tag editedTag) {
+        if (person.getTags().stream().noneMatch(tag -> tag.isSameTag(target))) {
+            return person;
+        }
+        Set<Tag> editedTags = person.getTags().stream()
+                .map(tag -> tag.isSameTag(target) ? editedTag : tag)
+                .collect(Collectors.toSet());
+        return new Person(person.getName(), person.getPhone(), person.getEmail(), person.getRole(),
+                person.getBirthday().orElse(null), person.getAddress().orElse(null),
+                person.getOrganisation().orElse(null), person.getNote().orElse(null), editedTags);
     }
 
     //// util methods

@@ -248,6 +248,35 @@ Shows a list of all persons in CoordiMate.
 
 Format: `list`
 
+### Editing a tag: `edittag`
+
+Renames an existing tag, including a default tag, and updates it wherever it is applied across contacts.
+
+Format: `edittag OLD_TAG t/NEW_TAG`
+
+Examples:
+
+* `edittag Production t/ProductionCrew`
+* `edittag Media t/Publicity`
+
+`OLD_TAG` must match an existing tag, ignoring capitalization. `NEW_TAG` must contain 1 to 30
+alphanumeric characters without spaces. Leading and trailing whitespace is trimmed before validation.
+
+Success for `edittag Media t/Publicity`: `Media successfully renamed to Publicity.`
+
+| Condition | Error message |
+|---|---|
+| The current tag does not exist. | `No such tag exists: {OLD_TAG}.` |
+| The `t/` prefix is missing. | `No prefix given.` |
+| The current tag name is missing. | `Current tag name is not defined.` |
+| The new tag name is missing. | `New tag name is not defined.` |
+| The new tag name is blank. | `Tag name cannot be empty.` |
+| More than one `t/` prefix is supplied. | `Multiple tag names given.` |
+| The new tag contains spaces, symbols, or punctuation. | `Tag names should be alphanumeric with no spaces.` |
+| The new tag exceeds 30 characters. | `Tag names should not exceed 30 characters.` |
+| The new tag matches the current tag, ignoring capitalization. | `{NEW_TAG} is the same as {OLD_TAG}.` |
+| The new tag already exists. | `This tag already exists.` |
+
 ### Creating a tag: `newtag`
 
 Creates a custom tag and opens the Tags view. Tag names must contain 1 to 30 alphanumeric characters without spaces.

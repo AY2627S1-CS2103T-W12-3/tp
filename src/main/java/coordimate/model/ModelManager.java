@@ -110,6 +110,12 @@ public class ModelManager implements Model {
     }
 
     @Override
+    public void setTag(Tag target, Tag editedTag) {
+        requireAllNonNull(target, editedTag);
+        coordiMate.setTag(target, editedTag);
+    }
+
+    @Override
     public void setEvent(Event target, Event editedEvent) {
         coordiMate.setEvent(target, editedEvent);
     }

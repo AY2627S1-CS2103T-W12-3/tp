@@ -163,6 +163,16 @@ public class JsonSerializableCoordiMateTest {
     }
 
     @Test
+    public void toModelType_renamedDefaultTag_preservedDuringRoundTrip() throws Exception {
+        CoordiMate source = new CoordiMate();
+        source.setTag(new Tag("EXCO"), new Tag("Committee"));
+
+        CoordiMate restored = new JsonSerializableCoordiMate(source).toModelType();
+
+        assertEquals(source.getTagList(), restored.getTagList());
+    }
+
+    @Test
     public void toModelType_missingTags_addsDefaultTags() throws Exception {
         JsonSerializableCoordiMate data = new JsonSerializableCoordiMate(List.of(), List.of());
 
