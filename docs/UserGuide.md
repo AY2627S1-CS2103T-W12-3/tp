@@ -242,6 +242,44 @@ If some contacts were already assigned: `Assigned 1 member(s) to Final Concert. 
 
 If saving fails, no contacts are assigned and the existing data file remains unchanged.
 
+### Removing members from an event: `unassign`
+
+Removes one or more members from an existing event and saves the change. The contacts themselves are not deleted.
+
+Format: `unassign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...`
+
+* `EVENT_NAME` must match a saved event name, ignoring case. Leading and trailing whitespace is removed.
+* `CONTACT_INDEX` refers to the index number shown in the displayed person list, as in `assign`. Separate several indexes with spaces. Each index **must be a positive integer** 1, 2, 3, ...
+* Each parameter may appear only once.
+* All indexes are checked before any change is made. If any index is invalid, no members are removed.
+* Contacts who are not assigned to the event are skipped, and an index repeated in the same command is counted once.
+* The remaining members keep their order.
+* A removed member's attendance record for the event, if any, is also removed. Other members' attendance is kept.
+
+Examples:
+
+* `unassign evn/Final Concert c/2` removes the 2nd person in the displayed list from `Final Concert`.
+* `unassign evn/student life fair c/1 3` removes the 1st and 3rd persons from `Student Life Fair`.
+* `find Bernice` followed by `unassign evn/Final Concert c/1` removes the 1st person in the results of the `find` command.
+
+Success: `Removed 2 member(s) from Final Concert.`
+
+If some contacts were not assigned: `Removed 1 member(s) from Final Concert. 1 contact(s) were not assigned.`
+
+| Condition | Error message |
+|---|---|
+| No saved event has the supplied name, ignoring case. | `Event {EVENT_NAME} does not exist.` |
+| An index is larger than the displayed person list. | `Contact {CONTACT_INDEX} does not exist in the displayed list.` |
+| An index is not a positive integer. | `Contact indexes must be positive integers separated by spaces. Example: c/1 3 5` |
+| None of the specified contacts are assigned. | `None of the specified contacts are assigned to {EVENT_NAME}. No changes were made.` |
+| The event name is empty. | `Event name must not be empty.` |
+| `c/` has no indexes. | `Please specify at least one contact to remove.` |
+| `evn/` or `c/` is missing. | `Invalid command format!` followed by the command format |
+| A parameter is repeated. | `Each parameter may only be specified once.` |
+| An unknown parameter is used. | `Unknown parameter. Example: unassign evn/Final Concert c/2 3` |
+
+If saving fails, no members are removed and the existing data file remains unchanged.
+
 ### Listing all persons: `list`
 
 Shows a list of all persons in CoordiMate.
@@ -479,4 +517,5 @@ Action     | Format, Examples
 **Edit contacts**   | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [t/TAG]... [at/TAG]... [rt/TAG]...`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
 **Find**   | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
 **List**   | `list`
+**Unassign** | `unassign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...`<br> e.g., `unassign evn/Final Concert c/2 3`
 **Help**   | `help`

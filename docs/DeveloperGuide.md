@@ -522,6 +522,38 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
   * 2c1. CoordiMate displays the relevant error and assigns no contacts.
   * The use case ends.
 
+**Use case: Remove members from an event**
+
+**Preconditions:** CoordiMate is running. The event exists and has at least one member.
+
+**MSS**
+
+1. The Exco member removes one or more members from an event using the `unassign` command, specifying the event name and the displayed indexes of the contacts.
+2. CoordiMate verifies the event and contacts, then removes the contacts from the event's members, together with their attendance records for that event.
+3. CoordiMate confirms how many members were removed.
+4. The use case ends.
+
+**Extensions**
+
+* 1a. No saved event has the given name, or a contact index is invalid.
+  * 1a1. CoordiMate displays the relevant error and removes no members.
+  * 1a2. The Exco member corrects the event name or index and retries step 1.
+
+* 1b. No contact indexes are provided.
+  * 1b1. CoordiMate reports that at least one contact must be specified.
+  * 1b2. The Exco member provides one or more contact indexes and retries step 1.
+
+* 2a. A specified contact is not assigned to the event, or the same contact index appears more than once.
+  * 2a1. CoordiMate skips those contacts and reports the number of members removed.
+
+* 2b. None of the specified contacts are assigned to the event.
+  * 2b1. CoordiMate reports that no changes were made.
+  * The use case ends.
+
+* 2c. CoordiMate cannot save the change to the local data file.
+  * 2c1. CoordiMate displays the relevant error and removes no members.
+  * The use case ends.
+
 **Use case: Record event attendance**
 
 **Preconditions:** CoordiMate is running. The event exists and has at least one member assigned to it.
@@ -693,6 +725,31 @@ testers are expected to do more *exploratory* testing.
 
    1. Test case: `delete` a member.<br>
       Expected: The person is removed from the event's members. Closing and relaunching the app keeps the data.
+
+### Removing members from an event
+
+1. Removing members while all persons are being shown
+
+   1. Prerequisites: List all persons using the `list` command, with at least 4 persons in the list. Create an event using `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`, then run `assign evn/Final Concert c/1 2 3`. Select the event in the **Events** tab.
+
+   1. Test case: `unassign evn/final concert c/2 4`<br>
+      Expected: The status message shows `Removed 1 member(s) from Final Concert. 1 contact(s) were not assigned.` The event's details list the 1st and 3rd persons under **Members (2)**, in that order.
+
+   1. Test case: `unassign evn/Final Concert c/4`<br>
+      Expected: No change. The status message shows that none of the specified contacts are assigned.
+
+   1. Test case: `unassign evn/Gala c/1`<br>
+      Expected: No change. The status message shows `Event Gala does not exist.`
+
+   1. Other incorrect unassign commands to try: `unassign evn/Final Concert c/0`, `unassign evn/Final Concert c/1 x` (where x is larger than the list size), `unassign evn/Final Concert c/1 c/3`, `unassign evn/Final Concert`<br>
+      Expected: No change. The status message shows error details.
+
+1. Removing members from a filtered list
+
+   1. Prerequisites: The `Final Concert` event has the 1st and 3rd persons as members. Use `find` so that the displayed list shows only the 3rd person.
+
+   1. Test case: `unassign evn/Final Concert c/1`<br>
+      Expected: The 3rd person of the full list, shown 1st in the filtered list, is removed. The 1st person of the full list remains a member.
 
 ### Saving data
 
