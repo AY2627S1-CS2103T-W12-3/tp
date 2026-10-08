@@ -55,7 +55,8 @@ public class EventMembersPredicateTest {
 
     @Test
     public void equalityAndNullArguments() {
-        EventMembersPredicate predicate = new EventMembersPredicate("Final Concert", List.of(concert));
+        EventMembersPredicate predicate = new EventMembersPredicate(" Final Concert ", List.of(concert));
+        assertEquals("Final Concert", predicate.getEventName());
         assertEquals(predicate, new EventMembersPredicate("final concert", List.of()));
         assertEquals(predicate.hashCode(), new EventMembersPredicate("FINAL CONCERT", List.of()).hashCode());
         assertNotEquals(predicate, new EventMembersPredicate("Fair", List.of(concert)));

@@ -75,9 +75,11 @@ public class CoordiMate implements ReadOnlyCoordiMate {
     public void resetData(ReadOnlyCoordiMate newData) {
         requireNonNull(newData);
 
+        // Events are replaced first: replacing the persons makes filtered person lists re-check their
+        // predicates, and predicates such as EventMembersPredicate must then see the new events.
+        setEvents(newData.getEventList());
         setPersons(newData.getPersonList());
         setTags(newData.getTagList());
-        setEvents(newData.getEventList());
     }
 
     /**

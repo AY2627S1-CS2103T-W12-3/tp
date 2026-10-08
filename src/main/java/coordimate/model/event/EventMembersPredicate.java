@@ -26,6 +26,10 @@ public class EventMembersPredicate implements Predicate<Person> {
         this.events = requireNonNull(events);
     }
 
+    public String getEventName() {
+        return eventName;
+    }
+
     @Override
     public boolean test(Person person) {
         return events.stream()
