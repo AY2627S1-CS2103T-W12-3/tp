@@ -280,6 +280,41 @@ If some contacts were not assigned: `Removed 1 member(s) from Final Concert. 1 c
 
 If saving fails, no members are removed and the existing data file remains unchanged.
 
+### Viewing members of an event: `members`
+
+Shows only the members of an event in the contact list, with their full contact details.
+
+Format: `members evn/EVENT_NAME`
+
+* `EVENT_NAME` must match a saved event name, ignoring case. Leading and trailing whitespace is removed.
+* CoordiMate switches to the **Contacts** view and lists the event's members in contact list order.
+* The members' index numbers can be used directly in other commands, such as `unassign`, `edit` and `delete`.
+* The list stays up to date while it is shown: members removed with `unassign` disappear from it, and renaming the event with `editevent` keeps showing its members. If the event is deleted, the list becomes empty.
+* `add` and `edit` show all contacts again afterwards, so that you can see the contact you changed.
+* Use `list` to show all contacts again.
+
+Selecting an event in the **Events** tab also shows its member names under **Members**, in the order they were assigned.
+
+Examples:
+
+* `members evn/Final Concert` shows the members of `Final Concert`.
+* `members evn/student life fair` shows the members of `Student Life Fair`.
+* `members evn/Final Concert` followed by `unassign evn/Final Concert c/2` removes the 2nd member shown.
+
+Success: `Listed 2 member(s) of Final Concert. Use list to show all contacts.`
+
+If the event has no members, the contact list is empty: `Final Concert has no members assigned. Use list to show all contacts.`
+
+| Condition | Error message |
+|---|---|
+| No saved event has the supplied name, ignoring case. | `Event {EVENT_NAME} does not exist.` |
+| The event name is empty. | `Event name must not be empty.` |
+| `evn/` is missing, or there is text before it. | `Invalid command format!` followed by the command format |
+| `evn/` is repeated. | `Each parameter may only be specified once.` |
+| An unknown parameter is used. | `Unknown parameter. Example: members evn/Final Concert` |
+
+If an error occurs, the contact list stays as it was.
+
 ### Listing all persons: `list`
 
 Shows a list of all persons in CoordiMate.
@@ -517,5 +552,6 @@ Action     | Format, Examples
 **Edit contacts**   | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [t/TAG]... [at/TAG]... [rt/TAG]...`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
 **Find**   | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
 **List**   | `list`
+**Members** | `members evn/EVENT_NAME`<br> e.g., `members evn/Final Concert`
 **Unassign** | `unassign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...`<br> e.g., `unassign evn/Final Concert c/2 3`
 **Help**   | `help`

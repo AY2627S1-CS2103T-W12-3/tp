@@ -554,13 +554,42 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
   * 2c1. CoordiMate displays the relevant error and removes no members.
   * The use case ends.
 
+**Use case: View members of an event**
+
+**Preconditions:** CoordiMate is running. The event exists.
+
+**MSS**
+
+1. The Exco member requests to view the members of an event using the `members` command, specifying the event name.
+2. CoordiMate switches to the contact list and shows only the event's members, with their contact details.
+3. CoordiMate confirms how many members are shown.
+4. The use case ends.
+
+**Extensions**
+
+* 1a. No saved event has the given name, or the command format is invalid.
+  * 1a1. CoordiMate displays the relevant error and leaves the contact list unchanged.
+  * 1a2. The Exco member corrects the command and retries step 1.
+
+* 2a. The event has no members.
+  * 2a1. CoordiMate shows an empty contact list and reports that the event has no members.
+  * The use case ends.
+
+* 3a. The Exco member removes a shown member from the event, or renames the event.
+  * 3a1. CoordiMate updates the shown list to the event's current members.
+  * The use case resumes from step 3.
+
+* 3b. The Exco member wants to see all contacts again.
+  * 3b1. The Exco member uses the `list` command, and CoordiMate shows all contacts.
+  * The use case ends.
+
 **Use case: Record event attendance**
 
 **Preconditions:** CoordiMate is running. The event exists and has at least one member assigned to it.
 
 **MSS**
 
-1. The Exco member requests to view the list of members assigned to an event.
+1. The Exco member requests to view the list of members assigned to an event (use case: View members of an event).
 2. CoordiMate displays the list of members for that event.
 3. The Exco member marks a member's attendance status as present or absent using the `markattendance` command.
 4. CoordiMate records the attendance status and confirms the update.
@@ -750,6 +779,34 @@ testers are expected to do more *exploratory* testing.
 
    1. Test case: `unassign evn/Final Concert c/1`<br>
       Expected: The 3rd person of the full list, shown 1st in the filtered list, is removed. The 1st person of the full list remains a member.
+
+### Viewing members of an event
+
+1. Viewing the members of an event
+
+   1. Prerequisites: List all persons using the `list` command, with at least 3 persons in the list. Create an event using `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`, then run `assign evn/Final Concert c/3 1`. Switch to the **Events** view.
+
+   1. Test case: `members evn/final concert`<br>
+      Expected: CoordiMate switches to the **Contacts** view and shows only the 1st and 3rd persons, numbered 1 and 2. The status message shows `Listed 2 member(s) of Final Concert. Use list to show all contacts.`
+
+   1. Test case: `members evn/Gala`<br>
+      Expected: The contact list is unchanged. The status message shows `Event Gala does not exist.`
+
+   1. Other incorrect members commands to try: `members`, `members evn/`, `members evn/Final Concert c/1`, `members evn/Final Concert evn/Fair`<br>
+      Expected: The contact list is unchanged. The status message shows error details.
+
+1. Keeping the shown members up to date
+
+   1. Prerequisites: The members of `Final Concert` are shown, as above.
+
+   1. Test case: `unassign evn/Final Concert c/1`<br>
+      Expected: The removed person disappears from the list straight away, and the remaining member is numbered 1.
+
+   1. Test case: `editevent evn/Final Concert nevn/Grand Concert`<br>
+      Expected: The list still shows the event's members.
+
+   1. Test case: `deleteevent evn/Grand Concert`, then `list`<br>
+      Expected: The list becomes empty after the event is deleted, then shows all persons after `list`.
 
 ### Saving data
 
