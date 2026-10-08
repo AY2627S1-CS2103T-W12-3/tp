@@ -1,32 +1,44 @@
 package coordimate.logic.commands;
 
 import static coordimate.logic.parser.CliSyntax.PREFIX_ADDRESS;
+import static coordimate.logic.parser.CliSyntax.PREFIX_ADD_TAG;
+import static coordimate.logic.parser.CliSyntax.PREFIX_BIRTHDAY;
 import static coordimate.logic.parser.CliSyntax.PREFIX_EMAIL;
 import static coordimate.logic.parser.CliSyntax.PREFIX_NAME;
+import static coordimate.logic.parser.CliSyntax.PREFIX_NOTE;
+import static coordimate.logic.parser.CliSyntax.PREFIX_ORGANISATION;
 import static coordimate.logic.parser.CliSyntax.PREFIX_PHONE;
+import static coordimate.logic.parser.CliSyntax.PREFIX_REMOVE_TAG;
+import static coordimate.logic.parser.CliSyntax.PREFIX_ROLE;
 import static coordimate.logic.parser.CliSyntax.PREFIX_TAG;
+import static coordimate.logic.parser.CliSyntax.PREFIX_TARGET;
 import static coordimate.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 import static java.util.Objects.requireNonNull;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import coordimate.commons.core.index.Index;
 import coordimate.commons.util.CollectionUtil;
 import coordimate.commons.util.ToStringBuilder;
-import coordimate.logic.Messages;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.Model;
 import coordimate.model.event.MemberNameConflictException;
 import coordimate.model.person.Address;
+import coordimate.model.person.Birthday;
 import coordimate.model.person.Email;
 import coordimate.model.person.Name;
+import coordimate.model.person.Note;
+import coordimate.model.person.Organisation;
 import coordimate.model.person.Person;
 import coordimate.model.person.Phone;
+import coordimate.model.person.Role;
 import coordimate.model.tag.Tag;
 
 /**
@@ -36,27 +48,43 @@ public class EditCommand extends Command {
 
     public static final String COMMAND_WORD = "edit";
 
-    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Edits the details of the person identified "
-            + "by the index number used in the displayed person list. "
+    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Edits the details of a saved contact. "
             + "Existing values will be overwritten by the input values.\n"
-            + "Parameters: INDEX (must be a positive integer) "
+            + "Parameters: INDEX or " + PREFIX_TARGET + "IDENTIFIER "
             + "[" + PREFIX_NAME + "NAME] "
             + "[" + PREFIX_PHONE + "PHONE] "
             + "[" + PREFIX_EMAIL + "EMAIL] "
+            + "[" + PREFIX_ROLE + "ROLE] "
+            + "[" + PREFIX_BIRTHDAY + "BIRTHDAY] "
             + "[" + PREFIX_ADDRESS + "ADDRESS] "
-            + "[" + PREFIX_TAG + "TAG]...\n"
+            + "[" + PREFIX_ORGANISATION + "ORGANISATION] "
+            + "[" + PREFIX_NOTE + "NOTE] "
+            + "[" + PREFIX_TAG + "TAG]... "
+            + "[" + PREFIX_ADD_TAG + "TAG]... "
+            + "[" + PREFIX_REMOVE_TAG + "TAG]...\n"
             + "Example: " + COMMAND_WORD + " 1 "
             + PREFIX_PHONE + "91234567 "
             + PREFIX_EMAIL + "johndoe@example.com";
 
-    public static final String MESSAGE_EDIT_PERSON_SUCCESS = "Edited person: %1$s";
-    public static final String MESSAGE_NOT_EDITED = "At least one field to edit must be provided.";
+    public static final String MESSAGE_EDIT_PERSON_SUCCESS = "Contact updated successfully:\n%1$s";
+    public static final String MESSAGE_NOT_EDITED =
+            "Please provide at least one field or tag operation to edit. Example: edit 2 r/Logistics";
     public static final String MESSAGE_DUPLICATE_PERSON =
             "This update conflicts with another saved contact. No changes were made.";
+    public static final String MESSAGE_SAVE_ERROR = "Contact could not be saved. No changes were made.";
+    public static final String MESSAGE_LOAD_ERROR =
+            "Contact data could not be loaded. Please check the local data file.";
     public static final String MESSAGE_MEMBER_NAME_CONFLICT =
             "Cannot rename this contact because an event already has a member with that name. No changes were made.";
+    public static final String MESSAGE_NO_MATCH =
+            "No contact matches that identifier. Use an exact saved name, phone number, or email address.";
+    public static final String MESSAGE_AMBIGUOUS_MATCH = "Multiple contacts match that identifier:\n%1$s\n"
+            + "Retry with a unique phone or email, or a displayed index if shown.";
+    public static final String MESSAGE_INVALID_INDEX =
+            "No contact exists at index %1$d. Please use an index from the current list.";
 
     private final Index index;
+    private final String targetIdentifier;
     private final EditPersonDescriptor editPersonDescriptor;
 
     /**
@@ -70,20 +98,30 @@ public class EditCommand extends Command {
         requireNonNull(editPersonDescriptor);
 
         this.index = index;
+        targetIdentifier = null;
+        this.editPersonDescriptor = new EditPersonDescriptor(editPersonDescriptor);
+    }
+
+    /**
+     * Creates a command that identifies a saved contact by exact name, phone, or email.
+     */
+    public EditCommand(String targetIdentifier, EditPersonDescriptor editPersonDescriptor) {
+        requireNonNull(targetIdentifier);
+        requireNonNull(editPersonDescriptor);
+        if (targetIdentifier.isBlank()) {
+            throw new IllegalArgumentException("Contact identifier must not be blank.");
+        }
+
+        index = null;
+        this.targetIdentifier = targetIdentifier.strip();
         this.editPersonDescriptor = new EditPersonDescriptor(editPersonDescriptor);
     }
 
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
-        List<Person> lastShownPersons = model.getFilteredPersonList();
-
-        if (index.getZeroBased() >= lastShownPersons.size()) {
-            throw new CommandException(Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX);
-        }
-
-        Person personToEdit = lastShownPersons.get(index.getZeroBased());
-        Person editedPerson = createEditedPerson(personToEdit, editPersonDescriptor);
+        Person personToEdit = resolvePersonToEdit(model);
+        Person editedPerson = createEditedPerson(personToEdit, editPersonDescriptor, model.getTagList());
 
         boolean duplicatesAnotherPerson = model.getCoordiMate().getPersonList().stream()
                 .anyMatch(person -> !person.equals(personToEdit) && person.isSamePerson(editedPerson));
@@ -96,26 +134,132 @@ public class EditCommand extends Command {
         } catch (MemberNameConflictException e) {
             throw new CommandException(MESSAGE_MEMBER_NAME_CONFLICT, e);
         }
+        for (TagOperation operation : editPersonDescriptor.getTagOperations()) {
+            if (operation.type() == TagOperationType.ADD) {
+                model.registerTag(operation.tag());
+            }
+        }
         model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
-        return new CommandResult(String.format(MESSAGE_EDIT_PERSON_SUCCESS, Messages.format(editedPerson)));
+        return new CommandResult(successMessage(editedPerson));
+    }
+
+    static String successMessage(Person person) {
+        String details = "Name: " + person.getName()
+                + "\nPhone: " + person.getPhone()
+                + "\nEmail: " + person.getEmail()
+                + "\nRole: " + person.getRole();
+        return String.format(MESSAGE_EDIT_PERSON_SUCCESS, details);
+    }
+
+    private Person resolvePersonToEdit(Model model) throws CommandException {
+        List<Person> displayedPersons = model.getFilteredPersonList();
+        if (index != null) {
+            if (index.getZeroBased() >= displayedPersons.size()) {
+                throw new CommandException(String.format(MESSAGE_INVALID_INDEX, index.getOneBased()));
+            }
+            return displayedPersons.get(index.getZeroBased());
+        }
+        return resolveTarget(targetIdentifier, model.getCoordiMate().getPersonList(), displayedPersons);
+    }
+
+    /**
+     * Finds a contact across all saved contacts, independently of the displayed list.
+     */
+    static Person resolveTarget(String identifier, List<Person> savedPersons, List<Person> displayedPersons)
+            throws CommandException {
+        String trimmedIdentifier = identifier.strip();
+        String normalizedPhone = trimmedIdentifier.replace(" ", "").replace("-", "")
+                .replace("(", "").replace(")", "");
+        List<Person> matches = savedPersons.stream().filter(person ->
+                person.getName().getFullName().equalsIgnoreCase(trimmedIdentifier)
+                || person.getEmail().getValue().equalsIgnoreCase(trimmedIdentifier)
+                || person.getPhone().getNormalizedValue().equals(normalizedPhone)).toList();
+        if (matches.isEmpty()) {
+            throw new CommandException(MESSAGE_NO_MATCH);
+        }
+        if (matches.size() > 1) {
+            String matchDetails = matches.stream().map(person -> formatMatch(person, displayedPersons))
+                    .collect(Collectors.joining("\n"));
+            throw new CommandException(String.format(MESSAGE_AMBIGUOUS_MATCH, matchDetails));
+        }
+        return matches.getFirst();
+    }
+
+    private static String formatMatch(Person person, List<Person> displayedPersons) {
+        String details = "- " + person.getName() + " | Phone: " + person.getPhone()
+                + " | Email: " + person.getEmail();
+        int displayedIndex = displayedPersons.indexOf(person);
+        return displayedIndex < 0 ? details : details + " | Current-list index: " + (displayedIndex + 1);
     }
 
     /**
      * Creates and returns a {@code Person} with the details of {@code personToEdit}
      * edited with {@code editPersonDescriptor}.
      */
-    private static Person createEditedPerson(Person personToEdit, EditPersonDescriptor editPersonDescriptor) {
+    private static Person createEditedPerson(Person personToEdit, EditPersonDescriptor editPersonDescriptor,
+            List<Tag> savedTags) {
         assert personToEdit != null;
 
         Name updatedName = editPersonDescriptor.getName().orElse(personToEdit.getName());
         Phone updatedPhone = editPersonDescriptor.getPhone().orElse(personToEdit.getPhone());
         Email updatedEmail = editPersonDescriptor.getEmail().orElse(personToEdit.getEmail());
-        Address updatedAddress = editPersonDescriptor.getAddress().orElse(personToEdit.getAddress().orElse(null));
-        Set<Tag> updatedTags = editPersonDescriptor.getTags().orElse(personToEdit.getTags());
+        Role updatedRole = editPersonDescriptor.getRole().orElse(personToEdit.getRole());
+        Birthday updatedBirthday = editPersonDescriptor.isBirthdayEdited()
+                ? editPersonDescriptor.getBirthday().orElse(null) : personToEdit.getBirthday().orElse(null);
+        Address updatedAddress = editPersonDescriptor.isAddressEdited()
+                ? editPersonDescriptor.getAddress().orElse(null) : personToEdit.getAddress().orElse(null);
+        Organisation updatedOrganisation = editPersonDescriptor.isOrganisationEdited()
+                ? editPersonDescriptor.getOrganisation().orElse(null) : personToEdit.getOrganisation().orElse(null);
+        Note updatedNote = editPersonDescriptor.isNoteEdited()
+                ? editPersonDescriptor.getNote().orElse(null) : personToEdit.getNote().orElse(null);
+        Set<Tag> updatedTags = createUpdatedTags(personToEdit, editPersonDescriptor, savedTags);
 
-        return new Person(updatedName, updatedPhone, updatedEmail, personToEdit.getRole(),
-                personToEdit.getBirthday().orElse(null), updatedAddress, personToEdit.getOrganisation().orElse(null),
-                personToEdit.getNote().orElse(null), updatedTags);
+        return new Person(updatedName, updatedPhone, updatedEmail, updatedRole,
+                updatedBirthday, updatedAddress, updatedOrganisation, updatedNote, updatedTags);
+    }
+
+    private static Set<Tag> createUpdatedTags(Person personToEdit, EditPersonDescriptor descriptor,
+            List<Tag> savedTags) {
+        Set<Tag> updatedTags = new HashSet<>();
+        if (descriptor.getTags().isPresent()) {
+            for (Tag tag : descriptor.getTags().orElseThrow()) {
+                Tag canonicalTag = findSavedTag(tag, savedTags);
+                if (updatedTags.stream().noneMatch(canonicalTag::isSameTag)) {
+                    updatedTags.add(canonicalTag);
+                }
+            }
+        } else {
+            updatedTags.addAll(personToEdit.getTags());
+        }
+        for (TagOperation operation : descriptor.getTagOperations()) {
+            Tag tag = operation.tag();
+            if (operation.type() == TagOperationType.ADD) {
+                if (updatedTags.stream().noneMatch(tag::isSameTag)) {
+                    updatedTags.add(findSavedTag(tag, savedTags));
+                }
+            } else {
+                updatedTags.removeIf(tag::isSameTag);
+            }
+        }
+        return updatedTags;
+    }
+
+    private static Tag findSavedTag(Tag requested, List<Tag> savedTags) {
+        return savedTags.stream().filter(requested::isSameTag).findFirst().orElse(requested);
+    }
+
+    /** The effect of an {@code at/} or {@code rt/} argument. */
+    public enum TagOperationType {
+        ADD, REMOVE
+    }
+
+    /** A tag operation in command order. */
+    public record TagOperation(TagOperationType type, Tag tag) {
+        /** Creates an operation with a non-null type and tag. */
+        public TagOperation {
+            requireNonNull(type);
+            requireNonNull(tag);
+        }
     }
 
     @Override
@@ -129,7 +273,8 @@ public class EditCommand extends Command {
             return false;
         }
 
-        return index.equals(otherEditCommand.index)
+        return Objects.equals(index, otherEditCommand.index)
+                && Objects.equals(targetIdentifier, otherEditCommand.targetIdentifier)
                 && editPersonDescriptor.equals(otherEditCommand.editPersonDescriptor);
     }
 
@@ -137,20 +282,29 @@ public class EditCommand extends Command {
     public String toString() {
         return new ToStringBuilder(this)
                 .add("index", index)
+                .add("targetIdentifier", targetIdentifier)
                 .add("editPersonDescriptor", editPersonDescriptor)
                 .toString();
     }
 
     /**
-     * Stores the details to edit the person with. Each non-empty field value will replace the
-     * corresponding field value of the person.
+     * Stores the details to edit the person with. Optional fields distinguish omission from clearing.
      */
     public static class EditPersonDescriptor {
         private Name name;
         private Phone phone;
         private Email email;
+        private Role role;
+        private Birthday birthday;
+        private boolean isBirthdayEdited;
         private Address address;
+        private boolean isAddressEdited;
+        private Organisation organisation;
+        private boolean isOrganisationEdited;
+        private Note note;
+        private boolean isNoteEdited;
         private Set<Tag> tags;
+        private final List<TagOperation> tagOperations = new ArrayList<>();
 
         /**
          * Creates a descriptor with no fields selected for editing.
@@ -165,15 +319,30 @@ public class EditCommand extends Command {
             setName(toCopy.name);
             setPhone(toCopy.phone);
             setEmail(toCopy.email);
-            setAddress(toCopy.address);
+            setRole(toCopy.role);
+            if (toCopy.isBirthdayEdited) {
+                setBirthday(toCopy.birthday);
+            }
+            if (toCopy.isAddressEdited) {
+                setAddress(toCopy.address);
+            }
+            if (toCopy.isOrganisationEdited) {
+                setOrganisation(toCopy.organisation);
+            }
+            if (toCopy.isNoteEdited) {
+                setNote(toCopy.note);
+            }
             setTags(toCopy.tags);
+            tagOperations.addAll(toCopy.tagOperations);
         }
 
         /**
          * Returns true if at least one field is edited.
          */
         public boolean isAnyFieldEdited() {
-            return CollectionUtil.isAnyNonNull(name, phone, email, address, tags);
+            return CollectionUtil.isAnyNonNull(name, phone, email, role, tags)
+                    || isBirthdayEdited || isAddressEdited || isOrganisationEdited || isNoteEdited
+                    || !tagOperations.isEmpty();
         }
 
         public void setName(Name name) {
@@ -200,12 +369,64 @@ public class EditCommand extends Command {
             return Optional.ofNullable(email);
         }
 
+        public void setRole(Role role) {
+            this.role = role;
+        }
+
+        public Optional<Role> getRole() {
+            return Optional.ofNullable(role);
+        }
+
+        public void setBirthday(Birthday birthday) {
+            this.birthday = birthday;
+            isBirthdayEdited = true;
+        }
+
+        public Optional<Birthday> getBirthday() {
+            return Optional.ofNullable(birthday);
+        }
+
+        public boolean isBirthdayEdited() {
+            return isBirthdayEdited;
+        }
+
         public void setAddress(Address address) {
             this.address = address;
+            isAddressEdited = true;
         }
 
         public Optional<Address> getAddress() {
             return Optional.ofNullable(address);
+        }
+
+        public boolean isAddressEdited() {
+            return isAddressEdited;
+        }
+
+        public void setOrganisation(Organisation organisation) {
+            this.organisation = organisation;
+            isOrganisationEdited = true;
+        }
+
+        public Optional<Organisation> getOrganisation() {
+            return Optional.ofNullable(organisation);
+        }
+
+        public boolean isOrganisationEdited() {
+            return isOrganisationEdited;
+        }
+
+        public void setNote(Note note) {
+            this.note = note;
+            isNoteEdited = true;
+        }
+
+        public Optional<Note> getNote() {
+            return Optional.ofNullable(note);
+        }
+
+        public boolean isNoteEdited() {
+            return isNoteEdited;
         }
 
         /**
@@ -225,6 +446,16 @@ public class EditCommand extends Command {
             return (tags != null) ? Optional.of(Collections.unmodifiableSet(tags)) : Optional.empty();
         }
 
+        /** Adds a tag operation after the preceding operations. */
+        public void addTagOperation(TagOperation operation) {
+            tagOperations.add(requireNonNull(operation));
+        }
+
+        /** Returns tag operations in their original command order. */
+        public List<TagOperation> getTagOperations() {
+            return List.copyOf(tagOperations);
+        }
+
         @Override
         public boolean equals(Object other) {
             if (other == this) {
@@ -239,8 +470,17 @@ public class EditCommand extends Command {
             return Objects.equals(name, otherEditPersonDescriptor.name)
                     && Objects.equals(phone, otherEditPersonDescriptor.phone)
                     && Objects.equals(email, otherEditPersonDescriptor.email)
+                    && Objects.equals(role, otherEditPersonDescriptor.role)
+                    && isBirthdayEdited == otherEditPersonDescriptor.isBirthdayEdited
+                    && Objects.equals(birthday, otherEditPersonDescriptor.birthday)
+                    && isAddressEdited == otherEditPersonDescriptor.isAddressEdited
                     && Objects.equals(address, otherEditPersonDescriptor.address)
-                    && Objects.equals(tags, otherEditPersonDescriptor.tags);
+                    && isOrganisationEdited == otherEditPersonDescriptor.isOrganisationEdited
+                    && Objects.equals(organisation, otherEditPersonDescriptor.organisation)
+                    && isNoteEdited == otherEditPersonDescriptor.isNoteEdited
+                    && Objects.equals(note, otherEditPersonDescriptor.note)
+                    && Objects.equals(tags, otherEditPersonDescriptor.tags)
+                    && tagOperations.equals(otherEditPersonDescriptor.tagOperations);
         }
 
         @Override
@@ -249,8 +489,17 @@ public class EditCommand extends Command {
                     .add("name", name)
                     .add("phone", phone)
                     .add("email", email)
+                    .add("role", role)
+                    .add("birthdayEdited", isBirthdayEdited)
+                    .add("birthday", birthday)
+                    .add("addressEdited", isAddressEdited)
                     .add("address", address)
+                    .add("organisationEdited", isOrganisationEdited)
+                    .add("organisation", organisation)
+                    .add("noteEdited", isNoteEdited)
+                    .add("note", note)
                     .add("tags", tags)
+                    .add("tagOperations", tagOperations)
                     .toString();
         }
     }

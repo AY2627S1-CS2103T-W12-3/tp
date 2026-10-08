@@ -55,6 +55,9 @@ public interface Model {
      */
     ObservableList<Tag> getTagList();
 
+    /** Registers a tag for future use if its name is not already saved. */
+    void registerTag(Tag tag);
+
     /**
      * Returns true if a tag with the same name as {@code tag} exists, ignoring case.
      */

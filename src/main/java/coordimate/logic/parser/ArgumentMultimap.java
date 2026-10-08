@@ -23,6 +23,10 @@ public class ArgumentMultimap {
      * Prefixes mapped to their respective arguments.
      */
     private final Map<Prefix, List<String>> argMultimap = new HashMap<>();
+    private final List<PrefixedValue> argumentsInOrder = new ArrayList<>();
+
+    /** A parsed argument and its prefix. */
+    public record PrefixedValue(Prefix prefix, String value) {}
 
     /**
      * Associates the specified argument value with {@code prefix} key in this map.
@@ -35,6 +39,14 @@ public class ArgumentMultimap {
         List<String> argValues = getAllValues(prefix);
         argValues.add(argValue);
         argMultimap.put(prefix, argValues);
+        argumentsInOrder.add(new PrefixedValue(prefix, argValue));
+    }
+
+    /**
+     * Returns arguments in their original command order, including the preamble.
+     */
+    public List<PrefixedValue> getArgumentsInOrder() {
+        return List.copyOf(argumentsInOrder);
     }
 
     /**
