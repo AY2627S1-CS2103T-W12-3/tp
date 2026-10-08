@@ -65,6 +65,7 @@
         "deleting-a-person": "Deleting a person",
         "assigning-members-to-an-event": "Assigning members to an event",
         "removing-members-from-an-event": "Removing members from an event",
+        "viewing-members-of-an-event": "Viewing members of an event",
         "saving-data": "Saving data"
       },
       "headingKeywords": {}
@@ -119,6 +120,7 @@
         "deleting-an-event-deleteevent": "Deleting an event: deleteevent",
         "assigning-members-to-an-event-assign": "Assigning members to an event: assign",
         "removing-members-from-an-event-unassign": "Removing members from an event: unassign",
+        "viewing-members-of-an-event-members": "Viewing members of an event: members",
         "listing-all-persons-list": "Listing all persons: list",
         "deleting-a-tag-deletetag": "Deleting a tag: deletetag",
         "editing-a-tag-edittag": "Editing a tag: edittag",
