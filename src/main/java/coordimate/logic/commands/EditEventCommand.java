@@ -70,6 +70,20 @@ public class EditEventCommand extends Command {
                 editedEvent.getName(), editedEvent.getStartTime(), editedEvent.getEndTime()));
     }
 
+    /**
+     * Returns true if this command gives a new name to the event named {@code name}, ignoring case.
+     */
+    public boolean renamesEvent(String name) {
+        return newName != null && eventName.equalsIgnoreCase(name.strip());
+    }
+
+    /**
+     * Returns the new event name, or null if this command keeps the existing name.
+     */
+    public String getNewName() {
+        return newName;
+    }
+
     @Override
     public boolean equals(Object other) {
         return other instanceof EditEventCommand otherCommand && eventName.equals(otherCommand.eventName)

@@ -22,6 +22,9 @@ public class CommandResult {
     /** The tags view should be shown. */
     private final boolean shouldShowTags;
 
+    /** The contacts view should be shown. */
+    private final boolean shouldShowContacts;
+
     /**
      * Constructs a {@code CommandResult} with the specified fields.
      */
@@ -33,10 +36,19 @@ public class CommandResult {
      * Constructs a {@code CommandResult} with the specified fields.
      */
     public CommandResult(String feedbackToUser, boolean shouldShowHelp, boolean shouldExit, boolean shouldShowTags) {
+        this(feedbackToUser, shouldShowHelp, shouldExit, shouldShowTags, false);
+    }
+
+    /**
+     * Constructs a {@code CommandResult} with the specified fields.
+     */
+    public CommandResult(String feedbackToUser, boolean shouldShowHelp, boolean shouldExit, boolean shouldShowTags,
+            boolean shouldShowContacts) {
         this.feedbackToUser = requireNonNull(feedbackToUser);
         this.shouldShowHelp = shouldShowHelp;
         this.shouldExit = shouldExit;
         this.shouldShowTags = shouldShowTags;
+        this.shouldShowContacts = shouldShowContacts;
     }
 
     /**
@@ -72,6 +84,13 @@ public class CommandResult {
         return shouldShowTags;
     }
 
+    /**
+     * Returns true if the command requests that the contacts view be shown.
+     */
+    public boolean shouldShowContacts() {
+        return shouldShowContacts;
+    }
+
     @Override
     public boolean equals(Object other) {
         if (other == this) {
@@ -86,12 +105,13 @@ public class CommandResult {
         return feedbackToUser.equals(otherCommandResult.feedbackToUser)
                 && shouldShowHelp == otherCommandResult.shouldShowHelp
                 && shouldExit == otherCommandResult.shouldExit
-                && shouldShowTags == otherCommandResult.shouldShowTags;
+                && shouldShowTags == otherCommandResult.shouldShowTags
+                && shouldShowContacts == otherCommandResult.shouldShowContacts;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(feedbackToUser, shouldShowHelp, shouldExit, shouldShowTags);
+        return Objects.hash(feedbackToUser, shouldShowHelp, shouldExit, shouldShowTags, shouldShowContacts);
     }
 
     @Override
@@ -101,6 +121,7 @@ public class CommandResult {
                 .add("showHelp", shouldShowHelp)
                 .add("exit", shouldExit)
                 .add("showTags", shouldShowTags)
+                .add("showContacts", shouldShowContacts)
                 .toString();
     }
 

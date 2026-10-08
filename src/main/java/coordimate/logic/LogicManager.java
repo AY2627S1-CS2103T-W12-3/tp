@@ -26,6 +26,7 @@ import coordimate.logic.parser.exceptions.ParseException;
 import coordimate.model.Model;
 import coordimate.model.ModelManager;
 import coordimate.model.event.Event;
+import coordimate.model.event.EventMembersPredicate;
 import coordimate.model.person.Person;
 import coordimate.model.tag.Tag;
 import coordimate.storage.Storage;
@@ -141,7 +142,21 @@ public class LogicManager implements Logic {
         if (command instanceof AddCommand || command instanceof EditCommand) {
             model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
         }
+        keepMembersViewAfterRename(command);
         return result;
+    }
+
+    /**
+     * Keeps showing the same members when {@code command} renames the event whose members are displayed,
+     * since the displayed list follows the event by its name.
+     */
+    private void keepMembersViewAfterRename(Command command) {
+        if (command instanceof EditEventCommand editEvent
+                && model.getFilteredPersonPredicate() instanceof EventMembersPredicate shown
+                && editEvent.renamesEvent(shown.getEventName())) {
+            model.updateFilteredPersonList(new EventMembersPredicate(editEvent.getNewName(),
+                    model.getCoordiMate().getEventList()));
+        }
     }
 
     @Override

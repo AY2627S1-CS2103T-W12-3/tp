@@ -272,6 +272,10 @@ public class MainWindow extends UiPart<Stage> {
                 showTags();
             }
 
+            if (commandResult.shouldShowContacts()) {
+                showContacts();
+            }
+
             if (commandResult.shouldExit()) {
                 handleExit();
             }

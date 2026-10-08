@@ -1,8 +1,10 @@
 package coordimate.logic.commands;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
@@ -112,6 +114,19 @@ public class EditEventCommandTest {
                     assertThrows(CommandException.class, () -> command.execute(model)).getMessage());
             assertEquals(List.of(concert), model.getCoordiMate().getEventList());
         }
+    }
+
+    @Test
+    public void renamesEvent_onlyWhenNewNameGivenForThatEvent() {
+        EditEventCommand rename = new EditEventCommand("Final Concert", "Grand Concert", null, null);
+        assertTrue(rename.renamesEvent("Final Concert"));
+        assertTrue(rename.renamesEvent(" final concert "));
+        assertFalse(rename.renamesEvent("Fair"));
+        assertEquals("Grand Concert", rename.getNewName());
+
+        EditEventCommand timeOnly = new EditEventCommand("Final Concert", null, null, new EventTime("08-08-2026"));
+        assertFalse(timeOnly.renamesEvent("Final Concert"));
+        assertEquals(null, timeOnly.getNewName());
     }
 
     @Test

@@ -16,6 +16,7 @@ public class CommandResultTest {
         assertTrue(commandResult.equals(new CommandResult("feedback")));
         assertTrue(commandResult.equals(new CommandResult("feedback", false, false)));
         assertTrue(commandResult.equals(new CommandResult("feedback", false, false, false)));
+        assertTrue(commandResult.equals(new CommandResult("feedback", false, false, false, false)));
 
         // same object -> returns true
         assertTrue(commandResult.equals(commandResult));
@@ -37,6 +38,9 @@ public class CommandResultTest {
 
         // different showTags value -> returns false
         assertFalse(commandResult.equals(new CommandResult("feedback", false, false, true)));
+
+        // different showContacts value -> returns false
+        assertFalse(commandResult.equals(new CommandResult("feedback", false, false, false, true)));
     }
 
     @Test
@@ -57,6 +61,9 @@ public class CommandResultTest {
 
         // different showTags value -> returns different hashcode
         assertNotEquals(commandResult.hashCode(), new CommandResult("feedback", false, false, true).hashCode());
+
+        // different showContacts value -> returns different hashcode
+        assertNotEquals(commandResult.hashCode(), new CommandResult("feedback", false, false, false, true).hashCode());
     }
 
     @Test
@@ -64,7 +71,8 @@ public class CommandResultTest {
         CommandResult commandResult = new CommandResult("feedback");
         String expected = CommandResult.class.getCanonicalName() + "{feedbackToUser="
                 + commandResult.getFeedbackToUser() + ", showHelp=" + commandResult.shouldShowHelp()
-                + ", exit=" + commandResult.shouldExit() + ", showTags=" + commandResult.shouldShowTags() + "}";
+                + ", exit=" + commandResult.shouldExit() + ", showTags=" + commandResult.shouldShowTags()
+                + ", showContacts=" + commandResult.shouldShowContacts() + "}";
         assertEquals(expected, commandResult.toString());
     }
 
@@ -73,5 +81,12 @@ public class CommandResultTest {
         CommandResult commandResult = new CommandResult("feedback", false, false, true);
 
         assertTrue(commandResult.shouldShowTags());
+    }
+
+    @Test
+    public void shouldShowContacts_defaultFalseAndSetWhenRequested() {
+        assertFalse(new CommandResult("feedback").shouldShowContacts());
+        assertFalse(new CommandResult("feedback", false, false, true).shouldShowContacts());
+        assertTrue(new CommandResult("feedback", false, false, false, true).shouldShowContacts());
     }
 }

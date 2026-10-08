@@ -6,8 +6,8 @@ import static coordimate.logic.parser.CliSyntax.PREFIX_EVENT_NAME;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -17,8 +17,8 @@ import coordimate.logic.parser.exceptions.ParseException;
 import coordimate.model.event.Event;
 
 /**
- * Parses the {@code evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...} arguments shared by the commands
- * that change an event's members, rejecting unknown or repeated parameters.
+ * Parses the {@code evn/EVENT_NAME [c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...]} arguments shared by the commands
+ * that view or change an event's members, rejecting unknown or repeated parameters.
  */
 final class EventContactsParser {
     static final String MESSAGE_REPEATED_PARAMETER = "Each parameter may only be specified once.";
@@ -27,7 +27,6 @@ final class EventContactsParser {
 
     // Same parameter pattern as the other event commands, so all of them reject the same unknown parameters.
     private static final Pattern PARAMETER_PATTERN = Pattern.compile("(?<!\\S)([A-Za-z]+/|/[A-Za-z]+)");
-    private static final Set<String> PREFIXES = Set.of(PREFIX_EVENT_NAME.toString(), PREFIX_CONTACT.toString());
 
     /**
      * The event name and contact indexes given to a command.
@@ -37,7 +36,8 @@ final class EventContactsParser {
     private EventContactsParser() {}
 
     /**
-     * Parses {@code args} into an event name and the contact indexes in the order given.
+     * Parses {@code evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...} into an event name and the contact
+     * indexes in the order given.
      *
      * @param usage The command's usage text, shown when {@code evn/} or {@code c/} is missing.
      * @param unknownParameterMessage The error shown when an unknown parameter is used.
@@ -46,30 +46,55 @@ final class EventContactsParser {
      */
     static Parsed parse(String args, String usage, String unknownParameterMessage, String noContactsMessage)
             throws ParseException {
+        ArgumentMultimap argMultimap = tokenize(args, usage, unknownParameterMessage,
+                PREFIX_EVENT_NAME, PREFIX_CONTACT);
+        return new Parsed(readEventName(argMultimap),
+                parseContactIndexes(argMultimap.getValue(PREFIX_CONTACT).get(), noContactsMessage));
+    }
+
+    /**
+     * Parses {@code evn/EVENT_NAME} into an event name.
+     *
+     * @param usage The command's usage text, shown when {@code evn/} is missing.
+     * @param unknownParameterMessage The error shown when an unknown parameter is used.
+     * @throws ParseException If the arguments do not follow the expected format.
+     */
+    static String parseEventName(String args, String usage, String unknownParameterMessage) throws ParseException {
+        return readEventName(tokenize(args, usage, unknownParameterMessage, PREFIX_EVENT_NAME));
+    }
+
+    /**
+     * Splits {@code args} by the {@code allowed} prefixes, each of which must appear exactly once with nothing
+     * before the first one.
+     */
+    private static ArgumentMultimap tokenize(String args, String usage, String unknownParameterMessage,
+            Prefix... allowed) throws ParseException {
         requireNonNull(args);
+        List<String> allowedPrefixes = Arrays.stream(allowed).map(Prefix::toString).toList();
         Matcher matcher = PARAMETER_PATTERN.matcher(args);
         while (matcher.find()) {
-            if (!PREFIXES.contains(matcher.group())) {
+            if (!allowedPrefixes.contains(matcher.group())) {
                 throw new ParseException(unknownParameterMessage);
             }
         }
 
-        ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(args, PREFIX_EVENT_NAME, PREFIX_CONTACT);
-        if (!argMultimap.getPreamble().isEmpty() || argMultimap.getValue(PREFIX_EVENT_NAME).isEmpty()
-                || argMultimap.getValue(PREFIX_CONTACT).isEmpty()) {
+        ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(args, allowed);
+        boolean isMissingPrefix = Arrays.stream(allowed).anyMatch(prefix -> argMultimap.getValue(prefix).isEmpty());
+        if (!argMultimap.getPreamble().isEmpty() || isMissingPrefix) {
             throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, usage));
         }
-        if (argMultimap.getAllValues(PREFIX_EVENT_NAME).size() > 1
-                || argMultimap.getAllValues(PREFIX_CONTACT).size() > 1) {
+        if (Arrays.stream(allowed).anyMatch(prefix -> argMultimap.getAllValues(prefix).size() > 1)) {
             throw new ParseException(MESSAGE_REPEATED_PARAMETER);
         }
+        return argMultimap;
+    }
 
+    private static String readEventName(ArgumentMultimap argMultimap) throws ParseException {
         String eventName = argMultimap.getValue(PREFIX_EVENT_NAME).get().strip();
         if (eventName.isEmpty()) {
             throw new ParseException(Event.MESSAGE_EMPTY_NAME);
         }
-        return new Parsed(eventName,
-                parseContactIndexes(argMultimap.getValue(PREFIX_CONTACT).get(), noContactsMessage));
+        return eventName;
     }
 
     private static List<Index> parseContactIndexes(String value, String noContactsMessage) throws ParseException {

@@ -75,6 +75,16 @@ public class ModelManagerTest {
     }
 
     @Test
+    public void getFilteredPersonPredicate_returnsLatestPredicate() {
+        assertEquals(null, modelManager.getFilteredPersonPredicate());
+        NameContainsKeywordsPredicate predicate = new NameContainsKeywordsPredicate(List.of("Alice"));
+        modelManager.updateFilteredPersonList(predicate);
+        assertEquals(predicate, modelManager.getFilteredPersonPredicate());
+        modelManager.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
+        assertEquals(PREDICATE_SHOW_ALL_PERSONS, modelManager.getFilteredPersonPredicate());
+    }
+
+    @Test
     public void getTagList_returnsDefaultTags() {
         assertEquals(List.of(new Tag("EXCO"), new Tag("Sponsor"), new Tag("UniversityStaff"),
                 new Tag("Logistics")), modelManager.getTagList());
