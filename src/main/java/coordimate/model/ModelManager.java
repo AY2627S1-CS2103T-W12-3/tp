@@ -93,6 +93,9 @@ public class ModelManager implements Model {
     public void deleteTag(Tag target) {
         requireNonNull(target);
         coordiMate.removeTag(target);
+    }
+
+    @Override
     public void registerTag(Tag tag) {
         requireNonNull(tag);
         if (!coordiMate.hasTag(tag)) {

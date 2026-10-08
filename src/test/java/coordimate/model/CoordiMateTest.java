@@ -209,22 +209,28 @@ public class CoordiMateTest {
 
     @Test
     public void removeTag_existingTag_removesTagFromListAndContacts() {
-        Person taggedAlice = new PersonBuilder(ALICE).withTags("EXCO", "Sponsor").build();
+        Person taggedAlice = new PersonBuilder(ALICE).withRole("Logistics").withBirthday("18-06-2004")
+                .withOrganisation("NUS Student Affairs").withNote("Handles venue bookings")
+                .withTags("EXCO", "Sponsor").build();
+        Person taggedBenson = new PersonBuilder(BENSON).withoutAddress().withTags("EXCO").build();
         coordiMate.addPerson(taggedAlice);
-        coordiMate.addPerson(BENSON);
+        coordiMate.addPerson(taggedBenson);
 
         coordiMate.removeTag(new Tag("exco"));
 
         assertEquals(List.of(new Tag("Sponsor"), new Tag("UniversityStaff"), new Tag("Logistics")),
                 coordiMate.getTagList());
-        assertEquals(List.of(new Tag("Sponsor")), coordiMate.getPersonList().get(0).getTags().stream().toList());
-        assertEquals(BENSON, coordiMate.getPersonList().get(1));
+        assertEquals(new PersonBuilder(taggedAlice).withTags("Sponsor").build(), coordiMate.getPersonList().get(0));
+        assertEquals(new PersonBuilder(taggedBenson).withTags().build(), coordiMate.getPersonList().get(1));
     }
 
     @Test
     public void removeTag_invalidArguments_throwsException() {
         assertThrows(NullPointerException.class, () -> coordiMate.removeTag(null));
         assertThrows(IllegalArgumentException.class, () -> coordiMate.removeTag(new Tag("Missing")));
+    }
+
+    @Test
     public void setTag_customTag_replacesTagInListAndContacts() {
         Tag publicity = new Tag("Publicity");
         Tag media = new Tag("Media");

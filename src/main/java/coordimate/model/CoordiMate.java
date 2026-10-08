@@ -62,11 +62,11 @@ public class CoordiMate implements ReadOnlyCoordiMate {
     }
 
     /**
-     * Replaces the saved tags. An empty replacement restores the initial default tags.
+     * Replaces the saved tags, including with an empty list.
      */
     public void setTags(List<Tag> tags) {
         requireNonNull(tags);
-        this.tags.setTags(tags.isEmpty() ? DEFAULT_TAGS : tags);
+        this.tags.setTags(tags);
     }
 
     /**
@@ -171,6 +171,9 @@ public class CoordiMate implements ReadOnlyCoordiMate {
                 .toList();
         tags.setTags(remainingTags);
         persons.setPersons(updatedPersons);
+    }
+
+    /**
      * Replaces {@code target} with {@code editedTag} in the saved tag list and on every contact.
      * {@code target} must exist, and {@code editedTag} must not already exist.
      */
@@ -305,7 +308,9 @@ public class CoordiMate implements ReadOnlyCoordiMate {
         Set<Tag> remainingTags = person.getTags().stream()
                 .filter(tag -> !tag.isSameTag(target))
                 .collect(Collectors.toSet());
-        return new Person(person.getName(), person.getPhone(), person.getEmail(), person.getAddress(), remainingTags);
+        return new Person(person.getName(), person.getPhone(), person.getEmail(), person.getRole(),
+                person.getBirthday().orElse(null), person.getAddress().orElse(null),
+                person.getOrganisation().orElse(null), person.getNote().orElse(null), remainingTags);
     }
 
     //// util methods
