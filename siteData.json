@@ -118,6 +118,7 @@
         "deleting-an-event-deleteevent": "Deleting an event: deleteevent",
         "assigning-members-to-an-event-assign": "Assigning members to an event: assign",
         "listing-all-persons-list": "Listing all persons: list",
+        "deleting-a-tag-deletetag": "Deleting a tag: deletetag",
         "editing-a-tag-edittag": "Editing a tag: edittag",
         "creating-a-tag-newtag": "Creating a tag: newtag",
         "listing-all-tags-listtags": "Listing all tags: listtags",
