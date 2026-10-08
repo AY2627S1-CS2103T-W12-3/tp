@@ -9,8 +9,10 @@ import static java.util.Objects.requireNonNull;
  */
 public class Tag {
 
-    public static final String MESSAGE_CONSTRAINTS = "Tag names should be alphanumeric";
+    public static final String MESSAGE_CONSTRAINTS = "Tag names should be alphanumeric with no spaces.";
+    public static final String MESSAGE_LENGTH_CONSTRAINTS = "Tag names should not exceed 30 characters.";
     public static final String VALIDATION_REGEX = "\\p{Alnum}+";
+    public static final int MAX_LENGTH = 30;
 
     private final String tagName;
 
@@ -21,7 +23,8 @@ public class Tag {
      */
     public Tag(String tagName) {
         requireNonNull(tagName);
-        checkArgument(isValidTagName(tagName), MESSAGE_CONSTRAINTS);
+        checkArgument(tagName.matches(VALIDATION_REGEX), MESSAGE_CONSTRAINTS);
+        checkArgument(tagName.length() <= MAX_LENGTH, MESSAGE_LENGTH_CONSTRAINTS);
         this.tagName = tagName;
     }
 
@@ -44,7 +47,7 @@ public class Tag {
      * Returns true if a given string is a valid tag name.
      */
     public static boolean isValidTagName(String test) {
-        return test.matches(VALIDATION_REGEX);
+        return test.matches(VALIDATION_REGEX) && test.length() <= MAX_LENGTH;
     }
 
     @Override

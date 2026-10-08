@@ -103,6 +103,16 @@ public class AddCommandTest {
         }
 
         @Override
+        public boolean hasTag(Tag tag) {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
+        public void addTag(Tag tag) {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
         public void setEvent(coordimate.model.event.Event target, coordimate.model.event.Event editedEvent) {
             throw new AssertionError("This method should not be called.");
         }
