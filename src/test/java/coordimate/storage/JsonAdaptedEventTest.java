@@ -5,10 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
 import coordimate.commons.exceptions.IllegalValueException;
+import coordimate.model.event.AttendanceStatus;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
 import coordimate.model.person.Name;
@@ -84,5 +86,47 @@ public class JsonAdaptedEventTest {
         for (int i = 0; i < events.length; i++) {
             assertEquals(messages[i], assertThrows(IllegalValueException.class, events[i]::toModelType).getMessage());
         }
+    }
+
+    @Test
+    public void toModelType_attendance_preservedInRoundTrip() throws Exception {
+        Event expected = new Event("Concert", new EventTime("08-08-2026"), new EventTime("08-08-2026 18:00"),
+                List.of(new Name("Bernice Yu"), new Name("Alex Yeoh")),
+                Map.of(new Name("Bernice Yu"), AttendanceStatus.PRESENT));
+        assertEquals(expected, new JsonAdaptedEvent(expected).toModelType());
+    }
+
+    @Test
+    public void toModelType_missingAttendance_noAttendanceRecorded() throws Exception {
+        Event expected = new Event("Concert", new EventTime("08-08-2026"), new EventTime("08-08-2026"),
+                List.of(new Name("Alex Yeoh")));
+        assertEquals(expected, new JsonAdaptedEvent("Concert", "08-08-2026", "08-08-2026",
+                List.of("Alex Yeoh")).toModelType());
+    }
+
+    @Test
+    public void toModelType_attendanceForUnassignedMember_throwsIllegalValueException() {
+        JsonAdaptedEvent event = new JsonAdaptedEvent("Concert", "08-08-2026", "08-08-2026",
+                List.of("Alex Yeoh"), Map.of("Bernice Yu", "present"));
+        assertEquals(Event.MESSAGE_UNASSIGNED_ATTENDANCE,
+                assertThrows(IllegalValueException.class, event::toModelType).getMessage());
+    }
+
+    @Test
+    public void toModelType_invalidAttendanceStatus_throwsIllegalValueException() {
+        JsonAdaptedEvent event = new JsonAdaptedEvent("Concert", "08-08-2026", "08-08-2026",
+                List.of("Alex Yeoh"), Map.of("Alex Yeoh", "maybe"));
+        assertEquals(JsonAdaptedEvent.MESSAGE_INVALID_ATTENDANCE_STATUS,
+                assertThrows(IllegalValueException.class, event::toModelType).getMessage());
+    }
+
+    @Test
+    public void toModelType_nullAttendanceKeyOrValue_throwsIllegalValueException() {
+        Map<String, String> nullValue = new java.util.HashMap<>();
+        nullValue.put("Alex Yeoh", null);
+        JsonAdaptedEvent eventWithNullValue = new JsonAdaptedEvent("Concert", "08-08-2026", "08-08-2026",
+                List.of("Alex Yeoh"), nullValue);
+        assertEquals(JsonAdaptedEvent.MESSAGE_NULL_ATTENDANCE,
+                assertThrows(IllegalValueException.class, eventWithNullValue::toModelType).getMessage());
     }
 }
