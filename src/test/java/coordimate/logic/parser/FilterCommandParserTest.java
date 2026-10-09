@@ -55,6 +55,29 @@ public class FilterCommandParserTest {
     }
 
     @Test
+    public void parse_fieldLikeTextInQuotes_treatedAsOneValue() {
+        FilterCommand expected = new FilterCommand(
+                List.of(new FilterCriterion(FilterField.EVENT, "Planning tag/review")));
+        assertParseSuccess(parser, " event/\"Planning tag/review\"", expected);
+    }
+
+    @Test
+    public void parse_fieldAfterQuotedValue_parsedAsSeparateFilter() {
+        FilterCommand expected = new FilterCommand(List.of(
+                new FilterCriterion(FilterField.EVENT, "Planning tag/review"),
+                new FilterCriterion(FilterField.TAG, "friend")));
+        assertParseSuccess(parser, " event/\"Planning tag/review\" tag/friend", expected);
+    }
+
+    @Test
+    public void parse_singleOrganisationFilter_returnsFilterCommand() {
+        FilterCommand expected = new FilterCommand(
+                List.of(new FilterCriterion(FilterField.ORGANISATION, "NUS Student Affairs")));
+        assertParseSuccess(parser, " organisation/NUS Student Affairs", expected);
+        assertParseSuccess(parser, " ORGANISATION/\"NUS Student Affairs\"", expected);
+    }
+
+    @Test
     public void parse_emptyValue_throwsParseException() {
         assertParseFailure(parser, " tag/", FilterCommandParser.MESSAGE_EMPTY_VALUE);
         assertParseFailure(parser, " tag/   ", FilterCommandParser.MESSAGE_EMPTY_VALUE);
@@ -62,7 +85,6 @@ public class FilterCommandParserTest {
 
     @Test
     public void parse_unsupportedField_throwsParseException() {
-        assertParseFailure(parser, " organisation/NUS", FilterCommandParser.MESSAGE_INVALID_FIELD);
         assertParseFailure(parser, " favourite/true", FilterCommandParser.MESSAGE_INVALID_FIELD);
         assertParseFailure(parser, " unknown/value", FilterCommandParser.MESSAGE_INVALID_FIELD);
     }

@@ -98,6 +98,28 @@ public class FilterCommandTest {
     }
 
     @Test
+    public void execute_organisationFilterCaseInsensitive_success() throws Exception {
+        CoordiMate coordiMate = new CoordiMate();
+        var aliceAtNus = new PersonBuilder(ALICE).withOrganisation("NUS Student Affairs").build();
+        coordiMate.addPerson(aliceAtNus);
+        coordiMate.addPerson(new PersonBuilder(BENSON).withOrganisation("NUS Students").build());
+        ModelManager modelWithOrganisations = new ModelManager(coordiMate, new UserPrefs());
+        FilterCommand command = filter(FilterField.ORGANISATION, "nus student affairs");
+
+        CommandResult result = command.execute(modelWithOrganisations);
+
+        assertEquals(String.format(FilterCommand.MESSAGE_SUCCESS, 1), result.getFeedbackToUser());
+        assertEquals(List.of(aliceAtNus), modelWithOrganisations.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_organisationDoesNotExist_throwsCommandException() {
+        FilterCommand command = filter(FilterField.ORGANISATION, "zzzNoSuchOrganisation");
+
+        assertThrows(CommandException.class, FilterCommand.MESSAGE_NO_MATCHING_VALUE, () -> command.execute(model));
+    }
+
+    @Test
     public void execute_multipleCriteria_requiresAllToMatch() throws Exception {
         CoordiMate coordiMate = new CoordiMate();
         coordiMate.addTag(new Tag("Friends"));

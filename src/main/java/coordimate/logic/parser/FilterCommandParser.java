@@ -21,7 +21,7 @@ public class FilterCommandParser implements Parser<FilterCommand> {
     public static final String MESSAGE_EMPTY_COMMAND = "Filter field cannot be empty.";
     public static final String MESSAGE_EMPTY_VALUE = "Filter value cannot be empty.";
     public static final String MESSAGE_INVALID_FIELD =
-            "Invalid filter field. Supported fields: tag, event.";
+            "Invalid filter field. Supported fields: tag, event, organisation.";
 
     private static final Pattern FIELD_PATTERN = Pattern.compile("(?<!\\S)([A-Za-z]+)/");
 
@@ -57,13 +57,22 @@ public class FilterCommandParser implements Parser<FilterCommand> {
         return new FilterCommand(criteria);
     }
 
+    /**
+     * Returns the FIELD/ tokens in {@code args}, ignoring any that appear inside a quoted value.
+     */
     private List<MatchResult> findFieldTokens(String args) {
         Matcher matcher = FIELD_PATTERN.matcher(args);
         List<MatchResult> tokens = new ArrayList<>();
         while (matcher.find()) {
-            tokens.add(matcher.toMatchResult());
+            if (!isInsideQuotes(args, matcher.start())) {
+                tokens.add(matcher.toMatchResult());
+            }
         }
         return tokens;
+    }
+
+    private boolean isInsideQuotes(String args, int index) {
+        return args.substring(0, index).chars().filter(c -> c == '"').count() % 2 == 1;
     }
 
     private String stripQuotes(String value) {
