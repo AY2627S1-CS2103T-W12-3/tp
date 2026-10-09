@@ -58,7 +58,8 @@ public class EditEventCommand extends Command {
         try {
             editedEvent = new Event(newName == null ? target.getName() : newName,
                     newStartTime == null ? target.getStartTime() : newStartTime,
-                    newEndTime == null ? target.getEndTime() : newEndTime, target.getMembers());
+                    newEndTime == null ? target.getEndTime() : newEndTime, target.getMembers(),
+                    target.getAttendanceRecord());
         } catch (IllegalArgumentException e) {
             throw new CommandException(e.getMessage(), e);
         }

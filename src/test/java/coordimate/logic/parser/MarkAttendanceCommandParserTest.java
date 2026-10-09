@@ -55,6 +55,11 @@ public class MarkAttendanceCommandParserTest {
     }
 
     @Test
+    public void parse_invalidMemberName_rejected() {
+        assertError(" evn/Final Concert mem/Alice! att/present", Name.MESSAGE_CONSTRAINTS);
+    }
+
+    @Test
     public void parse_invalidStatus_rejected() {
         assertError(" evn/Final Concert mem/Alice Tan att/maybe",
                 MarkAttendanceCommandParser.MESSAGE_INVALID_STATUS);

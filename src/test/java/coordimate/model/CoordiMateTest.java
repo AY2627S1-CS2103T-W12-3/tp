@@ -14,9 +14,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
+import coordimate.model.event.AttendanceStatus;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
 import coordimate.model.event.MemberNameConflictException;
@@ -142,6 +144,39 @@ public class CoordiMateTest {
         assertEquals(List.of(ALICE, BENSON, CARL), coordiMate.getPersonList());
     }
 
+    @Test
+    public void removePerson_withAttendance_removesOnlyTheirAttendance() {
+        addContactsAndEventsWithAttendance();
+        coordiMate.removePerson(ALICE);
+        assertEquals(List.of(event("Concert", Map.of(BENSON.getName(), AttendanceStatus.ABSENT),
+                BENSON.getName(), CARL.getName()),
+                event("Fair", Map.of(CARL.getName(), AttendanceStatus.PRESENT), CARL.getName()),
+                event("Meeting")), coordiMate.getEventList());
+    }
+
+    @Test
+    public void setPerson_renamedContactWithAttendance_attendanceMovedToNewName() {
+        addContactsAndEventsWithAttendance();
+        Person renamedAlice = new PersonBuilder(ALICE).withName("Alice Tan").build();
+        coordiMate.setPerson(ALICE, renamedAlice);
+        Name newName = renamedAlice.getName();
+        assertEquals(List.of(event("Concert", Map.of(newName, AttendanceStatus.PRESENT,
+                BENSON.getName(), AttendanceStatus.ABSENT), BENSON.getName(), newName, CARL.getName()),
+                event("Fair", Map.of(CARL.getName(), AttendanceStatus.PRESENT), CARL.getName(), newName),
+                event("Meeting")), coordiMate.getEventList());
+    }
+
+    private void addContactsAndEventsWithAttendance() {
+        coordiMate.addPerson(ALICE);
+        coordiMate.addPerson(BENSON);
+        coordiMate.addPerson(CARL);
+        coordiMate.addEvent(event("Concert", Map.of(ALICE.getName(), AttendanceStatus.PRESENT,
+                BENSON.getName(), AttendanceStatus.ABSENT), BENSON.getName(), ALICE.getName(), CARL.getName()));
+        coordiMate.addEvent(event("Fair", Map.of(CARL.getName(), AttendanceStatus.PRESENT),
+                CARL.getName(), ALICE.getName()));
+        coordiMate.addEvent(event("Meeting"));
+    }
+
     private void addContactsAndEvents() {
         coordiMate.addPerson(ALICE);
         coordiMate.addPerson(BENSON);
@@ -153,6 +188,11 @@ public class CoordiMateTest {
 
     private static Event event(String name, Name... members) {
         return new Event(name, new EventTime("08-08-2026"), new EventTime("08-08-2026"), List.of(members));
+    }
+
+    private static Event event(String name, Map<Name, AttendanceStatus> attendance, Name... members) {
+        return new Event(name, new EventTime("08-08-2026"), new EventTime("08-08-2026"), List.of(members),
+                attendance);
     }
 
     @Test

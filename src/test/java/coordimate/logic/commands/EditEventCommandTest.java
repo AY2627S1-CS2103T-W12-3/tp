@@ -7,11 +7,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.ModelManager;
+import coordimate.model.event.AttendanceStatus;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
 import coordimate.model.person.Name;
@@ -49,6 +51,19 @@ public class EditEventCommandTest {
         new EditEventCommand("Final Concert", null, null, end).execute(model);
         new EditEventCommand("final concert", "Grand Concert", null, null).execute(model);
         assertEquals(List.of(new Event("Grand Concert", concert.getStartTime(), end, members)),
+                model.getCoordiMate().getEventList());
+    }
+
+    @Test
+    public void execute_eventWithAttendance_retainsAttendance() throws Exception {
+        List<Name> members = List.of(new Name("Bernice Yu"), new Name("Alex Yeoh"));
+        Map<Name, AttendanceStatus> attendance = Map.of(new Name("Alex Yeoh"), AttendanceStatus.PRESENT);
+        ModelManager model = new ModelManager();
+        model.addEvent(new Event(concert.getName(), concert.getStartTime(), concert.getEndTime(), members,
+                attendance));
+        EventTime end = new EventTime("08-08-2026 19:00");
+        new EditEventCommand("Final Concert", "Grand Concert", null, end).execute(model);
+        assertEquals(List.of(new Event("Grand Concert", concert.getStartTime(), end, members, attendance)),
                 model.getCoordiMate().getEventList());
     }
 
