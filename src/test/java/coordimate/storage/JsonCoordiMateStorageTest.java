@@ -61,6 +61,19 @@ public class JsonCoordiMateStorageTest {
     }
 
     @Test
+    public void readAndSaveCoordiMate_legacyPhoneNumbers_preservesContacts() throws Exception {
+        ReadOnlyCoordiMate legacyData = readCoordiMate("legacyPhoneCoordiMate.json").orElseThrow();
+        assertEquals("123", legacyData.getPersonList().get(0).getPhone().getValue());
+        assertEquals("1234567890123456", legacyData.getPersonList().get(1).getPhone().getValue());
+
+        Path filePath = testFolder.resolve("LegacyPhones.json");
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(filePath);
+        storage.saveCoordiMate(legacyData);
+
+        assertEquals(legacyData, storage.readCoordiMate().orElseThrow());
+    }
+
+    @Test
     public void readAndSaveCoordiMate_allInOrder_success() throws Exception {
         Path filePath = testFolder.resolve("TempCoordiMate.json");
         CoordiMate original = getTypicalCoordiMate();
