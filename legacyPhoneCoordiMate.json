@@ -1,0 +1,18 @@
+{
+  "persons": [
+    {
+      "name": "Legacy Short",
+      "phone": "123",
+      "email": "legacy.short@example.com",
+      "address": "Old Road",
+      "tags": []
+    },
+    {
+      "name": "Legacy Long",
+      "phone": "1234567890123456",
+      "email": "legacy.long@example.com",
+      "address": "Old Road",
+      "tags": []
+    }
+  ]
+}

@@ -153,6 +153,10 @@ The `Storage` component,
 * is implemented by `StorageManager`, which delegates the actual JSON file access to `JsonCoordiMateStorage` and `JsonUserPrefsStorage` (one class per data file).
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
 
+Previously saved digit-only phone numbers with at least three digits remain valid model data, so older JSON files can
+still load. The command parser applies the current 7–15-digit rule whenever a user supplies a phone number for `add`
+or `edit`; editing another field does not require replacing a legacy phone number.
+
 ### Common classes
 
 Classes used by multiple components are in the `coordimate.commons` package.
