@@ -13,7 +13,6 @@ import coordimate.logic.commands.MarkAttendanceCommand;
 import coordimate.logic.parser.exceptions.ParseException;
 import coordimate.model.event.AttendanceStatus;
 import coordimate.model.event.Event;
-import coordimate.model.person.Name;
 
 /**
  * Parses an event name, member name, and attendance status, rejecting unknown or repeated parameters.
@@ -79,7 +78,7 @@ public class MarkAttendanceCommandParser implements Parser<MarkAttendanceCommand
             throw new ParseException(MESSAGE_INVALID_STATUS);
         }
 
-        return new MarkAttendanceCommand(eventName, new Name(memberName), status);
+        return new MarkAttendanceCommand(eventName, ParserUtil.parseName(memberName), status);
     }
 
     private ParseException invalidFormat() {

@@ -11,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,6 +20,7 @@ import coordimate.commons.core.index.Index;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.ModelManager;
 import coordimate.model.UserPrefs;
+import coordimate.model.event.AttendanceStatus;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
 import coordimate.model.person.Name;
@@ -65,6 +67,20 @@ public class AssignCommandTest {
                 assign("Final Concert", 2, 3, 1).execute(model).getFeedbackToUser());
         assertEquals(withMembers(concert, ALICE.getName(), BENSON.getName(), CARL.getName()),
                 model.getCoordiMate().getEventList().getFirst());
+    }
+
+    @Test
+    public void execute_existingAttendance_preserved() throws Exception {
+        assign("Final Concert", 1).execute(model);
+        new MarkAttendanceCommand("Final Concert", ALICE.getName(), AttendanceStatus.PRESENT).execute(model);
+        assign("Final Concert", 2).execute(model);
+        assertEquals(new Event(concert.getName(), concert.getStartTime(), concert.getEndTime(),
+                List.of(ALICE.getName(), BENSON.getName()), Map.of(ALICE.getName(), AttendanceStatus.PRESENT)),
+                model.getCoordiMate().getEventList().getFirst());
+        assertEquals(String.format(MarkAttendanceCommand.MESSAGE_ALREADY_MARKED, ALICE.getName(),
+                AttendanceStatus.PRESENT, "Final Concert"),
+                new MarkAttendanceCommand("Final Concert", ALICE.getName(), AttendanceStatus.PRESENT)
+                        .execute(model).getFeedbackToUser());
     }
 
     @Test

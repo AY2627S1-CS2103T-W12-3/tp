@@ -3,12 +3,15 @@ package coordimate.model;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import coordimate.commons.util.ToStringBuilder;
+import coordimate.model.event.AttendanceStatus;
 import coordimate.model.event.Event;
 import coordimate.model.event.MemberNameConflictException;
 import coordimate.model.person.Name;
@@ -263,8 +266,9 @@ public class CoordiMate implements ReadOnlyCoordiMate {
     }
 
     /**
-     * Prepares event rosters with {@code oldName} replaced by {@code newName}, keeping each member's position.
-     * Removes {@code oldName} instead if {@code newName} is null.
+     * Prepares event rosters with {@code oldName} replaced by {@code newName}, keeping each member's position
+     * and moving {@code oldName}'s attendance to {@code newName}.
+     * Removes {@code oldName} and its attendance instead if {@code newName} is null.
      */
     private List<Event> getEventsWithReplacedMember(Name oldName, Name newName) {
         List<Event> updatedEvents = new ArrayList<>();
@@ -280,7 +284,13 @@ public class CoordiMate implements ReadOnlyCoordiMate {
                     .map(member -> member.equals(oldName) ? newName : member)
                     .filter(Objects::nonNull)
                     .toList();
-            updatedEvents.add(new Event(event.getName(), event.getStartTime(), event.getEndTime(), members));
+            Map<Name, AttendanceStatus> attendance = new HashMap<>(event.getAttendanceRecord());
+            AttendanceStatus oldStatus = attendance.remove(oldName);
+            if (newName != null && oldStatus != null) {
+                attendance.put(newName, oldStatus);
+            }
+            updatedEvents.add(new Event(event.getName(), event.getStartTime(), event.getEndTime(), members,
+                    attendance));
         }
         return updatedEvents;
     }
