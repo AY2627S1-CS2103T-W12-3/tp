@@ -70,6 +70,16 @@ public class FilterCommandParserTest {
     }
 
     @Test
+    public void parse_unclosedQuote_throwsParseException() {
+        assertParseFailure(parser, " event/\"Planning tag/review tag/friend",
+                FilterCommandParser.MESSAGE_UNCLOSED_QUOTE);
+        assertParseFailure(parser, " event/\"Final Concert", FilterCommandParser.MESSAGE_UNCLOSED_QUOTE);
+        assertParseFailure(parser, " event/Final Concert\"", FilterCommandParser.MESSAGE_UNCLOSED_QUOTE);
+        assertParseFailure(parser, " event/\"Final Concert\" tag/\"friend",
+                FilterCommandParser.MESSAGE_UNCLOSED_QUOTE);
+    }
+
+    @Test
     public void parse_singleOrganisationFilter_returnsFilterCommand() {
         FilterCommand expected = new FilterCommand(
                 List.of(new FilterCriterion(FilterField.ORGANISATION, "NUS Student Affairs")));
