@@ -81,9 +81,9 @@ Shows a message explaining how to access the help page.
 Format: `help`
 
 
-### Adding a person: `add`
+### Adding a contact: `add`
 
-Adds a person to CoordiMate.
+Adds a contact to CoordiMate.
 
 Contact names must be unique after trimming surrounding spaces and ignoring case.
 An add is also rejected if its phone number or email address is already used by another contact.
@@ -211,7 +211,7 @@ Assigns one or more contacts to an existing event as members and saves the chang
 Format: `assign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...`
 
 * `EVENT_NAME` must match a saved event name, ignoring case. Leading and trailing whitespace is removed.
-* `CONTACT_INDEX` refers to the index number shown in the displayed person list. If the list is filtered (e.g. after `find`), the index refers to the filtered list. Use `list` to show everyone again. Separate several indexes with spaces. Each index **must be a positive integer** 1, 2, 3, ...
+* `CONTACT_INDEX` refers to the index number shown in the displayed contact list. If the list is filtered (e.g. after `find`), the index refers to the filtered list. Use `list` to show everyone again. Separate several indexes with spaces. Each index **must be a positive integer** 1, 2, 3, ...
 * Each parameter may appear only once.
 * All indexes are checked before any change is made. If any index is invalid, no contacts are assigned.
 * Contacts who are already assigned to the event are skipped, and an index repeated in the same command is counted once.
@@ -221,9 +221,9 @@ Selecting the event in the **Events** tab shows its members under **Members**.
 
 Examples:
 
-* `assign evn/Final Concert c/2` assigns the 2nd person in the displayed list to `Final Concert`.
-* `assign evn/student life fair c/1 4 5` assigns the 1st, 4th and 5th persons to `Student Life Fair`.
-* `find Bernice` followed by `assign evn/Final Concert c/1` assigns the 1st person in the results of the `find` command.
+* `assign evn/Final Concert c/2` assigns the 2nd contact in the displayed list to `Final Concert`.
+* `assign evn/student life fair c/1 4 5` assigns the 1st, 4th and 5th contacts to `Student Life Fair`.
+* `find Bernice` followed by `assign evn/Final Concert c/1` assigns the 1st contact in the results of the `find` command.
 
 Success: `Assigned 2 member(s) to Final Concert.`
 
@@ -232,7 +232,7 @@ If some contacts were already assigned: `Assigned 1 member(s) to Final Concert. 
 | Condition | Error message |
 |---|---|
 | No saved event has the supplied name, ignoring case. | `Event {EVENT_NAME} does not exist.` |
-| An index is larger than the displayed person list. | `Contact {CONTACT_INDEX} does not exist in the displayed list.` |
+| An index is larger than the displayed contact list. | `Contact {CONTACT_INDEX} does not exist in the displayed list.` |
 | An index is not a positive integer. | `Contact indexes must be positive integers separated by spaces. Example: c/1 3 5` |
 | Every specified contact is already assigned. | `All specified contacts are already assigned to {EVENT_NAME}. No changes were made.` |
 | The event name is empty. | `Event name must not be empty.` |
@@ -250,7 +250,7 @@ Removes one or more members from an existing event and saves the change. The con
 Format: `unassign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...`
 
 * `EVENT_NAME` must match a saved event name, ignoring case. Leading and trailing whitespace is removed.
-* `CONTACT_INDEX` refers to the index number shown in the displayed person list, as in `assign`. If the list is filtered (e.g. after `find`), the index refers to the filtered list. Use `list` to show everyone again. Separate several indexes with spaces. Each index **must be a positive integer** 1, 2, 3, ...
+* `CONTACT_INDEX` refers to the index number shown in the displayed contact list, as in `assign`. If the list is filtered (e.g. after `find`), the index refers to the filtered list. Use `list` to show everyone again. Separate several indexes with spaces. Each index **must be a positive integer** 1, 2, 3, ...
 * Each parameter may appear only once.
 * All indexes are checked before any change is made. If any index is invalid, no members are removed.
 * Contacts who are not assigned to the event are skipped, and an index repeated in the same command is counted once.
@@ -259,9 +259,9 @@ Format: `unassign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...`
 
 Examples:
 
-* `unassign evn/Final Concert c/2` removes the 2nd person in the displayed list from `Final Concert`.
-* `unassign evn/student life fair c/1 3` removes the 1st and 3rd persons from `Student Life Fair`.
-* `find Bernice` followed by `unassign evn/Final Concert c/1` removes the 1st person in the results of the `find` command.
+* `unassign evn/Final Concert c/2` removes the 2nd contact in the displayed list from `Final Concert`.
+* `unassign evn/student life fair c/1 3` removes the 1st and 3rd contacts from `Student Life Fair`.
+* `find Bernice` followed by `unassign evn/Final Concert c/1` removes the 1st contact in the results of the `find` command.
 
 Success: `Removed 2 member(s) from Final Concert.`
 
@@ -270,7 +270,7 @@ If some contacts were not assigned: `Removed 1 member(s) from Final Concert. 1 c
 | Condition | Error message |
 |---|---|
 | No saved event has the supplied name, ignoring case. | `Event {EVENT_NAME} does not exist.` |
-| An index is larger than the displayed person list. | `Contact {CONTACT_INDEX} does not exist in the displayed list.` |
+| An index is larger than the displayed contact list. | `Contact {CONTACT_INDEX} does not exist in the displayed list.` |
 | An index is not a positive integer. | `Contact indexes must be positive integers separated by spaces. Example: c/1 3 5` |
 | None of the specified contacts are assigned. | `None of the specified contacts are assigned to {EVENT_NAME}. No changes were made.` |
 | The event name is empty. | `Event name must not be empty.` |
@@ -316,9 +316,9 @@ If the event has no members, the contact list is empty: `Final Concert has no me
 
 If an error occurs, the contact list stays as it was.
 
-### Listing all persons: `list`
+### Listing all contacts: `list`
 
-Shows a list of all persons in CoordiMate.
+Shows a list of all contacts in CoordiMate.
 
 Format: `list`
 
@@ -371,20 +371,20 @@ Success for `edittag Media t/Publicity`: `Media successfully renamed to Publicit
 | The new tag matches the current tag, ignoring capitalization. | `{NEW_TAG} is the same as {OLD_TAG}.` |
 | The new tag already exists. | `This tag already exists.` |
 
-### Creating a tag: `newtag`
+### Adding a tag: `addtag`
 
 Creates a custom tag and opens the Tags view. Tag names must contain 1 to 30 alphanumeric characters without spaces.
 Leading and trailing whitespace is trimmed. Tag names preserve their capitalization, but are unique regardless of
 capitalization.
 
-Format: `newtag t/TAG`
+Format: `addtag t/TAG`
 
 Examples:
 
-* `newtag t/ProductionCrew`
-* `newtag t/Publicity`
+* `addtag t/ProductionCrew`
+* `addtag t/Publicity`
 
-If a tag named `Publicity` already exists, commands such as `newtag t/publicity` are rejected as duplicates.
+If a tag named `Publicity` already exists, commands such as `addtag t/publicity` are rejected as duplicates.
 
 Success: `Created tag: Publicity.`
 
@@ -405,15 +405,15 @@ Shows every default and custom tag in the Tags view.
 
 Format: `listtags`
 
-### Editing a person: `edit`
+### Editing a contact: `edit`
 
-Edits an existing person in CoordiMate.
+Edits an existing contact in CoordiMate.
 
 Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [t/TAG]... [at/TAG]... [rt/TAG]...`
 
 Or: `edit target/IDENTIFIER [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [t/TAG]... [at/TAG]... [rt/TAG]...`
 
-* Edits the person at the specified `INDEX`. The index refers to the index number shown in the displayed person list. The index **must be a positive integer** 1, 2, 3, ...
+* Edits the contact at the specified `INDEX`. The index refers to the index number shown in the displayed contact list. The index **must be a positive integer** 1, 2, 3, ...
 * Alternatively, `target/IDENTIFIER` finds an exact saved name, phone number, or email address across all contacts, including those hidden by the current search or filter. Names and emails ignore letter case; phone numbers ignore spaces, hyphens, and brackets. Supply either an index or `target/`, not both.
 * If several contacts match an identifier, the command lists each match's name, phone, and email. An index appears only for a match in the current displayed list. Retry with a unique phone or email, or a displayed index.
 * If no contact matches `target/`, the command reports an error. An index outside the displayed list reports `No contact exists at index INDEX. Please use an index from the current list.`
@@ -426,7 +426,7 @@ Or: `edit target/IDENTIFIER [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [
 * `t/TAG` replaces all existing tags; repeat it to specify several replacement tags. `t/` with no value clears the tag set.
 * `at/TAG` adds a tag without removing other tags, while `rt/TAG` removes only that tag from the contact. These may be repeated or mixed and are applied in command order. Neither may be mixed with `t/`.
 * Tag matching ignores case. Adding an existing tag or removing an absent tag has no effect. A valid new tag named by `t/` or `at/` is saved as a custom tag. Empty `at/` and `rt/` values are invalid.
-* If the person's name changes, events they are assigned to show the new name.
+* If the contact's name changes, events they are assigned to show the new name.
 * A new name already used by another contact, ignoring case and surrounding spaces, is rejected.
 * An edit is saved to the local data file before it appears in the contact list. If the file cannot be read or written,
   the edit is not applied. A failed write reports `Contact could not be saved. No changes were made.`; invalid stored
@@ -445,16 +445,16 @@ Role: President
 ```
 
 Examples:
-*  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st person to be `91234567` and `johndoe@example.com` respectively.
-*  `edit 2 n/Betsy Crower t/` Edits the name of the 2nd person to be `Betsy Crower` and clears all existing tags.
+*  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st contact to be `91234567` and `johndoe@example.com` respectively.
+*  `edit 2 n/Betsy Crower t/` Edits the name of the 2nd contact to be `Betsy Crower` and clears all existing tags.
 *  `edit 3 r/Logistics Lead m/Handles venue bookings` Updates a role and note.
 *  `edit 3 b/ a/ o/ m/` Clears the optional birthday, address, organisation, and note.
 *  `edit target/alice@example.com r/Vice-President` Updates a contact even if the current list is filtered.
 *  `edit 3 at/Sponsor rt/Logistics` Adds Sponsor, then removes Logistics without changing other tags.
 
-### Locating persons by name: `find`
+### Locating contacts by name: `find`
 
-Finds persons whose names contain any of the given keywords.
+Finds contacts whose names contain any of the given keywords.
 
 Format: `find KEYWORD [MORE_KEYWORDS]`
 
@@ -469,7 +469,7 @@ Examples:
 * `find alex david` returns `Alex Yeoh`, `David Li`<br>
   ![result for 'find alex david'](images/findAlexDavidResult.png)
 
-### Deleting a person: `delete`
+### Deleting a contact: `delete`
 
 Finds a saved contact and asks for confirmation before deleting it.
 
@@ -523,7 +523,7 @@ CoordiMate data is saved automatically as a JSON file `[JAR file location]/data/
 
 **Caution:**
 If your changes make the data file invalid, CoordiMate starts with an empty dataset at the next run. The invalid file remains on disk until you run a command (CoordiMate saves after every command). Still, we recommend backing up the file before editing it.<br>
-Each name in an event's `members` list must exactly match the name of a saved person, or the data file is invalid.<br>
+Each name in an event's `members` list must exactly match the name of a saved contact, or the data file is invalid.<br>
 Furthermore, certain edits can cause CoordiMate to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </box>
 
@@ -552,6 +552,7 @@ _Details coming soon ..._
 Action     | Format, Examples
 -----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 **Add**    | `add n/NAME p/PHONE e/EMAIL r/ROLE [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [t/TAG]... [m/NOTE]`<br> e.g., `add n/James Ho p/22224444 e/jamesho@example.com r/Member t/friend`
+**Add tag** | `addtag t/TAG`<br> e.g., `addtag t/Publicity`
 **Assign** | `assign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...`<br> e.g., `assign evn/Final Concert c/1 4 5`
 **Clear**  | `clear`
 **Delete tag** | `deletetag t/TAG`<br> e.g., `deletetag t/Publicity`

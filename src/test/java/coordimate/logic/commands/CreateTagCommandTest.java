@@ -20,7 +20,7 @@ public class CreateTagCommandTest {
     private static final Tag PUBLICITY = new Tag("Publicity");
 
     @Test
-    public void execute_newTag_addsTag() {
+    public void execute_addTag_addsTag() {
         Model model = new ModelManager();
         Model expectedModel = new ModelManager(model.getCoordiMate(), new UserPrefs());
         expectedModel.addTag(PUBLICITY);
