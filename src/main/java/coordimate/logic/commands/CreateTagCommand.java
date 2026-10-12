@@ -11,7 +11,7 @@ import coordimate.model.tag.Tag;
  */
 public class CreateTagCommand extends MutatingTagCommand {
 
-    public static final String COMMAND_WORD = "newtag";
+    public static final String COMMAND_WORD = "addtag";
 
     public static final String MESSAGE_USAGE = COMMAND_WORD + ": Creates a custom tag. "
             + "Parameters: t/TAG\n"

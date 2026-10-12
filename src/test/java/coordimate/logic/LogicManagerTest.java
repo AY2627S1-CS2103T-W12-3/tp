@@ -85,15 +85,15 @@ public class LogicManagerTest {
     }
 
     @Test
-    public void execute_newTagSaveFailure_modelUnchangedAndRetrySucceeds() throws Exception {
+    public void execute_addTagSaveFailure_modelUnchangedAndRetrySucceeds() throws Exception {
         useStorageThatFailsNextSave();
         Tag publicity = new Tag("Publicity");
 
         assertThrows(CommandException.class, MutatingTagCommand.MESSAGE_SAVE_ERROR, () ->
-                logic.execute("newtag t/Publicity"));
+                logic.execute("addtag t/Publicity"));
         assertFalse(model.hasTag(publicity));
 
-        CommandResult retryResult = logic.execute("newtag t/Publicity");
+        CommandResult retryResult = logic.execute("addtag t/Publicity");
         assertEquals("Created tag: Publicity.", retryResult.getFeedbackToUser());
         assertTrue(model.hasTag(publicity));
     }
@@ -132,7 +132,7 @@ public class LogicManagerTest {
     }
 
     @Test
-    public void execute_newTagLoadFailure_modelUnchanged() {
+    public void execute_addTagLoadFailure_modelUnchanged() {
         JsonCoordiMateStorage coordiMateStorage =
                 new JsonCoordiMateStorage(temporaryFolder.resolve("coordiMate.json")) {
                     @Override
@@ -145,7 +145,7 @@ public class LogicManagerTest {
         logic = new LogicManager(model, new StorageManager(coordiMateStorage, userPrefsStorage));
 
         assertThrows(CommandException.class, MutatingTagCommand.MESSAGE_LOAD_ERROR, () ->
-                logic.execute("newtag t/Publicity"));
+                logic.execute("addtag t/Publicity"));
         assertFalse(model.hasTag(new Tag("Publicity")));
     }
 
