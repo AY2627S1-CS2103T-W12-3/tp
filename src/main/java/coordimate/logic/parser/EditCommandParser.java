@@ -49,8 +49,10 @@ public class EditCommandParser implements Parser<EditCommand> {
             "Use either t/ to replace tags, or at/ and rt/ to add or remove them, not both.";
 
     private static final Pattern PARAMETER_PATTERN = Pattern.compile("(?<!\\S)([A-Za-z]+/)");
-    private static final Set<String> ALLOWED_PREFIXES =
-            Set.of("n/", "p/", "e/", "r/", "b/", "a/", "o/", "m/", "t/", "at/", "rt/", "target/");
+    private static final Set<String> ALLOWED_PREFIXES = Set.of(PREFIX_NAME.toString(), PREFIX_PHONE.toString(),
+            PREFIX_EMAIL.toString(), PREFIX_ROLE.toString(), PREFIX_BIRTHDAY.toString(), PREFIX_ADDRESS.toString(),
+            PREFIX_ORGANISATION.toString(), PREFIX_NOTE.toString(), PREFIX_TAG.toString(), PREFIX_ADD_TAG.toString(),
+            PREFIX_REMOVE_TAG.toString(), PREFIX_TARGET.toString());
 
     /**
      * Parses the given {@code String} of arguments in the context of the EditCommand

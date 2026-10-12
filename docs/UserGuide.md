@@ -123,8 +123,7 @@ leading and trailing whitespace is removed. Names must be unique, ignoring case.
 Different events may share the same start and end times.
 
 Start and end times use `dd-MM-yyyy`, optionally followed by `HH:mm` in 24-hour format.
-Date-only values are saved without a time of day. The `/et` spelling from the examples
-is also accepted as an alternative to `et/`.
+Date-only values are saved without a time of day.
 
 The start must not be after the end. Equal start and end values are allowed.
 Dates are compared first. On the same date, times are compared only when both are
@@ -133,7 +132,7 @@ specified. Invalid ordering reports: `Start time must not be after end time.`
 Examples:
 
 * `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`
-* `addevent evn/Student Life Fair st/09-10-2026 /et 10-10-2026`
+* `addevent evn/Student Life Fair st/09-10-2026 et/10-10-2026`
 
 Success: `Created Event Student Life Fair. Start Time: 09-10-2026. End Time: 10-10-2026.`
 

@@ -1,6 +1,9 @@
 package coordimate.logic.parser;
 
 import static coordimate.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
+import static coordimate.logic.parser.CliSyntax.PREFIX_END_TIME;
+import static coordimate.logic.parser.CliSyntax.PREFIX_EVENT_NAME;
+import static coordimate.logic.parser.CliSyntax.PREFIX_START_TIME;
 import static java.util.Objects.requireNonNull;
 
 import java.util.LinkedHashMap;
@@ -15,14 +18,15 @@ import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
 
 /**
- * Accepts the documented et/ prefix and the /et spelling used in the examples.
+ * Parses the required fields of an add-event command.
  */
 public class AddEventCommandParser implements Parser<AddEventCommand> {
     public static final String MESSAGE_UNKNOWN_PARAMETER = "Unknown parameter. Example: r/Logistics";
     public static final String MESSAGE_REPEATED_PARAMETER = "Each required parameter may only be specified once.";
 
     private static final Pattern PARAMETER_PATTERN = Pattern.compile("(?<!\\S)([A-Za-z]+/|/[A-Za-z]+)");
-    private static final Set<String> REQUIRED_PREFIXES = Set.of("evn/", "st/", "et/");
+    private static final Set<String> REQUIRED_PREFIXES = Set.of(PREFIX_EVENT_NAME.toString(),
+            PREFIX_START_TIME.toString(), PREFIX_END_TIME.toString());
 
     @Override
     public AddEventCommand parse(String args) throws ParseException {
@@ -39,9 +43,6 @@ public class AddEventCommandParser implements Parser<AddEventCommand> {
                 values.put(previousPrefix, args.substring(valueStart, matcher.start()).strip());
             }
             String prefix = matcher.group();
-            if (prefix.equals("/et")) {
-                prefix = "et/";
-            }
             if (!REQUIRED_PREFIXES.contains(prefix)) {
                 throw new ParseException(MESSAGE_UNKNOWN_PARAMETER);
             }
@@ -54,12 +55,12 @@ public class AddEventCommandParser implements Parser<AddEventCommand> {
         if (previousPrefix != null) {
             values.put(previousPrefix, args.substring(valueStart).strip());
         }
-        if (!values.containsKey("evn/")) {
+        if (!values.containsKey(PREFIX_EVENT_NAME.toString())) {
             throw createInvalidFormatException();
         }
-        String name = values.get("evn/");
-        String start = values.getOrDefault("st/", "");
-        String end = values.getOrDefault("et/", "");
+        String name = values.get(PREFIX_EVENT_NAME.toString());
+        String start = values.getOrDefault(PREFIX_START_TIME.toString(), "");
+        String end = values.getOrDefault(PREFIX_END_TIME.toString(), "");
         if (name.isEmpty()) {
             throw new ParseException(Event.MESSAGE_EMPTY_NAME);
         }

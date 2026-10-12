@@ -25,7 +25,8 @@ public class DeleteCommandParser implements Parser<DeleteCommand> {
     public static final String MESSAGE_INVALID_INDEX = "Invalid contact index. Example: delete 3";
 
     private static final Pattern PARAMETER_PATTERN = Pattern.compile("(?<!\\S)([A-Za-z]+/)");
-    private static final Set<String> ALLOWED_PREFIXES = Set.of("n/", "p/", "e/");
+    private static final Set<String> ALLOWED_PREFIXES =
+            Set.of(PREFIX_NAME.toString(), PREFIX_PHONE.toString(), PREFIX_EMAIL.toString());
 
     @Override
     public DeleteCommand parse(String args) throws ParseException {
