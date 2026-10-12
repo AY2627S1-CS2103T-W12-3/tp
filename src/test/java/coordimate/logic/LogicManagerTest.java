@@ -13,16 +13,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Path;
+import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import coordimate.commons.exceptions.DataLoadingException;
 import coordimate.logic.commands.AddCommand;
 import coordimate.logic.commands.CommandResult;
 import coordimate.logic.commands.CreateTagCommand;
 import coordimate.logic.commands.DeleteCommand;
 import coordimate.logic.commands.ListCommand;
+import coordimate.logic.commands.MarkAttendanceCommand;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.logic.parser.exceptions.ParseException;
 import coordimate.model.Model;
@@ -108,6 +111,32 @@ public class LogicManagerTest {
         CommandResult retryResult = logic.execute("newtag t/Publicity");
         assertEquals("Created tag: Publicity.", retryResult.getFeedbackToUser());
         assertTrue(model.hasTag(publicity));
+    }
+
+    @Test
+    public void execute_newTagLoadFailure_modelUnchanged() {
+        JsonCoordiMateStorage coordiMateStorage =
+                new JsonCoordiMateStorage(temporaryFolder.resolve("coordiMate.json")) {
+                    @Override
+                    public Optional<ReadOnlyCoordiMate> readCoordiMate() throws DataLoadingException {
+                        throw new DataLoadingException(DUMMY_IO_EXCEPTION);
+                    }
+                };
+        JsonUserPrefsStorage userPrefsStorage =
+                new JsonUserPrefsStorage(temporaryFolder.resolve("userPrefs.json"));
+        logic = new LogicManager(model, new StorageManager(coordiMateStorage, userPrefsStorage));
+
+        assertThrows(CommandException.class, CreateTagCommand.MESSAGE_LOAD_ERROR, () ->
+                logic.execute("newtag t/Publicity"));
+        assertFalse(model.hasTag(new Tag("Publicity")));
+    }
+
+    @Test
+    public void execute_markAttendanceMissingEvent_throwsCommandException() {
+        String command = "markattendance evn/Gala mem/Alice Pauline att/present";
+        String expectedMessage = String.format(MarkAttendanceCommand.MESSAGE_EVENT_NOT_FOUND, "Gala");
+
+        assertCommandException(command, expectedMessage);
     }
 
     @Test
