@@ -12,6 +12,7 @@ import coordimate.commons.exceptions.DataLoadingException;
 import coordimate.logic.commands.AddCommand;
 import coordimate.logic.commands.AddEventCommand;
 import coordimate.logic.commands.AssignCommand;
+import coordimate.logic.commands.ClearCommand;
 import coordimate.logic.commands.Command;
 import coordimate.logic.commands.CommandResult;
 import coordimate.logic.commands.DeleteCommand;
@@ -84,7 +85,8 @@ public class LogicManager implements Logic {
             return new CommandResult(DeleteCommand.confirmationPrompt(target));
         }
 
-        if (command instanceof AddCommand || command instanceof EditCommand || command instanceof MutatingTagCommand
+        if (command instanceof AddCommand || command instanceof EditCommand || command instanceof ClearCommand
+                || command instanceof MutatingTagCommand
                 || command instanceof AddEventCommand
                 || command instanceof EditEventCommand || command instanceof AssignCommand
                 || command instanceof DeleteEventCommand || command instanceof MarkAttendanceCommand
@@ -117,6 +119,7 @@ public class LogicManager implements Logic {
                 case AddCommand _ -> AddCommand.MESSAGE_LOAD_ERROR;
                 case EditCommand _ -> EditCommand.MESSAGE_LOAD_ERROR;
                 case DeleteCommand _ -> DeleteCommand.MESSAGE_LOAD_ERROR;
+                case ClearCommand _ -> ClearCommand.MESSAGE_LOAD_ERROR;
                 case MutatingTagCommand _ -> MutatingTagCommand.MESSAGE_LOAD_ERROR;
                 default -> AddEventCommand.MESSAGE_LOAD_ERROR;
             };
@@ -135,6 +138,7 @@ public class LogicManager implements Logic {
                 case EditEventCommand _ -> EditEventCommand.MESSAGE_SAVE_ERROR;
                 case AssignCommand _ -> AssignCommand.MESSAGE_SAVE_ERROR;
                 case DeleteEventCommand _ -> DeleteEventCommand.MESSAGE_SAVE_ERROR;
+                case ClearCommand _ -> ClearCommand.MESSAGE_SAVE_ERROR;
                 case MarkAttendanceCommand _ -> MarkAttendanceCommand.MESSAGE_SAVE_ERROR;
                 case UnassignCommand _ -> UnassignCommand.MESSAGE_SAVE_ERROR;
                 case MutatingTagCommand _ -> MutatingTagCommand.MESSAGE_SAVE_ERROR;

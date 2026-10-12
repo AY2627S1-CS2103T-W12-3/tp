@@ -501,6 +501,10 @@ Clears all entries from CoordiMate.
 
 Format: `clear`
 
+The cleared data is saved before the contact, event, and tag lists change. If the local data file cannot be read,
+CoordiMate reports `Contact data could not be loaded. Please check the local data file.` If saving fails, it reports
+`CoordiMate could not be cleared. No changes were made.` In either case, the displayed data remains unchanged.
+
 ### Exiting the program: `exit`
 
 Exits the program.
