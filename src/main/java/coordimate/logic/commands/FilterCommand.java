@@ -65,6 +65,15 @@ public class FilterCommand extends Command {
                         .orElseThrow(() -> new CommandException(MESSAGE_NO_MATCHING_VALUE));
                 return person -> event.hasMember(person.getName());
             }
+            case ORGANISATION -> {
+                Predicate<Person> inOrganisation = person -> person.getOrganisation()
+                        .map(organisation -> organisation.getValue().equalsIgnoreCase(value)).orElse(false);
+                boolean organisationExists = model.getCoordiMate().getPersonList().stream().anyMatch(inOrganisation);
+                if (!organisationExists) {
+                    throw new CommandException(MESSAGE_NO_MATCHING_VALUE);
+                }
+                return inOrganisation;
+            }
             default -> throw new IllegalStateException("Unhandled filter field: " + criterion.field());
         }
     }

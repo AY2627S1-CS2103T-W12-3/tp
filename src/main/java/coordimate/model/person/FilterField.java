@@ -8,7 +8,8 @@ import java.util.Optional;
  */
 public enum FilterField {
     TAG("tag"),
-    EVENT("event");
+    EVENT("event"),
+    ORGANISATION("organisation");
 
     private final String fieldName;
 

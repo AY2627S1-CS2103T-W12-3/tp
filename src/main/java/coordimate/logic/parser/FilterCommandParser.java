@@ -21,7 +21,8 @@ public class FilterCommandParser implements Parser<FilterCommand> {
     public static final String MESSAGE_EMPTY_COMMAND = "Filter field cannot be empty.";
     public static final String MESSAGE_EMPTY_VALUE = "Filter value cannot be empty.";
     public static final String MESSAGE_INVALID_FIELD =
-            "Invalid filter field. Supported fields: tag, event.";
+            "Invalid filter field. Supported fields: tag, event, organisation.";
+    public static final String MESSAGE_UNCLOSED_QUOTE = "Unclosed quotation mark.";
 
     private static final Pattern FIELD_PATTERN = Pattern.compile("(?<!\\S)([A-Za-z]+)/");
 
@@ -36,6 +37,9 @@ public class FilterCommandParser implements Parser<FilterCommand> {
         List<MatchResult> fieldTokens = findFieldTokens(trimmed);
         if (fieldTokens.isEmpty() || fieldTokens.get(0).start() != 0) {
             throw new ParseException(MESSAGE_EMPTY_COMMAND);
+        }
+        if (hasUnclosedQuoteBeforeField(trimmed)) {
+            throw new ParseException(MESSAGE_UNCLOSED_QUOTE);
         }
 
         List<FilterCriterion> criteria = new ArrayList<>();
@@ -57,13 +61,34 @@ public class FilterCommandParser implements Parser<FilterCommand> {
         return new FilterCommand(criteria);
     }
 
+    /**
+     * Returns the FIELD/ tokens in {@code args}, ignoring any that appear inside a quoted value.
+     */
     private List<MatchResult> findFieldTokens(String args) {
         Matcher matcher = FIELD_PATTERN.matcher(args);
         List<MatchResult> tokens = new ArrayList<>();
         while (matcher.find()) {
-            tokens.add(matcher.toMatchResult());
+            if (!isInsideQuotes(args, matcher.start())) {
+                tokens.add(matcher.toMatchResult());
+            }
         }
         return tokens;
+    }
+
+    /**
+     * Returns true if {@code args} has an unclosed quotation mark followed by a FIELD/ token, which leaves it
+     * unclear where the value ends. An unclosed quotation mark with no field after it is part of the value,
+     * since saved names such as an event called {@code "Cali} may contain one.
+     */
+    private boolean hasUnclosedQuoteBeforeField(String args) {
+        if (!isInsideQuotes(args, args.length())) {
+            return false;
+        }
+        return FIELD_PATTERN.matcher(args).find(args.lastIndexOf('"'));
+    }
+
+    private boolean isInsideQuotes(String args, int index) {
+        return args.substring(0, index).chars().filter(c -> c == '"').count() % 2 == 1;
     }
 
     private String stripQuotes(String value) {
