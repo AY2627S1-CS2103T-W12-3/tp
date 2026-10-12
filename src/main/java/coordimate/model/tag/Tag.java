@@ -23,8 +23,7 @@ public class Tag {
      */
     public Tag(String tagName) {
         requireNonNull(tagName);
-        checkArgument(tagName.matches(VALIDATION_REGEX), MESSAGE_CONSTRAINTS);
-        checkArgument(tagName.length() <= MAX_LENGTH, MESSAGE_LENGTH_CONSTRAINTS);
+        checkArgument(isValidTagName(tagName), MESSAGE_CONSTRAINTS);
         this.tagName = tagName;
     }
 
@@ -44,10 +43,19 @@ public class Tag {
     }
 
     /**
-     * Returns true if a given string is a valid tag name.
+     * Returns true if a given string is a valid tag name in the model, including names accepted by older versions.
      */
     public static boolean isValidTagName(String test) {
-        return test.matches(VALIDATION_REGEX) && test.length() <= MAX_LENGTH;
+        requireNonNull(test);
+        return test.matches(VALIDATION_REGEX);
+    }
+
+    /**
+     * Returns true if a tag name entered through a command meets the current length limit.
+     */
+    public static boolean isValidInputTagName(String test) {
+        requireNonNull(test);
+        return isValidTagName(test) && test.length() <= MAX_LENGTH;
     }
 
     @Override

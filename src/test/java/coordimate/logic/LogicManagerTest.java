@@ -7,6 +7,8 @@ import static coordimate.logic.commands.CommandTestUtil.NAME_DESC_AMY;
 import static coordimate.logic.commands.CommandTestUtil.PHONE_DESC_AMY;
 import static coordimate.testutil.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
@@ -18,6 +20,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import coordimate.logic.commands.AddCommand;
 import coordimate.logic.commands.CommandResult;
+import coordimate.logic.commands.CreateTagCommand;
 import coordimate.logic.commands.DeleteCommand;
 import coordimate.logic.commands.ListCommand;
 import coordimate.logic.commands.exceptions.CommandException;
@@ -76,6 +79,35 @@ public class LogicManagerTest {
     @Test
     public void execute_storageThrowsAdException_throwsCommandException() {
         assertCommandFailureForExceptionFromStorage(DUMMY_AD_EXCEPTION, AddCommand.MESSAGE_SAVE_ERROR);
+    }
+
+    @Test
+    public void execute_newTagSaveFailure_modelUnchangedAndRetrySucceeds() throws Exception {
+        Path dataPath = temporaryFolder.resolve("coordiMate.json");
+        JsonCoordiMateStorage coordiMateStorage = new JsonCoordiMateStorage(dataPath) {
+            private boolean failNextSave = true;
+
+            @Override
+            public void saveCoordiMate(ReadOnlyCoordiMate coordiMate) throws IOException {
+                if (failNextSave) {
+                    failNextSave = false;
+                    throw DUMMY_IO_EXCEPTION;
+                }
+                super.saveCoordiMate(coordiMate);
+            }
+        };
+        JsonUserPrefsStorage userPrefsStorage =
+                new JsonUserPrefsStorage(temporaryFolder.resolve("userPrefs.json"));
+        logic = new LogicManager(model, new StorageManager(coordiMateStorage, userPrefsStorage));
+        Tag publicity = new Tag("Publicity");
+
+        assertThrows(CommandException.class, CreateTagCommand.MESSAGE_SAVE_ERROR, () ->
+                logic.execute("newtag t/Publicity"));
+        assertFalse(model.hasTag(publicity));
+
+        CommandResult retryResult = logic.execute("newtag t/Publicity");
+        assertEquals("Created tag: Publicity.", retryResult.getFeedbackToUser());
+        assertTrue(model.hasTag(publicity));
     }
 
     @Test

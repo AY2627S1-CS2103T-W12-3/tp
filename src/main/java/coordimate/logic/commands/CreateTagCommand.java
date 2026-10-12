@@ -19,6 +19,9 @@ public class CreateTagCommand extends Command {
 
     public static final String MESSAGE_SUCCESS = "Created tag: %s.";
     public static final String MESSAGE_DUPLICATE_TAG = "This tag already exists.";
+    public static final String MESSAGE_SAVE_ERROR = "Tag could not be saved. No changes were made.";
+    public static final String MESSAGE_LOAD_ERROR =
+            "Contact data could not be loaded. Please check the local data file.";
 
     private final Tag toAdd;
 
