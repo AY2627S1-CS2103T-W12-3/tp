@@ -17,12 +17,12 @@ public class AddEventCommandParserTest {
     public void parse_documentedExamples_success() throws Exception {
         AddEventCommand concert = new AddEventCommand(new Event("Final Concert",
                 new EventTime("08-08-2026 15:00"), new EventTime("08-08-2026 18:00")));
-        assertEquals(concert, parser.parse(" evn/Final Concert st/08-08-2026 15:00 /et 08-08-2026 18:00"));
+        assertEquals(concert, parser.parse(" evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00"));
         assertEquals(concert, new CoordiMateParser().parseCommand(
                 "addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00"));
         AddEventCommand fair = new AddEventCommand(new Event("Student Life Fair",
                 new EventTime("09-10-2026"), new EventTime("10-10-2026")));
-        assertEquals(fair, parser.parse(" evn/Student Life Fair st/09-10-2026 /et 10-10-2026"));
+        assertEquals(fair, parser.parse(" evn/Student Life Fair st/09-10-2026 et/10-10-2026"));
         assertEquals(fair, parser.parse(" et/10-10-2026 evn/  Student Life Fair  st/09-10-2026"));
     }
 
@@ -44,7 +44,7 @@ public class AddEventCommandParserTest {
     @Test
     public void parse_startAfterEnd_timeOrderError() {
         assertError(" evn/Fair st/10-10-2026 et/09-10-2026", Event.MESSAGE_INVALID_TIME_ORDER);
-        assertError(" evn/Concert st/08-08-2026 18:00 /et 08-08-2026 15:00", Event.MESSAGE_INVALID_TIME_ORDER);
+        assertError(" evn/Concert st/08-08-2026 18:00 et/08-08-2026 15:00", Event.MESSAGE_INVALID_TIME_ORDER);
     }
 
     @Test
@@ -52,10 +52,11 @@ public class AddEventCommandParserTest {
         String valid = " evn/Fair st/09-10-2026 et/10-10-2026";
         assertError(valid + " r/Logistics", AddEventCommandParser.MESSAGE_UNKNOWN_PARAMETER);
         assertError(" x/foo" + valid, AddEventCommandParser.MESSAGE_UNKNOWN_PARAMETER);
-        for (String repeated : new String[] {" evn/Fair", " st/09-10-2026", " et/10-10-2026",
-            " /et 10-10-2026"}) {
+        for (String repeated : new String[] {" evn/Fair", " st/09-10-2026", " et/10-10-2026"}) {
             assertError(valid + repeated, AddEventCommandParser.MESSAGE_REPEATED_PARAMETER);
         }
+        assertError(" evn/Fair st/09-10-2026 /et 10-10-2026",
+                AddEventCommandParser.MESSAGE_UNKNOWN_PARAMETER);
         assertError(" evn/Fair evn/Fair st/09-10-2026 et/10-10-2026",
                 AddEventCommandParser.MESSAGE_REPEATED_PARAMETER);
         assertThrows(ParseException.class, () -> parser.parse("unexpected" + valid));

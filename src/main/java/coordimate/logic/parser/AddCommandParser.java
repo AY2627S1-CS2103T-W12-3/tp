@@ -41,7 +41,9 @@ public class AddCommandParser implements Parser<AddCommand> {
     public static final String MESSAGE_INVALID_TAG = "Invalid tag. Example: t/Logistics";
 
     private static final Pattern PARAMETER_PATTERN = Pattern.compile("(?<!\\S)([A-Za-z]+/)");
-    private static final Set<String> ALLOWED_PREFIXES = Set.of("n/", "p/", "e/", "r/", "b/", "a/", "o/", "t/", "m/");
+    private static final Set<String> ALLOWED_PREFIXES = Set.of(PREFIX_NAME.toString(), PREFIX_PHONE.toString(),
+            PREFIX_EMAIL.toString(), PREFIX_ROLE.toString(), PREFIX_BIRTHDAY.toString(), PREFIX_ADDRESS.toString(),
+            PREFIX_ORGANISATION.toString(), PREFIX_TAG.toString(), PREFIX_NOTE.toString());
 
     @Override
     public AddCommand parse(String args) throws ParseException {
