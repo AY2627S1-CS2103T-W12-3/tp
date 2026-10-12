@@ -70,13 +70,24 @@ public class FilterCommandParserTest {
     }
 
     @Test
-    public void parse_unclosedQuote_throwsParseException() {
+    public void parse_unclosedQuoteBeforeAnotherField_throwsParseException() {
         assertParseFailure(parser, " event/\"Planning tag/review tag/friend",
                 FilterCommandParser.MESSAGE_UNCLOSED_QUOTE);
-        assertParseFailure(parser, " event/\"Final Concert", FilterCommandParser.MESSAGE_UNCLOSED_QUOTE);
-        assertParseFailure(parser, " event/Final Concert\"", FilterCommandParser.MESSAGE_UNCLOSED_QUOTE);
-        assertParseFailure(parser, " event/\"Final Concert\" tag/\"friend",
+        assertParseFailure(parser, " event/\"Final Concert\" tag/\"friend event/Orientation",
                 FilterCommandParser.MESSAGE_UNCLOSED_QUOTE);
+    }
+
+    @Test
+    public void parse_unclosedQuoteWithNoFieldAfter_keptAsPartOfValue() {
+        assertParseSuccess(parser, " event/\"Cali",
+                new FilterCommand(List.of(new FilterCriterion(FilterField.EVENT, "\"Cali"))));
+        assertParseSuccess(parser, " event/\"Final Concert",
+                new FilterCommand(List.of(new FilterCriterion(FilterField.EVENT, "\"Final Concert"))));
+        assertParseSuccess(parser, " event/Final Concert\"",
+                new FilterCommand(List.of(new FilterCriterion(FilterField.EVENT, "Final Concert\""))));
+        assertParseSuccess(parser, " tag/friend event/\"Cali", new FilterCommand(List.of(
+                new FilterCriterion(FilterField.TAG, "friend"),
+                new FilterCriterion(FilterField.EVENT, "\"Cali"))));
     }
 
     @Test

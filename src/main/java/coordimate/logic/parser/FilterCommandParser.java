@@ -38,7 +38,7 @@ public class FilterCommandParser implements Parser<FilterCommand> {
         if (fieldTokens.isEmpty() || fieldTokens.get(0).start() != 0) {
             throw new ParseException(MESSAGE_EMPTY_COMMAND);
         }
-        if (isInsideQuotes(trimmed, trimmed.length())) {
+        if (hasUnclosedQuoteBeforeField(trimmed)) {
             throw new ParseException(MESSAGE_UNCLOSED_QUOTE);
         }
 
@@ -73,6 +73,18 @@ public class FilterCommandParser implements Parser<FilterCommand> {
             }
         }
         return tokens;
+    }
+
+    /**
+     * Returns true if {@code args} has an unclosed quotation mark followed by a FIELD/ token, which leaves it
+     * unclear where the value ends. An unclosed quotation mark with no field after it is part of the value,
+     * since saved names such as an event called {@code "Cali} may contain one.
+     */
+    private boolean hasUnclosedQuoteBeforeField(String args) {
+        if (!isInsideQuotes(args, args.length())) {
+            return false;
+        }
+        return FIELD_PATTERN.matcher(args).find(args.lastIndexOf('"'));
     }
 
     private boolean isInsideQuotes(String args, int index) {
