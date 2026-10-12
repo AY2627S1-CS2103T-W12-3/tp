@@ -19,6 +19,7 @@ import coordimate.logic.commands.DeleteEventCommand;
 import coordimate.logic.commands.EditCommand;
 import coordimate.logic.commands.EditEventCommand;
 import coordimate.logic.commands.MarkAttendanceCommand;
+import coordimate.logic.commands.MutatingTagCommand;
 import coordimate.logic.commands.UnassignCommand;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.logic.parser.CoordiMateParser;
@@ -83,7 +84,8 @@ public class LogicManager implements Logic {
             return new CommandResult(DeleteCommand.confirmationPrompt(target));
         }
 
-        if (command instanceof AddCommand || command instanceof EditCommand || command instanceof AddEventCommand
+        if (command instanceof AddCommand || command instanceof EditCommand || command instanceof MutatingTagCommand
+                || command instanceof AddEventCommand
                 || command instanceof EditEventCommand || command instanceof AssignCommand
                 || command instanceof DeleteEventCommand || command instanceof MarkAttendanceCommand
                 || command instanceof UnassignCommand) {
@@ -115,6 +117,7 @@ public class LogicManager implements Logic {
                 case AddCommand _ -> AddCommand.MESSAGE_LOAD_ERROR;
                 case EditCommand _ -> EditCommand.MESSAGE_LOAD_ERROR;
                 case DeleteCommand _ -> DeleteCommand.MESSAGE_LOAD_ERROR;
+                case MutatingTagCommand _ -> MutatingTagCommand.MESSAGE_LOAD_ERROR;
                 default -> AddEventCommand.MESSAGE_LOAD_ERROR;
             };
             throw new CommandException(message, e);
@@ -134,6 +137,7 @@ public class LogicManager implements Logic {
                 case DeleteEventCommand _ -> DeleteEventCommand.MESSAGE_SAVE_ERROR;
                 case MarkAttendanceCommand _ -> MarkAttendanceCommand.MESSAGE_SAVE_ERROR;
                 case UnassignCommand _ -> UnassignCommand.MESSAGE_SAVE_ERROR;
+                case MutatingTagCommand _ -> MutatingTagCommand.MESSAGE_SAVE_ERROR;
                 default -> AddEventCommand.MESSAGE_SAVE_ERROR;
             };
             throw new CommandException(message, e);

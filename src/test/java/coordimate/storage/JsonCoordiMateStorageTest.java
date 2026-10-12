@@ -7,6 +7,7 @@ import static coordimate.testutil.TypicalPersons.IDA;
 import static coordimate.testutil.TypicalPersons.getTypicalCoordiMate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -18,6 +19,7 @@ import org.junit.jupiter.api.io.TempDir;
 import coordimate.commons.exceptions.DataLoadingException;
 import coordimate.model.CoordiMate;
 import coordimate.model.ReadOnlyCoordiMate;
+import coordimate.model.tag.Tag;
 
 public class JsonCoordiMateStorageTest {
     private static final Path TEST_DATA_FOLDER = Paths.get("src", "test", "data", "JsonCoordiMateStorageTest");
@@ -67,6 +69,22 @@ public class JsonCoordiMateStorageTest {
         assertEquals("1234567890123456", legacyData.getPersonList().get(1).getPhone().getValue());
 
         Path filePath = testFolder.resolve("LegacyPhones.json");
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(filePath);
+        storage.saveCoordiMate(legacyData);
+
+        assertEquals(legacyData, storage.readCoordiMate().orElseThrow());
+    }
+
+    @Test
+    public void readAndSaveCoordiMate_legacyLongTag_preservesContactAndTag() throws Exception {
+        String legacyTagName = "1234567890123456789012345678901";
+        ReadOnlyCoordiMate legacyData = readCoordiMate("legacyLongTagCoordiMate.json").orElseThrow();
+
+        assertEquals(1, legacyData.getPersonList().size());
+        assertTrue(legacyData.getPersonList().getFirst().getTags().contains(new Tag(legacyTagName)));
+        assertTrue(legacyData.getTagList().contains(new Tag(legacyTagName)));
+
+        Path filePath = testFolder.resolve("LegacyLongTag.json");
         JsonCoordiMateStorage storage = new JsonCoordiMateStorage(filePath);
         storage.saveCoordiMate(legacyData);
 

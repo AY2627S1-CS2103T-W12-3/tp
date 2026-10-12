@@ -9,7 +9,7 @@ import coordimate.model.tag.Tag;
 /**
  * Creates a custom tag unless a tag with the same name already exists.
  */
-public class CreateTagCommand extends Command {
+public class CreateTagCommand extends MutatingTagCommand {
 
     public static final String COMMAND_WORD = "newtag";
 
@@ -19,7 +19,6 @@ public class CreateTagCommand extends Command {
 
     public static final String MESSAGE_SUCCESS = "Created tag: %s.";
     public static final String MESSAGE_DUPLICATE_TAG = "This tag already exists.";
-
     private final Tag toAdd;
 
     /**

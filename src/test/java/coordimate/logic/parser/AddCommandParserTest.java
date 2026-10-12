@@ -115,6 +115,8 @@ public class AddCommandParserTest {
         assertParseFailure(parser, REQUIRED + " o/!", Organisation.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, REQUIRED + " m/Bad\nNote", Note.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, REQUIRED + " t/Bad Tag", AddCommandParser.MESSAGE_INVALID_TAG);
+        assertParseFailure(parser, REQUIRED + " t/1234567890123456789012345678901",
+                AddCommandParser.MESSAGE_INVALID_TAG);
     }
 
     @Test

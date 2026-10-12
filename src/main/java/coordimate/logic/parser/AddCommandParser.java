@@ -146,7 +146,7 @@ public class AddCommandParser implements Parser<AddCommand> {
                 tags.clear();
                 continue;
             }
-            if (!Tag.isValidTagName(value)) {
+            if (!Tag.isValidInputTagName(value)) {
                 throw new ParseException(MESSAGE_INVALID_TAG);
             }
             Tag tag = new Tag(value);

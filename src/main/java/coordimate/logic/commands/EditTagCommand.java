@@ -11,7 +11,7 @@ import coordimate.model.tag.Tag;
 /**
  * Renames an existing tag and updates every contact that uses it.
  */
-public class EditTagCommand extends Command {
+public class EditTagCommand extends MutatingTagCommand {
 
     public static final String COMMAND_WORD = "edittag";
 

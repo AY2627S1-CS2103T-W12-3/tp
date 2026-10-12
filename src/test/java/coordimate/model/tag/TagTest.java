@@ -1,6 +1,7 @@
 package coordimate.model.tag;
 
 import static coordimate.testutil.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -17,7 +18,6 @@ public class TagTest {
     public void constructor_invalidTagName_throwsIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class, () -> new Tag(""));
         assertThrows(IllegalArgumentException.class, () -> new Tag("Publicity Team"));
-        assertThrows(IllegalArgumentException.class, () -> new Tag("1234567890123456789012345678901"));
     }
 
     @Test
@@ -27,15 +27,28 @@ public class TagTest {
 
         assertFalse(Tag.isValidTagName(""));
         assertFalse(Tag.isValidTagName("Publicity Team"));
-        assertFalse(Tag.isValidTagName("1234567890123456789012345678901"));
-        // invalid tag names
-        assertFalse(Tag.isValidTagName(""));
-        assertFalse(Tag.isValidTagName("Publicity Team"));
-        assertFalse(Tag.isValidTagName("1234567890123456789012345678901"));
-
         // valid tag names
         assertTrue(Tag.isValidTagName("Publicity"));
         assertTrue(Tag.isValidTagName("123456789012345678901234567890"));
+        assertTrue(Tag.isValidTagName("1234567890123456789012345678901"));
+    }
+
+    @Test
+    public void isValidInputTagName_enforcesCurrentLengthLimit() {
+        assertThrows(NullPointerException.class, () -> Tag.isValidInputTagName(null));
+
+        assertFalse(Tag.isValidInputTagName(""));
+        assertFalse(Tag.isValidInputTagName("Publicity Team"));
+        assertFalse(Tag.isValidInputTagName("1234567890123456789012345678901"));
+
+        assertTrue(Tag.isValidInputTagName("Publicity"));
+        assertTrue(Tag.isValidInputTagName("123456789012345678901234567890"));
+    }
+
+    @Test
+    public void constructor_legacyLongTag_retainsName() {
+        String legacyTagName = "1234567890123456789012345678901";
+        assertEquals(legacyTagName, new Tag(legacyTagName).getTagName());
     }
 
     @Test
