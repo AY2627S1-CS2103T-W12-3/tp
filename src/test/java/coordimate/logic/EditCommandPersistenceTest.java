@@ -29,6 +29,7 @@ import coordimate.model.tag.Tag;
 import coordimate.storage.JsonCoordiMateStorage;
 import coordimate.storage.JsonUserPrefsStorage;
 import coordimate.storage.StorageManager;
+import coordimate.testutil.PersonBuilder;
 
 public class EditCommandPersistenceTest {
     private static final String EDIT = "edit 1 n/Benson Tan at/Alumni2026";
@@ -68,6 +69,21 @@ public class EditCommandPersistenceTest {
         assertEquals("President", model.getCoordiMate().getPersonList().getFirst().getRole().toString());
         assertEquals(model.getCoordiMate(), storage.readCoordiMate().orElseThrow());
         assertEquals(2, model.getFilteredPersonList().size());
+    }
+
+    @Test
+    public void execute_nonPhoneEditOnLegacyContact_preservesPhoneAndSaves() throws Exception {
+        ModelManager model = new ModelManager();
+        model.addPerson(new PersonBuilder(ALICE).withPhone("123").build());
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(temporaryFolder.resolve("legacy.json"));
+        storage.saveCoordiMate(model.getCoordiMate());
+
+        newLogic(model, storage).execute("edit 1 r/President");
+
+        Person editedPerson = storage.readCoordiMate().orElseThrow().getPersonList().getFirst();
+        assertEquals("123", editedPerson.getPhone().getValue());
+        assertEquals("President", editedPerson.getRole().getValue());
+        assertEquals(model.getCoordiMate(), storage.readCoordiMate().orElseThrow());
     }
 
     @Test

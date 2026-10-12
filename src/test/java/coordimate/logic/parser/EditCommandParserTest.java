@@ -100,6 +100,21 @@ public class EditCommandParserTest {
     }
 
     @Test
+    public void parse_phoneOutsideCurrentLength_rejectedEvenIfLegacyNumber() {
+        for (String phone : new String[] {"123", "123456", "1234567890123456"}) {
+            assertParseFailure(parser, "1 p/" + phone, Phone.MESSAGE_CONSTRAINTS);
+        }
+    }
+
+    @Test
+    public void parse_phoneAtCurrentLengthBoundaries_success() {
+        for (String phone : new String[] {"1234567", "123456789012345"}) {
+            EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withPhone(phone).build();
+            assertParseSuccess(parser, "1 p/" + phone, new EditCommand(INDEX_FIRST_PERSON, descriptor));
+        }
+    }
+
+    @Test
     public void parse_allFieldsSpecified_success() {
         Index targetIndex = INDEX_SECOND_PERSON;
         String userInput = targetIndex.getOneBased() + PHONE_DESC_BOB + TAG_DESC_HUSBAND

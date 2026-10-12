@@ -116,4 +116,20 @@ public class AddCommandParserTest {
         assertParseFailure(parser, REQUIRED + " m/Bad\nNote", Note.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, REQUIRED + " t/Bad Tag", AddCommandParser.MESSAGE_INVALID_TAG);
     }
+
+    @Test
+    public void parse_phoneOutsideCurrentLength_rejectedEvenIfLegacyNumber() {
+        for (String phone : new String[] {"123", "123456", "1234567890123456"}) {
+            assertParseFailure(parser, REQUIRED.replace("85355255", phone), Phone.MESSAGE_CONSTRAINTS);
+        }
+    }
+
+    @Test
+    public void parse_phoneAtCurrentLengthBoundaries_success() {
+        for (String phone : new String[] {"1234567", "123456789012345"}) {
+            AddCommand expected = new AddCommand(new PersonBuilder().withRole("Logistics")
+                    .withPhone(phone).withoutAddress().withTags().build());
+            assertParseSuccess(parser, REQUIRED.replace("85355255", phone), expected);
+        }
+    }
 }

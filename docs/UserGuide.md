@@ -95,6 +95,7 @@ If the local contact data cannot be loaded or saved, CoordiMate reports an error
 Format: `add n/NAME p/PHONE e/EMAIL r/ROLE [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [t/TAG]... [m/NOTE]`
 
 Name, phone, email, and role are required. Birthday uses `dd-MM-yyyy` and cannot be in the future.
+New phone numbers must contain 7–15 digits. An optional leading `+`, spaces, hyphens, and brackets are allowed.
 Address, organisation, and note are optional. An empty `b/`, `a/`, `o/`, or `m/` leaves that field unset,
 as does omitting it. Non-tag fields may appear only once; `t/TAG` may repeat. An empty `t/` clears the
 tags collected so far. A valid new tag is saved as a custom tag. Successful feedback is
@@ -419,6 +420,8 @@ Or: `edit target/IDENTIFIER [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [
 * Provide at least one field or tag operation. Omitted fields retain their existing values.
 * Name, phone, email, and role cannot be cleared. Use `b/`, `a/`, `o/`, or `m/` with no value to clear that optional field.
 * Birthday uses `dd-MM-yyyy` and cannot be in the future. Edited values follow the same validation rules as `add`.
+* Older saved digit-only phone numbers with at least 3 digits remain usable. An edit without `p/` keeps the existing
+  number; a supplied `p/` value must follow the current 7–15-digit rule.
 * Each non-tag field may be specified only once. Unknown parameters are rejected.
 * `t/TAG` replaces all existing tags; repeat it to specify several replacement tags. `t/` with no value clears the tag set.
 * `at/TAG` adds a tag without removing other tags, while `rt/TAG` removes only that tag from the contact. These may be repeated or mixed and are applied in command order. Neither may be mixed with `t/`.

@@ -28,8 +28,8 @@ public class PhoneTest {
         // invalid phone numbers
         assertFalse(Phone.isValidPhone("")); // empty string
         assertFalse(Phone.isValidPhone(" ")); // spaces only
-        assertFalse(Phone.isValidPhone("123456")); // fewer than 7 digits
-        assertFalse(Phone.isValidPhone("1234567890123456")); // more than 15 digits
+        assertFalse(Phone.isValidPhone("12")); // shorter than any previously valid phone number
+        assertFalse(Phone.isValidPhone("12-3")); // legacy short numbers were digit-only
         assertFalse(Phone.isValidPhone("phone")); // non-numeric
         assertFalse(Phone.isValidPhone("9011p041")); // alphabets within digits
         assertFalse(Phone.isValidPhone("9123+4567")); // plus sign is only allowed at the start
@@ -39,10 +39,32 @@ public class PhoneTest {
 
         // valid phone numbers
         assertTrue(Phone.isValidPhone("1234567")); // minimum digit count
+        assertTrue(Phone.isValidPhone("123")); // previously valid stored phone number
+        assertTrue(Phone.isValidPhone("1234567890123456")); // previously valid digit-only phone number
         assertTrue(Phone.isValidPhone("93121534"));
         assertTrue(Phone.isValidPhone("124293842033123")); // maximum digit count
         assertTrue(Phone.isValidPhone("+65 (9123) 4567")); // country code, spaces and brackets
         assertTrue(Phone.isValidPhone("9123-4567")); // hyphen separator
+    }
+
+    @Test
+    public void isValidInputPhone_requiresSevenToFifteenDigits() {
+        assertThrows(NullPointerException.class, () -> Phone.isValidInputPhone(null));
+
+        assertFalse(Phone.isValidInputPhone("123"));
+        assertFalse(Phone.isValidInputPhone("123456"));
+        assertFalse(Phone.isValidInputPhone("1234567890123456"));
+        assertFalse(Phone.isValidInputPhone("12-3456"));
+        assertFalse(Phone.isValidInputPhone("+65 (123)"));
+
+        assertTrue(Phone.isValidInputPhone("1234567"));
+        assertTrue(Phone.isValidInputPhone("123456789012345"));
+        assertTrue(Phone.isValidInputPhone("+65 (9123) 4567"));
+    }
+
+    @Test
+    public void constructor_legacyPhone_retainsOriginalNumber() {
+        assertEquals("123", new Phone("123").getValue());
     }
 
     @Test
