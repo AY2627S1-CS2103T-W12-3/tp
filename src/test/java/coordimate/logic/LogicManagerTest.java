@@ -22,10 +22,10 @@ import org.junit.jupiter.api.io.TempDir;
 import coordimate.commons.exceptions.DataLoadingException;
 import coordimate.logic.commands.AddCommand;
 import coordimate.logic.commands.CommandResult;
-import coordimate.logic.commands.CreateTagCommand;
 import coordimate.logic.commands.DeleteCommand;
 import coordimate.logic.commands.ListCommand;
 import coordimate.logic.commands.MarkAttendanceCommand;
+import coordimate.logic.commands.MutatingTagCommand;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.logic.parser.exceptions.ParseException;
 import coordimate.model.Model;
@@ -86,31 +86,49 @@ public class LogicManagerTest {
 
     @Test
     public void execute_newTagSaveFailure_modelUnchangedAndRetrySucceeds() throws Exception {
-        Path dataPath = temporaryFolder.resolve("coordiMate.json");
-        JsonCoordiMateStorage coordiMateStorage = new JsonCoordiMateStorage(dataPath) {
-            private boolean failNextSave = true;
-
-            @Override
-            public void saveCoordiMate(ReadOnlyCoordiMate coordiMate) throws IOException {
-                if (failNextSave) {
-                    failNextSave = false;
-                    throw DUMMY_IO_EXCEPTION;
-                }
-                super.saveCoordiMate(coordiMate);
-            }
-        };
-        JsonUserPrefsStorage userPrefsStorage =
-                new JsonUserPrefsStorage(temporaryFolder.resolve("userPrefs.json"));
-        logic = new LogicManager(model, new StorageManager(coordiMateStorage, userPrefsStorage));
+        useStorageThatFailsNextSave();
         Tag publicity = new Tag("Publicity");
 
-        assertThrows(CommandException.class, CreateTagCommand.MESSAGE_SAVE_ERROR, () ->
+        assertThrows(CommandException.class, MutatingTagCommand.MESSAGE_SAVE_ERROR, () ->
                 logic.execute("newtag t/Publicity"));
         assertFalse(model.hasTag(publicity));
 
         CommandResult retryResult = logic.execute("newtag t/Publicity");
         assertEquals("Created tag: Publicity.", retryResult.getFeedbackToUser());
         assertTrue(model.hasTag(publicity));
+    }
+
+    @Test
+    public void execute_editTagSaveFailure_modelUnchangedAndRetrySucceeds() throws Exception {
+        Tag publicity = new Tag("Publicity");
+        Tag media = new Tag("Media");
+        model.addTag(publicity);
+        useStorageThatFailsNextSave();
+
+        assertThrows(CommandException.class, MutatingTagCommand.MESSAGE_SAVE_ERROR, () ->
+                logic.execute("edittag Publicity t/Media"));
+        assertTrue(model.hasTag(publicity));
+        assertFalse(model.hasTag(media));
+
+        CommandResult retryResult = logic.execute("edittag Publicity t/Media");
+        assertEquals("Publicity successfully renamed to Media.", retryResult.getFeedbackToUser());
+        assertFalse(model.hasTag(publicity));
+        assertTrue(model.hasTag(media));
+    }
+
+    @Test
+    public void execute_deleteTagSaveFailure_modelUnchangedAndRetrySucceeds() throws Exception {
+        Tag publicity = new Tag("Publicity");
+        model.addTag(publicity);
+        useStorageThatFailsNextSave();
+
+        assertThrows(CommandException.class, MutatingTagCommand.MESSAGE_SAVE_ERROR, () ->
+                logic.execute("deletetag t/Publicity"));
+        assertTrue(model.hasTag(publicity));
+
+        CommandResult retryResult = logic.execute("deletetag t/Publicity");
+        assertEquals("Publicity successfully deleted.", retryResult.getFeedbackToUser());
+        assertFalse(model.hasTag(publicity));
     }
 
     @Test
@@ -126,7 +144,7 @@ public class LogicManagerTest {
                 new JsonUserPrefsStorage(temporaryFolder.resolve("userPrefs.json"));
         logic = new LogicManager(model, new StorageManager(coordiMateStorage, userPrefsStorage));
 
-        assertThrows(CommandException.class, CreateTagCommand.MESSAGE_LOAD_ERROR, () ->
+        assertThrows(CommandException.class, MutatingTagCommand.MESSAGE_LOAD_ERROR, () ->
                 logic.execute("newtag t/Publicity"));
         assertFalse(model.hasTag(new Tag("Publicity")));
     }
@@ -236,5 +254,24 @@ public class LogicManagerTest {
         String addCommand = AddCommand.COMMAND_WORD + NAME_DESC_AMY + PHONE_DESC_AMY
                 + EMAIL_DESC_AMY + " r/NA" + ADDRESS_DESC_AMY;
         assertCommandFailure(addCommand, CommandException.class, expectedMessage);
+    }
+
+    private void useStorageThatFailsNextSave() {
+        Path dataPath = temporaryFolder.resolve("coordiMate.json");
+        JsonCoordiMateStorage coordiMateStorage = new JsonCoordiMateStorage(dataPath) {
+            private boolean failNextSave = true;
+
+            @Override
+            public void saveCoordiMate(ReadOnlyCoordiMate coordiMate) throws IOException {
+                if (failNextSave) {
+                    failNextSave = false;
+                    throw DUMMY_IO_EXCEPTION;
+                }
+                super.saveCoordiMate(coordiMate);
+            }
+        };
+        JsonUserPrefsStorage userPrefsStorage =
+                new JsonUserPrefsStorage(temporaryFolder.resolve("userPrefs.json"));
+        logic = new LogicManager(model, new StorageManager(coordiMateStorage, userPrefsStorage));
     }
 }

@@ -11,7 +11,7 @@ import coordimate.model.tag.Tag;
 /**
  * Deletes an existing tag and removes it from every contact that uses it.
  */
-public class DeleteTagCommand extends Command {
+public class DeleteTagCommand extends MutatingTagCommand {
 
     public static final String COMMAND_WORD = "deletetag";
     public static final String MESSAGE_USAGE = COMMAND_WORD + " t/TAG";
