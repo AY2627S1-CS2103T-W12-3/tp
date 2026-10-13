@@ -137,9 +137,23 @@ public class EventListPanel extends UiPart<Region> {
     }
 
     /**
-     * Shows each assigned member's attendance and the totals for the selected event.
+     * Shows each assigned member's attendance for the selected event.
      */
     private void showMembers(Event event) {
+        updateAttendanceCounts(event);
+
+        members.getChildren().clear();
+        if (event.getMembers().isEmpty()) {
+            members.getChildren().add(createEmptyMembersHint());
+            return;
+        }
+        for (int index = 0; index < event.getMembers().size(); index++) {
+            Name member = event.getMembers().get(index);
+            members.getChildren().add(createMemberRow(index + 1, member, event.getAttendance(member).orElse(null)));
+        }
+    }
+
+    private void updateAttendanceCounts(Event event) {
         long present = event.getAttendanceRecord().values().stream()
                 .filter(status -> status == AttendanceStatus.PRESENT).count();
         long absent = event.getAttendanceRecord().values().stream()
@@ -147,19 +161,13 @@ public class EventListPanel extends UiPart<Region> {
         presentCount.setText(present + " Present");
         absentCount.setText(absent + " Absent");
         notMarkedCount.setText((event.getMembers().size() - present - absent) + " Not marked");
+    }
 
-        members.getChildren().clear();
-        if (event.getMembers().isEmpty()) {
-            Label hint = new Label("No members assigned yet. Assign contacts with assign.");
-            hint.setWrapText(true);
-            hint.getStyleClass().add("detail-value");
-            members.getChildren().add(hint);
-            return;
-        }
-        for (int index = 0; index < event.getMembers().size(); index++) {
-            Name member = event.getMembers().get(index);
-            members.getChildren().add(createMemberRow(index + 1, member, event.getAttendance(member).orElse(null)));
-        }
+    private Label createEmptyMembersHint() {
+        Label hint = new Label("No members assigned yet. Assign contacts with assign.");
+        hint.setWrapText(true);
+        hint.getStyleClass().add("detail-value");
+        return hint;
     }
 
     private HBox createMemberRow(int number, Name member, AttendanceStatus status) {
