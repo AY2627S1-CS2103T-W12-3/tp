@@ -38,24 +38,37 @@ public class MarkAttendanceCommand extends Command {
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
-        Event target = model.getCoordiMate().getEventList().stream()
-                .filter(event -> event.getName().equalsIgnoreCase(eventName)).findFirst()
-                .orElseThrow(() -> new CommandException(String.format(MESSAGE_EVENT_NOT_FOUND, eventName)));
+        Event matchingEvent = findMatchingEvent(model);
+        Name matchingMember = findMatchingMember(matchingEvent);
 
-        if (!target.hasMember(memberName)) {
-            throw new CommandException(
-                    String.format(MESSAGE_MEMBER_NOT_ASSIGNED, memberName, target.getName()));
-        }
-
-        if (target.getAttendance(memberName).map(status::equals).orElse(false)) {
+        if (hasMatchingAttendanceStatus(matchingEvent, matchingMember)) {
             return new CommandResult(
-                    String.format(MESSAGE_ALREADY_MARKED, memberName, status, target.getName()));
+                    String.format(MESSAGE_ALREADY_MARKED, matchingMember, status, matchingEvent.getName()));
         }
 
-        Event updated = target.withAttendance(memberName, status);
-        model.setEvent(target, updated);
+        Event updatedEvent = matchingEvent.withAttendance(matchingMember, status);
+        model.setEvent(matchingEvent, updatedEvent);
 
-        return new CommandResult(String.format(MESSAGE_SUCCESS, memberName, status, target.getName()));
+        return new CommandResult(String.format(MESSAGE_SUCCESS, matchingMember, status, matchingEvent.getName()));
+    }
+
+    private Event findMatchingEvent(Model model) throws CommandException {
+        return model.getCoordiMate().getEventList().stream()
+                .filter(event -> event.getName().equalsIgnoreCase(eventName))
+                .findFirst()
+                .orElseThrow(() -> new CommandException(String.format(MESSAGE_EVENT_NOT_FOUND, eventName)));
+    }
+
+    private Name findMatchingMember(Event event) throws CommandException {
+        return event.getMembers().stream()
+                .filter(member -> member.getFullName().equalsIgnoreCase(memberName.getFullName()))
+                .findFirst()
+                .orElseThrow(() -> new CommandException(
+                        String.format(MESSAGE_MEMBER_NOT_ASSIGNED, memberName, event.getName())));
+    }
+
+    private boolean hasMatchingAttendanceStatus(Event event, Name member) {
+        return event.getAttendance(member).map(status::equals).orElse(false);
     }
 
     @Override
@@ -66,7 +79,8 @@ public class MarkAttendanceCommand extends Command {
         if (!(other instanceof MarkAttendanceCommand otherCommand)) {
             return false;
         }
-        return eventName.equalsIgnoreCase(otherCommand.eventName) && memberName.equals(otherCommand.memberName)
+        return eventName.equalsIgnoreCase(otherCommand.eventName)
+                && memberName.getFullName().equalsIgnoreCase(otherCommand.memberName.getFullName())
                 && status == otherCommand.status;
     }
 }

@@ -87,11 +87,40 @@ public class MarkAttendanceCommandTest {
     }
 
     @Test
+    public void execute_memberNameCaseInsensitive_marksAttendanceUsingStoredName() throws Exception {
+        Name differentlyCasedAlex = new Name("aLeX yEoH");
+        MarkAttendanceCommand command = new MarkAttendanceCommand("Final Concert", differentlyCasedAlex,
+                AttendanceStatus.PRESENT);
+
+        CommandResult result = command.execute(model);
+
+        assertEquals(String.format(MarkAttendanceCommand.MESSAGE_SUCCESS, alex, AttendanceStatus.PRESENT,
+                "Final Concert"), result.getFeedbackToUser());
+        assertEquals(AttendanceStatus.PRESENT,
+                model.getCoordiMate().getEventList().getFirst().getAttendance(alex).get());
+    }
+
+    @Test
+    public void execute_differentlyCasedMemberName_overwritesExistingAttendance() throws Exception {
+        new MarkAttendanceCommand("Final Concert", alex, AttendanceStatus.ABSENT).execute(model);
+        Name differentlyCasedAlex = new Name("aLEX yEOH");
+
+        new MarkAttendanceCommand("Final Concert", differentlyCasedAlex, AttendanceStatus.PRESENT).execute(model);
+
+        Event updatedEvent = model.getCoordiMate().getEventList().getFirst();
+        assertEquals(AttendanceStatus.PRESENT, updatedEvent.getAttendance(alex).get());
+        assertEquals(1, updatedEvent.getAttendanceRecord().size());
+    }
+
+    @Test
     public void equalityAndNullArguments() {
         MarkAttendanceCommand command = new MarkAttendanceCommand("Final Concert", alex, AttendanceStatus.PRESENT);
 
         assertEquals(command, new MarkAttendanceCommand("Final Concert", alex, AttendanceStatus.PRESENT));
         assertEquals(command, new MarkAttendanceCommand("final concert", alex, AttendanceStatus.PRESENT));
+        assertEquals(command, new MarkAttendanceCommand("Final Concert", new Name("aLEX yEOH"),
+                AttendanceStatus.PRESENT));
+        assertNotEquals(command, new MarkAttendanceCommand("Orientation Camp", alex, AttendanceStatus.PRESENT));
         assertNotEquals(command, new MarkAttendanceCommand("Final Concert", bernice, AttendanceStatus.PRESENT));
         assertNotEquals(command, new MarkAttendanceCommand("Final Concert", alex, AttendanceStatus.ABSENT));
         assertNotEquals(command, null);
