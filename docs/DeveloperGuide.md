@@ -744,7 +744,7 @@ testers are expected to do more *exploratory* testing.
 
 1. Assigning contacts from a filtered list
 
-   1. Prerequisites: The `Final Concert` event exists. Use `find` so that the displayed list starts with a person who is not first in the full list.
+   1. Prerequisites: The `Final Concert` event exists. Use `search` so that the displayed list starts with a person who is not first in the full list.
 
    1. Test case: `assign evn/Final Concert c/1`<br>
       Expected: The 1st person in the filtered list, not the full list, is added to the event's members.
@@ -779,7 +779,7 @@ testers are expected to do more *exploratory* testing.
 
 1. Removing members from a filtered list
 
-   1. Prerequisites: The `Final Concert` event has the 1st and 3rd persons as members. Use `find` so that the displayed list shows only the 3rd person.
+   1. Prerequisites: The `Final Concert` event has the 1st and 3rd persons as members. Use `search` so that the displayed list shows only the 3rd person.
 
    1. Test case: `unassign evn/Final Concert c/1`<br>
       Expected: The 3rd person of the full list, shown 1st in the filtered list, is removed. The 1st person of the full list remains a member.

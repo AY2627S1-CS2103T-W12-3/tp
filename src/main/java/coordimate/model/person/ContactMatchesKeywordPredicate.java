@@ -2,6 +2,7 @@ package coordimate.model.person;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.Locale;
 import java.util.function.Predicate;
 
 import coordimate.commons.util.ToStringBuilder;
@@ -28,11 +29,12 @@ public class ContactMatchesKeywordPredicate implements Predicate<Person> {
      */
     @Override
     public boolean test(Person person) {
-        String lowerKeyword = keyword.toLowerCase();
-        return person.getName().getFullName().toLowerCase().contains(lowerKeyword)
-                || person.getPhone().getValue().toLowerCase().contains(lowerKeyword)
-                || person.getEmail().getValue().toLowerCase().contains(lowerKeyword)
-                || person.getAddress().map(address -> address.getValue().toLowerCase().contains(lowerKeyword))
+        String lowerKeyword = keyword.toLowerCase(Locale.ROOT);
+        return person.getName().getFullName().toLowerCase(Locale.ROOT).contains(lowerKeyword)
+                || person.getPhone().getValue().toLowerCase(Locale.ROOT).contains(lowerKeyword)
+                || person.getEmail().getValue().toLowerCase(Locale.ROOT).contains(lowerKeyword)
+                || person.getAddress().map(address -> address.getValue().toLowerCase(Locale.ROOT)
+                        .contains(lowerKeyword))
                         .orElse(false);
     }
 

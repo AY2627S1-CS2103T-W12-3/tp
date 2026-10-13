@@ -16,7 +16,7 @@ import coordimate.commons.core.index.Index;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.CoordiMate;
 import coordimate.model.Model;
-import coordimate.model.person.NameContainsKeywordsPredicate;
+import coordimate.model.person.ContactMatchesKeywordPredicate;
 import coordimate.model.person.Person;
 import coordimate.testutil.EditPersonDescriptorBuilder;
 
@@ -119,8 +119,7 @@ public class CommandTestUtil {
         assertTrue(targetIndex.getZeroBased() < model.getFilteredPersonList().size());
 
         Person person = model.getFilteredPersonList().get(targetIndex.getZeroBased());
-        final String[] splitName = person.getName().getFullName().split("\\s+");
-        model.updateFilteredPersonList(new NameContainsKeywordsPredicate(List.of(splitName[0])));
+        model.updateFilteredPersonList(new ContactMatchesKeywordPredicate(person.getName().getFullName()));
 
         assertEquals(1, model.getFilteredPersonList().size());
     }

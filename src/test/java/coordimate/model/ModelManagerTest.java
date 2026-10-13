@@ -13,7 +13,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import coordimate.commons.core.GuiSettings;
-import coordimate.model.person.NameContainsKeywordsPredicate;
+import coordimate.model.person.ContactMatchesKeywordPredicate;
 import coordimate.model.tag.Tag;
 import coordimate.testutil.CoordiMateBuilder;
 
@@ -77,7 +77,7 @@ public class ModelManagerTest {
     @Test
     public void getFilteredPersonPredicate_returnsLatestPredicate() {
         assertEquals(null, modelManager.getFilteredPersonPredicate());
-        NameContainsKeywordsPredicate predicate = new NameContainsKeywordsPredicate(List.of("Alice"));
+        ContactMatchesKeywordPredicate predicate = new ContactMatchesKeywordPredicate("Alice");
         modelManager.updateFilteredPersonList(predicate);
         assertEquals(predicate, modelManager.getFilteredPersonPredicate());
         modelManager.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
@@ -136,8 +136,7 @@ public class ModelManagerTest {
         assertFalse(modelManager.equals(new ModelManager(differentCoordiMate, userPrefs)));
 
         // different filteredList -> returns false
-        String[] keywords = ALICE.getName().getFullName().split("\\s+");
-        modelManager.updateFilteredPersonList(new NameContainsKeywordsPredicate(List.of(keywords)));
+        modelManager.updateFilteredPersonList(new ContactMatchesKeywordPredicate(ALICE.getName().getFullName()));
         assertFalse(modelManager.equals(new ModelManager(coordiMate, userPrefs)));
 
         // resets modelManager to initial state for upcoming tests

@@ -12,7 +12,8 @@ import coordimate.model.person.ContactMatchesKeywordPredicate;
  */
 public class SearchCommandParser implements Parser<SearchCommand> {
 
-    public static final String MESSAGE_EMPTY_KEYWORD = "Search keyword cannot be empty.";
+    public static final String MESSAGE_EMPTY_KEYWORD = "Search keyword cannot be empty.\n"
+            + SearchCommand.MESSAGE_USAGE;
 
     @Override
     public SearchCommand parse(String args) throws ParseException {
