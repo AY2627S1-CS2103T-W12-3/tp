@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 public class OrganisationTest {
 
     @Test
-    public void constructor_invalidOrganisation_throwsIllegalArgumentException() {
+    public void construct_invalidOrganisation_throwsIllegalArgumentException() {
         assertThrows(NullPointerException.class, () -> new Organisation(null));
         assertThrows(IllegalArgumentException.class, () -> new Organisation(""));
     }
@@ -34,7 +34,7 @@ public class OrganisationTest {
     }
 
     @Test
-    public void constructor_surroundingSpaces_trimmed() {
+    public void construct_surroundingSpaces_trimmed() {
         assertEquals("NUS Student Affairs", new Organisation("  NUS Student Affairs  ").getValue());
     }
 

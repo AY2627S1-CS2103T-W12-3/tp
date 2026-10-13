@@ -19,22 +19,22 @@ import coordimate.testutil.PersonBuilder;
 public class PersonTest {
 
     @Test
-    public void asObservableList_modifyList_throwsUnsupportedOperationException() {
+    public void getObservableList_modifyList_throwsUnsupportedOperationException() {
         Person person = new PersonBuilder().build();
         assertThrows(UnsupportedOperationException.class, () -> person.getTags().remove(0));
     }
 
     @Test
-    public void optionalDetails_presentAndAbsent() {
+    public void handleOptionalDetails_presentAndAbsent() {
         assertTrue(ALICE.getBirthday().isEmpty());
         assertTrue(ALICE.getAddress().isPresent());
         assertTrue(ALICE.getOrganisation().isEmpty());
         assertTrue(ALICE.getNote().isEmpty());
 
-        assertTrue(new PersonBuilder(ALICE).withoutAddress().build().getAddress().isEmpty());
+        assertTrue(new PersonBuilder(ALICE).clearAddress().build().getAddress().isEmpty());
 
-        Person contact = new PersonBuilder(ALICE).withBirthday("18-06-2004")
-                .withOrganisation("NUS Student Affairs").withNote("Handles venue bookings").build();
+        Person contact = new PersonBuilder(ALICE).setBirthday("18-06-2004")
+                .setOrganisation("NUS Student Affairs").setNote("Handles venue bookings").build();
         assertEquals("18-06-2004", contact.getBirthday().orElseThrow().getValue());
         assertEquals("NUS Student Affairs", contact.getOrganisation().orElseThrow().getValue());
         assertEquals("Handles venue bookings", contact.getNote().orElseThrow().getValue());
@@ -49,31 +49,31 @@ public class PersonTest {
         assertFalse(ALICE.isSamePerson(null));
 
         // same name, different phone and email -> returns true
-        Person editedAlice = new PersonBuilder(ALICE).withPhone(VALID_PHONE_BOB).withEmail(VALID_EMAIL_BOB)
-                .withAddress(VALID_ADDRESS_BOB).withTags(VALID_TAG_HUSBAND).build();
+        Person editedAlice = new PersonBuilder(ALICE).setPhone(VALID_PHONE_BOB).setEmail(VALID_EMAIL_BOB)
+                .setAddress(VALID_ADDRESS_BOB).setTags(VALID_TAG_HUSBAND).build();
         assertTrue(ALICE.isSamePerson(editedAlice));
 
         // name matching ignores case and surrounding spaces
-        editedAlice = new PersonBuilder(ALICE).withName("  aLiCe pAuLiNe  ")
-                .withPhone(VALID_PHONE_BOB).withEmail(VALID_EMAIL_BOB).build();
+        editedAlice = new PersonBuilder(ALICE).setName("  aLiCe pAuLiNe  ")
+                .setPhone(VALID_PHONE_BOB).setEmail(VALID_EMAIL_BOB).build();
         assertTrue(ALICE.isSamePerson(editedAlice));
 
         // different name, same phone and email -> returns true
-        editedAlice = new PersonBuilder(ALICE).withName(VALID_NAME_BOB).build();
+        editedAlice = new PersonBuilder(ALICE).setName(VALID_NAME_BOB).build();
         assertTrue(ALICE.isSamePerson(editedAlice));
 
         // a formatted version of the same phone is a duplicate even with a different name and email
-        editedAlice = new PersonBuilder(ALICE).withName(VALID_NAME_BOB)
-                .withPhone("(9435) 1253").withEmail(VALID_EMAIL_BOB).build();
+        editedAlice = new PersonBuilder(ALICE).setName(VALID_NAME_BOB)
+                .setPhone("(9435) 1253").setEmail(VALID_EMAIL_BOB).build();
         assertTrue(ALICE.isSamePerson(editedAlice));
 
         // email comparison ignores case even with a different name and phone
-        editedAlice = new PersonBuilder(ALICE).withName(VALID_NAME_BOB)
-                .withPhone(VALID_PHONE_BOB).withEmail("ALICE@EXAMPLE.COM").build();
+        editedAlice = new PersonBuilder(ALICE).setName(VALID_NAME_BOB)
+                .setPhone(VALID_PHONE_BOB).setEmail("ALICE@EXAMPLE.COM").build();
         assertTrue(ALICE.isSamePerson(editedAlice));
 
         // changing the role does not create a new contact identity
-        editedAlice = new PersonBuilder(ALICE).withRole("Logistics").build();
+        editedAlice = new PersonBuilder(ALICE).setRole("Logistics").build();
         assertTrue(ALICE.isSamePerson(editedAlice));
 
         // different name, phone, and email -> returns false
@@ -81,7 +81,7 @@ public class PersonTest {
     }
 
     @Test
-    public void equals() {
+    public void checkEquals() {
         // same values -> returns true
         Person aliceCopy = new PersonBuilder(ALICE).build();
         assertTrue(ALICE.equals(aliceCopy));
@@ -99,38 +99,38 @@ public class PersonTest {
         assertFalse(ALICE.equals(BOB));
 
         // different name -> returns false
-        Person editedAlice = new PersonBuilder(ALICE).withName(VALID_NAME_BOB).build();
+        Person editedAlice = new PersonBuilder(ALICE).setName(VALID_NAME_BOB).build();
         assertFalse(ALICE.equals(editedAlice));
 
         // different phone -> returns false
-        editedAlice = new PersonBuilder(ALICE).withPhone(VALID_PHONE_BOB).build();
+        editedAlice = new PersonBuilder(ALICE).setPhone(VALID_PHONE_BOB).build();
         assertFalse(ALICE.equals(editedAlice));
 
         // different email -> returns false
-        editedAlice = new PersonBuilder(ALICE).withEmail(VALID_EMAIL_BOB).build();
+        editedAlice = new PersonBuilder(ALICE).setEmail(VALID_EMAIL_BOB).build();
         assertFalse(ALICE.equals(editedAlice));
 
         // different role -> returns false
-        editedAlice = new PersonBuilder(ALICE).withRole("Logistics").build();
+        editedAlice = new PersonBuilder(ALICE).setRole("Logistics").build();
         assertFalse(ALICE.equals(editedAlice));
 
         // different optional details -> returns false
-        assertFalse(ALICE.equals(new PersonBuilder(ALICE).withBirthday("18-06-2004").build()));
-        assertFalse(ALICE.equals(new PersonBuilder(ALICE).withOrganisation("NUS Student Affairs").build()));
-        assertFalse(ALICE.equals(new PersonBuilder(ALICE).withNote("Handles venue bookings").build()));
+        assertFalse(ALICE.equals(new PersonBuilder(ALICE).setBirthday("18-06-2004").build()));
+        assertFalse(ALICE.equals(new PersonBuilder(ALICE).setOrganisation("NUS Student Affairs").build()));
+        assertFalse(ALICE.equals(new PersonBuilder(ALICE).setNote("Handles venue bookings").build()));
 
         // different address -> returns false
-        editedAlice = new PersonBuilder(ALICE).withAddress(VALID_ADDRESS_BOB).build();
+        editedAlice = new PersonBuilder(ALICE).setAddress(VALID_ADDRESS_BOB).build();
         assertFalse(ALICE.equals(editedAlice));
-        assertFalse(ALICE.equals(new PersonBuilder(ALICE).withoutAddress().build()));
+        assertFalse(ALICE.equals(new PersonBuilder(ALICE).clearAddress().build()));
 
         // different tags -> returns false
-        editedAlice = new PersonBuilder(ALICE).withTags(VALID_TAG_HUSBAND).build();
+        editedAlice = new PersonBuilder(ALICE).setTags(VALID_TAG_HUSBAND).build();
         assertFalse(ALICE.equals(editedAlice));
     }
 
     @Test
-    public void toStringMethod() {
+    public void checkToStringMethod() {
         String expected = Person.class.getCanonicalName() + "{name=" + ALICE.getName() + ", phone=" + ALICE.getPhone()
                 + ", email=" + ALICE.getEmail() + ", role=" + ALICE.getRole() + ", birthday=null, address="
                 + ALICE.getAddress().orElseThrow() + ", organisation=null, note=null, tags=" + ALICE.getTags() + "}";

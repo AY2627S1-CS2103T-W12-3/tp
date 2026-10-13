@@ -70,6 +70,6 @@ public class UnassignCommandParserTest {
     }
 
     private static UnassignCommand unassign(String eventName, Integer... oneBasedIndexes) {
-        return new UnassignCommand(eventName, Arrays.stream(oneBasedIndexes).map(Index::fromOneBased).toList());
+        return new UnassignCommand(eventName, Arrays.stream(oneBasedIndexes).map(Index::createFromOneBased).toList());
     }
 }

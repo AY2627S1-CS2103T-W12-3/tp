@@ -74,7 +74,7 @@ public class AddEventCommandTest {
     }
 
     @Test
-    public void equality_andNullArguments() {
+    public void checkEquality_andNullArguments() {
         AddEventCommand command = new AddEventCommand(event);
         assertEquals(command, new AddEventCommand(event));
         assertEquals(command.hashCode(), new AddEventCommand(event).hashCode());

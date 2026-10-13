@@ -67,7 +67,7 @@ public class UniqueTagListTest {
         uniqueTagList.add(EXCO);
         uniqueTagList.setTags(List.of(SPONSOR));
 
-        assertEquals(List.of(SPONSOR), uniqueTagList.asUnmodifiableObservableList());
+        assertEquals(List.of(SPONSOR), uniqueTagList.getUnmodifiableObservableList());
     }
 
     @Test
@@ -89,7 +89,8 @@ public class UniqueTagListTest {
     public void getTagList_modifyList_throwsUnsupportedOperationException() {
         uniqueTagList.add(EXCO);
 
-        assertThrows(UnsupportedOperationException.class, () -> uniqueTagList.asUnmodifiableObservableList().remove(0));
+        assertThrows(UnsupportedOperationException.class, () ->
+                uniqueTagList.getUnmodifiableObservableList().remove(0));
     }
 
     @Test
@@ -101,7 +102,7 @@ public class UniqueTagListTest {
     }
 
     @Test
-    public void equals() {
+    public void checkEquals() {
         UniqueTagList copy = new UniqueTagList();
 
         assertEquals(uniqueTagList, uniqueTagList);
@@ -113,7 +114,7 @@ public class UniqueTagListTest {
     }
 
     @Test
-    public void hashCodeAndToString_sameTags_match() {
+    public void checkHashCodeAndToString_sameTags_match() {
         uniqueTagList.setTags(List.of(EXCO, SPONSOR));
         UniqueTagList copy = new UniqueTagList();
         copy.setTags(List.of(EXCO, SPONSOR));

@@ -8,22 +8,22 @@ import org.junit.jupiter.api.Test;
 public class AttendanceStatusTest {
 
     @Test
-    public void fromString_validValues_returnsMatchingStatus() {
-        assertEquals(AttendanceStatus.PRESENT, AttendanceStatus.fromString("present"));
-        assertEquals(AttendanceStatus.PRESENT, AttendanceStatus.fromString("PRESENT"));
-        assertEquals(AttendanceStatus.PRESENT, AttendanceStatus.fromString("Present"));
-        assertEquals(AttendanceStatus.ABSENT, AttendanceStatus.fromString("absent"));
-        assertEquals(AttendanceStatus.ABSENT, AttendanceStatus.fromString("ABSENT"));
+    public void parseFromString_validValues_returnsMatchingStatus() {
+        assertEquals(AttendanceStatus.PRESENT, AttendanceStatus.parseFromString("present"));
+        assertEquals(AttendanceStatus.PRESENT, AttendanceStatus.parseFromString("PRESENT"));
+        assertEquals(AttendanceStatus.PRESENT, AttendanceStatus.parseFromString("Present"));
+        assertEquals(AttendanceStatus.ABSENT, AttendanceStatus.parseFromString("absent"));
+        assertEquals(AttendanceStatus.ABSENT, AttendanceStatus.parseFromString("ABSENT"));
     }
 
     @Test
-    public void fromString_invalidValue_throwsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> AttendanceStatus.fromString("here"));
-        assertThrows(IllegalArgumentException.class, () -> AttendanceStatus.fromString(""));
+    public void parseFromString_invalidValue_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> AttendanceStatus.parseFromString("here"));
+        assertThrows(IllegalArgumentException.class, () -> AttendanceStatus.parseFromString(""));
     }
 
     @Test
-    public void toStringMethod() {
+    public void checkToStringMethod() {
         assertEquals("present", AttendanceStatus.PRESENT.toString());
         assertEquals("absent", AttendanceStatus.ABSENT.toString());
     }

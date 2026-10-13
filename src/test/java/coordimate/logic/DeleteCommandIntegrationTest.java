@@ -35,15 +35,15 @@ public class DeleteCommandIntegrationTest {
 
     @Test
     public void execute_requestThenConfirm_deletesContactAndEventAssignmentsAfterSaving() throws Exception {
-        ModelManager model = modelWithEvent();
+        ModelManager model = createModelWithEvent();
         Path path = temporaryFolder.resolve("contacts.json");
         JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path);
         storage.saveCoordiMate(model.getCoordiMate());
         String beforeFile = Files.readString(path);
         CoordiMate beforeModel = new CoordiMate(model.getCoordiMate());
-        Logic logic = newLogic(model, storage);
+        Logic logic = createLogic(model, storage);
 
-        assertEquals(DeleteCommand.confirmationPrompt(ALICE),
+        assertEquals(DeleteCommand.formatConfirmationPrompt(ALICE),
                 logic.execute("delete n/alice pauline").getFeedbackToUser());
         assertTrue(logic.isAwaitingDeleteConfirmation());
         assertEquals(beforeModel, model.getCoordiMate());
@@ -58,8 +58,8 @@ public class DeleteCommandIntegrationTest {
 
     @Test
     public void execute_uppercaseConfirmation_deletesContact() throws Exception {
-        ModelManager model = modelWithEvent();
-        Logic logic = newLogic(model, new JsonCoordiMateStorage(temporaryFolder.resolve("uppercase.json")));
+        ModelManager model = createModelWithEvent();
+        Logic logic = createLogic(model, new JsonCoordiMateStorage(temporaryFolder.resolve("uppercase.json")));
 
         logic.execute("delete p/(9435) 1253");
         assertEquals("Contact deleted successfully: Alice Pauline.", logic.execute("Y").getFeedbackToUser());
@@ -70,13 +70,13 @@ public class DeleteCommandIntegrationTest {
     public void execute_otherConfirmationInput_cancelsWithoutExecutingInput() throws Exception {
         String[] cancellations = {"n", "N", "", "list", "delete 2", " y "};
         for (String input : cancellations) {
-            ModelManager model = modelWithEvent();
+            ModelManager model = createModelWithEvent();
             Path path = temporaryFolder.resolve("cancel.json");
             JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path);
             storage.saveCoordiMate(model.getCoordiMate());
             String beforeFile = Files.readString(path);
             CoordiMate beforeModel = new CoordiMate(model.getCoordiMate());
-            Logic logic = newLogic(model, storage);
+            Logic logic = createLogic(model, storage);
 
             logic.execute("delete 1");
             assertEquals(LogicManager.MESSAGE_DELETE_CANCELLED, logic.execute(input).getFeedbackToUser());
@@ -85,17 +85,17 @@ public class DeleteCommandIntegrationTest {
             assertEquals(beforeFile, Files.readString(path));
 
             // A canceled command has to be entered again to run.
-            assertEquals(DeleteCommand.confirmationPrompt(BENSON), logic.execute("delete 2").getFeedbackToUser());
+            assertEquals(DeleteCommand.formatConfirmationPrompt(BENSON), logic.execute("delete 2").getFeedbackToUser());
         }
     }
 
     @Test
     public void execute_filteredIndex_usesDisplayedContact() throws Exception {
-        ModelManager model = modelWithEvent();
+        ModelManager model = createModelWithEvent();
         model.updateFilteredPersonList(person -> person.equals(BENSON));
-        Logic logic = newLogic(model, new JsonCoordiMateStorage(temporaryFolder.resolve("filtered.json")));
+        Logic logic = createLogic(model, new JsonCoordiMateStorage(temporaryFolder.resolve("filtered.json")));
 
-        assertEquals(DeleteCommand.confirmationPrompt(BENSON), logic.execute("delete 1").getFeedbackToUser());
+        assertEquals(DeleteCommand.formatConfirmationPrompt(BENSON), logic.execute("delete 1").getFeedbackToUser());
         logic.execute("y");
 
         assertEquals(List.of(ALICE), model.getCoordiMate().getPersonList());
@@ -105,11 +105,11 @@ public class DeleteCommandIntegrationTest {
 
     @Test
     public void execute_emailOutsideDisplayedList_findsSavedContact() throws Exception {
-        ModelManager model = modelWithEvent();
+        ModelManager model = createModelWithEvent();
         model.updateFilteredPersonList(person -> false);
-        Logic logic = newLogic(model, new JsonCoordiMateStorage(temporaryFolder.resolve("hidden.json")));
+        Logic logic = createLogic(model, new JsonCoordiMateStorage(temporaryFolder.resolve("hidden.json")));
 
-        assertEquals(DeleteCommand.confirmationPrompt(ALICE),
+        assertEquals(DeleteCommand.formatConfirmationPrompt(ALICE),
                 logic.execute("delete e/ALICE@EXAMPLE.COM").getFeedbackToUser());
         logic.execute("y");
 
@@ -121,7 +121,7 @@ public class DeleteCommandIntegrationTest {
     public void execute_saveFailure_modelAndFileUnchanged() throws Exception {
         IOException[] failures = {new IOException("Disk full"), new AccessDeniedException("contacts.json")};
         for (IOException failure : failures) {
-            ModelManager model = modelWithEvent();
+            ModelManager model = createModelWithEvent();
             Path path = temporaryFolder.resolve("failed.json");
             new JsonCoordiMateStorage(path).saveCoordiMate(model.getCoordiMate());
             String beforeFile = Files.readString(path);
@@ -132,7 +132,7 @@ public class DeleteCommandIntegrationTest {
                     throw failure;
                 }
             };
-            Logic logic = newLogic(model, failingStorage);
+            Logic logic = createLogic(model, failingStorage);
             logic.execute("delete 1");
 
             CommandException exception = assertThrows(CommandException.class, () -> logic.execute("y"));
@@ -149,9 +149,9 @@ public class DeleteCommandIntegrationTest {
     public void execute_corruptedFile_cannotRequestOrConfirmDeletion() throws Exception {
         Path path = temporaryFolder.resolve("corrupt.json");
         Files.writeString(path, "not json");
-        ModelManager model = modelWithEvent();
+        ModelManager model = createModelWithEvent();
         CoordiMate beforeModel = new CoordiMate(model.getCoordiMate());
-        Logic logic = newLogic(model, new JsonCoordiMateStorage(path));
+        Logic logic = createLogic(model, new JsonCoordiMateStorage(path));
 
         CommandException firstError = assertThrows(CommandException.class, () -> logic.execute("delete 1"));
         assertEquals(DeleteCommand.MESSAGE_LOAD_ERROR, firstError.getMessage());
@@ -169,7 +169,7 @@ public class DeleteCommandIntegrationTest {
         assertEquals("not json", Files.readString(path));
     }
 
-    private ModelManager modelWithEvent() {
+    private ModelManager createModelWithEvent() {
         ModelManager model = new ModelManager();
         model.addPerson(ALICE);
         model.addPerson(BENSON);
@@ -178,7 +178,7 @@ public class DeleteCommandIntegrationTest {
         return model;
     }
 
-    private Logic newLogic(ModelManager model, JsonCoordiMateStorage contactStorage) {
+    private Logic createLogic(ModelManager model, JsonCoordiMateStorage contactStorage) {
         return new LogicManager(model, new StorageManager(contactStorage,
                 new JsonUserPrefsStorage(temporaryFolder.resolve("prefs.json"))));
     }

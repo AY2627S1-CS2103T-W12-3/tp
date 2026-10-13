@@ -62,7 +62,7 @@ public class UniqueTagList implements Iterable<Tag> {
     /**
      * Returns the backing list as an unmodifiable {@code ObservableList}.
      */
-    public ObservableList<Tag> asUnmodifiableObservableList() {
+    public ObservableList<Tag> getUnmodifiableObservableList() {
         return unmodifiableTags;
     }
 

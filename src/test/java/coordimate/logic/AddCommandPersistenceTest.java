@@ -39,7 +39,7 @@ public class AddCommandPersistenceTest {
         JsonCoordiMateStorage storage = new JsonCoordiMateStorage(temporaryFolder.resolve("data.json"));
 
         assertEquals("Contact saved successfully: New Contact",
-                newLogic(model, storage).execute(COMMAND + " t/Publicity t/EXCO").getFeedbackToUser());
+                createLogic(model, storage).execute(COMMAND + " t/Publicity t/EXCO").getFeedbackToUser());
 
         assertEquals(model.getCoordiMate(), storage.readCoordiMate().orElseThrow());
         assertEquals(2, model.getFilteredPersonList().size());
@@ -60,7 +60,7 @@ public class AddCommandPersistenceTest {
         String beforeFile = Files.readString(path);
         CoordiMate beforeModel = new CoordiMate(model.getCoordiMate());
 
-        Logic logic = newLogic(model, storage);
+        Logic logic = createLogic(model, storage);
         CommandException exception = assertThrows(CommandException.class, () ->
                 logic.execute("add n/  aMy bEe  p/82345678 e/new@example.com r/Logistics"));
 
@@ -87,7 +87,7 @@ public class AddCommandPersistenceTest {
                 }
             };
 
-            Logic logic = newLogic(model, storage);
+            Logic logic = createLogic(model, storage);
             CommandException exception = assertThrows(CommandException.class, () -> logic.execute(COMMAND));
             assertEquals(AddCommand.MESSAGE_SAVE_ERROR, exception.getMessage());
             assertSame(failure, exception.getCause());
@@ -107,7 +107,7 @@ public class AddCommandPersistenceTest {
             model.addPerson(AMY);
             CoordiMate beforeModel = new CoordiMate(model.getCoordiMate());
 
-            Logic logic = newLogic(model, new JsonCoordiMateStorage(path));
+            Logic logic = createLogic(model, new JsonCoordiMateStorage(path));
             CommandException exception = assertThrows(CommandException.class, () -> logic.execute(COMMAND));
             assertEquals(AddCommand.MESSAGE_LOAD_ERROR, exception.getMessage());
             assertEquals(beforeModel, model.getCoordiMate());
@@ -115,7 +115,7 @@ public class AddCommandPersistenceTest {
         }
     }
 
-    private Logic newLogic(ModelManager model, JsonCoordiMateStorage storage) {
+    private Logic createLogic(ModelManager model, JsonCoordiMateStorage storage) {
         return new LogicManager(model, new StorageManager(storage,
                 new JsonUserPrefsStorage(temporaryFolder.resolve("prefs.json"))));
     }

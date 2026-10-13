@@ -39,7 +39,7 @@ public class EditCommandPersistenceTest {
 
     @Test
     public void execute_filteredIndex_savedAndReloadedWithRenamedEventMemberAndCustomTag() throws Exception {
-        ModelManager model = modelWithAssignedEvent();
+        ModelManager model = createModelWithAssignedEvent();
         model.updateFilteredPersonList(person -> person.equals(BENSON));
         JsonCoordiMateStorage storage = new JsonCoordiMateStorage(temporaryFolder.resolve("data.json"));
 
@@ -47,7 +47,7 @@ public class EditCommandPersistenceTest {
                 + "Name: Benson Tan\n"
                 + "Phone: 98765432\n"
                 + "Email: johnd@example.com\n"
-                + "Role: NA", newLogic(model, storage).execute(EDIT).getFeedbackToUser());
+                + "Role: NA", createLogic(model, storage).execute(EDIT).getFeedbackToUser());
 
         ReadOnlyCoordiMate saved = storage.readCoordiMate().orElseThrow();
         assertEquals(model.getCoordiMate(), saved);
@@ -60,11 +60,11 @@ public class EditCommandPersistenceTest {
 
     @Test
     public void execute_targetOutsideDisplayedList_savedAndReloaded() throws Exception {
-        ModelManager model = modelWithAssignedEvent();
+        ModelManager model = createModelWithAssignedEvent();
         model.updateFilteredPersonList(person -> false);
         JsonCoordiMateStorage storage = new JsonCoordiMateStorage(temporaryFolder.resolve("data.json"));
 
-        newLogic(model, storage).execute("edit target/alice@example.com r/President");
+        createLogic(model, storage).execute("edit target/alice@example.com r/President");
 
         assertEquals("President", model.getCoordiMate().getPersonList().getFirst().getRole().toString());
         assertEquals(model.getCoordiMate(), storage.readCoordiMate().orElseThrow());
@@ -74,11 +74,11 @@ public class EditCommandPersistenceTest {
     @Test
     public void execute_nonPhoneEditOnLegacyContact_preservesPhoneAndSaves() throws Exception {
         ModelManager model = new ModelManager();
-        model.addPerson(new PersonBuilder(ALICE).withPhone("123").build());
+        model.addPerson(new PersonBuilder(ALICE).setPhone("123").build());
         JsonCoordiMateStorage storage = new JsonCoordiMateStorage(temporaryFolder.resolve("legacy.json"));
         storage.saveCoordiMate(model.getCoordiMate());
 
-        newLogic(model, storage).execute("edit 1 r/President");
+        createLogic(model, storage).execute("edit 1 r/President");
 
         Person editedPerson = storage.readCoordiMate().orElseThrow().getPersonList().getFirst();
         assertEquals("123", editedPerson.getPhone().getValue());
@@ -90,7 +90,7 @@ public class EditCommandPersistenceTest {
     public void execute_saveFailure_modelAndFileUnchanged() throws Exception {
         IOException[] failures = {new IOException("Disk full"), new AccessDeniedException("data")};
         for (IOException failure : failures) {
-            ModelManager model = modelWithAssignedEvent();
+            ModelManager model = createModelWithAssignedEvent();
             model.updateFilteredPersonList(person -> person.equals(BENSON));
             Path path = temporaryFolder.resolve("failed.json");
             new JsonCoordiMateStorage(path).saveCoordiMate(model.getCoordiMate());
@@ -105,7 +105,7 @@ public class EditCommandPersistenceTest {
             };
 
             CommandException exception = assertThrows(CommandException.class, () ->
-                    newLogic(model, failingStorage).execute(EDIT));
+                    createLogic(model, failingStorage).execute(EDIT));
 
             assertEquals(EditCommand.MESSAGE_SAVE_ERROR, exception.getMessage());
             assertSame(failure, exception.getCause());
@@ -121,11 +121,11 @@ public class EditCommandPersistenceTest {
         for (String contents : corruptedContents) {
             Path path = temporaryFolder.resolve("corrupt.json");
             Files.writeString(path, contents);
-            ModelManager model = modelWithAssignedEvent();
+            ModelManager model = createModelWithAssignedEvent();
             model.updateFilteredPersonList(person -> false);
             CoordiMate beforeModel = new CoordiMate(model.getCoordiMate());
 
-            Logic logic = newLogic(model, new JsonCoordiMateStorage(path));
+            Logic logic = createLogic(model, new JsonCoordiMateStorage(path));
             CommandException exception = assertThrows(CommandException.class, () ->
                     logic.execute("edit target/alice@example.com r/President"));
 
@@ -137,7 +137,7 @@ public class EditCommandPersistenceTest {
         }
     }
 
-    private ModelManager modelWithAssignedEvent() {
+    private ModelManager createModelWithAssignedEvent() {
         ModelManager model = new ModelManager();
         model.addPerson(ALICE);
         model.addPerson(BENSON);
@@ -146,7 +146,7 @@ public class EditCommandPersistenceTest {
         return model;
     }
 
-    private Logic newLogic(ModelManager model, JsonCoordiMateStorage storage) {
+    private Logic createLogic(ModelManager model, JsonCoordiMateStorage storage) {
         return new LogicManager(model, new StorageManager(storage,
                 new JsonUserPrefsStorage(temporaryFolder.resolve("prefs.json"))));
     }

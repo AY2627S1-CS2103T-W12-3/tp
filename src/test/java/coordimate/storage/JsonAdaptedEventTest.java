@@ -17,32 +17,32 @@ import coordimate.model.person.Name;
 
 public class JsonAdaptedEventTest {
     @Test
-    public void toModelType_validDetails_preservesOptionalTimesAndTrimsName() throws Exception {
+    public void convertToModelType_validDetails_preservesOptionalTimesAndTrimsName() throws Exception {
         for (String start : new String[] {"08-08-2026", "08-08-2026 15:00"}) {
             Event expected = new Event("Concert", new EventTime(start), new EventTime("08-08-2026 18:00"));
-            assertEquals(expected, new JsonAdaptedEvent(expected).toModelType());
-            assertEquals(expected, new JsonAdaptedEvent("  Concert  ", start, "08-08-2026 18:00").toModelType());
+            assertEquals(expected, new JsonAdaptedEvent(expected).convertToModelType());
+            assertEquals(expected, new JsonAdaptedEvent("  Concert  ", start, "08-08-2026 18:00").convertToModelType());
         }
     }
 
     @Test
-    public void toModelType_members_preservedInOrder() throws Exception {
+    public void convertToModelType_members_preservedInOrder() throws Exception {
         Event expected = new Event("Concert", new EventTime("08-08-2026"), new EventTime("08-08-2026 18:00"),
                 List.of(new Name("Bernice Yu"), new Name("Alex Yeoh")));
-        assertEquals(expected, new JsonAdaptedEvent(expected).toModelType());
+        assertEquals(expected, new JsonAdaptedEvent(expected).convertToModelType());
         assertEquals(expected, new JsonAdaptedEvent("Concert", "08-08-2026", "08-08-2026 18:00",
-                List.of("Bernice Yu", "Alex Yeoh")).toModelType());
+                List.of("Bernice Yu", "Alex Yeoh")).convertToModelType());
     }
 
     @Test
-    public void toModelType_missingMembers_noMembers() throws Exception {
+    public void convertToModelType_missingMembers_noMembers() throws Exception {
         Event expected = new Event("Concert", new EventTime("08-08-2026"), new EventTime("08-08-2026"));
-        assertEquals(expected, new JsonAdaptedEvent("Concert", "08-08-2026", "08-08-2026", null).toModelType());
-        assertEquals(expected, new JsonAdaptedEvent("Concert", "08-08-2026", "08-08-2026").toModelType());
+        assertEquals(expected, new JsonAdaptedEvent("Concert", "08-08-2026", "08-08-2026", null).convertToModelType());
+        assertEquals(expected, new JsonAdaptedEvent("Concert", "08-08-2026", "08-08-2026").convertToModelType());
     }
 
     @Test
-    public void toModelType_invalidMembers_throwsIllegalValueException() {
+    public void convertToModelType_invalidMembers_throwsIllegalValueException() {
         List<List<String>> invalidMembers = List.of(
                 Arrays.asList("Alex Yeoh", null), List.of("Alex Yeoh!"), List.of(""),
                 List.of("Alex Yeoh", "Bernice Yu", "Alex Yeoh"));
@@ -52,12 +52,13 @@ public class JsonAdaptedEventTest {
         };
         for (int i = 0; i < messages.length; i++) {
             JsonAdaptedEvent event = new JsonAdaptedEvent("Concert", "08-08-2026", "08-08-2026", invalidMembers.get(i));
-            assertEquals(messages[i], assertThrows(IllegalValueException.class, event::toModelType).getMessage());
+            assertEquals(messages[i],
+                    assertThrows(IllegalValueException.class, event::convertToModelType).getMessage());
         }
     }
 
     @Test
-    public void toModelType_missingField_throwsIllegalValueException() {
+    public void convertToModelType_missingField_throwsIllegalValueException() {
         JsonAdaptedEvent[] events = {
             new JsonAdaptedEvent(null, "08-08-2026", "08-08-2026"),
             new JsonAdaptedEvent("Concert", null, "08-08-2026"),
@@ -65,12 +66,12 @@ public class JsonAdaptedEventTest {
         };
         for (JsonAdaptedEvent event : events) {
             assertEquals("Event name, start time and end time must be present.",
-                    assertThrows(IllegalValueException.class, event::toModelType).getMessage());
+                    assertThrows(IllegalValueException.class, event::convertToModelType).getMessage());
         }
     }
 
     @Test
-    public void toModelType_invalidDetails_throwsIllegalValueException() {
+    public void convertToModelType_invalidDetails_throwsIllegalValueException() {
         JsonAdaptedEvent[] events = {
             new JsonAdaptedEvent(" ", "08-08-2026", "08-08-2026"),
             new JsonAdaptedEvent("Concert", "31-02-2026", "08-08-2026"),
@@ -84,49 +85,50 @@ public class JsonAdaptedEventTest {
             EventTime.MESSAGE_EMPTY, EventTime.MESSAGE_EMPTY, Event.MESSAGE_INVALID_TIME_ORDER
         };
         for (int i = 0; i < events.length; i++) {
-            assertEquals(messages[i], assertThrows(IllegalValueException.class, events[i]::toModelType).getMessage());
+            assertEquals(messages[i],
+                    assertThrows(IllegalValueException.class, events[i]::convertToModelType).getMessage());
         }
     }
 
     @Test
-    public void toModelType_attendance_preservedInRoundTrip() throws Exception {
+    public void convertToModelType_attendance_preservedInRoundTrip() throws Exception {
         Event expected = new Event("Concert", new EventTime("08-08-2026"), new EventTime("08-08-2026 18:00"),
                 List.of(new Name("Bernice Yu"), new Name("Alex Yeoh")),
                 Map.of(new Name("Bernice Yu"), AttendanceStatus.PRESENT));
-        assertEquals(expected, new JsonAdaptedEvent(expected).toModelType());
+        assertEquals(expected, new JsonAdaptedEvent(expected).convertToModelType());
     }
 
     @Test
-    public void toModelType_missingAttendance_noAttendanceRecorded() throws Exception {
+    public void convertToModelType_missingAttendance_noAttendanceRecorded() throws Exception {
         Event expected = new Event("Concert", new EventTime("08-08-2026"), new EventTime("08-08-2026"),
                 List.of(new Name("Alex Yeoh")));
         assertEquals(expected, new JsonAdaptedEvent("Concert", "08-08-2026", "08-08-2026",
-                List.of("Alex Yeoh")).toModelType());
+                List.of("Alex Yeoh")).convertToModelType());
     }
 
     @Test
-    public void toModelType_attendanceForUnassignedMember_throwsIllegalValueException() {
+    public void convertToModelType_attendanceForUnassignedMember_throwsIllegalValueException() {
         JsonAdaptedEvent event = new JsonAdaptedEvent("Concert", "08-08-2026", "08-08-2026",
                 List.of("Alex Yeoh"), Map.of("Bernice Yu", "present"));
         assertEquals(Event.MESSAGE_UNASSIGNED_ATTENDANCE,
-                assertThrows(IllegalValueException.class, event::toModelType).getMessage());
+                assertThrows(IllegalValueException.class, event::convertToModelType).getMessage());
     }
 
     @Test
-    public void toModelType_invalidAttendanceStatus_throwsIllegalValueException() {
+    public void convertToModelType_invalidAttendanceStatus_throwsIllegalValueException() {
         JsonAdaptedEvent event = new JsonAdaptedEvent("Concert", "08-08-2026", "08-08-2026",
                 List.of("Alex Yeoh"), Map.of("Alex Yeoh", "maybe"));
         assertEquals(JsonAdaptedEvent.MESSAGE_INVALID_ATTENDANCE_STATUS,
-                assertThrows(IllegalValueException.class, event::toModelType).getMessage());
+                assertThrows(IllegalValueException.class, event::convertToModelType).getMessage());
     }
 
     @Test
-    public void toModelType_nullAttendanceKeyOrValue_throwsIllegalValueException() {
+    public void convertToModelType_nullAttendanceKeyOrValue_throwsIllegalValueException() {
         Map<String, String> nullValue = new java.util.HashMap<>();
         nullValue.put("Alex Yeoh", null);
         JsonAdaptedEvent eventWithNullValue = new JsonAdaptedEvent("Concert", "08-08-2026", "08-08-2026",
                 List.of("Alex Yeoh"), nullValue);
         assertEquals(JsonAdaptedEvent.MESSAGE_NULL_ATTENDANCE,
-                assertThrows(IllegalValueException.class, eventWithNullValue::toModelType).getMessage());
+                assertThrows(IllegalValueException.class, eventWithNullValue::convertToModelType).getMessage());
     }
 }

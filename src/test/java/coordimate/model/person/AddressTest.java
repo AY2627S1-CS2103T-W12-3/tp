@@ -9,12 +9,12 @@ import org.junit.jupiter.api.Test;
 public class AddressTest {
 
     @Test
-    public void constructor_null_throwsNullPointerException() {
+    public void construct_null_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> new Address(null));
     }
 
     @Test
-    public void constructor_invalidAddress_throwsIllegalArgumentException() {
+    public void construct_invalidAddress_throwsIllegalArgumentException() {
         String invalidAddress = "";
         assertThrows(IllegalArgumentException.class, () -> new Address(invalidAddress));
     }
@@ -41,7 +41,7 @@ public class AddressTest {
     }
 
     @Test
-    public void equals() {
+    public void checkEquals() {
         Address address = new Address("Valid Address");
 
         // same values -> returns true

@@ -35,13 +35,13 @@ public class EditEventIntegrationTest {
         ModelManager model = new ModelManager();
         model.addPerson(AMY);
         JsonCoordiMateStorage storage = new JsonCoordiMateStorage(temporaryFolder.resolve("data.json"));
-        Logic logic = newLogic(model, storage);
+        Logic logic = createLogic(model, storage);
         logic.execute(ADD);
         assertEquals("Edited Event NUS Student Life Fair. Start Time: 09-10-2026. End Time: 10-10-2026.",
                 logic.execute(EDIT).getFeedbackToUser());
         assertEquals(model.getCoordiMate(), storage.readCoordiMate().orElseThrow());
         ModelManager reloaded = new ModelManager(storage.readCoordiMate().orElseThrow(), model.getUserPrefs());
-        newLogic(reloaded, storage).execute("editevent evn/NUS Student Life Fair st/09-10-2026 16:00");
+        createLogic(reloaded, storage).execute("editevent evn/NUS Student Life Fair st/09-10-2026 16:00");
         assertEquals("09-10-2026 16:00", reloaded.getCoordiMate().getEventList().getFirst().getStartTime().toString());
         assertEquals(model.getCoordiMate().getPersonList(), reloaded.getCoordiMate().getPersonList());
     }
@@ -52,7 +52,7 @@ public class EditEventIntegrationTest {
         Event meeting = new Event("CCA Meeting", new EventTime("09-10-2026"), new EventTime("10-10-2026"));
         model.addEvent(meeting);
         JsonCoordiMateStorage storage = new JsonCoordiMateStorage(temporaryFolder.resolve("data.json"));
-        Logic logic = newLogic(model, storage);
+        Logic logic = createLogic(model, storage);
         assertEquals("Edited Event CCA MEETING. Start Time: 09-10-2026. End Time: 10-10-2026.",
                 logic.execute("editevent evn/CCA MEETING nevn/CCA MEETING").getFeedbackToUser());
         assertEquals(new Event("CCA MEETING", meeting.getStartTime(), meeting.getEndTime()),
@@ -64,7 +64,7 @@ public class EditEventIntegrationTest {
     public void execute_duplicate_modelAndFileUnchanged() throws Exception {
         ModelManager model = new ModelManager();
         JsonCoordiMateStorage storage = new JsonCoordiMateStorage(temporaryFolder.resolve("data.json"));
-        Logic logic = newLogic(model, storage);
+        Logic logic = createLogic(model, storage);
         logic.execute(ADD);
         logic.execute("addevent evn/NUS Student Life Fair st/09-10-2026 et/10-10-2026");
         CoordiMate before = new CoordiMate(model.getCoordiMate());
@@ -79,7 +79,7 @@ public class EditEventIntegrationTest {
     public void execute_saveFailure_modelAndFileUnchanged() throws Exception {
         ModelManager model = new ModelManager();
         Path path = temporaryFolder.resolve("data.json");
-        newLogic(model, new JsonCoordiMateStorage(path)).execute(ADD);
+        createLogic(model, new JsonCoordiMateStorage(path)).execute(ADD);
         CoordiMate before = new CoordiMate(model.getCoordiMate());
         String beforeFile = Files.readString(path);
         JsonCoordiMateStorage failingStorage = new JsonCoordiMateStorage(path) {
@@ -89,12 +89,13 @@ public class EditEventIntegrationTest {
             }
         };
         assertEquals(EditEventCommand.MESSAGE_SAVE_ERROR,
-                assertThrows(CommandException.class, () -> newLogic(model, failingStorage).execute(EDIT)).getMessage());
+                assertThrows(CommandException.class, () ->
+                        createLogic(model, failingStorage).execute(EDIT)).getMessage());
         assertEquals(before, model.getCoordiMate());
         assertEquals(beforeFile, Files.readString(path));
     }
 
-    private Logic newLogic(ModelManager model, JsonCoordiMateStorage storage) {
+    private Logic createLogic(ModelManager model, JsonCoordiMateStorage storage) {
         return new LogicManager(model, new StorageManager(storage,
                 new JsonUserPrefsStorage(temporaryFolder.resolve("prefs.json"))));
     }

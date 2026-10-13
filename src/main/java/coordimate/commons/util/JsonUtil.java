@@ -32,12 +32,12 @@ public class JsonUtil {
             .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
 
     static <T> void serializeObjectToJsonFile(Path jsonFile, T objectToSerialize) throws IOException {
-        FileUtil.writeToFile(jsonFile, toJsonString(objectToSerialize));
+        FileUtil.writeToFile(jsonFile, serializeToJsonString(objectToSerialize));
     }
 
     static <T> T deserializeObjectFromJsonFile(Path jsonFile, Class<T> classOfObjectToDeserialize)
             throws IOException {
-        return fromJsonString(FileUtil.readFromFile(jsonFile), classOfObjectToDeserialize);
+        return deserializeFromJsonString(FileUtil.readFromFile(jsonFile), classOfObjectToDeserialize);
     }
 
     /**
@@ -96,7 +96,7 @@ public class JsonUtil {
      * @param instanceClass The class of the resulting object.
      * @return The instance of T with the specified values in the JSON string.
      */
-    public static <T> T fromJsonString(String json, Class<T> instanceClass) throws IOException {
+    public static <T> T deserializeFromJsonString(String json, Class<T> instanceClass) throws IOException {
         return objectMapper.readValue(json, instanceClass);
     }
 
@@ -107,7 +107,7 @@ public class JsonUtil {
      * @param <T> The generic type to create an instance of.
      * @return JSON data representation of the given class instance, in string.
      */
-    public static <T> String toJsonString(T instance) throws JsonProcessingException {
+    public static <T> String serializeToJsonString(T instance) throws JsonProcessingException {
         return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(instance);
     }
 

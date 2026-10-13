@@ -36,7 +36,7 @@ public class FilterCommandTest {
     public void execute_tagFilterMatchesContacts_success() throws Exception {
         CoordiMate coordiMate = new CoordiMate();
         coordiMate.addTag(new Tag("Friends"));
-        coordiMate.addPerson(new PersonBuilder(ALICE).withTags("Friends").build());
+        coordiMate.addPerson(new PersonBuilder(ALICE).setTags("Friends").build());
         ModelManager modelWithTaggedPerson = new ModelManager(coordiMate, new UserPrefs());
 
         FilterCommand command = filter(FilterField.TAG, "Friends");
@@ -100,9 +100,9 @@ public class FilterCommandTest {
     @Test
     public void execute_organisationFilterCaseInsensitive_success() throws Exception {
         CoordiMate coordiMate = new CoordiMate();
-        var aliceAtNus = new PersonBuilder(ALICE).withOrganisation("NUS Student Affairs").build();
+        var aliceAtNus = new PersonBuilder(ALICE).setOrganisation("NUS Student Affairs").build();
         coordiMate.addPerson(aliceAtNus);
-        coordiMate.addPerson(new PersonBuilder(BENSON).withOrganisation("NUS Students").build());
+        coordiMate.addPerson(new PersonBuilder(BENSON).setOrganisation("NUS Students").build());
         ModelManager modelWithOrganisations = new ModelManager(coordiMate, new UserPrefs());
         FilterCommand command = filter(FilterField.ORGANISATION, "nus student affairs");
 
@@ -123,8 +123,8 @@ public class FilterCommandTest {
     public void execute_multipleCriteria_requiresAllToMatch() throws Exception {
         CoordiMate coordiMate = new CoordiMate();
         coordiMate.addTag(new Tag("Friends"));
-        var taggedAlice = new PersonBuilder(ALICE).withTags("Friends").build();
-        var taggedBenson = new PersonBuilder(BENSON).withTags("Friends").build();
+        var taggedAlice = new PersonBuilder(ALICE).setTags("Friends").build();
+        var taggedBenson = new PersonBuilder(BENSON).setTags("Friends").build();
         coordiMate.addPerson(taggedAlice);
         coordiMate.addPerson(taggedBenson);
 
@@ -144,7 +144,7 @@ public class FilterCommandTest {
     }
 
     @Test
-    public void equals() {
+    public void checkEquals() {
         FilterCommand command = filter(FilterField.TAG, "friend");
 
         // same object -> returns true

@@ -34,7 +34,7 @@ public class StorageManagerTest {
     }
 
     @Test
-    public void prefsReadSave() throws Exception {
+    public void readAndSavePrefs() throws Exception {
         /*
          * Note: This is an integration test that verifies the StorageManager is properly wired to the
          * {@link JsonUserPrefsStorage} class.
@@ -48,7 +48,7 @@ public class StorageManagerTest {
     }
 
     @Test
-    public void coordiMateReadSave() throws Exception {
+    public void readAndSaveCoordiMate() throws Exception {
         /*
          * Note: This is an integration test that verifies the StorageManager is properly wired to the
          * {@link JsonCoordiMateStorage} class.

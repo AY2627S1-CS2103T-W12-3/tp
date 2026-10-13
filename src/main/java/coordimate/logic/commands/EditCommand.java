@@ -140,10 +140,10 @@ public class EditCommand extends Command {
             }
         }
         model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
-        return new CommandResult(successMessage(editedPerson));
+        return new CommandResult(formatSuccessMessage(editedPerson));
     }
 
-    static String successMessage(Person person) {
+    static String formatSuccessMessage(Person person) {
         String details = "Name: " + person.getName()
                 + "\nPhone: " + person.getPhone()
                 + "\nEmail: " + person.getEmail()

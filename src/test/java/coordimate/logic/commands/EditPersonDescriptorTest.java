@@ -19,7 +19,7 @@ import coordimate.testutil.EditPersonDescriptorBuilder;
 public class EditPersonDescriptorTest {
 
     @Test
-    public void equals() {
+    public void checkEquals() {
         // same values -> returns true
         EditPersonDescriptor descriptorWithSameValues = new EditPersonDescriptor(DESC_AMY);
         assertTrue(DESC_AMY.equals(descriptorWithSameValues));
@@ -37,39 +37,39 @@ public class EditPersonDescriptorTest {
         assertFalse(DESC_AMY.equals(DESC_BOB));
 
         // different name -> returns false
-        EditPersonDescriptor editedAmy = new EditPersonDescriptorBuilder(DESC_AMY).withName(VALID_NAME_BOB).build();
+        EditPersonDescriptor editedAmy = new EditPersonDescriptorBuilder(DESC_AMY).setName(VALID_NAME_BOB).build();
         assertFalse(DESC_AMY.equals(editedAmy));
 
         // different phone -> returns false
-        editedAmy = new EditPersonDescriptorBuilder(DESC_AMY).withPhone(VALID_PHONE_BOB).build();
+        editedAmy = new EditPersonDescriptorBuilder(DESC_AMY).setPhone(VALID_PHONE_BOB).build();
         assertFalse(DESC_AMY.equals(editedAmy));
 
         // different email -> returns false
-        editedAmy = new EditPersonDescriptorBuilder(DESC_AMY).withEmail(VALID_EMAIL_BOB).build();
+        editedAmy = new EditPersonDescriptorBuilder(DESC_AMY).setEmail(VALID_EMAIL_BOB).build();
         assertFalse(DESC_AMY.equals(editedAmy));
 
         // different role or optional-field edit -> returns false
-        editedAmy = new EditPersonDescriptorBuilder(DESC_AMY).withRole("Logistics").build();
+        editedAmy = new EditPersonDescriptorBuilder(DESC_AMY).setRole("Logistics").build();
         assertFalse(DESC_AMY.equals(editedAmy));
-        editedAmy = new EditPersonDescriptorBuilder(DESC_AMY).withBirthday("18-06-2004").build();
+        editedAmy = new EditPersonDescriptorBuilder(DESC_AMY).setBirthday("18-06-2004").build();
         assertFalse(DESC_AMY.equals(editedAmy));
-        editedAmy = new EditPersonDescriptorBuilder(DESC_AMY).withOrganisation("NUS Student Affairs").build();
+        editedAmy = new EditPersonDescriptorBuilder(DESC_AMY).setOrganisation("NUS Student Affairs").build();
         assertFalse(DESC_AMY.equals(editedAmy));
-        editedAmy = new EditPersonDescriptorBuilder(DESC_AMY).withNote("Handles venue bookings").build();
+        editedAmy = new EditPersonDescriptorBuilder(DESC_AMY).setNote("Handles venue bookings").build();
         assertFalse(DESC_AMY.equals(editedAmy));
-        assertFalse(new EditPersonDescriptor().equals(new EditPersonDescriptorBuilder().withoutNote().build()));
+        assertFalse(new EditPersonDescriptor().equals(new EditPersonDescriptorBuilder().clearNote().build()));
 
         // different address -> returns false
-        editedAmy = new EditPersonDescriptorBuilder(DESC_AMY).withAddress(VALID_ADDRESS_BOB).build();
+        editedAmy = new EditPersonDescriptorBuilder(DESC_AMY).setAddress(VALID_ADDRESS_BOB).build();
         assertFalse(DESC_AMY.equals(editedAmy));
 
         // different tags -> returns false
-        editedAmy = new EditPersonDescriptorBuilder(DESC_AMY).withTags(VALID_TAG_HUSBAND).build();
+        editedAmy = new EditPersonDescriptorBuilder(DESC_AMY).setTags(VALID_TAG_HUSBAND).build();
         assertFalse(DESC_AMY.equals(editedAmy));
     }
 
     @Test
-    public void toStringMethod() {
+    public void checkToStringMethod() {
         EditPersonDescriptor editPersonDescriptor = new EditPersonDescriptor();
         String expected = EditPersonDescriptor.class.getCanonicalName() + "{name="
                 + editPersonDescriptor.getName().orElse(null) + ", phone="

@@ -65,7 +65,7 @@ public class DeleteCommand extends Command {
     }
 
     /** Creates a confirmed request for exactly the contact shown in the confirmation prompt. */
-    public static DeleteCommand forResolvedPerson(Person person) {
+    public static DeleteCommand createForResolvedPerson(Person person) {
         return new DeleteCommand(person);
     }
 
@@ -120,7 +120,7 @@ public class DeleteCommand extends Command {
     }
 
     /** Formats the contact details and the confirmation prompt. */
-    public static String confirmationPrompt(Person person) {
+    public static String formatConfirmationPrompt(Person person) {
         return "Contact found:\nName: " + person.getName()
                 + "\nPhone: " + person.getPhone()
                 + "\nEmail: " + person.getEmail()

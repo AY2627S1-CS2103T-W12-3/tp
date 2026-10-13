@@ -9,12 +9,12 @@ import org.junit.jupiter.api.Test;
 public class EmailTest {
 
     @Test
-    public void constructor_null_throwsNullPointerException() {
+    public void construct_null_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> new Email(null));
     }
 
     @Test
-    public void constructor_invalidEmail_throwsIllegalArgumentException() {
+    public void construct_invalidEmail_throwsIllegalArgumentException() {
         String invalidEmail = "";
         assertThrows(IllegalArgumentException.class, () -> new Email(invalidEmail));
     }
@@ -72,7 +72,7 @@ public class EmailTest {
     }
 
     @Test
-    public void equals() {
+    public void checkEquals() {
         Email email = new Email("valid@example.com");
 
         // same values -> returns true

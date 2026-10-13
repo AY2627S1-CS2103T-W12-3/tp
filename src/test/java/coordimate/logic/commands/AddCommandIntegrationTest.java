@@ -47,15 +47,15 @@ public class AddCommandIntegrationTest {
     @Test
     public void execute_sameNameOutsideFilteredList_failure() {
         model.updateFilteredPersonList(person -> false);
-        Person differentPerson = new PersonBuilder().withName("  aLiCe pAuLiNe  ").build();
+        Person differentPerson = new PersonBuilder().setName("  aLiCe pAuLiNe  ").build();
 
         assertCommandFailure(new AddCommand(differentPerson), model, AddCommand.MESSAGE_DUPLICATE_PERSON);
     }
 
     @Test
     public void execute_normalizedPhoneOrEmailDuplicate_failure() {
-        Person samePhone = new PersonBuilder().withPhone("(9435) 1253").build();
-        Person sameEmail = new PersonBuilder().withEmail("ALICE@EXAMPLE.COM").build();
+        Person samePhone = new PersonBuilder().setPhone("(9435) 1253").build();
+        Person sameEmail = new PersonBuilder().setEmail("ALICE@EXAMPLE.COM").build();
 
         assertCommandFailure(new AddCommand(samePhone), model, AddCommand.MESSAGE_DUPLICATE_PERSON);
         assertCommandFailure(new AddCommand(sameEmail), model, AddCommand.MESSAGE_DUPLICATE_PERSON);

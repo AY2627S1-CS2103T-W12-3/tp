@@ -10,12 +10,12 @@ import org.junit.jupiter.api.Test;
 public class NameTest {
 
     @Test
-    public void constructor_null_throwsNullPointerException() {
+    public void construct_null_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> new Name(null));
     }
 
     @Test
-    public void constructor_invalidName_throwsIllegalArgumentException() {
+    public void construct_invalidName_throwsIllegalArgumentException() {
         String invalidName = "";
         assertThrows(IllegalArgumentException.class, () -> new Name(invalidName));
     }
@@ -46,12 +46,12 @@ public class NameTest {
     }
 
     @Test
-    public void constructor_surroundingSpaces_trimmed() {
+    public void construct_surroundingSpaces_trimmed() {
         assertEquals("Alice Tan", new Name("  Alice Tan  ").getFullName());
     }
 
     @Test
-    public void equals() {
+    public void checkEquals() {
         Name name = new Name("Valid Name");
 
         // same values -> returns true

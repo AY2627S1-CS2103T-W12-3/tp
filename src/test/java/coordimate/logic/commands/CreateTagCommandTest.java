@@ -38,7 +38,7 @@ public class CreateTagCommandTest {
     }
 
     @Test
-    public void equals() {
+    public void checkEquals() {
         CreateTagCommand command = new CreateTagCommand(PUBLICITY);
         assertEquals(command, new CreateTagCommand(new Tag("Publicity")));
         assertEquals(command.hashCode(), new CreateTagCommand(new Tag("Publicity")).hashCode());
@@ -48,7 +48,7 @@ public class CreateTagCommandTest {
     }
 
     @Test
-    public void nullArguments_throwNullPointerException() {
+    public void rejectNullArguments_throwNullPointerException() {
         assertThrows(NullPointerException.class, () -> new CreateTagCommand(null));
         assertThrows(NullPointerException.class, () -> new CreateTagCommand(PUBLICITY).execute(null));
     }

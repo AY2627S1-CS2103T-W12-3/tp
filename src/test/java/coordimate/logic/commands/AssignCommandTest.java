@@ -42,14 +42,14 @@ public class AssignCommandTest {
     public void execute_singleContact_success() throws Exception {
         assertEquals("Assigned 1 member(s) to Final Concert.",
                 assign("Final Concert", 2).execute(model).getFeedbackToUser());
-        assertEquals(List.of(withMembers(concert, BENSON.getName()), fair), model.getCoordiMate().getEventList());
+        assertEquals(List.of(copyWithMembers(concert, BENSON.getName()), fair), model.getCoordiMate().getEventList());
     }
 
     @Test
     public void execute_multipleContacts_assignedInCommandOrder() throws Exception {
         assertEquals("Assigned 3 member(s) to Final Concert.",
                 assign("Final Concert", 3, 1, 4).execute(model).getFeedbackToUser());
-        assertEquals(withMembers(concert, CARL.getName(), ALICE.getName(), DANIEL.getName()),
+        assertEquals(copyWithMembers(concert, CARL.getName(), ALICE.getName(), DANIEL.getName()),
                 model.getCoordiMate().getEventList().getFirst());
     }
 
@@ -57,7 +57,7 @@ public class AssignCommandTest {
     public void execute_differentCaseEventName_usesSavedName() throws Exception {
         assertEquals("Assigned 1 member(s) to Final Concert.",
                 assign("fINAL cONCERT", 1).execute(model).getFeedbackToUser());
-        assertEquals(withMembers(concert, ALICE.getName()), model.getCoordiMate().getEventList().getFirst());
+        assertEquals(copyWithMembers(concert, ALICE.getName()), model.getCoordiMate().getEventList().getFirst());
     }
 
     @Test
@@ -65,7 +65,7 @@ public class AssignCommandTest {
         assign("Final Concert", 1, 2).execute(model);
         assertEquals("Assigned 1 member(s) to Final Concert. 2 contact(s) were already assigned.",
                 assign("Final Concert", 2, 3, 1).execute(model).getFeedbackToUser());
-        assertEquals(withMembers(concert, ALICE.getName(), BENSON.getName(), CARL.getName()),
+        assertEquals(copyWithMembers(concert, ALICE.getName(), BENSON.getName(), CARL.getName()),
                 model.getCoordiMate().getEventList().getFirst());
     }
 
@@ -87,7 +87,7 @@ public class AssignCommandTest {
     public void execute_repeatedIndex_countedOnce() throws Exception {
         assertEquals("Assigned 2 member(s) to Final Concert.",
                 assign("Final Concert", 1, 1, 3).execute(model).getFeedbackToUser());
-        assertEquals(withMembers(concert, ALICE.getName(), CARL.getName()),
+        assertEquals(copyWithMembers(concert, ALICE.getName(), CARL.getName()),
                 model.getCoordiMate().getEventList().getFirst());
     }
 
@@ -120,12 +120,12 @@ public class AssignCommandTest {
     public void execute_filteredList_usesDisplayedIndexes() throws Exception {
         model.updateFilteredPersonList(person -> person.equals(CARL) || person.equals(DANIEL));
         assign("Final Concert", 2).execute(model);
-        assertEquals(withMembers(concert, DANIEL.getName()), model.getCoordiMate().getEventList().getFirst());
+        assertEquals(copyWithMembers(concert, DANIEL.getName()), model.getCoordiMate().getEventList().getFirst());
         assertThrows(CommandException.class, () -> assign("Final Concert", 3).execute(model));
     }
 
     @Test
-    public void equalityAndNullArguments() {
+    public void checkEqualityAndNullArguments() {
         AssignCommand command = assign("Final Concert", 1, 2);
         assertEquals(command, assign(" Final Concert ", 1, 2));
         assertEquals(command.hashCode(), assign("Final Concert", 1, 2).hashCode());
@@ -133,15 +133,15 @@ public class AssignCommandTest {
         assertNotEquals(command, assign("Fair", 1, 2));
         assertNotEquals(command, null);
         assertThrows(NullPointerException.class, () -> command.execute(null));
-        assertThrows(NullPointerException.class, () -> new AssignCommand(null, List.of(Index.fromOneBased(1))));
+        assertThrows(NullPointerException.class, () -> new AssignCommand(null, List.of(Index.createFromOneBased(1))));
         assertThrows(NullPointerException.class, () -> new AssignCommand("Final Concert", null));
     }
 
     private static AssignCommand assign(String eventName, Integer... oneBasedIndexes) {
-        return new AssignCommand(eventName, Arrays.stream(oneBasedIndexes).map(Index::fromOneBased).toList());
+        return new AssignCommand(eventName, Arrays.stream(oneBasedIndexes).map(Index::createFromOneBased).toList());
     }
 
-    private static Event withMembers(Event event, Name... members) {
+    private static Event copyWithMembers(Event event, Name... members) {
         return new Event(event.getName(), event.getStartTime(), event.getEndTime(), List.of(members));
     }
 }

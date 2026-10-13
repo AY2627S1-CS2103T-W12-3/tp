@@ -61,7 +61,7 @@ public class JsonCoordiMateStorage {
         }
 
         try {
-            return Optional.of(jsonCoordiMate.get().toModelType());
+            return Optional.of(jsonCoordiMate.get().convertToModelType());
         } catch (IllegalValueException | IllegalArgumentException | NullPointerException ive) {
             logger.info("Illegal values found in " + filePath + ": " + ive.getMessage());
             throw new DataLoadingException(ive);

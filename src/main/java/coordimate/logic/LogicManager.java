@@ -69,7 +69,7 @@ public class LogicManager implements Logic {
             Person target = pendingDelete;
             pendingDelete = null;
             return commandText.equals("y") || commandText.equals("Y")
-                    ? executeAtomicCommand(DeleteCommand.forResolvedPerson(target))
+                    ? executeAtomicCommand(DeleteCommand.createForResolvedPerson(target))
                     : new CommandResult(MESSAGE_DELETE_CANCELLED);
         }
 
@@ -82,7 +82,7 @@ public class LogicManager implements Logic {
             }
             Person target = deleteCommand.resolvePerson(model);
             pendingDelete = target;
-            return new CommandResult(DeleteCommand.confirmationPrompt(target));
+            return new CommandResult(DeleteCommand.formatConfirmationPrompt(target));
         }
 
         if (command instanceof AddCommand || command instanceof EditCommand || command instanceof ClearCommand

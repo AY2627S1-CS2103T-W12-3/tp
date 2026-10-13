@@ -40,7 +40,7 @@ public class UniquePersonListTest {
     @Test
     public void contains_personWithSameIdentityFieldsInList_returnsTrue() {
         uniquePersonList.add(ALICE);
-        Person editedAlice = new PersonBuilder(ALICE).withAddress(VALID_ADDRESS_BOB).withTags(VALID_TAG_HUSBAND)
+        Person editedAlice = new PersonBuilder(ALICE).setAddress(VALID_ADDRESS_BOB).setTags(VALID_TAG_HUSBAND)
                 .build();
         assertTrue(uniquePersonList.contains(editedAlice));
     }
@@ -59,21 +59,21 @@ public class UniquePersonListTest {
     @Test
     public void add_sameNameWithDistinctPhoneAndEmail_throwsDuplicatePersonException() {
         uniquePersonList.add(ALICE);
-        Person differentAlice = new PersonBuilder(BOB).withName("  aLiCe pAuLiNe  ").build();
+        Person differentAlice = new PersonBuilder(BOB).setName("  aLiCe pAuLiNe  ").build();
 
         assertThrows(DuplicatePersonException.class, () -> uniquePersonList.add(differentAlice));
-        assertEquals(List.of(ALICE), uniquePersonList.asUnmodifiableObservableList());
+        assertEquals(List.of(ALICE), uniquePersonList.getUnmodifiableObservableList());
     }
 
     @Test
     public void add_normalizedPhoneOrEmailDuplicate_throwsDuplicatePersonException() {
         uniquePersonList.add(ALICE);
-        Person samePhone = new PersonBuilder(BOB).withPhone("(9435) 1253").build();
-        Person sameEmail = new PersonBuilder(BOB).withEmail("ALICE@EXAMPLE.COM").build();
+        Person samePhone = new PersonBuilder(BOB).setPhone("(9435) 1253").build();
+        Person sameEmail = new PersonBuilder(BOB).setEmail("ALICE@EXAMPLE.COM").build();
 
         assertThrows(DuplicatePersonException.class, () -> uniquePersonList.add(samePhone));
         assertThrows(DuplicatePersonException.class, () -> uniquePersonList.add(sameEmail));
-        assertEquals(List.of(ALICE), uniquePersonList.asUnmodifiableObservableList());
+        assertEquals(List.of(ALICE), uniquePersonList.getUnmodifiableObservableList());
     }
 
     @Test
@@ -103,7 +103,7 @@ public class UniquePersonListTest {
     @Test
     public void setPerson_editedPersonHasSameIdentity_success() {
         uniquePersonList.add(ALICE);
-        Person editedAlice = new PersonBuilder(ALICE).withAddress(VALID_ADDRESS_BOB).withTags(VALID_TAG_HUSBAND)
+        Person editedAlice = new PersonBuilder(ALICE).setAddress(VALID_ADDRESS_BOB).setTags(VALID_TAG_HUSBAND)
                 .build();
         uniquePersonList.setPerson(ALICE, editedAlice);
         UniquePersonList expectedUniquePersonList = new UniquePersonList();
@@ -182,19 +182,19 @@ public class UniquePersonListTest {
 
     @Test
     public void setPersons_listWithDuplicateNames_throwsDuplicatePersonException() {
-        Person differentAlice = new PersonBuilder(BOB).withName("alice pauline").build();
+        Person differentAlice = new PersonBuilder(BOB).setName("alice pauline").build();
         assertThrows(DuplicatePersonException.class, () ->
                 uniquePersonList.setPersons(List.of(ALICE, differentAlice)));
     }
 
     @Test
-    public void asUnmodifiableObservableList_modifyList_throwsUnsupportedOperationException() {
+    public void getUnmodifiableObservableList_modifyList_throwsUnsupportedOperationException() {
         assertThrows(UnsupportedOperationException.class, ()
-                -> uniquePersonList.asUnmodifiableObservableList().remove(0));
+                -> uniquePersonList.getUnmodifiableObservableList().remove(0));
     }
 
     @Test
-    public void toStringMethod() {
-        assertEquals(uniquePersonList.asUnmodifiableObservableList().toString(), uniquePersonList.toString());
+    public void checkToStringMethod() {
+        assertEquals(uniquePersonList.getUnmodifiableObservableList().toString(), uniquePersonList.toString());
     }
 }

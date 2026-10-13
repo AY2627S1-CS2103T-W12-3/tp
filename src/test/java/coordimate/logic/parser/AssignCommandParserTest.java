@@ -70,6 +70,6 @@ public class AssignCommandParserTest {
     }
 
     private static AssignCommand assign(String eventName, Integer... oneBasedIndexes) {
-        return new AssignCommand(eventName, Arrays.stream(oneBasedIndexes).map(Index::fromOneBased).toList());
+        return new AssignCommand(eventName, Arrays.stream(oneBasedIndexes).map(Index::createFromOneBased).toList());
     }
 }

@@ -22,7 +22,7 @@ public class EventTest {
     private final Name bernice = new Name("Bernice Yu");
 
     @Test
-    public void constructor_noMembers_emptyMemberList() {
+    public void construct_noMembers_emptyMemberList() {
         Event event = new Event("Concert", date, time);
         assertEquals(List.of(), event.getMembers());
         assertFalse(event.hasMember(alex));
@@ -30,7 +30,7 @@ public class EventTest {
     }
 
     @Test
-    public void constructor_members_preservesOrderAndCannotBeModified() {
+    public void construct_members_preservesOrderAndCannotBeModified() {
         List<Name> source = new ArrayList<>(List.of(bernice, alex));
         Event event = new Event("Concert", date, time, source);
         source.clear();
@@ -42,7 +42,7 @@ public class EventTest {
     }
 
     @Test
-    public void constructor_invalidMembers_rejected() {
+    public void construct_invalidMembers_rejected() {
         assertThrows(NullPointerException.class, () -> new Event("Concert", date, time, null));
         assertThrows(NullPointerException.class, () -> new Event("Concert", date, time, Arrays.asList(alex, null)));
         assertEquals(Event.MESSAGE_DUPLICATE_MEMBER, assertThrows(IllegalArgumentException.class, () ->
@@ -50,7 +50,7 @@ public class EventTest {
     }
 
     @Test
-    public void identity_differentMembers_sameEventButNotEqual() {
+    public void checkIdentity_differentMembers_sameEventButNotEqual() {
         Event event = new Event("Concert", date, time, List.of(alex, bernice));
         Event reordered = new Event("Concert", date, time, List.of(bernice, alex));
         Event noMembers = new Event("Concert", date, time);
@@ -63,7 +63,7 @@ public class EventTest {
     }
 
     @Test
-    public void constructor_nameIsTrimmed_emptyNameRejected() {
+    public void construct_nameIsTrimmed_emptyNameRejected() {
         assertEquals("Final Concert", new Event("  Final Concert  ", date, time).getName());
         assertThrows(IllegalArgumentException.class, () -> new Event(" \t\n", date, time));
         assertThrows(NullPointerException.class, () -> new Event(null, date, time));
@@ -72,7 +72,7 @@ public class EventTest {
     }
 
     @Test
-    public void identity_sameNameDifferentTimes_isDuplicate() {
+    public void checkIdentity_sameNameDifferentTimes_isDuplicate() {
         Event event = new Event("Concert", date, time);
         Event differentTimes = new Event("Concert", date, date);
         assertTrue(event.isSameEvent(differentTimes));
@@ -84,7 +84,7 @@ public class EventTest {
     }
 
     @Test
-    public void identity_sameNameDifferentCase_isDuplicateAndPreservesCase() {
+    public void checkIdentity_sameNameDifferentCase_isDuplicateAndPreservesCase() {
         Event event = new Event("Fair", date, time);
         for (String name : new String[] {"fair", "FAIR", "fAiR"}) {
             Event duplicate = new Event(name, date, date);
@@ -96,7 +96,7 @@ public class EventTest {
     }
 
     @Test
-    public void eventTime_validValues_preserveOptionalTime() {
+    public void createEventTime_validValues_preserveOptionalTime() {
         for (String value : new String[] {"29-02-2024", "09-10-2026", "08-08-2026 00:00", "08-08-2026 23:59"}) {
             assertTrue(EventTime.isValidTime(value));
             assertEquals(value, new EventTime(" " + value + " ").toString());
@@ -107,7 +107,7 @@ public class EventTest {
     }
 
     @Test
-    public void eventTime_invalidValues_rejected() {
+    public void createEventTime_invalidValues_rejected() {
         for (String value : new String[] {"", " ", "29-02-2026", "31-04-2026", "08-13-2026",
             "8-08-2026", "08-8-2026", "08-08-26", "2026-08-08", "15:00", "08-08-2026 24:00",
             "08-08-2026 15:60", "08-08-2026 3:00", "08-08-2026 15:00:00", "08-08-2026  15:00"}) {
@@ -118,7 +118,7 @@ public class EventTest {
     }
 
     @Test
-    public void constructor_startAfterEnd_rejected() {
+    public void construct_startAfterEnd_rejected() {
         String[][] reversedTimes = {
             {"08-08-2026 18:00", "08-08-2026 15:00"},
             {"10-10-2026", "09-10-2026"},
@@ -137,7 +137,7 @@ public class EventTest {
     }
 
     @Test
-    public void constructor_orderedOrEqualTimes_accepted() {
+    public void construct_orderedOrEqualTimes_accepted() {
         String[][] validTimes = {
             {"08-08-2026 15:00", "08-08-2026 18:00"},
             {"08-08-2026 15:00", "08-08-2026 15:00"},
@@ -159,21 +159,21 @@ public class EventTest {
     }
 
     @Test
-    public void constructor_noAttendance_emptyAttendanceRecord() {
+    public void construct_noAttendance_emptyAttendanceRecord() {
         Event event = new Event("Concert", date, time, List.of(alex));
         assertEquals(Map.of(), event.getAttendanceRecord());
         assertTrue(event.getAttendance(alex).isEmpty());
     }
 
     @Test
-    public void constructor_attendanceForUnassignedMember_rejected() {
+    public void construct_attendanceForUnassignedMember_rejected() {
         Map<Name, AttendanceStatus> attendance = Map.of(bernice, AttendanceStatus.PRESENT);
         assertEquals(Event.MESSAGE_UNASSIGNED_ATTENDANCE, assertThrows(IllegalArgumentException.class, () ->
                 new Event("Concert", date, time, List.of(alex), attendance)).getMessage());
     }
 
     @Test
-    public void constructor_attendanceForAssignedMembers_accepted() {
+    public void construct_attendanceForAssignedMembers_accepted() {
         Map<Name, AttendanceStatus> attendance = Map.of(alex, AttendanceStatus.PRESENT,
                 bernice, AttendanceStatus.ABSENT);
         Event event = new Event("Concert", date, time, List.of(alex, bernice), attendance);
@@ -182,9 +182,9 @@ public class EventTest {
     }
 
     @Test
-    public void withAttendance_assignedMember_returnsUpdatedCopy() {
+    public void copyWithAttendance_assignedMember_returnsUpdatedCopy() {
         Event event = new Event("Concert", date, time, List.of(alex, bernice));
-        Event updated = event.withAttendance(alex, AttendanceStatus.PRESENT);
+        Event updated = event.copyWithAttendance(alex, AttendanceStatus.PRESENT);
 
         assertTrue(event.getAttendance(alex).isEmpty());
         assertEquals(AttendanceStatus.PRESENT, updated.getAttendance(alex).get());
@@ -193,33 +193,33 @@ public class EventTest {
     }
 
     @Test
-    public void withAttendance_overwritesPreviousStatus() {
+    public void copyWithAttendance_overwritesPreviousStatus() {
         Event event = new Event("Concert", date, time, List.of(alex))
-                .withAttendance(alex, AttendanceStatus.ABSENT);
-        Event updated = event.withAttendance(alex, AttendanceStatus.PRESENT);
+                .copyWithAttendance(alex, AttendanceStatus.ABSENT);
+        Event updated = event.copyWithAttendance(alex, AttendanceStatus.PRESENT);
         assertEquals(AttendanceStatus.PRESENT, updated.getAttendance(alex).get());
     }
 
     @Test
-    public void withAttendance_unassignedMember_throwsIllegalArgumentException() {
+    public void copyWithAttendance_unassignedMember_throwsIllegalArgumentException() {
         Event event = new Event("Concert", date, time, List.of(alex));
         assertEquals(Event.MESSAGE_UNASSIGNED_ATTENDANCE, assertThrows(IllegalArgumentException.class, () ->
-                event.withAttendance(bernice, AttendanceStatus.PRESENT)).getMessage());
+                event.copyWithAttendance(bernice, AttendanceStatus.PRESENT)).getMessage());
     }
 
     @Test
-    public void withAttendance_nullArguments_throwsNullPointerException() {
+    public void copyWithAttendance_nullArguments_throwsNullPointerException() {
         Event event = new Event("Concert", date, time, List.of(alex));
-        assertThrows(NullPointerException.class, () -> event.withAttendance(null, AttendanceStatus.PRESENT));
-        assertThrows(NullPointerException.class, () -> event.withAttendance(alex, null));
+        assertThrows(NullPointerException.class, () -> event.copyWithAttendance(null, AttendanceStatus.PRESENT));
+        assertThrows(NullPointerException.class, () -> event.copyWithAttendance(alex, null));
     }
 
     @Test
     public void equals_differentAttendance_notEqual() {
         Event event = new Event("Concert", date, time, List.of(alex));
-        Event withAttendance = event.withAttendance(alex, AttendanceStatus.PRESENT);
+        Event withAttendance = event.copyWithAttendance(alex, AttendanceStatus.PRESENT);
         assertNotEquals(event, withAttendance);
         assertEquals(withAttendance, new Event("Concert", date, time, List.of(alex))
-                .withAttendance(alex, AttendanceStatus.PRESENT));
+                .copyWithAttendance(alex, AttendanceStatus.PRESENT));
     }
 }

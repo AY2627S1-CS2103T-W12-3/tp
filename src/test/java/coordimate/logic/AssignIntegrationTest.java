@@ -35,7 +35,7 @@ public class AssignIntegrationTest {
     public void execute_assign_savedAndReloaded() throws Exception {
         ModelManager model = new ModelManager(getTypicalCoordiMate(), new UserPrefs());
         JsonCoordiMateStorage storage = new JsonCoordiMateStorage(temporaryFolder.resolve("data.json"));
-        Logic logic = newLogic(model, storage);
+        Logic logic = createLogic(model, storage);
         logic.execute(ADD);
         assertEquals("Assigned 2 member(s) to Final Concert.",
                 logic.execute("assign evn/final concert c/2 1").getFeedbackToUser());
@@ -48,7 +48,7 @@ public class AssignIntegrationTest {
     public void execute_filteredContactList_assignsDisplayedContact() throws Exception {
         ModelManager model = new ModelManager(getTypicalCoordiMate(), new UserPrefs());
         JsonCoordiMateStorage storage = new JsonCoordiMateStorage(temporaryFolder.resolve("data.json"));
-        Logic logic = newLogic(model, storage);
+        Logic logic = createLogic(model, storage);
         logic.execute(ADD);
         model.updateFilteredPersonList(person -> person.equals(CARL));
         logic.execute("assign evn/Final Concert c/1");
@@ -63,7 +63,7 @@ public class AssignIntegrationTest {
     public void execute_deleteAssignedContact_savedFileStillLoads() throws Exception {
         ModelManager model = new ModelManager(getTypicalCoordiMate(), new UserPrefs());
         JsonCoordiMateStorage storage = new JsonCoordiMateStorage(temporaryFolder.resolve("data.json"));
-        Logic logic = newLogic(model, storage);
+        Logic logic = createLogic(model, storage);
         logic.execute(ADD);
         logic.execute("assign evn/Final Concert c/1 2");
         logic.execute("delete 1");
@@ -76,7 +76,7 @@ public class AssignIntegrationTest {
     public void execute_saveFailure_modelAndFileUnchanged() throws Exception {
         ModelManager model = new ModelManager(getTypicalCoordiMate(), new UserPrefs());
         Path path = temporaryFolder.resolve("data.json");
-        newLogic(model, new JsonCoordiMateStorage(path)).execute(ADD);
+        createLogic(model, new JsonCoordiMateStorage(path)).execute(ADD);
         CoordiMate before = new CoordiMate(model.getCoordiMate());
         String beforeFile = Files.readString(path);
         JsonCoordiMateStorage failingStorage = new JsonCoordiMateStorage(path) {
@@ -86,12 +86,12 @@ public class AssignIntegrationTest {
             }
         };
         assertEquals(AssignCommand.MESSAGE_SAVE_ERROR, assertThrows(CommandException.class, () ->
-                newLogic(model, failingStorage).execute("assign evn/Final Concert c/1")).getMessage());
+                createLogic(model, failingStorage).execute("assign evn/Final Concert c/1")).getMessage());
         assertEquals(before, model.getCoordiMate());
         assertEquals(beforeFile, Files.readString(path));
     }
 
-    private Logic newLogic(ModelManager model, JsonCoordiMateStorage storage) {
+    private Logic createLogic(ModelManager model, JsonCoordiMateStorage storage) {
         return new LogicManager(model, new StorageManager(storage,
                 new JsonUserPrefsStorage(temporaryFolder.resolve("prefs.json"))));
     }

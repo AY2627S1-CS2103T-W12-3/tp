@@ -78,13 +78,13 @@ class JsonSerializableCoordiMate {
      *
      * @throws IllegalValueException if there were any data constraints violated.
      */
-    public CoordiMate toModelType() throws IllegalValueException {
+    public CoordiMate convertToModelType() throws IllegalValueException {
         CoordiMate coordiMate = new CoordiMate();
         for (JsonAdaptedPerson jsonAdaptedPerson : persons) {
             if (jsonAdaptedPerson == null) {
                 throw new IllegalValueException("Persons list must not contain null entries.");
             }
-            Person person = jsonAdaptedPerson.toModelType();
+            Person person = jsonAdaptedPerson.convertToModelType();
             if (coordiMate.hasPerson(person)) {
                 throw new IllegalValueException(MESSAGE_DUPLICATE_PERSON);
             }
@@ -95,7 +95,7 @@ class JsonSerializableCoordiMate {
             if (jsonAdaptedTag == null) {
                 throw new IllegalValueException("Tags list must not contain null entries.");
             }
-            modelTags.add(jsonAdaptedTag.toModelType());
+            modelTags.add(jsonAdaptedTag.convertToModelType());
         }
         if (hasTagData) {
             try {
@@ -109,7 +109,7 @@ class JsonSerializableCoordiMate {
             if (jsonAdaptedEvent == null) {
                 throw new IllegalValueException("Events list must not contain null entries.");
             }
-            Event event = jsonAdaptedEvent.toModelType();
+            Event event = jsonAdaptedEvent.convertToModelType();
             if (coordiMate.hasEvent(event)) {
                 throw new IllegalValueException(MESSAGE_DUPLICATE_EVENT);
             }

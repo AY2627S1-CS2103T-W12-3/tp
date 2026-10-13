@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 public class RoleTest {
 
     @Test
-    public void constructor_invalidRole_throwsIllegalArgumentException() {
+    public void construct_invalidRole_throwsIllegalArgumentException() {
         assertThrows(NullPointerException.class, () -> new Role(null));
         assertThrows(IllegalArgumentException.class, () -> new Role(" "));
     }
@@ -34,7 +34,7 @@ public class RoleTest {
     }
 
     @Test
-    public void constructor_surroundingSpaces_trimmed() {
+    public void construct_surroundingSpaces_trimmed() {
         assertEquals("Logistics Lead", new Role("  Logistics Lead  ").getValue());
     }
 

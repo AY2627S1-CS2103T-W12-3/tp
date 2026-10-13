@@ -54,7 +54,7 @@ public class MembersIntegrationTest {
     }
 
     @Test
-    public void changesToAnotherEvent_shownListUnchanged() throws Exception {
+    public void changeToAnotherEvent_shownListUnchanged() throws Exception {
         logic.execute("members evn/Final Concert");
         logic.execute("assign evn/Fair c/1 2");
         logic.execute("unassign evn/Fair c/1");
@@ -62,7 +62,7 @@ public class MembersIntegrationTest {
     }
 
     @Test
-    public void shownEventRenamed_listKeepsMembers() throws Exception {
+    public void renameShownEvent_listKeepsMembers() throws Exception {
         logic.execute("members evn/Final Concert");
         logic.execute("editevent evn/final concert nevn/Grand Concert");
         assertEquals(List.of(ALICE, BENSON, CARL), model.getFilteredPersonList());
@@ -75,7 +75,7 @@ public class MembersIntegrationTest {
     }
 
     @Test
-    public void otherEventRenamedOrShownEventTimeEdited_listUnchanged() throws Exception {
+    public void renameOtherEventOrEditShownEventTime_listUnchanged() throws Exception {
         logic.execute("assign evn/Fair c/4");
         logic.execute("members evn/Final Concert");
         logic.execute("editevent evn/Fair nevn/Final Concert Two");
@@ -84,7 +84,7 @@ public class MembersIntegrationTest {
     }
 
     @Test
-    public void shownEventDeleted_listEmpties() throws Exception {
+    public void deleteShownEvent_listEmpties() throws Exception {
         logic.execute("members evn/Final Concert");
         logic.execute("deleteevent evn/Final Concert");
         assertEquals(List.of(), model.getFilteredPersonList());

@@ -145,7 +145,7 @@ public class EditEventCommandTest {
     }
 
     @Test
-    public void equalityAndNullArguments() {
+    public void checkEqualityAndNullArguments() {
         EditEventCommand command = new EditEventCommand("Final Concert", "New", null, null);
         assertEquals(command, new EditEventCommand("Final Concert", "New", null, null));
         assertEquals(command.hashCode(), new EditEventCommand("Final Concert", "New", null, null).hashCode());

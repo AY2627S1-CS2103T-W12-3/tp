@@ -100,7 +100,7 @@ final class EventContactsParser {
             if (!StringUtil.isNonZeroUnsignedInteger(token)) {
                 throw new ParseException(MESSAGE_INVALID_CONTACT_INDEXES);
             }
-            indexes.add(Index.fromOneBased(Integer.parseInt(token)));
+            indexes.add(Index.createFromOneBased(Integer.parseInt(token)));
         }
         return indexes;
     }

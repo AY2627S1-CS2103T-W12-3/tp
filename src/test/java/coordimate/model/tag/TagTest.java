@@ -10,12 +10,12 @@ import org.junit.jupiter.api.Test;
 public class TagTest {
 
     @Test
-    public void constructor_null_throwsNullPointerException() {
+    public void construct_null_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> new Tag(null));
     }
 
     @Test
-    public void constructor_invalidTagName_throwsIllegalArgumentException() {
+    public void construct_invalidTagName_throwsIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class, () -> new Tag(""));
         assertThrows(IllegalArgumentException.class, () -> new Tag("Publicity Team"));
     }
@@ -46,7 +46,7 @@ public class TagTest {
     }
 
     @Test
-    public void constructor_legacyLongTag_retainsName() {
+    public void construct_legacyLongTag_retainsName() {
         String legacyTagName = "1234567890123456789012345678901";
         assertEquals(legacyTagName, new Tag(legacyTagName).getTagName());
     }

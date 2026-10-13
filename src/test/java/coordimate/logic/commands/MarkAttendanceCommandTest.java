@@ -87,7 +87,7 @@ public class MarkAttendanceCommandTest {
     }
 
     @Test
-    public void equalityAndNullArguments() {
+    public void checkEqualityAndNullArguments() {
         MarkAttendanceCommand command = new MarkAttendanceCommand("Final Concert", alex, AttendanceStatus.PRESENT);
 
         assertEquals(command, new MarkAttendanceCommand("Final Concert", alex, AttendanceStatus.PRESENT));

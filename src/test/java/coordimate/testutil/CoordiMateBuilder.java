@@ -6,7 +6,7 @@ import coordimate.model.person.Person;
 /**
  * A utility class to help with building CoordiMate objects.
  * Example usage: <br>
- *     {@code CoordiMate coordiMate = new CoordiMateBuilder().withPerson("John", "Doe").build();}
+ *     {@code CoordiMate coordiMate = new CoordiMateBuilder().addPerson("John", "Doe").build();}
  */
 public class CoordiMateBuilder {
 
@@ -23,7 +23,7 @@ public class CoordiMateBuilder {
     /**
      * Adds a new {@code Person} to the {@code CoordiMate} that we are building.
      */
-    public CoordiMateBuilder withPerson(Person person) {
+    public CoordiMateBuilder addPerson(Person person) {
         coordiMate.addPerson(person);
         return this;
     }

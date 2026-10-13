@@ -54,7 +54,7 @@ public class MarkAttendanceCommand extends Command {
                     String.format(MESSAGE_ALREADY_MARKED, memberName, status, target.getName()));
         }
 
-        Event updated = target.withAttendance(memberName, status);
+        Event updated = target.copyWithAttendance(memberName, status);
         model.setEvent(target, updated);
 
         return new CommandResult(String.format(MESSAGE_SUCCESS, memberName, status, target.getName()));
