@@ -120,6 +120,7 @@ public class MarkAttendanceCommandTest {
         assertEquals(command, new MarkAttendanceCommand("final concert", alex, AttendanceStatus.PRESENT));
         assertEquals(command, new MarkAttendanceCommand("Final Concert", new Name("aLEX yEOH"),
                 AttendanceStatus.PRESENT));
+        assertNotEquals(command, new MarkAttendanceCommand("Orientation Camp", alex, AttendanceStatus.PRESENT));
         assertNotEquals(command, new MarkAttendanceCommand("Final Concert", bernice, AttendanceStatus.PRESENT));
         assertNotEquals(command, new MarkAttendanceCommand("Final Concert", alex, AttendanceStatus.ABSENT));
         assertNotEquals(command, null);
