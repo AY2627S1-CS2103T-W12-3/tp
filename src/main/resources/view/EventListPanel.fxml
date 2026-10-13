@@ -4,6 +4,7 @@
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.VBox?>
 
 <SplitPane fx:id="eventSplitPane" dividerPositions="0.5" styleClass="event-workspace"
@@ -32,7 +33,12 @@
         </VBox>
         <VBox spacing="5">
           <Label fx:id="memberCount" text="Members" styleClass="detail-caption" />
-          <Label fx:id="members" wrapText="true" styleClass="detail-value" />
+          <FlowPane hgap="12" vgap="4">
+            <Label fx:id="presentCount" styleClass="attendance-present-text" />
+            <Label fx:id="absentCount" styleClass="attendance-absent-text" />
+            <Label fx:id="notMarkedCount" styleClass="attendance-unmarked-text" />
+          </FlowPane>
+          <VBox fx:id="members" spacing="8" />
         </VBox>
       </VBox>
       <Label fx:id="selectionHint" text="Add an event with addevent to see its details here."
