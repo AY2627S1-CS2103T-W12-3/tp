@@ -44,20 +44,21 @@ public class MarkAttendanceCommand extends Command {
                 .filter(event -> event.getName().equalsIgnoreCase(eventName)).findFirst()
                 .orElseThrow(() -> new CommandException(String.format(MESSAGE_EVENT_NOT_FOUND, eventName)));
 
-        if (!target.hasMember(memberName)) {
-            throw new CommandException(
-                    String.format(MESSAGE_MEMBER_NOT_ASSIGNED, memberName, target.getName()));
-        }
+        Name matchingMember = target.getMembers().stream()
+                .filter(member -> member.getFullName().equalsIgnoreCase(memberName.getFullName()))
+                .findFirst()
+                .orElseThrow(() -> new CommandException(
+                        String.format(MESSAGE_MEMBER_NOT_ASSIGNED, memberName, target.getName())));
 
-        if (target.getAttendance(memberName).map(status::equals).orElse(false)) {
+        if (target.getAttendance(matchingMember).map(status::equals).orElse(false)) {
             return new CommandResult(
-                    String.format(MESSAGE_ALREADY_MARKED, memberName, status, target.getName()));
+                    String.format(MESSAGE_ALREADY_MARKED, matchingMember, status, target.getName()));
         }
 
-        Event updated = target.copyWithAttendance(memberName, status);
+        Event updated = target.copyWithAttendance(matchingMember, status);
         model.setEvent(target, updated);
 
-        return new CommandResult(String.format(MESSAGE_SUCCESS, memberName, status, target.getName()));
+        return new CommandResult(String.format(MESSAGE_SUCCESS, matchingMember, status, target.getName()));
     }
 
     @Override
@@ -68,7 +69,8 @@ public class MarkAttendanceCommand extends Command {
         if (!(other instanceof MarkAttendanceCommand otherCommand)) {
             return false;
         }
-        return eventName.equalsIgnoreCase(otherCommand.eventName) && memberName.equals(otherCommand.memberName)
+        return eventName.equalsIgnoreCase(otherCommand.eventName)
+                && memberName.getFullName().equalsIgnoreCase(otherCommand.memberName.getFullName())
                 && status == otherCommand.status;
     }
 }
