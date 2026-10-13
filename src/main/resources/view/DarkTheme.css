@@ -555,6 +555,54 @@
     -fx-border-color: #515658;
 }
 
+.attendance-member-row {
+    -fx-alignment: center-left;
+    -fx-padding: 10 12;
+    -fx-background-color: #343839;
+    -fx-background-radius: 4;
+    -fx-border-color: #515658;
+    -fx-border-radius: 4;
+}
+
+.attendance-badge {
+    -fx-padding: 3 8;
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
+    -fx-border-width: 1;
+    -fx-font-family: "Segoe UI Semibold";
+    -fx-font-size: 13px;
+}
+
+.attendance-present {
+    -fx-background-color: #1b3b2e;
+    -fx-border-color: #3b9a68;
+    -fx-text-fill: #9be0b5;
+}
+
+.attendance-absent {
+    -fx-background-color: #46272a;
+    -fx-border-color: #b85d65;
+    -fx-text-fill: #f2a3aa;
+}
+
+.attendance-unmarked {
+    -fx-background-color: #303a3f;
+    -fx-border-color: #6e8189;
+    -fx-text-fill: #c7d3d8;
+}
+
+.attendance-present-text {
+    -fx-text-fill: #9be0b5;
+}
+
+.attendance-absent-text {
+    -fx-text-fill: #f2a3aa;
+}
+
+.attendance-unmarked-text {
+    -fx-text-fill: #c7d3d8;
+}
+
 .event-details-scroll, .event-details-scroll > .viewport {
     -fx-background-color: #383838;
     -fx-padding: 0;

@@ -293,7 +293,7 @@ Format: `members evn/EVENT_NAME`
 * `add` and `edit` show all contacts again afterwards, so that you can see the contact you changed.
 * Use `list` to show all contacts again.
 
-Selecting an event in the **Events** tab also shows its member names under **Members**, in the order they were assigned.
+Selecting an event in the **Events** tab also shows its members under **Members**, in the order they were assigned. Each member shows **Present**, **Absent**, or **Not marked** if attendance has not been recorded. The counts above the list show how many members have each status. They update as soon as attendance is successfully marked or changed with `markattendance`.
 
 Examples:
 

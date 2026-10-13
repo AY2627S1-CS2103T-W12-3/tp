@@ -3,8 +3,8 @@ package coordimate.ui;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.stream.Collectors;
 
+import coordimate.model.event.AttendanceStatus;
 import coordimate.model.event.Event;
 import coordimate.model.person.Name;
 import javafx.beans.binding.Bindings;
@@ -17,6 +17,8 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MultipleSelectionModel;
 import javafx.scene.control.SplitPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
@@ -55,7 +57,16 @@ public class EventListPanel extends UiPart<Region> {
     private Label memberCount;
 
     @FXML
-    private Label members;
+    private Label presentCount;
+
+    @FXML
+    private Label absentCount;
+
+    @FXML
+    private Label notMarkedCount;
+
+    @FXML
+    private VBox members;
 
     @FXML
     private Label selectionHint;
@@ -121,18 +132,72 @@ public class EventListPanel extends UiPart<Region> {
             endTime.setText(event.getEndTime().toString());
             duration.setText(formatDuration(event));
             memberCount.setText("Members (" + event.getMembers().size() + ")");
-            members.setText(formatMembers(event));
+            showMembers(event);
         }
     }
 
     /**
-     * Returns the event's member names, one per line in assignment order, or a hint when it has none.
+     * Shows each assigned member's attendance for the selected event.
      */
-    private String formatMembers(Event event) {
+    private void showMembers(Event event) {
+        updateAttendanceCounts(event);
+
+        members.getChildren().clear();
         if (event.getMembers().isEmpty()) {
-            return "No members assigned yet. Assign contacts with assign.";
+            members.getChildren().add(createEmptyMembersHint());
+            return;
         }
-        return event.getMembers().stream().map(Name::toString).collect(Collectors.joining("\n"));
+        for (int index = 0; index < event.getMembers().size(); index++) {
+            Name member = event.getMembers().get(index);
+            members.getChildren().add(createMemberRow(index + 1, member, event.getAttendance(member).orElse(null)));
+        }
+    }
+
+    private void updateAttendanceCounts(Event event) {
+        long present = event.getAttendanceRecord().values().stream()
+                .filter(status -> status == AttendanceStatus.PRESENT).count();
+        long absent = event.getAttendanceRecord().values().stream()
+                .filter(status -> status == AttendanceStatus.ABSENT).count();
+        presentCount.setText(present + " Present");
+        absentCount.setText(absent + " Absent");
+        notMarkedCount.setText((event.getMembers().size() - present - absent) + " Not marked");
+    }
+
+    private Label createEmptyMembersHint() {
+        Label hint = new Label("No members assigned yet. Assign contacts with assign.");
+        hint.setWrapText(true);
+        hint.getStyleClass().add("detail-value");
+        return hint;
+    }
+
+    private HBox createMemberRow(int number, Name member, AttendanceStatus status) {
+        Label name = new Label(number + ". " + member);
+        name.setWrapText(true);
+        name.setMinWidth(0);
+        name.getStyleClass().add("detail-value");
+        HBox.setHgrow(name, Priority.ALWAYS);
+
+        HBox row = new HBox(12, name, createStatusBadge(status));
+        row.getStyleClass().add("attendance-member-row");
+        return row;
+    }
+
+    private Label createStatusBadge(AttendanceStatus status) {
+        String text;
+        String styleClass;
+        if (status == null) {
+            text = "Not marked";
+            styleClass = "attendance-unmarked";
+        } else if (status == AttendanceStatus.PRESENT) {
+            text = "Present";
+            styleClass = "attendance-present";
+        } else {
+            text = "Absent";
+            styleClass = "attendance-absent";
+        }
+        Label badge = new Label(text);
+        badge.getStyleClass().addAll("attendance-badge", styleClass);
+        return badge;
     }
 
     /**
