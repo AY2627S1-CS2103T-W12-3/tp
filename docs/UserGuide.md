@@ -293,7 +293,7 @@ Format: `members evn/EVENT_NAME`
 * `add` and `edit` show all contacts again afterwards, so that you can see the contact you changed.
 * Use `list` to show all contacts again.
 
-Selecting an event in the **Events** tab also shows its member names under **Members**, in the order they were assigned.
+Selecting an event in the **Events** tab also shows its members under **Members**, in the order they were assigned. Each member shows **Present**, **Absent**, or **Not marked** if attendance has not been recorded. The counts above the list show how many members have each status. They update as soon as attendance is successfully marked or changed with `markattendance`.
 
 Examples:
 
@@ -314,6 +314,40 @@ If the event has no members, the contact list is empty: `Final Concert has no me
 | An unknown parameter is used. | `Unknown parameter. Example: members evn/Final Concert` |
 
 If an error occurs, the contact list stays as it was.
+
+### Marking attendance: `markattendance`
+
+Records whether a member assigned to an event was present or absent.
+
+Format: `markattendance evn/EVENT_NAME mem/MEMBER_NAME att/STATUS`
+
+* `EVENT_NAME` and `MEMBER_NAME` must match saved values, ignoring case.
+* `MEMBER_NAME` must be assigned to the event.
+* `MEMBER_NAME` must be at most 80 characters, contain at least one letter, and use only letters, spaces,
+  hyphens, apostrophes, or periods.
+* `STATUS` must be `present` or `absent`, ignoring case.
+* Marking a member again replaces their previous attendance status.
+
+Examples:
+
+* `markattendance evn/Final Concert mem/Alex Yeoh att/present` marks Alex Yeoh as present.
+* `markattendance evn/final concert mem/alex yeoh att/ABSENT` marks the same member as absent.
+
+Success: `Marked Alex Yeoh as present for Event Final Concert.`
+
+If the member already has the requested status, no changes are made:
+`Alex Yeoh is already marked as present for Event Final Concert. No changes were made.`
+
+| Condition | Error message |
+|---|---|
+| No saved event has the supplied name, ignoring case. | `Error! Event {EVENT_NAME} does not exist!` |
+| The supplied member is not assigned to the event, ignoring case. | `Error! {MEMBER_NAME} is not assigned to event {EVENT_NAME}!` |
+| The member name violates the constraints above. | `Invalid name. Example: n/Aisha Tan` |
+| `STATUS` is not `present` or `absent`, ignoring case. | `STATUS must be either "present" or "absent"!` |
+| The event name is empty. | `Event name must not be empty.` |
+| A required parameter is missing, or the member name is empty. | `Invalid command format!` followed by the command format |
+| A parameter is repeated. | `Each parameter may only be specified once.` |
+| An unknown parameter is used. | `Unknown parameter. Example: markattendance evn/Final Concert mem/Alice Tan att/present` |
 
 ### Listing all contacts: `list`
 
@@ -565,5 +599,6 @@ Action     | Format, Examples
 **Search** | `search KEYWORD`<br> e.g., `search James`, `search "Jurong West"`
 **List**   | `list`
 **Members** | `members evn/EVENT_NAME`<br> e.g., `members evn/Final Concert`
+**Mark attendance** | `markattendance evn/EVENT_NAME mem/MEMBER_NAME att/STATUS`<br> e.g., `markattendance evn/Final Concert mem/Alex Yeoh att/present`
 **Unassign** | `unassign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...`<br> e.g., `unassign evn/Final Concert c/2 3`
 **Help**   | `help`
