@@ -1,0 +1,73 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+
+box Logic LOGIC_COLOR_T1
+participant ":LogicManager" as LogicManager LOGIC_COLOR
+participant "c:AddEventCommand" as Command LOGIC_COLOR
+end box
+
+box Model MODEL_COLOR_T1
+participant "model:ModelManager" as Model MODEL_COLOR
+participant "candidate:ModelManager" as Candidate MODEL_COLOR
+end box
+
+box Storage STORAGE_COLOR_T1
+participant ":Storage" as Storage STORAGE_COLOR
+end box
+
+[-> LogicManager : execute("addevent ...")
+activate LogicManager
+
+LogicManager -> Storage : readCoordiMate()
+activate Storage
+
+Storage --> LogicManager
+deactivate Storage
+
+LogicManager -> Model : getCoordiMate()
+activate Model
+
+Model --> LogicManager : data
+deactivate Model
+
+create Candidate
+LogicManager -> Candidate : ModelManager(data, prefs)
+activate Candidate
+
+Candidate --> LogicManager
+deactivate Candidate
+
+LogicManager -> Command : execute(candidate)
+activate Command
+
+Command -> Candidate : addEvent(event)
+activate Candidate
+
+Candidate --> Command
+deactivate Candidate
+
+Command --> LogicManager : result
+deactivate Command
+
+LogicManager -> Candidate : getCoordiMate()
+activate Candidate
+
+Candidate --> LogicManager : newData
+deactivate Candidate
+
+LogicManager -> Storage : saveCoordiMate(newData)
+activate Storage
+
+Storage --> LogicManager
+deactivate Storage
+
+LogicManager -> Model : setCoordiMate(newData)
+activate Model
+
+Model --> LogicManager
+deactivate Model
+
+[<-- LogicManager : result
+deactivate LogicManager
+@enduml

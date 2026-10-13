@@ -13,7 +13,7 @@
 
 ## **Acknowledgements**
 
-* _{This project is based on the AddressBook-Level3 project created by the [SE-EDU initiative](https://se-education.org).}_
+* This project is based on the AddressBook-Level3 project created by the [SE-EDU initiative](https://se-education.org).
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -102,6 +102,14 @@ The sequence diagram below illustrates the interactions within the `Logic` compo
 **Note:** The lifeline for `DeleteCommandParser` should end at the destroy marker (X), but due to a limitation of PlantUML, the lifeline continues till the end of diagram.
 </box>
 
+<box type="info" seamless>
+
+**Note:** This diagram and the architecture sequence diagram above are simplified to show the general flow of a
+command. In the actual implementation, `delete` first asks the user for confirmation, and commands that change data
+are executed on a copy of the model and saved before the change is applied. Both are described in
+[Saving data atomically](#saving-data-atomically).
+</box>
+
 
 How the `Logic` component works:
 
@@ -167,99 +175,284 @@ Classes used by multiple components are in the `coordimate.commons` package.
 
 This section describes some noteworthy details on how certain features are implemented.
 
-### \[Proposed\] Undo/redo feature
+### Saving data atomically
 
-#### Proposed Implementation
+A command that changes data either takes effect in full, both in the app and in the data file, or not at all.
+This keeps the displayed data and the saved data identical even when the data file cannot be read or written,
+and meets the requirement that saved data is not lost if the app terminates unexpectedly.
 
-The proposed undo/redo mechanism is facilitated by `VersionedCoordiMate`. It extends `CoordiMate` with an undo/redo history, stored internally as a `coordiMateStateList` and `currentStatePointer`. Additionally, it implements the following operations:
+#### Implementation
 
-* `VersionedCoordiMate#commit()` -- Saves the current CoordiMate state in its history.
-* `VersionedCoordiMate#undo()` -- Restores the previous CoordiMate state from its history.
-* `VersionedCoordiMate#redo()` -- Restores a previously undone CoordiMate state from its history.
+Two mechanisms work together.
 
-These operations are exposed in the `Model` interface as `Model#commitCoordiMate()`, `Model#undoCoordiMate()` and `Model#redoCoordiMate()` respectively.
+**1. Commands run on a copy of the model.** [`LogicManager#execute`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/logic/LogicManager.java)
+passes every command that changes data to `LogicManager#executeAtomicCommand`. These are `AddCommand`, `EditCommand`,
+`DeleteCommand`, `ClearCommand`, `AddEventCommand`, `EditEventCommand`, `DeleteEventCommand`, `AssignCommand`,
+`UnassignCommand`, `MarkAttendanceCommand`, and the tag commands that extend `MutatingTagCommand`.
 
-Given below is an example usage scenario and how the undo/redo mechanism behaves at each step.
+`executeAtomicCommand` does the following:
 
-Step 1. The user launches the application for the first time. The `VersionedCoordiMate` will be initialized with the initial CoordiMate state, and the `currentStatePointer` pointing to that single state.
+1. It calls `Storage#readCoordiMate()` to check that the existing data file can still be loaded. If it cannot,
+   the command is rejected with a load error and the file is left untouched, so that the user can repair it.
+   A missing data file is not an error.
+1. It creates a second `ModelManager`, the _candidate_, from a copy of the live model's data. The candidate's
+   filtered contact list is set to show the same contacts as the live displayed list, so that a contact index
+   typed by the user refers to the same contact in both models.
+1. It executes the command on the candidate. If the command fails, the candidate is discarded.
+1. It saves the candidate's data with `Storage#saveCoordiMate`. If saving fails, the command is rejected with a
+   save error such as `Event could not be saved. No changes were made.` and the candidate is discarded.
+1. Only then does it call `Model#setCoordiMate` to replace the live model's data with the candidate's data,
+   which updates the UI.
 
-<puml src="diagrams/UndoRedoState0.puml" alt="UndoRedoState0" />
+The live model is not touched until step 5, so a failure at any earlier step leaves the app exactly as it was.
 
-Step 2. The user executes the `delete 5` command to delete the 5th person in CoordiMate. The `delete` command calls `Model#commitCoordiMate()`, causing the modified CoordiMate state to be saved in the `coordiMateStateList`, and the `currentStatePointer` is shifted to the newly inserted state.
+The sequence diagram below shows these steps for an `addevent` command that succeeds. Parsing is omitted.
 
-<puml src="diagrams/UndoRedoState1.puml" alt="UndoRedoState1" />
+<puml src="diagrams/AtomicCommandSequenceDiagram.puml" alt="Interactions when a command that changes data is executed" />
 
-Step 3. The user executes `add n/David …​` to add a new person. The `add` command also calls `Model#commitCoordiMate()`, causing another modified CoordiMate state to be saved into the `coordiMateStateList`.
+The activity diagram below summarises the possible outcomes.
 
-<puml src="diagrams/UndoRedoState2.puml" alt="UndoRedoState2" />
+<puml src="diagrams/AtomicCommandActivityDiagram.puml" width="450" />
+
+After committing, `LogicManager` adjusts the displayed contact list where needed: `add` and `edit` show all
+contacts again so that the changed contact is visible, and renaming an event whose members are being shown keeps
+that view on the renamed event (see [Keeping events in sync with contacts](#keeping-events-in-sync-with-contacts)).
+
+**2. The data file is replaced in one step.**
+[`JsonCoordiMateStorage#saveCoordiMate`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/storage/JsonCoordiMateStorage.java)
+writes the new data to a temporary file named `coordimate-*.tmp` in the same folder as the data file, then moves it
+over the data file using `StandardCopyOption.ATOMIC_MOVE`. The data file therefore always holds either the complete
+old data or the complete new data. The temporary file is deleted if anything fails.
+
+**Deleting a contact** adds a confirmation step. For a `delete` command, `LogicManager` checks that the data file
+can be loaded, resolves the contact, stores it in its `pendingDelete` field, and returns a confirmation prompt.
+The next input is treated as the answer, not as a command: `y` or `Y` runs the deletion through
+`executeAtomicCommand`, and any other input cancels it.
+
+**Commands that do not change data**, such as `list`, `search`, `filter`, `members`, and `listtags`, are executed
+directly on the live model. As in AddressBook-Level3, `LogicManager` still saves the model afterwards. This has two
+consequences that developers should be aware of:
+
+* If the data file is invalid, such a command replaces it with the data currently in the app.
+* If the data file cannot be written, such a command reports a save error even though it changed no data.
+
+#### Design considerations
+
+**Aspect: How a command is prevented from taking effect when saving fails**
+
+* **Alternative 1 (current choice):** Execute the command on a copy of the model, save the copy, then replace the
+  live model's data.
+  * Pros: Works for every command without command-specific code. The UI never shows a change that was not saved.
+  * Cons: Copies all data for each command, which is acceptable for the expected 250 contacts. Each new command
+    that changes data must be added to the list in `LogicManager#execute`.
+
+* **Alternative 2:** Execute the command on the live model, and restore a snapshot if saving fails.
+  * Pros: No copy is needed when saving succeeds.
+  * Cons: The UI observes the model, so it briefly shows a change that is then reverted.
+
+* **Alternative 3:** Have each command undo its own change if saving fails.
+  * Pros: Uses the least memory.
+  * Cons: Every command needs correct undo logic, which is easy to get wrong.
+
+### Event attendance
+
+Attendance records whether each member of an event was present or absent.
+
+#### Implementation
+
+<puml src="diagrams/EventClassDiagram.puml" width="450" />
+
+An [`Event`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/event/Event.java) is immutable. It stores:
+
+* its members as a `List<Name>` of contact names, in the order they were assigned.
+* its attendance as a `Map<Name, AttendanceStatus>`, where `AttendanceStatus` is an enumeration of `PRESENT` and
+  `ABSENT`. A member with no entry in the map has not been marked.
+
+The `Event` constructor rejects an attendance record that contains a name which is not a member, so attendance can
+never exist for someone who is not assigned to the event.
+
+The `markattendance` command works as follows:
+
+1. `MarkAttendanceCommandParser` checks that `evn/`, `mem/`, and `att/` each appear exactly once, converts the
+   status with `AttendanceStatus#fromString`, and validates the member name with `ParserUtil#parseName`.
+1. `MarkAttendanceCommand#execute` finds the event and then the member, both ignoring case. It uses the member's
+   name as stored in the event, so that feedback and the attendance record use the saved capitalisation.
+1. If the member already has the requested status, the command reports that no changes were made.
+1. Otherwise it calls `Event#withAttendance`, which returns a copy of the event with the member's status set, and
+   replaces the event with `Model#setEvent`.
+
+The command changes data, so it runs through `executeAtomicCommand` as described above.
+
+Other commands keep the attendance record consistent with the members:
+
+| Change | Effect on attendance |
+|---|---|
+| `assign` adds members | Existing attendance is kept. New members are not marked. |
+| `unassign` removes members | The removed members' attendance is removed. |
+| `editevent` renames or reschedules the event | Attendance is kept. |
+| `edit` renames a contact | The contact's attendance moves to the new name in every event. |
+| `delete` deletes a contact | The contact's attendance is removed from every event. |
+
+In the data file, [`JsonAdaptedEvent`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/storage/JsonAdaptedEvent.java)
+stores attendance as an `attendance` object that maps each member's name to `"present"` or `"absent"`. A file with
+no `attendance` field loads with no attendance recorded, so files saved by earlier versions still load. A file is
+rejected as invalid if a status is neither value or if a name in `attendance` is not in the event's `members`.
+
+`EventListPanel` shows **Present**, **Absent**, or **Not marked** beside each member of the selected event, and
+the number of members with each status.
+
+#### Design considerations
+
+**Aspect: Where attendance is stored**
+
+* **Alternative 1 (current choice):** Each `Event` stores a map from member name to status.
+  * Pros: An event and its attendance are saved, copied, and replaced as one unit, so they cannot disagree.
+    Removing a member and their attendance is a single change.
+  * Cons: A contact's attendance across events can only be found by looking through every event.
+
+* **Alternative 2:** Store attendance records in a separate list, each referring to an event and a contact.
+  * Pros: Makes it easy to query one contact's attendance across all events.
+  * Cons: Every change to an event or contact must also update the separate list, or records are left behind.
+
+**Aspect: How "not marked" is represented**
+
+* **Alternative 1 (current choice):** A member with no entry in the map is not marked.
+  * Pros: Newly assigned members need no extra data, and older data files load without conversion.
+  * Cons: Code that counts statuses must derive the not-marked count from the members.
+
+* **Alternative 2:** Add a third `NOT_MARKED` status and give every member an entry.
+  * Pros: Every member has an explicit status.
+  * Cons: Every command that adds a member must also add an entry, and older data files would need converting.
+
+### Filtering contacts
+
+The `filter` command lists the contacts that match every given `FIELD/VALUE` pair, where the field is `tag`,
+`event`, or `organisation`.
+
+#### Implementation
+
+Filtering is split into parsing, which does not need saved data, and resolving, which does.
+
+**Parsing.** [`FilterCommandParser`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/logic/parser/FilterCommandParser.java)
+turns the arguments into a list of [`FilterCriterion`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/person/FilterCriterion.java)
+records, each holding a [`FilterField`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/person/FilterField.java)
+and the value as typed.
+
+1. It finds every `FIELD/` token, which is a run of letters followed by `/` at the start of the arguments or after
+   a space. A token is ignored if an odd number of quotation marks comes before it, since it is then inside a
+   quoted value.
+1. The value of each field is the text up to the next token. Surrounding quotation marks are removed.
+1. The field name is matched to a `FilterField`, ignoring case.
+
+An unclosed quotation mark is rejected only when a `FIELD/` token follows it, because it is then unclear where the
+value ends. With no token after it, the quotation mark is kept as part of the value, since saved names may contain
+one. For example, `filter event/"Cali` matches an event named `"Cali`.
+
+**Resolving.** [`FilterCommand#execute`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/logic/commands/FilterCommand.java)
+turns each criterion into a `Predicate<Person>` using the model:
+
+| Field | The value must match, ignoring case | A contact matches if |
+|---|---|---|
+| `tag` | a tag in `Model#getTagList()` | it has that tag |
+| `event` | the name of a saved event | it is a member of that event |
+| `organisation` | the organisation of at least one saved contact | its organisation is that value |
+
+If a value matches nothing, the command throws a `CommandException` with `No matching value found.` before the
+displayed list is changed. This tells the user about a mistyped value instead of showing an empty list. Otherwise
+the predicates are combined with `Predicate#and` and passed to `Model#updateFilteredPersonList`.
+
+`filter` does not change data, so it is executed directly on the live model.
 
 <box type="info" seamless>
 
-**Note:** If a command fails its execution, it will not call `Model#commitCoordiMate()`, so the CoordiMate state will not be saved into the `coordiMateStateList`.
+**Note:** The `event` predicate holds the `Event` found when the command was executed. Since an `Event` is
+immutable, the filtered list does not follow later changes to that event's members until `filter` is run again.
+The `members` command differs: it uses `EventMembersPredicate`, which looks the event up each time it is tested.
 </box>
 
-Step 4. The user now decides that adding the person was a mistake, and decides to undo that action by executing the `undo` command. The `undo` command will call `Model#undoCoordiMate()`, which shifts the `currentStatePointer` once to the left and restores the previous CoordiMate state.
+To add a filter field, add a constant to `FilterField`, add a case to `FilterCommand#resolvePredicate`, and update
+`FilterCommandParser.MESSAGE_INVALID_FIELD`.
 
-<puml src="diagrams/UndoRedoState3.puml" alt="UndoRedoState3" />
+The `search` command is implemented separately. `SearchCommand` uses `ContactMatchesKeywordPredicate`, which tests
+whether a contact's name, phone, email, address, or organisation contains the keyword, ignoring case.
 
+#### Design considerations
 
-<box type="info" seamless>
+**Aspect: Syntax of a filter**
 
-**Note:** If the `currentStatePointer` is at index 0, pointing to the initial CoordiMate state, then there are no previous states to restore. The `undo` command uses `Model#canUndoCoordiMate()` to check if this is the case. If so, it will return an error to the user rather
-than attempting to perform the undo.
-</box>
+* **Alternative 1 (current choice):** Full field names, as in `filter tag/EXCO event/Final Concert`.
+  * Pros: The fields are self-explanatory, and a field is added by extending one enumeration.
+  * Cons: Differs from the short prefixes of other commands, such as `t/`.
 
-The following sequence diagram shows how an undo operation goes through the `Logic` component:
+* **Alternative 2:** Reuse the existing prefixes, as in `filter t/EXCO evn/Final Concert`.
+  * Pros: Consistent with other commands.
+  * Cons: Some prefixes would mean different things in different commands, and organisation would need `o/`,
+    which is easy to confuse with other single-letter prefixes.
 
-<puml src="diagrams/UndoSequenceDiagram-Logic.puml" alt="UndoSequenceDiagram-Logic" />
+**Aspect: What happens when a value does not exist**
 
-<box type="info" seamless>
+* **Alternative 1 (current choice):** Reject the command with `No matching value found.`
+  * Pros: Distinguishes a mistyped value from a valid value that no contact has.
+  * Cons: The command must look the value up in the model before filtering.
 
-**Note:** The lifeline for `UndoCommand` should end at the destroy marker (X), but due to a limitation of PlantUML, it continues to the end of the diagram.
-</box>
+* **Alternative 2:** Show an empty list.
+  * Pros: Simpler to implement.
+  * Cons: The user cannot tell whether the value was mistyped.
 
-Similarly, how an undo operation goes through the `Model` component is shown below:
+### Keeping events in sync with contacts
 
-<puml src="diagrams/UndoSequenceDiagram-Model.puml" alt="UndoSequenceDiagram-Model" />
+An event refers to its members by contact `Name`, not by `Person` object. Contacts are replaced with new `Person`
+objects whenever they are edited, so a name is the stable way to refer to one. In exchange, the app must keep the
+names in events consistent with the saved contacts.
 
-The `redo` command does the opposite — it calls `Model#redoCoordiMate()`, which shifts the `currentStatePointer` once to the right and restores the previously undone CoordiMate state.
+#### Implementation
 
-<box type="info" seamless>
+**Renaming and deleting contacts.** [`CoordiMate`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/CoordiMate.java)
+updates events whenever a contact changes:
 
-**Note:** If the `currentStatePointer` is at index `coordiMateStateList.size() - 1`, pointing to the latest CoordiMate state, then there are no undone states to restore. The `redo` command uses `Model#canRedoCoordiMate()` to check if this is the case. If so, it will return an error to the user rather than attempting to perform the redo.
-</box>
+* `CoordiMate#setPerson` checks whether the contact's name has changed. If so, every event that lists the old name
+  is replaced with a copy that lists the new name in the same position and carries the contact's attendance over.
+* `CoordiMate#removePerson` replaces every event that lists the contact with a copy that has neither the name nor
+  its attendance.
 
-Step 5. The user then decides to execute the command `list`. Commands that do not modify CoordiMate data, such as `list`, will usually not call `Model#commitCoordiMate()`, `Model#undoCoordiMate()` or `Model#redoCoordiMate()`. Thus, the `coordiMateStateList` remains unchanged.
+Both use `CoordiMate#getEventsWithReplacedMember`, which builds all the updated events before anything is changed.
+As a safeguard, if an event already has a member with the new name, it throws `MemberNameConflictException` and no data is changed.
+`EditCommand` reports this as `Cannot rename this contact because an event already has a member with that name.
+No changes were made.`
 
-<puml src="diagrams/UndoRedoState4.puml" alt="UndoRedoState4" />
+**Loading data.** `JsonSerializableCoordiMate#toModelType` rejects a data file in which an event lists a member
+who is not a saved contact, with `Event members must refer to existing contacts.`
 
-Step 6. The user executes `clear`, which calls `Model#commitCoordiMate()`. Since the `currentStatePointer` is not pointing at the end of the `coordiMateStateList`, all states after the `currentStatePointer` will be purged. Reason: It no longer makes sense to redo the `add n/David …` command. This is the behavior that most modern desktop applications follow.
+**Showing an event's members.** `MembersCommand` filters the contact list with
+[`EventMembersPredicate`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/event/EventMembersPredicate.java).
+The predicate holds the event's name and the model's live event list, and looks the event up each time it is tested.
+The displayed members therefore follow later changes:
 
-<puml src="diagrams/UndoRedoState5.puml" alt="UndoRedoState5" />
+* After `unassign`, the removed member no longer matches and disappears from the list.
+* After `deleteevent`, no event has that name, so the list becomes empty.
+* After `editevent` renames the event, the old name would match nothing, so
+  `LogicManager#keepMembersViewAfterRename` replaces the predicate with one for the new name.
 
-The following activity diagram summarizes what happens when a user executes a new command:
+A filtered list re-tests its predicate only when the contact list changes. For this reason `CoordiMate#resetData`
+replaces the events **before** the contacts: when the contacts are replaced and the predicate is tested again, it
+already sees the new events.
 
-<puml src="diagrams/CommitActivityDiagram.puml" width="250" />
+#### Design considerations
 
-#### Design considerations:
+**Aspect: How an event refers to its members**
 
-**Aspect: How undo & redo execute:**
+* **Alternative 1 (current choice):** By contact name.
+  * Pros: Readable in the data file, where `members` is a list of names. Names are already unique among contacts.
+  * Cons: Renaming or deleting a contact must update every event, as described above.
 
-* **Alternative 1 (current choice):** Saves the entire CoordiMate state.
-  * Pros: Easy to implement.
-  * Cons: May have performance issues in terms of memory usage.
+* **Alternative 2:** By a reference to the `Person` object.
+  * Pros: No lookup is needed to get a member's details.
+  * Cons: `Person` is immutable and is replaced on every edit, so every event would need updating on any edit, not
+    only on a rename.
 
-* **Alternative 2:** Individual command knows how to undo/redo by
-  itself.
-  * Pros: Will use less memory (e.g. for `delete`, just save the person being deleted).
-  * Cons: We must ensure that the implementation of each individual command is correct.
-
-_{more aspects and alternatives to be added}_
-
-### \[Proposed\] Data archiving
-
-_{Explain here how the data archiving feature will be implemented}_
-
+* **Alternative 3:** By a generated contact ID.
+  * Pros: Renaming a contact would not affect events.
+  * Cons: Needs a new ID field and a change to the data file format, and makes the data file harder to edit by hand.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -626,8 +819,6 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
   * 4a1. CoordiMate displays the relevant error and does not update the displayed status.
   * The use case resumes from step 5.
 
-*{More to be added}*
-
 ### Non-Functional Requirements
 
 1.  Should work on any _mainstream OS_ (Windows, macOS, Linux) as long as it has Java `25` or above installed.
@@ -702,24 +893,159 @@ testers are expected to do more *exploratory* testing.
    1. Relaunch the app by double-clicking the JAR file.<br>
        Expected: The most recent window size and location are retained.
 
-1. _{ more test cases … }_
+1. Shutting down
 
-### Deleting a person
+   1. Test case: `exit`<br>
+      Expected: The app closes. Relaunching it shows the same data as before.
 
-1. Deleting a person while all persons are being shown
+<box type="info" seamless>
 
-   1. Prerequisites: List all persons using the `list` command, with multiple persons in the list.
+**Note:** Several tests below start from the sample contacts. To restore them, close the app, delete
+`data/coordimate.json` from the folder containing the JAR file, and relaunch the app.
+</box>
 
-   1. Test case: `delete 1`<br>
-      Expected: The first contact is deleted from the list. The status message shows the deleted contact's details.
+### Deleting a contact
+
+1. Deleting a contact while all contacts are being shown
+
+   1. Prerequisites: List all contacts using the `list` command, with multiple contacts in the list.
+
+   1. Test case: `delete 1`, then `n`<br>
+      Expected: The first contact's name, phone, email, and role are shown, followed by `Confirm deletion? [y/N]`. After `n`, the status message shows `Deletion cancelled. No changes were made.` and no contact is deleted.
+
+   1. Test case: `delete 1`, then `y`<br>
+      Expected: The first contact is deleted from the list. The status message shows `Contact deleted successfully: ` followed by the contact's name.
 
    1. Test case: `delete 0`<br>
-      Expected: No person is deleted. The status message shows error details.
+      Expected: No confirmation is requested and no contact is deleted. The status message shows `Invalid contact index. Example: delete 3`
 
-   1. Other incorrect delete commands to try: `delete`, `delete x`, `...` (where x is larger than the list size)<br>
-      Expected: Similar to previous.
+   1. Other incorrect delete commands to try: `delete`, `delete x`, `delete 99` (where the list has fewer than 99 contacts)<br>
+      Expected: No confirmation is requested and no contact is deleted. The status message shows error details.
 
-1. _{ more test cases … }_
+### Searching contacts
+
+1. Searching the sample contacts
+
+   1. Prerequisites: The sample contacts are loaded.
+
+   1. Test case: `search alex`<br>
+      Expected: Only `Alex Yeoh` is listed. The status message shows `1 contact(s) found matching "alex".`
+
+   1. Test case: `search serangoon`<br>
+      Expected: `Bernice Yu` and `David Li` are listed, matched by their addresses.
+
+   1. Test case: `search "Serangoon Gardens"`<br>
+      Expected: The same two contacts are listed.
+
+   1. Test case: `search 9927`<br>
+      Expected: Only `Bernice Yu` is listed, matched by phone number.
+
+   1. Test case: `search example.com`<br>
+      Expected: All six contacts are listed, matched by email address.
+
+   1. Test case: `search zzz`<br>
+      Expected: The list is empty. The status message shows `No contacts found matching "zzz".`
+
+   1. Test case: `search`<br>
+      Expected: The list is unchanged. The status message shows `Search keyword cannot be empty.` followed by the usage.
+
+1. Searching by organisation
+
+   1. Prerequisites: Run `add n/Mr Lim p/90801110 e/lim@example.com o/NUS Student Affairs r/University Staff t/UniversityStaff`.
+
+   1. Test case: `search student affairs`<br>
+      Expected: Only `Mr Lim` is listed.
+
+### Filtering contacts
+
+1. Filtering by tag, event, and organisation
+
+   1. Prerequisites: The sample contacts are loaded. Run these commands in order:<br>
+      `add n/Aisha Tan p/+6591234567 e/aisha@example.com r/Logistics t/EXCO`<br>
+      `add n/Mr Lim p/90801110 e/lim@example.com o/NUS Student Affairs r/University Staff t/UniversityStaff`<br>
+      `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`<br>
+      `assign evn/Final Concert c/1 7`
+
+   1. Test case: `filter tag/exco`<br>
+      Expected: Only `Aisha Tan` is listed. The status message shows `1 contact(s) found.`
+
+   1. Test case: `filter event/"Final Concert"`<br>
+      Expected: `Alex Yeoh` and `Aisha Tan` are listed.
+
+   1. Test case: `filter event/Final Concert tag/EXCO`<br>
+      Expected: Only `Aisha Tan` is listed, as she is the only contact matching both filters.
+
+   1. Test case: `filter organisation/NUS Student Affairs`<br>
+      Expected: Only `Mr Lim` is listed.
+
+   1. Test case: `filter organisation/NUS`<br>
+      Expected: The list is unchanged. The status message shows `No matching value found.`
+
+   1. Test case: `filter tag/Sponsor`<br>
+      Expected: The list is empty, as the tag exists but no contact has it. The status message shows `No contacts match the specified filters.`
+
+   1. Test case: `filter role/Logistics`<br>
+      Expected: The list is unchanged. The status message shows `Invalid filter field. Supported fields: tag, event, organisation.`
+
+   1. Other incorrect filter commands to try: `filter`, `filter tag/`, `filter event/"Final Concert tag/EXCO`<br>
+      Expected: The list is unchanged. The status message shows error details.
+
+### Adding an event
+
+1. Adding events
+
+   1. Prerequisites: No event named `Final Concert` or `Fair` exists.
+
+   1. Test case: `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`<br>
+      Expected: The **Events** tab opens with the new event selected. The status message shows `Created Event Final Concert. Start Time: 08-08-2026 15:00. End Time: 08-08-2026 18:00.`
+
+   1. Test case: `addevent evn/final concert st/09-10-2026 et/10-10-2026`<br>
+      Expected: No event is added. The status message shows `An event with this name already exists.`
+
+   1. Test case: `addevent evn/Fair st/10-10-2026 et/09-10-2026`<br>
+      Expected: No event is added. The status message shows `Start time must not be after end time.`
+
+   1. Test case: `addevent evn/Fair st/10/10/2026 et/11-10-2026`<br>
+      Expected: No event is added. The status message shows the required date and time format.
+
+   1. Other incorrect addevent commands to try: `addevent`, `addevent evn/Fair st/10-10-2026`, `addevent evn/Fair st/10-10-2026 st/10-10-2026 et/11-10-2026`<br>
+      Expected: No event is added. The status message shows error details.
+
+### Editing an event
+
+1. Editing an existing event
+
+   1. Prerequisites: Create an event using `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`. Select it in the **Events** tab.
+
+   1. Test case: `editevent evn/final concert st/08-08-2026 16:00 et/08-08-2026 19:00`<br>
+      Expected: The event's details show the new times. The status message shows `Edited Event Final Concert. Start Time: 08-08-2026 16:00. End Time: 08-08-2026 19:00.`
+
+   1. Test case: `editevent evn/Final Concert nevn/Grand Concert`<br>
+      Expected: The event is renamed to `Grand Concert` and keeps its times.
+
+   1. Test case: `editevent evn/Grand Concert st/09-08-2026`<br>
+      Expected: No change. The status message shows `Start time must not be after end time.`
+
+   1. Test case: `editevent evn/Gala nevn/Ball`<br>
+      Expected: No change. The status message shows `Event Gala does not exist.`
+
+   1. Other incorrect editevent commands to try: `editevent evn/Grand Concert`, `editevent evn/Grand Concert nevn/`<br>
+      Expected: No change. The status message shows error details.
+
+### Deleting an event
+
+1. Deleting an existing event
+
+   1. Prerequisites: An event named `Grand Concert` exists, as created in the previous section.
+
+   1. Test case: `deleteevent evn/Gala`<br>
+      Expected: No event is deleted. The status message shows `Event Gala does not exist.`
+
+   1. Test case: `deleteevent evn/grand concert`<br>
+      Expected: The event is removed from the **Events** tab. The status message shows `Deleted Event Grand Concert.`
+
+   1. Other incorrect deleteevent commands to try: `deleteevent`, `deleteevent evn/`<br>
+      Expected: No event is deleted. The status message shows error details.
 
 ### Assigning members to an event
 
@@ -812,10 +1138,132 @@ testers are expected to do more *exploratory* testing.
    1. Test case: `deleteevent evn/Grand Concert`, then `list`<br>
       Expected: The list becomes empty after the event is deleted, then shows all persons after `list`.
 
+### Marking attendance
+
+1. Marking and changing attendance
+
+   1. Prerequisites: The sample contacts are loaded and listed using `list`. Create an event using `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`, then run `assign evn/Final Concert c/1 2`. Select the event in the **Events** tab.
+
+   1. Test case: `markattendance evn/Final Concert mem/Alex Yeoh att/present`<br>
+      Expected: `Alex Yeoh` shows **Present**. The counts show 1 present, 0 absent, and 1 not marked. The status message shows `Marked Alex Yeoh as present for Event Final Concert.`
+
+   1. Test case: `markattendance evn/final concert mem/alex yeoh att/ABSENT`<br>
+      Expected: `Alex Yeoh` shows **Absent**. The counts show 0 present, 1 absent, and 1 not marked.
+
+   1. Test case: Repeat the previous command.<br>
+      Expected: No change. The status message shows `Alex Yeoh is already marked as absent for Event Final Concert. No changes were made.`
+
+   1. Test case: `markattendance evn/Final Concert mem/David Li att/present`<br>
+      Expected: No change. The status message shows `Error! David Li is not assigned to event Final Concert!`
+
+   1. Test case: `markattendance evn/Gala mem/Alex Yeoh att/present`<br>
+      Expected: No change. The status message shows `Error! Event Gala does not exist!`
+
+   1. Other incorrect markattendance commands to try: `markattendance evn/Final Concert mem/Alex Yeoh att/late`, `markattendance evn/Final Concert mem/Alex Yeoh`, `markattendance evn/Final Concert mem/Alex Yeoh att/present att/absent`<br>
+      Expected: No change. The status message shows error details.
+
+1. Keeping attendance in sync with members
+
+   1. Prerequisites: Continue from the previous test, with `Alex Yeoh` marked absent. List all contacts using `list`.
+
+   1. Test case: `assign evn/Final Concert c/3`<br>
+      Expected: The 3rd contact is added as **Not marked**. `Alex Yeoh` is still **Absent**.
+
+   1. Test case: `editevent evn/Final Concert et/08-08-2026 20:00`<br>
+      Expected: The end time changes. `Alex Yeoh` is still **Absent**.
+
+   1. Test case: `edit 1 n/Alex Tan`<br>
+      Expected: The event's members show `Alex Tan` in the same position, still **Absent**.
+
+   1. Test case: `unassign evn/Final Concert c/1`, then `assign evn/Final Concert c/1`<br>
+      Expected: `Alex Tan` is removed, then added again at the end of the members as **Not marked**.
+
+   1. Test case: Mark any member's attendance, then close and relaunch the app.<br>
+      Expected: The attendance is retained.
+
+### Managing tags
+
+1. Adding, renaming, and deleting tags
+
+   1. Prerequisites: The sample contacts are loaded and no custom tags have been created.
+
+   1. Test case: `listtags`<br>
+      Expected: The Tags view opens. The status message lists `EXCO, Sponsor, UniversityStaff, Logistics`.
+
+   1. Test case: `addtag t/Publicity`<br>
+      Expected: `Publicity` appears in the Tags view. The status message shows `Created tag: Publicity.`
+
+   1. Test case: `addtag t/publicity`<br>
+      Expected: No tag is added. The status message shows `This tag already exists.`
+
+   1. Test case: `addtag t/Event Crew`<br>
+      Expected: No tag is added. The status message shows `Tag names should be alphanumeric with no spaces.`
+
+   1. Test case: `edittag Publicity t/Media`<br>
+      Expected: The tag is renamed. The status message shows `Publicity successfully renamed to Media.`
+
+   1. Test case: `edit 1 at/Media`, then `edittag media t/Press`<br>
+      Expected: The 1st contact's details show the tag `Press`.
+
+   1. Test case: `deletetag t/press`<br>
+      Expected: The tag is removed from the Tags view and from the 1st contact. The status message shows `Press successfully deleted.`
+
+   1. Test case: `deletetag t/Nope`<br>
+      Expected: No tag is deleted. The status message shows `No such tag exists: Nope.`
+
+   1. Other incorrect tag commands to try: `addtag`, `addtag Publicity`, `edittag EXCO`, `deletetag EXCO`, `listtags 1`<br>
+      Expected: No change. The status message shows error details.
+
 ### Saving data
 
-1. Dealing with missing/corrupted data files
+<box type="warning" seamless>
 
-   1. _{Explain how to simulate missing or corrupted data files and state the expected behavior.}_
+**Caution:** These tests modify or remove the data file. Back up `data/coordimate.json` first if it holds data you
+want to keep.
+</box>
 
-1. _{ more test cases … }_
+1. Dealing with a missing data file
+
+   1. Prerequisites: The app is closed and `data/coordimate.json` exists.
+
+   1. Test case: Delete `data/coordimate.json`, then launch the app.<br>
+      Expected: The app starts with the sample contacts.
+
+   1. Test case: Run `list`, then check the `data` folder.<br>
+      Expected: `data/coordimate.json` has been created again.
+
+1. Dealing with a corrupted data file
+
+   1. Prerequisites: The app is closed and `data/coordimate.json` contains at least one contact. Keep a copy of the file.
+
+   1. Test case: Open `data/coordimate.json` in a text editor, delete the first `{`, save, then launch the app.<br>
+      Expected: The app starts with no contacts and no events.
+
+   1. Test case: Without closing the app, run `addevent evn/Test st/01-01-2027 et/01-01-2027`.<br>
+      Expected: No event is added. The status message shows `Contact data could not be loaded. Please check the local data file.` The data file is unchanged.
+
+   1. Test case: Close the app, put the `{` back, save, then launch the app.<br>
+      Expected: The original contacts and events are shown again.
+
+   1. Test case: Corrupt the file again as above, launch the app, then run `list`.<br>
+      Expected: The corrupted file is replaced with the app's empty data. Restore the copy of the file to get the original data back.
+
+1. Dealing with an event member who is not a contact
+
+   1. Prerequisites: The app is closed and `data/coordimate.json` contains an event with at least one member. Keep a copy of the file.
+
+   1. Test case: In the data file, change one name in an event's `members` list to a name that no contact has, save, then launch the app.<br>
+      Expected: The file is treated as invalid, so the app starts with no contacts and no events. Restore the copy of the file afterwards.
+
+1. Dealing with a failed save
+
+   1. Prerequisites: The app is running and `data/coordimate.json` exists. Make the data impossible to save: on Windows, open the properties of `data/coordimate.json` and tick **Read-only**; on macOS or Linux, run `chmod a-w data` in the folder containing the JAR file.
+
+   1. Test case: `addevent evn/Test st/01-01-2027 et/01-01-2027`<br>
+      Expected: No event is added and the **Events** tab is unchanged. The status message shows `Event could not be saved. No changes were made.`
+
+   1. Test case: `add n/Test Person p/91234567 e/testperson@example.com r/Member`<br>
+      Expected: No contact is added. The status message shows `Contact could not be saved. No changes were made.`
+
+   1. Test case: Undo the change made in the prerequisites (untick **Read-only**, or run `chmod u+w data`), then repeat the `addevent` command.<br>
+      Expected: The event is added.
