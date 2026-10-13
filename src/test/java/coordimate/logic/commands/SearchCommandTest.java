@@ -3,6 +3,7 @@ package coordimate.logic.commands;
 import static coordimate.logic.commands.CommandTestUtil.assertCommandSuccess;
 import static coordimate.testutil.TypicalPersons.ALICE;
 import static coordimate.testutil.TypicalPersons.BENSON;
+import static coordimate.testutil.TypicalPersons.DANIEL;
 import static coordimate.testutil.TypicalPersons.getTypicalCoordiMate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -21,6 +22,28 @@ public class SearchCommandTest {
 
     private final Model model = new ModelManager(getTypicalCoordiMate(), new UserPrefs());
     private final Model expectedModel = new ModelManager(getTypicalCoordiMate(), new UserPrefs());
+
+    @Test
+    public void execute_sharedNameSubstring_multipleContactsFound() {
+        String keyword = "eIeR";
+        ContactMatchesKeywordPredicate predicate = new ContactMatchesKeywordPredicate(keyword);
+        SearchCommand command = new SearchCommand(predicate, keyword);
+        expectedModel.updateFilteredPersonList(predicate);
+
+        assertCommandSuccess(command, model, String.format(SearchCommand.MESSAGE_SUCCESS, 2, keyword), expectedModel);
+        assertEquals(List.of(BENSON, DANIEL), model.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_previouslyFilteredList_searchesAllContacts() {
+        model.updateFilteredPersonList(new ContactMatchesKeywordPredicate("Alice"));
+        ContactMatchesKeywordPredicate predicate = new ContactMatchesKeywordPredicate("Benson");
+        expectedModel.updateFilteredPersonList(predicate);
+
+        assertCommandSuccess(new SearchCommand(predicate, "Benson"), model,
+                String.format(SearchCommand.MESSAGE_SUCCESS, 1, "Benson"), expectedModel);
+        assertEquals(List.of(BENSON), model.getFilteredPersonList());
+    }
 
     @Test
     public void equals() {
@@ -68,7 +91,10 @@ public class SearchCommandTest {
 
         expectedModel.updateFilteredPersonList(predicate);
 
-        assertTrue(expectedModel.getFilteredPersonList().contains(BENSON));
+        String expectedMessage = String.format(SearchCommand.MESSAGE_SUCCESS,
+                expectedModel.getFilteredPersonList().size(), keyword);
+        assertCommandSuccess(command, model, expectedMessage, expectedModel);
+        assertTrue(model.getFilteredPersonList().contains(BENSON));
     }
 
     @Test

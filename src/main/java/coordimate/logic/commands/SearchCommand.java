@@ -12,7 +12,10 @@ import coordimate.model.person.ContactMatchesKeywordPredicate;
 public class SearchCommand extends Command {
 
     public static final String COMMAND_WORD = "search";
-    public static final String MESSAGE_USAGE = "search KEYWORD";
+    public static final String MESSAGE_USAGE = COMMAND_WORD
+            + ": Lists contacts whose name, phone, email, or address contains the given keyword (case-insensitive).\n"
+            + "Parameters: KEYWORD (use spaces for a phrase; surrounding quotes are optional)\n"
+            + "Example: " + COMMAND_WORD + " jurong west";
     public static final String MESSAGE_SUCCESS = "%1$d contact(s) found matching \"%2$s\".";
     public static final String MESSAGE_NO_MATCHES = "No contacts found matching \"%1$s\".";
 
