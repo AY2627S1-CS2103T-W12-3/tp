@@ -121,6 +121,7 @@
         "assigning-members-to-an-event-assign": "Assigning members to an event: assign",
         "removing-members-from-an-event-unassign": "Removing members from an event: unassign",
         "viewing-members-of-an-event-members": "Viewing members of an event: members",
+        "marking-attendance-markattendance": "Marking attendance: markattendance",
         "listing-all-contacts-list": "Listing all contacts: list",
         "deleting-a-tag-deletetag": "Deleting a tag: deletetag",
         "editing-a-tag-edittag": "Editing a tag: edittag",
