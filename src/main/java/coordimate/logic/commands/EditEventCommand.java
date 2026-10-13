@@ -14,8 +14,9 @@ import coordimate.model.event.EventTime;
  */
 public class EditEventCommand extends Command {
     public static final String COMMAND_WORD = "editevent";
-    public static final String MESSAGE_USAGE =
-            "editevent evn/EVENT_NAME [nevn/NEW_EVENT_NAME] [st/NEW_START_TIME] [et/NEW_END_TIME]";
+    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Edits an event.\n"
+            + "Parameters: evn/EVENT_NAME [nevn/NEW_EVENT_NAME] [st/NEW_START_TIME] [et/NEW_END_TIME]\n"
+            + "Example: " + COMMAND_WORD + " evn/Final Concert st/08-08-2026 16:00";
     public static final String MESSAGE_SUCCESS = "Edited Event %s. Start Time: %s. End Time: %s.";
     public static final String MESSAGE_EVENT_NOT_FOUND = "Event %s does not exist.";
     public static final String MESSAGE_NOT_EDITED = "Please provide at least one field to edit.";

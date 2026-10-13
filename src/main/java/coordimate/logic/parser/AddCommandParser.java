@@ -14,9 +14,8 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
+import coordimate.logic.Messages;
 import coordimate.logic.commands.AddCommand;
 import coordimate.logic.parser.exceptions.ParseException;
 import coordimate.model.person.Address;
@@ -34,13 +33,13 @@ import coordimate.model.tag.Tag;
  * Parses the required and optional contact fields of an add command.
  */
 public class AddCommandParser implements Parser<AddCommand> {
-    public static final String MESSAGE_UNKNOWN_PARAMETER = "Unknown parameter. Example: r/Logistics";
+    public static final String MESSAGE_UNKNOWN_PARAMETER =
+            "Unknown parameter. Example: r/Logistics";
     public static final String MESSAGE_REPEATED_REQUIRED_PARAMETER =
-            "Each required parameter may only be specified once.";
+            Messages.MESSAGE_REPEATED_REQUIRED_PARAMETER;
     public static final String MESSAGE_EMPTY_REQUIRED_VALUE = "This field cannot be empty. Example: n/Aisha Tan";
     public static final String MESSAGE_INVALID_TAG = "Invalid tag. Example: t/Logistics";
 
-    private static final Pattern PARAMETER_PATTERN = Pattern.compile("(?<!\\S)([A-Za-z]+/)");
     private static final Set<String> ALLOWED_PREFIXES = Set.of(PREFIX_NAME.toString(), PREFIX_PHONE.toString(),
             PREFIX_EMAIL.toString(), PREFIX_ROLE.toString(), PREFIX_BIRTHDAY.toString(), PREFIX_ADDRESS.toString(),
             PREFIX_ORGANISATION.toString(), PREFIX_TAG.toString(), PREFIX_NOTE.toString());
@@ -48,7 +47,8 @@ public class AddCommandParser implements Parser<AddCommand> {
     @Override
     public AddCommand parse(String args) throws ParseException {
         requireNonNull(args);
-        rejectUnknownParameters(args);
+        PrefixParser.rejectUnknownParameters(args, PrefixParser.CONTACT_PARAMETER_PATTERN,
+                ALLOWED_PREFIXES, MESSAGE_UNKNOWN_PARAMETER);
         ArgumentMultimap arguments = ArgumentTokenizer.tokenize(args, PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL,
                 PREFIX_ROLE, PREFIX_BIRTHDAY, PREFIX_ADDRESS, PREFIX_ORGANISATION, PREFIX_TAG, PREFIX_NOTE);
         if (!hasRequiredPrefixes(arguments) || !arguments.getPreamble().isEmpty()) {
@@ -68,15 +68,6 @@ public class AddCommandParser implements Parser<AddCommand> {
         Note note = parseNote(arguments.getValue(PREFIX_NOTE).orElse(""));
         Set<Tag> tags = parseTags(arguments);
         return new AddCommand(new Person(name, phone, email, role, birthday, address, organisation, note, tags));
-    }
-
-    private static void rejectUnknownParameters(String args) throws ParseException {
-        Matcher matcher = PARAMETER_PATTERN.matcher(args);
-        while (matcher.find()) {
-            if (!ALLOWED_PREFIXES.contains(matcher.group())) {
-                throw new ParseException(MESSAGE_UNKNOWN_PARAMETER);
-            }
-        }
     }
 
     private static boolean hasRequiredPrefixes(ArgumentMultimap arguments) {

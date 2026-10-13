@@ -14,7 +14,9 @@ import coordimate.model.person.Name;
 public class MarkAttendanceCommand extends Command {
 
     public static final String COMMAND_WORD = "markattendance";
-    public static final String MESSAGE_USAGE = "markattendance evn/EVENT_NAME mem/MEMBER_NAME att/STATUS";
+    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Marks a member as present or absent.\n"
+            + "Parameters: evn/EVENT_NAME mem/MEMBER_NAME att/STATUS\n"
+            + "Example: " + COMMAND_WORD + " evn/Final Concert mem/Alice Tan att/present";
     public static final String MESSAGE_SUCCESS = "Marked %s as %s for Event %s.";
     public static final String MESSAGE_ALREADY_MARKED =
             "%s is already marked as %s for Event %s. No changes were made.";
