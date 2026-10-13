@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 
@@ -24,7 +23,6 @@ import coordimate.logic.commands.EditCommand.EditPersonDescriptor;
 import coordimate.logic.commands.EditTagCommand;
 import coordimate.logic.commands.ExitCommand;
 import coordimate.logic.commands.FilterCommand;
-import coordimate.logic.commands.FindCommand;
 import coordimate.logic.commands.HelpCommand;
 import coordimate.logic.commands.ListCommand;
 import coordimate.logic.commands.ListTagsCommand;
@@ -38,7 +36,6 @@ import coordimate.model.person.ContactMatchesKeywordPredicate;
 import coordimate.model.person.FilterCriterion;
 import coordimate.model.person.FilterField;
 import coordimate.model.person.Name;
-import coordimate.model.person.NameContainsKeywordsPredicate;
 import coordimate.model.person.Person;
 import coordimate.model.tag.Tag;
 import coordimate.testutil.EditPersonDescriptorBuilder;
@@ -147,11 +144,15 @@ public class CoordiMateParserTest {
     }
 
     @Test
-    public void parseCommand_find() throws Exception {
-        List<String> keywords = List.of("foo", "bar", "baz");
-        FindCommand command = (FindCommand) parser.parseCommand(
-                FindCommand.COMMAND_WORD + " " + keywords.stream().collect(Collectors.joining(" ")));
-        assertEquals(new FindCommand(new NameContainsKeywordsPredicate(keywords)), command);
+    public void parseCommand_removedCommand_throwsUnknownCommandException() {
+        assertThrows(ParseException.class, MESSAGE_UNKNOWN_COMMAND, () -> parser.parseCommand("find"));
+        assertThrows(ParseException.class, MESSAGE_UNKNOWN_COMMAND, () -> parser.parseCommand("find Alice"));
+    }
+
+    @Test
+    public void parseCommand_searchPhrase() throws Exception {
+        SearchCommand command = (SearchCommand) parser.parseCommand("search Alice Pauline");
+        assertEquals(new SearchCommand(new ContactMatchesKeywordPredicate("Alice Pauline"), "Alice Pauline"), command);
     }
 
     @Test

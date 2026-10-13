@@ -16,6 +16,7 @@ public class SearchCommandParserTest {
     public void parse_emptyArg_throwsParseException() {
         assertParseFailure(parser, "", SearchCommandParser.MESSAGE_EMPTY_KEYWORD);
         assertParseFailure(parser, "   ", SearchCommandParser.MESSAGE_EMPTY_KEYWORD);
+        assertParseFailure(parser, " \n \t ", SearchCommandParser.MESSAGE_EMPTY_KEYWORD);
     }
 
     @Test
@@ -29,6 +30,7 @@ public class SearchCommandParserTest {
         SearchCommand expected = new SearchCommand(new ContactMatchesKeywordPredicate("Alice"), "Alice");
         assertParseSuccess(parser, "Alice", expected);
         assertParseSuccess(parser, "  Alice  ", expected);
+        assertParseSuccess(parser, " \n \t Alice \t \n ", expected);
     }
 
     @Test
@@ -36,6 +38,7 @@ public class SearchCommandParserTest {
         SearchCommand expected = new SearchCommand(new ContactMatchesKeywordPredicate("Alice Pauline"),
                 "Alice Pauline");
         assertParseSuccess(parser, "\"Alice Pauline\"", expected);
+        assertParseSuccess(parser, "  Alice Pauline  ", expected);
     }
 
     @Test

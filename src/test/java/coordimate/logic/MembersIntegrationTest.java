@@ -91,8 +91,8 @@ public class MembersIntegrationTest {
     }
 
     @Test
-    public void renameAfterFind_listUnchanged() throws Exception {
-        logic.execute("find Kurz");
+    public void renameAfterSearch_listUnchanged() throws Exception {
+        logic.execute("search Kurz");
         logic.execute("editevent evn/Final Concert nevn/Grand Concert");
         assertEquals(List.of(CARL), model.getFilteredPersonList());
     }

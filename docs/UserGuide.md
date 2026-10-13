@@ -210,7 +210,7 @@ Assigns one or more contacts to an existing event as members and saves the chang
 Format: `assign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...`
 
 * `EVENT_NAME` must match a saved event name, ignoring case. Leading and trailing whitespace is removed.
-* `CONTACT_INDEX` refers to the index number shown in the displayed contact list. If the list is filtered (e.g. after `find`), the index refers to the filtered list. Use `list` to show everyone again. Separate several indexes with spaces. Each index **must be a positive integer** 1, 2, 3, ...
+* `CONTACT_INDEX` refers to the index number shown in the displayed contact list. If the list is filtered (e.g. after `search`), the index refers to the filtered list. Use `list` to show everyone again. Separate several indexes with spaces. Each index **must be a positive integer** 1, 2, 3, ...
 * Each parameter may appear only once.
 * All indexes are checked before any change is made. If any index is invalid, no contacts are assigned.
 * Contacts who are already assigned to the event are skipped, and an index repeated in the same command is counted once.
@@ -222,7 +222,7 @@ Examples:
 
 * `assign evn/Final Concert c/2` assigns the 2nd contact in the displayed list to `Final Concert`.
 * `assign evn/student life fair c/1 4 5` assigns the 1st, 4th and 5th contacts to `Student Life Fair`.
-* `find Bernice` followed by `assign evn/Final Concert c/1` assigns the 1st contact in the results of the `find` command.
+* `search Bernice` followed by `assign evn/Final Concert c/1` assigns the 1st contact in the results of the `search` command.
 
 Success: `Assigned 2 member(s) to Final Concert.`
 
@@ -249,7 +249,7 @@ Removes one or more members from an existing event and saves the change. The con
 Format: `unassign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...`
 
 * `EVENT_NAME` must match a saved event name, ignoring case. Leading and trailing whitespace is removed.
-* `CONTACT_INDEX` refers to the index number shown in the displayed contact list, as in `assign`. If the list is filtered (e.g. after `find`), the index refers to the filtered list. Use `list` to show everyone again. Separate several indexes with spaces. Each index **must be a positive integer** 1, 2, 3, ...
+* `CONTACT_INDEX` refers to the index number shown in the displayed contact list, as in `assign`. If the list is filtered (e.g. after `search`), the index refers to the filtered list. Use `list` to show everyone again. Separate several indexes with spaces. Each index **must be a positive integer** 1, 2, 3, ...
 * Each parameter may appear only once.
 * All indexes are checked before any change is made. If any index is invalid, no members are removed.
 * Contacts who are not assigned to the event are skipped, and an index repeated in the same command is counted once.
@@ -260,7 +260,7 @@ Examples:
 
 * `unassign evn/Final Concert c/2` removes the 2nd contact in the displayed list from `Final Concert`.
 * `unassign evn/student life fair c/1 3` removes the 1st and 3rd contacts from `Student Life Fair`.
-* `find Bernice` followed by `unassign evn/Final Concert c/1` removes the 1st contact in the results of the `find` command.
+* `search Bernice` followed by `unassign evn/Final Concert c/1` removes the 1st contact in the results of the `search` command.
 
 Success: `Removed 2 member(s) from Final Concert.`
 
@@ -451,22 +451,27 @@ Examples:
 *  `edit target/alice@example.com r/Vice-President` Updates a contact even if the current list is filtered.
 *  `edit 3 at/Sponsor rt/Logistics` Adds Sponsor, then removes Logistics without changing other tags.
 
-### Locating contacts by name: `find`
+### Searching contacts: `search`
 
-Finds contacts whose names contain any of the given keywords.
+Lists contacts whose name, phone number, email, or address contains the given keyword or phrase.
 
-Format: `find KEYWORD [MORE_KEYWORDS]`
+Format: `search KEYWORD`
 
-* The search is case-insensitive; for example, `hans` matches `Hans`.
-* Keyword order does not matter; for example, `Hans Bo` matches `Bo Hans`.
-* The search considers only names.
-* Only full words match; for example, `Han` does not match `Hans`.
-* Persons matching at least one keyword are returned (an `OR` search); for example, `Hans Bo` returns `Hans Gruber` and `Bo Yang`.
+* Matching is case-insensitive across all four fields; for example, `hans` matches `Hans`.
+* Partial words match; for example, `Han` matches `Hans`.
+* The entire keyword is matched as one substring within a field. Spaces and word order matter:
+  `search Hans Bo` matches `Hans Bo Yang`, but does not match `Bo Hans` or separate contacts named `Hans` and `Bo`.
+* Surrounding quotation marks are optional: `search "Jurong West"` and `search Jurong West` give the same results.
+* Leading and trailing spaces are ignored. An empty keyword is rejected with usage instructions.
+* Search checks all saved contacts, including those hidden by the current search or filter.
+* Results replace the displayed contact list. Use their displayed indexes in subsequent commands, or `list` to show everyone.
+* If nothing matches, the displayed list is empty and a no-matches message is shown.
 
 Examples:
-* `find John` returns `john` and `John Doe`
-* `find alex david` returns `Alex Yeoh`, `David Li`<br>
-  ![result for 'find alex david'](images/findAlexDavidResult.png)
+* `search John` matches `John Doe` by name and `john@example.com` by email.
+* `search 9123` matches a phone number containing `9123`, such as `91234567`.
+* `search EXAMPLE.COM` matches email addresses containing `example.com`, regardless of case.
+* `search jurong west` matches addresses containing `Jurong West`.
 
 ### Deleting a contact: `delete`
 
@@ -488,7 +493,7 @@ Formats: `delete INDEX` · `delete n/NAME` · `delete p/PHONE` · `delete e/EMAI
 
 Examples:
 * `list` followed by `delete 2`, then `y`, deletes the 2nd displayed contact.
-* `find Betsy` followed by `delete 1`, then `Y`, deletes the 1st contact in the results.
+* `search Betsy` followed by `delete 1`, then `Y`, deletes the 1st contact in the results.
 * `delete e/aisha@example.com`, then `y`, deletes that saved contact even if a filter hides it.
 
 On confirmation, feedback is `Contact deleted successfully: NAME.` Missing, invalid, unknown, repeated, and
@@ -557,7 +562,7 @@ Action     | Format, Examples
 **Delete tag** | `deletetag t/TAG`<br> e.g., `deletetag t/Publicity`
 **Delete contacts** | `delete INDEX` or `delete n/NAME`, `delete p/PHONE`, `delete e/EMAIL`; confirm with `y`<br> e.g., `delete 3`
 **Edit contacts**   | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [t/TAG]... [at/TAG]... [rt/TAG]...`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
-**Find**   | `find KEYWORD [MORE_KEYWORDS]`<br> e.g., `find James Jake`
+**Search** | `search KEYWORD`<br> e.g., `search James`, `search "Jurong West"`
 **List**   | `list`
 **Members** | `members evn/EVENT_NAME`<br> e.g., `members evn/Final Concert`
 **Unassign** | `unassign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...`<br> e.g., `unassign evn/Final Concert c/2 3`
