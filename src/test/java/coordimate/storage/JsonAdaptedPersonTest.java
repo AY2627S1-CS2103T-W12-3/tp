@@ -4,6 +4,7 @@ import static coordimate.storage.JsonAdaptedPerson.MISSING_FIELD_MESSAGE_FORMAT;
 import static coordimate.testutil.Assert.assertThrows;
 import static coordimate.testutil.TypicalPersons.BENSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
@@ -22,6 +23,7 @@ import coordimate.model.person.Organisation;
 import coordimate.model.person.Person;
 import coordimate.model.person.Phone;
 import coordimate.model.person.Role;
+import coordimate.model.tag.Tag;
 import coordimate.testutil.PersonBuilder;
 
 public class JsonAdaptedPersonTest {
@@ -187,4 +189,82 @@ public class JsonAdaptedPersonTest {
         assertThrows(IllegalValueException.class, person::toModelType);
     }
 
+    @Test
+    public void toModelType_fieldsAtMaximumLength_returnsPerson() throws Exception {
+        String maxName = "N".repeat(Name.MAX_LENGTH);
+        String maxEmail = "e".repeat(Email.MAX_LOCAL_PART_LENGTH) + "@"
+                + "d".repeat(Email.MAX_LENGTH - Email.MAX_LOCAL_PART_LENGTH - 5) + ".com";
+        String maxTag = "T".repeat(Tag.MAX_LENGTH);
+        JsonAdaptedPerson adapted = new JsonAdaptedPerson(maxName, VALID_PHONE, maxEmail,
+                "A".repeat(Address.MAX_LENGTH), "R".repeat(Role.MAX_LENGTH), null,
+                "O".repeat(Organisation.MAX_LENGTH), "M".repeat(Note.MAX_LENGTH), List.of(new JsonAdaptedTag(maxTag)));
+
+        Person person = adapted.toModelType();
+        assertEquals(maxName, person.getName().toString());
+        assertEquals(maxEmail, person.getEmail().toString());
+        assertEquals(Email.MAX_LENGTH, maxEmail.length());
+        assertTrue(person.getTags().contains(new Tag(maxTag)));
+    }
+
+    @Test
+    public void toModelType_fieldOverMaximumLength_throwsFieldConstraints() {
+        String over = "X";
+        String overEmail = "e".repeat(Email.MAX_LOCAL_PART_LENGTH + 1) + "@example.com";
+        JsonAdaptedPerson[] people = {
+            new JsonAdaptedPerson("N".repeat(Name.MAX_LENGTH) + over, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS,
+                    VALID_TAGS),
+            new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, overEmail, VALID_ADDRESS, VALID_TAGS),
+            new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, "A".repeat(Address.MAX_LENGTH) + over,
+                    VALID_TAGS),
+            new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS,
+                    "R".repeat(Role.MAX_LENGTH) + over, VALID_TAGS),
+            new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS, "Logistics", null,
+                    "O".repeat(Organisation.MAX_LENGTH) + over, null, VALID_TAGS),
+            new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS, "Logistics", null, null,
+                    "M".repeat(Note.MAX_LENGTH) + over, VALID_TAGS),
+        };
+        String[] messages = {
+            Name.MESSAGE_CONSTRAINTS, Email.MESSAGE_CONSTRAINTS, Address.MESSAGE_CONSTRAINTS,
+            Role.MESSAGE_CONSTRAINTS, Organisation.MESSAGE_CONSTRAINTS, Note.MESSAGE_CONSTRAINTS
+        };
+        for (int i = 0; i < people.length; i++) {
+            assertThrows(IllegalValueException.class, messages[i], people[i]::toModelType);
+        }
+    }
+
+    @Test
+    public void toModelType_organisationWithPunctuation_returnsPerson() throws Exception {
+        JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS,
+                "Logistics", null, "St. John's Ambulance (NUS)", null, VALID_TAGS);
+
+        assertEquals("St. John's Ambulance (NUS)", person.toModelType().getOrganisation().orElseThrow().getValue());
+    }
+
+    /**
+     * Phones of 3 to 6 digits were valid in earlier versions, so they still load,
+     * but commands only accept the current 7 to 15 digits.
+     */
+    @Test
+    public void toModelType_legacyShortPhone_loadsButIsRejectedAsInput() throws Exception {
+        String legacyPhone = "123";
+        JsonAdaptedPerson person =
+                new JsonAdaptedPerson(VALID_NAME, legacyPhone, VALID_EMAIL, VALID_ADDRESS, VALID_TAGS);
+
+        assertEquals(legacyPhone, person.toModelType().getPhone().toString());
+        assertFalse(Phone.isValidInputPhone(legacyPhone));
+    }
+
+    /**
+     * Tags longer than 30 characters were valid in earlier versions, so they still load,
+     * but commands only accept tags of at most 30 characters.
+     */
+    @Test
+    public void toModelType_legacyLongTag_loadsButIsRejectedAsInput() throws Exception {
+        String legacyTag = "T".repeat(Tag.MAX_LENGTH + 1);
+        JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS,
+                List.of(new JsonAdaptedTag(legacyTag)));
+
+        assertTrue(person.toModelType().getTags().contains(new Tag(legacyTag)));
+        assertFalse(Tag.isValidInputTagName(legacyTag));
+    }
 }
