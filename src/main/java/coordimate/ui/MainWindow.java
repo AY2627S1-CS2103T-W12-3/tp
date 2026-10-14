@@ -416,6 +416,7 @@ public class MainWindow extends UiPart<Stage> {
     }
 
     void show() {
+        primaryStage.setMaximized(true);
         primaryStage.show();
     }
 

@@ -23,7 +23,7 @@
 1. Copy the file to the folder you want to use as the _home folder_ for CoordiMate.
 
 1. Open a terminal, `cd` to the folder containing the JAR file, and run `java -jar coordimate.jar`.<br>
-   A GUI similar to the one below should appear in a few seconds. Note how the app contains some sample data.<br>
+   A maximized GUI similar to the one below should appear in a few seconds. Note how the app contains some sample data.<br>
    ![Ui](images/Ui.png)
 
    The left sidebar switches between Contacts, Events, and Tags and shows commands for the selected view.

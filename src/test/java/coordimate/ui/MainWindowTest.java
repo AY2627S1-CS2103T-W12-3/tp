@@ -43,6 +43,7 @@ public class MainWindowTest {
             Platform.runLater(started::countDown);
         }
         assertTrue(started.await(10, TimeUnit.SECONDS));
+        Platform.setImplicitExit(false);
     }
 
     @Test
@@ -81,6 +82,24 @@ public class MainWindowTest {
             contacts.fire();
             assertTrue(views.getSelectionModel().getSelectedItem().getText().startsWith("Contacts"));
             assertTrue(prefixHelp.getText().contains("n/Name"));
+            stage.close();
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void showWindow_startsMaximized() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            MainWindow window = new MainWindow(stage, new LogicManager(new ModelManager(), null),
+                    Path.of("data", "coordimate.json"));
+            window.fillInnerParts();
+
+            window.show();
+            assertTrue(stage.isMaximized());
+
             stage.close();
             return null;
         });
