@@ -1,6 +1,7 @@
 package coordimate.ui;
 
 import java.nio.file.Path;
+import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -11,14 +12,18 @@ import coordimate.logic.commands.AddEventCommand;
 import coordimate.logic.commands.CommandResult;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.logic.parser.exceptions.ParseException;
+import coordimate.model.person.Person;
+import coordimate.model.tag.Tag;
 import javafx.beans.binding.Bindings;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Orientation;
+import javafx.geometry.Pos;
 import javafx.scene.AccessibleRole;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SplitPane;
@@ -29,7 +34,9 @@ import javafx.scene.control.ToggleButton;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -106,6 +113,12 @@ public class MainWindow extends UiPart<Stage> {
 
     @FXML
     private Label selectedTagName;
+
+    @FXML
+    private Label tagMemberCount;
+
+    @FXML
+    private ListView<Person> tagMemberListView;
 
     @FXML
     private SplitPane tagSplitPane;
@@ -218,10 +231,18 @@ public class MainWindow extends UiPart<Stage> {
 
         eventListPanel = new EventListPanel(logic.getEventList(), logic.getFilteredPersonList());
         eventListPanelPlaceholder.getChildren().add(eventListPanel.getRoot());
-        TagListViewModel tagListViewModel = new TagListViewModel(logic.getTagList());
+        TagListViewModel tagListViewModel = new TagListViewModel(logic.getTagList(), logic.getPersonList());
         tagListView.setItems(tagListViewModel.getTagNames());
-        tagListView.getSelectionModel().selectedItemProperty().addListener((observable, oldTag, tag) ->
-                selectedTagName.setText(tag == null ? "Select a tag" : tag));
+        tagMemberListView.setItems(tagListViewModel.getMembers());
+        tagMemberListView.setCellFactory(list -> new TagMemberListCell());
+        tagMemberCount.textProperty().bind(tagListViewModel.memberCountTextProperty());
+        tagMemberListView.setPlaceholder(new Label("Select a tag to view its members."));
+        tagListView.getSelectionModel().selectedItemProperty().addListener((observable, oldTag, tag) -> {
+            selectedTagName.setText(tag == null ? "Select a tag" : tag);
+            tagListViewModel.selectTag(tag);
+            tagMemberListView.setPlaceholder(new Label(tag == null
+                    ? "Select a tag to view its members." : "No contacts use this tag."));
+        });
         tagSplitPane.widthProperty().addListener((observable, oldWidth, width) ->
                 tagSplitPane.setOrientation(width.doubleValue() < 650
                         ? Orientation.VERTICAL : Orientation.HORIZONTAL));
@@ -283,6 +304,90 @@ public class MainWindow extends UiPart<Stage> {
         if (commandHelp != null) {
             commandBox.setCommand(command);
             prefixHelp.setText(commandHelp);
+        }
+    }
+
+    private Label createMemberTag(String tagName) {
+        Label tag = new Label(tagName);
+        tag.getStyleClass().addAll("event-member-tag", getTagColorClass(tagName));
+        return tag;
+    }
+
+    private String getTagColorClass(String tagName) {
+        return switch (tagName.toLowerCase(Locale.ROOT)) {
+            case "logistics" -> "event-member-tag-teal";
+            case "sponsor" -> "event-member-tag-amber";
+            case "publicity", "universitystaff" -> "event-member-tag-purple";
+            default -> "event-member-tag-blue";
+        };
+    }
+
+    private String getAvatarColorClass(Person person) {
+        if (person.getTags().stream().anyMatch(tag -> tag.getTagName().equalsIgnoreCase("logistics"))) {
+            return "event-member-avatar-teal";
+        }
+        if (person.getTags().stream().anyMatch(tag -> tag.getTagName().equalsIgnoreCase("sponsor"))) {
+            return "event-member-avatar-amber";
+        }
+        return "event-member-avatar-purple";
+    }
+
+    private String initials(String fullName) {
+        String[] parts = fullName.strip().split("\\s+");
+        String result = parts[0].substring(0, 1);
+        if (parts.length > 1) {
+            result += parts[parts.length - 1].substring(0, 1);
+        }
+        return result.toUpperCase(Locale.ROOT);
+    }
+
+    private String formatMemberDetails(Person person) {
+        StringBuilder details = new StringBuilder(person.getRole().getValue());
+        person.getOrganisation().ifPresent(organisation -> details.append(" · ").append(organisation.getValue()));
+        return details.toString();
+    }
+
+    private class TagMemberListCell extends ListCell<Person> {
+        @Override
+        protected void updateItem(Person person, boolean empty) {
+            super.updateItem(person, empty);
+            setText(null);
+            if (empty || person == null) {
+                setGraphic(null);
+                return;
+            }
+
+            Label avatar = new Label(initials(person.getName().getFullName()));
+            avatar.getStyleClass().addAll("event-member-avatar", getAvatarColorClass(person));
+
+            Label name = new Label(person.getName().getFullName());
+            name.setWrapText(true);
+            name.setMinWidth(0);
+            name.getStyleClass().add("event-member-name");
+
+            FlowPane identityLine = new FlowPane(8, 4);
+            identityLine.setAlignment(Pos.CENTER_LEFT);
+            identityLine.getStyleClass().add("event-member-identity");
+            identityLine.getChildren().add(name);
+            person.getTags().stream()
+                    .sorted((left, right) -> String.CASE_INSENSITIVE_ORDER.compare(
+                            left.getTagName(), right.getTagName()))
+                    .map(Tag::getTagName)
+                    .map(MainWindow.this::createMemberTag)
+                    .forEach(identityLine.getChildren()::add);
+
+            Label subtitle = new Label(formatMemberDetails(person));
+            subtitle.setWrapText(true);
+            subtitle.setMinWidth(0);
+            subtitle.getStyleClass().add("event-member-metadata");
+
+            VBox details = new VBox(4, identityLine, subtitle);
+            details.getStyleClass().add("event-member-details");
+            HBox.setHgrow(details, Priority.ALWAYS);
+
+            HBox row = new HBox(12, avatar, details);
+            row.getStyleClass().add("tag-member-row");
+            setGraphic(row);
         }
     }
 

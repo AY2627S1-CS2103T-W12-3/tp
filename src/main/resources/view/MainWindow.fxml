@@ -108,6 +108,9 @@
                 <VBox spacing="16" minWidth="0" styleClass="tag-details-section">
                   <Label text="TAG DETAILS" styleClass="section-heading" />
                   <Label fx:id="selectedTagName" text="Select a tag" wrapText="true" styleClass="contact-name" />
+                  <Label fx:id="tagMemberCount" text="Members (0)" styleClass="section-heading" />
+                  <ListView fx:id="tagMemberListView" VBox.vgrow="ALWAYS" minWidth="0" minHeight="0"
+                            accessibleText="Contacts assigned to the selected tag." styleClass="tag-member-list" />
                   <Label text="Use newtag, edittag, and deletetag in the command box to manage saved tags."
                          wrapText="true" styleClass="detail-caption" />
                 </VBox>

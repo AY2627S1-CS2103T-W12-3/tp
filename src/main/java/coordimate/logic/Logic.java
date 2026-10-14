@@ -31,6 +31,9 @@ public interface Logic {
      */
     ObservableList<Person> getFilteredPersonList();
 
+    /** Returns the live, unmodifiable list of all saved persons. */
+    ObservableList<Person> getPersonList();
+
     /**
      * Returns the live, unmodifiable event list in insertion order.
      */

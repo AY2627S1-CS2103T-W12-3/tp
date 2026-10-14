@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.awt.GraphicsEnvironment;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
@@ -15,6 +16,9 @@ import org.junit.jupiter.api.Test;
 
 import coordimate.logic.LogicManager;
 import coordimate.model.ModelManager;
+import coordimate.model.person.Person;
+import coordimate.testutil.PersonBuilder;
+import coordimate.testutil.TypicalPersons;
 import javafx.application.Platform;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
@@ -45,7 +49,10 @@ public class MainWindowTest {
     public void switchViews_updatesWorkspaceAndCommandHints() throws Exception {
         FutureTask<Void> task = new FutureTask<>(() -> {
             Stage stage = new Stage();
-            MainWindow window = new MainWindow(stage, new LogicManager(new ModelManager(), null),
+            ModelManager model = new ModelManager();
+            model.addPerson(new PersonBuilder(TypicalPersons.ALICE).withTags("EXCO").build());
+            model.updateFilteredPersonList(person -> false);
+            MainWindow window = new MainWindow(stage, new LogicManager(model, null),
                     Path.of("data", "coordimate.json"));
             window.fillInnerParts();
             stage.getScene().getRoot().applyCss();
@@ -66,6 +73,10 @@ public class MainWindowTest {
             ListView<?> tagList = (ListView<?>) stage.getScene().getRoot().lookup("#tagListView");
             tagList.getSelectionModel().selectFirst();
             assertEquals("EXCO", ((Label) stage.getScene().getRoot().lookup("#selectedTagName")).getText());
+            ListView<?> tagMembers = (ListView<?>) stage.getScene().getRoot().lookup("#tagMemberListView");
+            assertEquals(List.of("Alice Pauline"), tagMembers.getItems().stream()
+                    .map(person -> ((Person) person).getName().getFullName()).toList());
+            assertEquals("Members (1)", ((Label) stage.getScene().getRoot().lookup("#tagMemberCount")).getText());
 
             contacts.fire();
             assertTrue(views.getSelectionModel().getSelectedItem().getText().startsWith("Contacts"));

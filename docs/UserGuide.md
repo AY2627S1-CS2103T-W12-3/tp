@@ -446,6 +446,10 @@ Shows every default and custom tag in the Tags view.
 
 Format: `listtags`
 
+Select a tag in the **Tags** tab to see the contacts assigned to it and the member count. The member list includes
+all saved contacts, regardless of the current contact search or filter, and is ordered by name. Each member shows
+their tags, role, and organisation.
+
 ### Editing a contact: `edit`
 
 Edits an existing contact in CoordiMate.

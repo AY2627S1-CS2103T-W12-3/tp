@@ -245,6 +245,14 @@
     -fx-border-color: #2b3446;
     -fx-border-radius: 5;
 }
+.tag-member-row {
+    -fx-alignment: center-left;
+    -fx-padding: 10 12;
+    -fx-background-color: #1b202a;
+    -fx-background-radius: 5;
+    -fx-border-color: #2b3446;
+    -fx-border-radius: 5;
+}
 .event-member-index {
     -fx-min-width: 20;
     -fx-font-family: "JetBrains Mono", "Consolas", monospace;
@@ -295,6 +303,8 @@
     -fx-font-weight: bold;
 }
 .tag-list .list-cell:filled:selected { -fx-border-color: #0ea5e9; -fx-background-color: #182232; }
+.tag-member-list .list-cell:filled { -fx-padding: 5 0; -fx-background-color: transparent; }
+.tag-member-list .list-cell:filled:selected { -fx-background-color: transparent; }
 
 .feedback-band {
     -fx-padding: 8 16;

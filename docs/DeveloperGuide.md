@@ -86,7 +86,9 @@ The `UI` component,
   member to contact role, organisation, and tags, and refreshes when contact data changes. Contact and
   event views keep their details pane above a minimum width, then stack the list above details when the
   window is narrow. Sidebar command rows insert only the command word into the command box and show its
-  format and an example; rows also support keyboard activation.
+  format and an example; rows also support keyboard activation. Selecting a tag shows all saved contacts
+  assigned to it, independent of the current contact filter, and refreshes names, roles, organisations, and tags
+  when contact data changes.
 * keeps a reference to the `Logic` component, because the `UI` relies on the `Logic` to execute commands.
 * depends on some classes in the `Model` component because it displays `Person` objects from the model.
 
