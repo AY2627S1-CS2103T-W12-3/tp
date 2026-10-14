@@ -23,14 +23,26 @@ public class OrganisationTest {
         assertFalse(Organisation.isValidOrganisation(""));
         assertFalse(Organisation.isValidOrganisation(" "));
         assertFalse(Organisation.isValidOrganisation("&"));
-        assertFalse(Organisation.isValidOrganisation("NUS/CCA"));
+        assertFalse(Organisation.isValidOrganisation(".,'()/")); // punctuation only
         assertFalse(Organisation.isValidOrganisation("NUS\n"));
+        assertFalse(Organisation.isValidOrganisation("NUS @ Kent Ridge")); // unsupported symbol
+        assertFalse(Organisation.isValidOrganisation("NUS #1"));
         assertFalse(Organisation.isValidOrganisation("A".repeat(81)));
 
         assertTrue(Organisation.isValidOrganisation("A"));
         assertTrue(Organisation.isValidOrganisation("A".repeat(80)));
         assertTrue(Organisation.isValidOrganisation("NUS Student Affairs"));
         assertTrue(Organisation.isValidOrganisation("Arts & Culture-2"));
+        assertTrue(Organisation.isValidOrganisation("NUS/CCA"));
+        assertTrue(Organisation.isValidOrganisation("St. John's Ambulance"));
+        assertTrue(Organisation.isValidOrganisation("NUS (School of Computing)"));
+        assertTrue(Organisation.isValidOrganisation("Tan, Lim & Partners"));
+    }
+
+    @Test
+    public void messageConstraints_statesLimitAndCharacters() {
+        assertTrue(Organisation.MESSAGE_CONSTRAINTS.contains(String.valueOf(Organisation.MAX_LENGTH)));
+        assertTrue(Organisation.MESSAGE_CONSTRAINTS.contains("- & . , ' ( ) /"));
     }
 
     @Test

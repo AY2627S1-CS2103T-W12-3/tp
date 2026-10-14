@@ -13,7 +13,8 @@ import java.time.format.ResolverStyle;
  */
 public class Birthday {
 
-    public static final String MESSAGE_CONSTRAINTS = "Invalid birthday. Use dd-MM-yyyy, e.g. b/18-06-2004";
+    public static final String MESSAGE_CONSTRAINTS = "Invalid birthday. Use a real date in dd-MM-yyyy format "
+            + "that is not in the future. Example: b/18-06-2004";
     private static final String DATE_REGEX = "[0-9]{2}-[0-9]{2}-[0-9]{4}";
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd-MM-uuuu")
             .withResolverStyle(ResolverStyle.STRICT);

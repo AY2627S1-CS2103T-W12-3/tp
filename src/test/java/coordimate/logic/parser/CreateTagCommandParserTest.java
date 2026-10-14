@@ -45,7 +45,7 @@ public class CreateTagCommandParserTest {
         assertParseFailure(parser, " t/Publicity Team", Tag.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, " t/Publicity!", Tag.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, " t/", "Tag name cannot be empty.");
-        assertParseFailure(parser, " t/1234567890123456789012345678901", Tag.MESSAGE_LENGTH_CONSTRAINTS);
+        assertParseFailure(parser, " t/1234567890123456789012345678901", Tag.MESSAGE_CONSTRAINTS);
     }
 
     @Test

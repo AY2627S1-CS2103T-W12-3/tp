@@ -9,8 +9,9 @@ import static java.util.Objects.requireNonNull;
  */
 public class Address {
 
-    public static final String MESSAGE_CONSTRAINTS = "Invalid address. Example: a/21 Kent Ridge Road, #03-12";
-    private static final int MAX_LENGTH = 200;
+    public static final int MAX_LENGTH = 200;
+    public static final String MESSAGE_CONSTRAINTS = "Invalid address. Use 1 to " + MAX_LENGTH
+            + " printable characters. Example: a/21 Kent Ridge Road, #03-12";
 
     private final String value;
 

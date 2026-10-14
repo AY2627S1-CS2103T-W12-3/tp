@@ -9,8 +9,10 @@ import static java.util.Objects.requireNonNull;
  */
 public class Name {
 
-    public static final String MESSAGE_CONSTRAINTS = "Invalid name. Example: n/Aisha Tan";
-    private static final int MAX_LENGTH = 80;
+    public static final int MAX_LENGTH = 80;
+    public static final String MESSAGE_CONSTRAINTS = "Invalid name. Use 1 to " + MAX_LENGTH
+            + " characters: letters, spaces, hyphens, apostrophes, and periods, with at least one letter. "
+            + "Example: n/Aisha Tan";
 
     private final String fullName;
 

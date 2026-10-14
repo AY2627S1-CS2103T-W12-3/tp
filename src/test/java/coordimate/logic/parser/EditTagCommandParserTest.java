@@ -53,7 +53,7 @@ public class EditTagCommandParserTest {
         assertParseFailure(parser, " Media t/Publicity Team", Tag.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, " Media t/Publicity!", Tag.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, " Media t/1234567890123456789012345678901",
-                Tag.MESSAGE_LENGTH_CONSTRAINTS);
+                Tag.MESSAGE_CONSTRAINTS);
     }
 
     @Test
