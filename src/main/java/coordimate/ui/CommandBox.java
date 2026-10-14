@@ -57,6 +57,13 @@ public class CommandBox extends UiPart<Region> {
         }
     }
 
+    /** Places a command word in the input, ready for the user to complete. */
+    void setCommand(String command) {
+        commandTextField.setText(command);
+        commandTextField.positionCaret(command.length());
+        commandTextField.requestFocus();
+    }
+
     /**
      * Sets the command box style to use the default style.
      */

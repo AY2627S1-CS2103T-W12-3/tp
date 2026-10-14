@@ -1,6 +1,7 @@
 package coordimate.ui;
 
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import coordimate.commons.core.GuiSettings;
@@ -14,6 +15,9 @@ import javafx.beans.binding.Bindings;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Orientation;
+import javafx.scene.AccessibleRole;
+import javafx.scene.Cursor;
+import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MenuItem;
@@ -22,8 +26,10 @@ import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TextInputControl;
 import javafx.scene.control.ToggleButton;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -35,6 +41,40 @@ import javafx.stage.Stage;
 public class MainWindow extends UiPart<Stage> {
 
     private static final String FXML = "MainWindow.fxml";
+    private static final Map<String, String> COMMAND_HELP_TEXT = Map.ofEntries(
+            Map.entry("add", "Format: add n/NAME p/PHONE e/EMAIL r/ROLE [b/BIRTHDAY] [a/ADDRESS]"
+                    + " [o/ORGANISATION] [t/TAG]... [m/NOTE]\n"
+                    + "Example: add n/Aisha Tan p/+6591234567 e/aisha@example.com r/Logistics t/EXCO"),
+            Map.entry("edit", "Format: edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY]"
+                    + " [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [t/TAG]... [at/TAG]... [rt/TAG]...\n"
+                    + "Or: edit target/IDENTIFIER [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY]"
+                    + " [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [t/TAG]... [at/TAG]... [rt/TAG]...\n"
+                    + "Example: edit 1 p/91234567 e/johndoe@example.com"),
+            Map.entry("delete", "Format: delete INDEX (or n/NAME, p/PHONE, or e/EMAIL)\n"
+                    + "Example: delete e/aisha@example.com"),
+            Map.entry("search", "Format: search KEYWORD\nExample: search jurong west"),
+            Map.entry("filter", "Format: filter FIELD/VALUE [FIELD/VALUE]...\n"
+                    + "Example: filter tag/friend organisation/NUS"),
+            Map.entry("list", "Format: list\nExample: list"),
+            Map.entry("addevent", "Format: addevent evn/EVENT_NAME st/START_TIME et/END_TIME\n"
+                    + "Example: addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00"),
+            Map.entry("editevent", "Format: editevent evn/EVENT_NAME [nevn/NEW_EVENT_NAME]"
+                    + " [st/NEW_START_TIME] [et/NEW_END_TIME]\n"
+                    + "Example: editevent evn/Final Concert nevn/Grand Concert"),
+            Map.entry("deleteevent", "Format: deleteevent evn/EVENT_NAME\n"
+                    + "Example: deleteevent evn/Final Concert"),
+            Map.entry("assign", "Format: assign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...\n"
+                    + "Example: assign evn/Final Concert c/2 3"),
+            Map.entry("unassign", "Format: unassign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...\n"
+                    + "Example: unassign evn/Final Concert c/2 3"),
+            Map.entry("members", "Format: members evn/EVENT_NAME\nExample: members evn/Final Concert"),
+            Map.entry("markattendance", "Format: markattendance evn/EVENT_NAME mem/MEMBER_NAME att/STATUS\n"
+                    + "Example: markattendance evn/Final Concert mem/Alex Yeoh att/present"),
+            Map.entry("listtags", "Format: listtags\nExample: listtags"),
+            Map.entry("addtag", "Format: addtag t/TAG\nExample: addtag t/ProductionCrew"),
+            Map.entry("edittag", "Format: edittag OLD_TAG t/NEW_TAG\n"
+                    + "Example: edittag Production t/ProductionCrew"),
+            Map.entry("deletetag", "Format: deletetag t/TAG\nExample: deletetag t/ProductionCrew"));
 
     private final Logger logger = LogsCenter.getLogger(getClass());
 
@@ -47,6 +87,7 @@ public class MainWindow extends UiPart<Stage> {
     private EventListPanel eventListPanel;
     private ResultDisplay resultDisplay;
     private HelpWindow helpWindow;
+    private CommandBox commandBox;
 
     @FXML
     private StackPane commandBoxPlaceholder;
@@ -210,8 +251,39 @@ public class MainWindow extends UiPart<Stage> {
         StatusBarFooter statusBarFooter = new StatusBarFooter(dataFilePath);
         statusbarPlaceholder.getChildren().add(statusBarFooter.getRoot());
 
-        CommandBox commandBox = new CommandBox(this::executeCommand, logic::isAwaitingDeleteConfirmation);
+        commandBox = new CommandBox(this::executeCommand, logic::isAwaitingDeleteConfirmation);
         commandBoxPlaceholder.getChildren().add(commandBox.getRoot());
+        makeCommandRowsInteractive(contactsCommands);
+        makeCommandRowsInteractive(eventsCommands);
+        makeCommandRowsInteractive(tagsCommands);
+    }
+
+    private void makeCommandRowsInteractive(VBox commandList) {
+        for (Node child : commandList.getChildren()) {
+            if (!(child instanceof HBox row) || !row.getStyleClass().contains("cheat-row")) {
+                continue;
+            }
+            String command = ((Label) row.getChildren().get(0)).getText();
+            row.setAccessibleRole(AccessibleRole.BUTTON);
+            row.setAccessibleText("Insert " + command + " command");
+            row.setFocusTraversable(true);
+            row.setCursor(Cursor.HAND);
+            row.setOnMouseClicked(event -> selectCommand(command));
+            row.setOnKeyPressed(event -> {
+                if (event.getCode() == KeyCode.ENTER || event.getCode() == KeyCode.SPACE) {
+                    selectCommand(command);
+                    event.consume();
+                }
+            });
+        }
+    }
+
+    private void selectCommand(String command) {
+        String commandHelp = COMMAND_HELP_TEXT.get(command);
+        if (commandHelp != null) {
+            commandBox.setCommand(command);
+            prefixHelp.setText(commandHelp);
+        }
     }
 
     /**

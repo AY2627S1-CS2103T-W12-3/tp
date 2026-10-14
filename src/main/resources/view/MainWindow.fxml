@@ -119,7 +119,7 @@
         <StackPane fx:id="commandBoxPlaceholder" styleClass="command-container" VBox.vgrow="NEVER" />
         <HBox alignment="CENTER_LEFT" styleClass="prefix-help">
           <Label fx:id="prefixHelp" text="Prefixes: n/Name  p/Phone  e/Email  r/Role  t/Tag  m/Note"
-                 styleClass="command-hint" />
+                 wrapText="true" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="command-hint" />
         </HBox>
         <StackPane fx:id="statusbarPlaceholder" VBox.vgrow="NEVER" />
       </VBox>

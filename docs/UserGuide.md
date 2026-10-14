@@ -27,6 +27,8 @@
    ![Ui](images/Ui.png)
 
    The left sidebar switches between Contacts, Events, and Tags and shows commands for the selected view.
+   Click a command name to put only the command word in the input and show its format and an example below the input.
+   Complete the command by typing its arguments after the command word.
    The main workspace shows a list beside its details, and the command box, feedback, and prefix hints stay at the bottom.
 
 1. Type a command in the command box and press Enter to execute it. For example, type **`help`** and press Enter to open the help window.<br>

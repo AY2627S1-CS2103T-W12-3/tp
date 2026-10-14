@@ -19,7 +19,9 @@ import javafx.application.Platform;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TabPane;
+import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
+import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
 
 /**
@@ -68,6 +70,31 @@ public class MainWindowTest {
             contacts.fire();
             assertTrue(views.getSelectionModel().getSelectedItem().getText().startsWith("Contacts"));
             assertTrue(prefixHelp.getText().contains("n/Name"));
+            stage.close();
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void clickCommandRow_insertsCommandAndShowsFormatAndExample() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            MainWindow window = new MainWindow(stage, new LogicManager(new ModelManager(), null),
+                    Path.of("data", "coordimate.json"));
+            window.fillInnerParts();
+            stage.getScene().getRoot().applyCss();
+
+            HBox addRow = (HBox) stage.getScene().getRoot().lookup(".cheat-row");
+            addRow.getOnMouseClicked().handle(null);
+            TextField commandInput = (TextField) stage.getScene().getRoot().lookup(".text-field");
+            Label prefixHelp = (Label) stage.getScene().getRoot().lookup("#prefixHelp");
+            assertEquals("add", commandInput.getText());
+            assertTrue(prefixHelp.getText().startsWith("Format: add n/NAME p/PHONE e/EMAIL r/ROLE"));
+            assertTrue(prefixHelp.getText().contains("[t/TAG]... [m/NOTE]"));
+            assertTrue(prefixHelp.getText().contains("Example: add n/Aisha Tan"));
+
             stage.close();
             return null;
         });

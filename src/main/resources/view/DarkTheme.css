@@ -84,6 +84,7 @@
     -fx-spacing: 8;
 }
 .cheat-row:hover { -fx-background-color: #1f2633; }
+.cheat-row:focused { -fx-border-color: #38bdf8; -fx-border-radius: 4; -fx-border-width: 1; }
 .cheat-name {
     -fx-font-family: "JetBrains Mono", "Consolas", monospace;
     -fx-font-size: 11px;
@@ -169,6 +170,7 @@
     -fx-font-family: "JetBrains Mono", "Consolas", monospace;
     -fx-font-weight: bold;
 }
+.event-details-card .detail-value { -fx-font-weight: bold; }
 .note-card { -fx-font-family: "Inter", "Segoe UI", sans-serif; }
 .time-tile {
     -fx-padding: 12;
