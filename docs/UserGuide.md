@@ -74,9 +74,12 @@
 
 ### Viewing help: `help`
 
-Shows a message explaining how to access the help page.
-
-![help message](images/helpMessage.png)
+Opens a resizable Help window containing a scrollable two-column table of every available command and its usage format.
+The [User Guide website](https://ay2627s1-cs2103t-w12-3.github.io/tp/) and **Copy URL** button remain at the bottom of
+the window for access to detailed instructions.
+Select **Close** or press <kbd>Esc</kbd> to dismiss the Help window without exiting CoordiMate.
+Selecting **Help** in the menu bar opens this window directly. <kbd>F1</kbd> remains available as a keyboard shortcut.
+In the command formats, parameters enclosed in square brackets `[ ]` are optional.
 
 Format: `help`
 
