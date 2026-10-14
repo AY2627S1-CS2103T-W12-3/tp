@@ -35,6 +35,8 @@ public class PersonCard extends UiPart<Region> {
     @FXML
     private Label phone;
     @FXML
+    private Label role;
+    @FXML
     private Label address;
     @FXML
     private Label email;
@@ -50,6 +52,7 @@ public class PersonCard extends UiPart<Region> {
         id.setText(displayedIndex + ". ");
         name.setText(person.getName().getFullName());
         phone.setText(person.getPhone().getValue());
+        role.setText(person.getRole().getValue());
         boolean hasAddress = person.getAddress().isPresent();
         address.setText(person.getAddress().map(Address::getValue).orElse(""));
         address.setVisible(hasAddress);

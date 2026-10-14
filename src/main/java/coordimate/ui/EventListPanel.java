@@ -91,7 +91,7 @@ public class EventListPanel extends UiPart<Region> {
         });
         events.addListener((ListChangeListener<Event>) change -> keepSelectionAfterChange());
         eventSplitPane.widthProperty().addListener((observable, oldWidth, width) ->
-                eventSplitPane.setOrientation(width.doubleValue() < 680
+                eventSplitPane.setOrientation(width.doubleValue() < 760
                 ? Orientation.VERTICAL : Orientation.HORIZONTAL));
         showDetails(null);
         eventListView.getSelectionModel().selectFirst();
@@ -219,17 +219,27 @@ public class EventListPanel extends UiPart<Region> {
     }
 
     /**
-     * Displays an event's name and start and end times in a list card.
+     * Displays an event's timing and attendance overview in a list card.
      */
     private static class EventListCell extends ListCell<Event> {
         private final Label name = new Label();
         private final Label times = new Label();
-        private final VBox card = new VBox(8, name, times);
+        private final Label memberTotal = new Label();
+        private final Label presentTotal = new Label();
+        private final Label absentTotal = new Label();
+        private final Label unmarkedTotal = new Label();
+        private final HBox overview = new HBox(10, memberTotal, presentTotal, absentTotal, unmarkedTotal);
+        private final VBox card = new VBox(8, name, times, overview);
 
         EventListCell() {
             card.getStyleClass().add("event-card");
             name.getStyleClass().add("event-card-name");
             times.getStyleClass().add("detail-caption");
+            memberTotal.getStyleClass().add("event-member-total");
+            presentTotal.getStyleClass().add("attendance-present-text");
+            absentTotal.getStyleClass().add("attendance-absent-text");
+            unmarkedTotal.getStyleClass().add("attendance-unmarked-text");
+            overview.getStyleClass().add("event-overview");
             name.setWrapText(true);
             times.setWrapText(true);
             card.maxWidthProperty().bind(widthProperty().subtract(24));
@@ -244,7 +254,28 @@ public class EventListPanel extends UiPart<Region> {
             } else {
                 name.setText((getIndex() + 1) + ". " + event.getName());
                 times.setText(event.getStartTime() + " to " + event.getEndTime());
+                updateOverview(event);
                 setGraphic(card);
+            }
+        }
+
+        private void updateOverview(Event event) {
+            int members = event.getMembers().size();
+            if (members == 0) {
+                memberTotal.setText("No members assigned");
+            } else {
+                memberTotal.setText(members + (members == 1 ? " member" : " members"));
+            }
+            long present = event.getAttendanceRecord().values().stream()
+                    .filter(status -> status == AttendanceStatus.PRESENT).count();
+            long absent = event.getAttendanceRecord().values().stream()
+                    .filter(status -> status == AttendanceStatus.ABSENT).count();
+            presentTotal.setText(present + " present");
+            absentTotal.setText(absent + " absent");
+            unmarkedTotal.setText((members - present - absent) + " unmarked");
+            for (Label count : new Label[]{presentTotal, absentTotal, unmarkedTotal}) {
+                count.setVisible(members > 0);
+                count.setManaged(members > 0);
             }
         }
     }

@@ -8,6 +8,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.awt.GraphicsEnvironment;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.FutureTask;
@@ -17,6 +19,9 @@ import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import coordimate.model.event.AttendanceStatus;
+import coordimate.model.event.Event;
+import coordimate.model.event.EventTime;
 import coordimate.model.person.Person;
 import coordimate.testutil.PersonBuilder;
 import javafx.application.Platform;
@@ -30,7 +35,9 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SplitPane;
 import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 
 /**
  * Tests the contact list's selection and details states on the JavaFX application thread.
@@ -114,6 +121,7 @@ public class PersonListPanelTest {
             assertEquals("— (not specified)", getLabel(root, "organisation").getText());
             assertEquals("— (not specified)", getLabel(root, "note").getText());
             assertTrue(((FlowPane) root.lookup("#detailTags")).getChildren().isEmpty());
+            assertEquals("0 events", getLabel(root, "assignedEventCount").getText());
 
             Region card = new PersonCard(contact, 1).getRoot();
             new Scene(card);
@@ -131,11 +139,42 @@ public class PersonListPanelTest {
             SplitPane pane = (SplitPane) new PersonListPanel(persons).getRoot();
             new Scene(pane);
 
-            pane.resize(700, 500);
+            pane.resize(900, 500);
             assertEquals(Orientation.HORIZONTAL, pane.getOrientation());
+            assertEquals(460, ((Region) pane.getItems().get(1)).getMinWidth());
 
-            pane.resize(500, 500);
+            pane.resize(700, 500);
             assertEquals(Orientation.VERTICAL, pane.getOrientation());
+        });
+    }
+
+    @Test
+    public void assignedEvents_updateWithAttendanceWithoutChangingSelection() throws Exception {
+        runOnJavaFxThread(() -> {
+            EventTime time = new EventTime("25-10-2026");
+            Event event = new Event("Final Concert", time, time, List.of(ALICE.getName()), Map.of());
+            ObservableList<Event> events = FXCollections.observableArrayList(event);
+            Region root = new PersonListPanel(FXCollections.observableArrayList(ALICE), events).getRoot();
+            new Scene(root);
+            root.applyCss();
+            getList(root).getSelectionModel().select(ALICE);
+
+            assertEquals("AP", getLabel(root, "selectedAvatar").getText());
+            assertEquals("1 event", getLabel(root, "assignedEventCount").getText());
+            VBox assigned = (VBox) root.lookup("#assignedEvents");
+            assertEquals(1, assigned.getChildren().size());
+            HBox row = (HBox) assigned.getChildren().getFirst();
+            assertEquals("Not marked", ((Label) row.getChildren().getLast()).getText());
+
+            events.setAll(event.withAttendance(ALICE.getName(), AttendanceStatus.PRESENT));
+            assertEquals(ALICE, getList(root).getSelectionModel().getSelectedItem());
+            assertEquals("1 event", getLabel(root, "assignedEventCount").getText());
+            HBox updatedRow = (HBox) assigned.getChildren().getFirst();
+            assertEquals("Present", ((Label) updatedRow.getChildren().getLast()).getText());
+
+            events.clear();
+            assertEquals("0 events", getLabel(root, "assignedEventCount").getText());
+            assertEquals("No events assigned.", ((Label) assigned.getChildren().getFirst()).getText());
         });
     }
 

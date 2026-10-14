@@ -13,8 +13,11 @@ import coordimate.logic.parser.exceptions.ParseException;
 import javafx.beans.binding.Bindings;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.geometry.Orientation;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.SplitPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TextInputControl;
@@ -22,6 +25,7 @@ import javafx.scene.control.ToggleButton;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 /**
@@ -58,6 +62,24 @@ public class MainWindow extends UiPart<Stage> {
 
     @FXML
     private ListView<String> tagListView;
+
+    @FXML
+    private Label selectedTagName;
+
+    @FXML
+    private SplitPane tagSplitPane;
+
+    @FXML
+    private VBox contactsCommands;
+
+    @FXML
+    private VBox eventsCommands;
+
+    @FXML
+    private VBox tagsCommands;
+
+    @FXML
+    private Label prefixHelp;
 
     @FXML
     private TabPane views;
@@ -150,13 +172,24 @@ public class MainWindow extends UiPart<Stage> {
      * Fills up all the placeholders of this window.
      */
     void fillInnerParts() {
-        personListPanel = new PersonListPanel(logic.getFilteredPersonList());
+        personListPanel = new PersonListPanel(logic.getFilteredPersonList(), logic.getEventList());
         personListPanelPlaceholder.getChildren().add(personListPanel.getRoot());
 
         eventListPanel = new EventListPanel(logic.getEventList());
         eventListPanelPlaceholder.getChildren().add(eventListPanel.getRoot());
         TagListViewModel tagListViewModel = new TagListViewModel(logic.getTagList());
         tagListView.setItems(tagListViewModel.getTagNames());
+        tagListView.getSelectionModel().selectedItemProperty().addListener((observable, oldTag, tag) ->
+                selectedTagName.setText(tag == null ? "Select a tag" : tag));
+        tagSplitPane.widthProperty().addListener((observable, oldWidth, width) ->
+                tagSplitPane.setOrientation(width.doubleValue() < 650
+                        ? Orientation.VERTICAL : Orientation.HORIZONTAL));
+        contactsCommands.visibleProperty().bind(contactsView.selectedProperty());
+        contactsCommands.managedProperty().bind(contactsCommands.visibleProperty());
+        eventsCommands.visibleProperty().bind(eventsView.selectedProperty());
+        eventsCommands.managedProperty().bind(eventsCommands.visibleProperty());
+        tagsCommands.visibleProperty().bind(tagsView.selectedProperty());
+        tagsCommands.managedProperty().bind(tagsCommands.visibleProperty());
         contactsTab.textProperty().bind(Bindings.size(logic.getFilteredPersonList()).asString("Contacts (%d)"));
         eventsTab.textProperty().bind(Bindings.size(logic.getEventList()).asString("Events (%d)"));
         contactsView.textProperty().bind(contactsTab.textProperty());
@@ -165,6 +198,10 @@ public class MainWindow extends UiPart<Stage> {
         views.getSelectionModel().selectedItemProperty().addListener((observable, oldTab, tab) -> {
             contactsView.setSelected(tab == contactsTab);
             eventsView.setSelected(tab == eventsTab);
+            tagsView.setSelected(tab == tagsTab);
+            prefixHelp.setText(tab == eventsTab ? "Prefixes: evn/Event  st/Start  et/End  c/Contact"
+                    : tab == tagsTab ? "Prefixes: t/Tag"
+                    : "Prefixes: n/Name  p/Phone  e/Email  r/Role  t/Tag  m/Note");
         });
 
         resultDisplay = new ResultDisplay();
@@ -181,8 +218,8 @@ public class MainWindow extends UiPart<Stage> {
      * Sets the default size based on {@code guiSettings}.
      */
     private void setWindowDefaultSize(GuiSettings guiSettings) {
-        primaryStage.setHeight(guiSettings.getWindowHeight());
-        primaryStage.setWidth(guiSettings.getWindowWidth());
+        primaryStage.setHeight(Math.max(guiSettings.getWindowHeight(), primaryStage.getMinHeight()));
+        primaryStage.setWidth(Math.max(guiSettings.getWindowWidth(), primaryStage.getMinWidth()));
         if (guiSettings.getWindowCoordinates() != null) {
             primaryStage.setX(guiSettings.getWindowCoordinates().getX());
             primaryStage.setY(guiSettings.getWindowCoordinates().getY());

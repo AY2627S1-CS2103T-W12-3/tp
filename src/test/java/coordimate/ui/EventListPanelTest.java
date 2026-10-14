@@ -1,6 +1,7 @@
 package coordimate.ui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.awt.GraphicsEnvironment;
@@ -21,9 +22,11 @@ import coordimate.model.person.Name;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.geometry.Orientation;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.SplitPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
@@ -100,6 +103,40 @@ public class EventListPanelTest {
             assertEquals("Members (0)", getLabel(root, "memberCount").getText());
             Label hint = (Label) getMembers(root).getChildren().getFirst();
             assertEquals("No members assigned yet. Assign contacts with assign.", hint.getText());
+        });
+    }
+
+    @Test
+    public void eventCard_showsMemberAndAttendanceOverview() throws Exception {
+        runOnJavaFxThread(() -> {
+            Event event = event(List.of(ALICE, BOB, CHARLIE),
+                    Map.of(ALICE, AttendanceStatus.PRESENT, BOB, AttendanceStatus.ABSENT));
+            Region root = new EventListPanel(FXCollections.observableArrayList(event)).getRoot();
+            new Scene(root, 900, 600);
+            root.resize(900, 600);
+            root.applyCss();
+            root.layout();
+
+            HBox overview = (HBox) root.lookup(".event-overview");
+            assertNotNull(overview);
+            assertEquals("3 members", ((Label) overview.getChildren().get(0)).getText());
+            assertEquals("1 present", ((Label) overview.getChildren().get(1)).getText());
+            assertEquals("1 absent", ((Label) overview.getChildren().get(2)).getText());
+            assertEquals("1 unmarked", ((Label) overview.getChildren().get(3)).getText());
+        });
+    }
+
+    @Test
+    public void resize_narrowWindowStacksEventPanes() throws Exception {
+        runOnJavaFxThread(() -> {
+            SplitPane pane = (SplitPane) new EventListPanel(FXCollections.observableArrayList()).getRoot();
+            new Scene(pane);
+            pane.resize(900, 500);
+            assertEquals(Orientation.HORIZONTAL, pane.getOrientation());
+            assertEquals(460, ((Region) pane.getItems().get(1)).getMinWidth());
+
+            pane.resize(700, 500);
+            assertEquals(Orientation.VERTICAL, pane.getOrientation());
         });
     }
 

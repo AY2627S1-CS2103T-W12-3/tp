@@ -26,6 +26,9 @@
    A GUI similar to the one below should appear in a few seconds. Note how the app contains some sample data.<br>
    ![Ui](images/Ui.png)
 
+   The left sidebar switches between Contacts, Events, and Tags and shows commands for the selected view.
+   The main workspace shows a list beside its details, and the command box, feedback, and prefix hints stay at the bottom.
+
 1. Type a command in the command box and press Enter to execute it. For example, type **`help`** and press Enter to open the help window.<br>
    Some example commands you can try:
 
@@ -40,7 +43,7 @@
    * `exit` : Exits the app.
 
    In the Contacts view, select a contact from the displayed list to see their phone number, email address,
-   role, birthday, address, organisation, tags, and note in the details pane. The number beside a contact is
+   role, birthday, address, organisation, tags, note, and assigned events in the details pane. The number beside a contact is
    its index in the currently displayed list. If a list change hides the selected contact, the details pane clears.
    Unset optional fields show `— (not specified)`; a contact with no tags shows no tag chips.
 
@@ -138,7 +141,9 @@ Success: `Created Event Student Life Fair. Start Time: 09-10-2026. End Time: 10-
 
 Use the **Events** tab on the left to browse saved events. Selecting an event shows its
 start time, end time, duration, and members. A successful `addevent` opens this tab and selects
-the new event. At narrower window sizes, the list appears above the details.
+the new event. Each event card shows its member count and attendance summary. At narrower window
+sizes, the list appears above the details. The list and details divider can be dragged, but the
+details pane keeps a minimum width while the panes are side by side.
 
 Command feedback appears above the input at the bottom of the window. Rejected commands
 show a red feedback band and input border. The command stays in the input so you can
