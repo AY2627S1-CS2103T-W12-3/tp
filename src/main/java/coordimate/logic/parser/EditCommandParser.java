@@ -27,10 +27,6 @@ import coordimate.logic.commands.EditCommand.TagOperation;
 import coordimate.logic.commands.EditCommand.TagOperationType;
 import coordimate.logic.parser.ArgumentMultimap.PrefixedValue;
 import coordimate.logic.parser.exceptions.ParseException;
-import coordimate.model.person.Birthday;
-import coordimate.model.person.Note;
-import coordimate.model.person.Organisation;
-import coordimate.model.person.Role;
 import coordimate.model.tag.Tag;
 
 /**
@@ -99,18 +95,11 @@ public class EditCommandParser implements Parser<EditCommand> {
             editPersonDescriptor.setEmail(ParserUtil.parseEmail(argMultimap.getValue(PREFIX_EMAIL).get()));
         }
         if (argMultimap.getValue(PREFIX_ROLE).isPresent()) {
-            String role = argMultimap.getValue(PREFIX_ROLE).orElseThrow();
-            if (!Role.isValidRole(role)) {
-                throw new ParseException(Role.MESSAGE_CONSTRAINTS);
-            }
-            editPersonDescriptor.setRole(new Role(role));
+            editPersonDescriptor.setRole(ParserUtil.parseRole(argMultimap.getValue(PREFIX_ROLE).get()));
         }
         if (argMultimap.getValue(PREFIX_BIRTHDAY).isPresent()) {
             String birthday = argMultimap.getValue(PREFIX_BIRTHDAY).orElseThrow();
-            if (!birthday.isEmpty() && !Birthday.isValidBirthday(birthday)) {
-                throw new ParseException(Birthday.MESSAGE_CONSTRAINTS);
-            }
-            editPersonDescriptor.setBirthday(birthday.isEmpty() ? null : new Birthday(birthday));
+            editPersonDescriptor.setBirthday(birthday.isEmpty() ? null : ParserUtil.parseBirthday(birthday));
         }
         if (argMultimap.getValue(PREFIX_ADDRESS).isPresent()) {
             String address = argMultimap.getValue(PREFIX_ADDRESS).orElseThrow();
@@ -118,17 +107,12 @@ public class EditCommandParser implements Parser<EditCommand> {
         }
         if (argMultimap.getValue(PREFIX_ORGANISATION).isPresent()) {
             String organisation = argMultimap.getValue(PREFIX_ORGANISATION).orElseThrow();
-            if (!organisation.isEmpty() && !Organisation.isValidOrganisation(organisation)) {
-                throw new ParseException(Organisation.MESSAGE_CONSTRAINTS);
-            }
-            editPersonDescriptor.setOrganisation(organisation.isEmpty() ? null : new Organisation(organisation));
+            editPersonDescriptor.setOrganisation(
+                    organisation.isEmpty() ? null : ParserUtil.parseOrganisation(organisation));
         }
         if (argMultimap.getValue(PREFIX_NOTE).isPresent()) {
             String note = argMultimap.getValue(PREFIX_NOTE).orElseThrow();
-            if (!note.isEmpty() && !Note.isValidNote(note)) {
-                throw new ParseException(Note.MESSAGE_CONSTRAINTS);
-            }
-            editPersonDescriptor.setNote(note.isEmpty() ? null : new Note(note));
+            editPersonDescriptor.setNote(note.isEmpty() ? null : ParserUtil.parseNote(note));
         }
         parseTagEdits(argMultimap, editPersonDescriptor);
 

@@ -12,10 +12,15 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 import coordimate.logic.parser.exceptions.ParseException;
+import coordimate.model.event.Event;
 import coordimate.model.person.Address;
+import coordimate.model.person.Birthday;
 import coordimate.model.person.Email;
 import coordimate.model.person.Name;
+import coordimate.model.person.Note;
+import coordimate.model.person.Organisation;
 import coordimate.model.person.Phone;
+import coordimate.model.person.Role;
 import coordimate.model.tag.Tag;
 
 public class ParserUtilTest {
@@ -192,5 +197,55 @@ public class ParserUtilTest {
         Set<Tag> expectedTagSet = Set.of(new Tag(VALID_TAG_1), new Tag(VALID_TAG_2));
 
         assertEquals(expectedTagSet, actualTagSet);
+    }
+
+    @Test
+    public void parseRole_variousValues() throws Exception {
+        assertThrows(NullPointerException.class, () -> ParserUtil.parseRole(null));
+        assertThrows(ParseException.class, Role.MESSAGE_CONSTRAINTS, () -> ParserUtil.parseRole("***"));
+        assertThrows(ParseException.class, Role.MESSAGE_CONSTRAINTS, () ->
+                ParserUtil.parseRole("R".repeat(Role.MAX_LENGTH + 1)));
+        assertEquals(new Role("Logistics Lead"), ParserUtil.parseRole(WHITESPACE + "Logistics Lead" + WHITESPACE));
+    }
+
+    @Test
+    public void parseBirthday_variousValues() throws Exception {
+        assertThrows(NullPointerException.class, () -> ParserUtil.parseBirthday(null));
+        assertThrows(ParseException.class, Birthday.MESSAGE_CONSTRAINTS, () -> ParserUtil.parseBirthday("31-02-2004"));
+        assertThrows(ParseException.class, Birthday.MESSAGE_CONSTRAINTS, () -> ParserUtil.parseBirthday("2004-06-18"));
+        assertEquals(new Birthday("18-06-2004"), ParserUtil.parseBirthday(WHITESPACE + "18-06-2004" + WHITESPACE));
+    }
+
+    @Test
+    public void parseOrganisation_variousValues() throws Exception {
+        assertThrows(NullPointerException.class, () -> ParserUtil.parseOrganisation(null));
+        assertThrows(ParseException.class, Organisation.MESSAGE_CONSTRAINTS, () ->
+                ParserUtil.parseOrganisation("NUS @ Kent Ridge"));
+        assertThrows(ParseException.class, Organisation.MESSAGE_CONSTRAINTS, () ->
+                ParserUtil.parseOrganisation("O".repeat(Organisation.MAX_LENGTH + 1)));
+        assertEquals(new Organisation("St. John's Ambulance"),
+                ParserUtil.parseOrganisation(WHITESPACE + "St. John's Ambulance" + WHITESPACE));
+    }
+
+    @Test
+    public void parseNote_variousValues() throws Exception {
+        assertThrows(NullPointerException.class, () -> ParserUtil.parseNote(null));
+        assertThrows(ParseException.class, Note.MESSAGE_CONSTRAINTS, () -> ParserUtil.parseNote(WHITESPACE));
+        assertThrows(ParseException.class, Note.MESSAGE_CONSTRAINTS, () ->
+                ParserUtil.parseNote("N".repeat(Note.MAX_LENGTH + 1)));
+        assertEquals(new Note("Handles venue bookings"),
+                ParserUtil.parseNote(WHITESPACE + "Handles venue bookings" + WHITESPACE));
+    }
+
+    @Test
+    public void parseEventName_variousValues() throws Exception {
+        assertThrows(NullPointerException.class, () -> ParserUtil.parseEventName(null));
+        assertThrows(ParseException.class, Event.MESSAGE_EMPTY_NAME, () -> ParserUtil.parseEventName(WHITESPACE));
+        assertThrows(ParseException.class, Event.MESSAGE_NAME_CONSTRAINTS, () ->
+                ParserUtil.parseEventName("E".repeat(Event.MAX_NAME_LENGTH + 1)));
+        assertThrows(ParseException.class, Event.MESSAGE_NAME_CONSTRAINTS, () ->
+                ParserUtil.parseEventName("Final\u0007Concert"));
+        assertEquals("Final Concert", ParserUtil.parseEventName("  Final Concert  "));
+        assertEquals("E".repeat(Event.MAX_NAME_LENGTH), ParserUtil.parseEventName("E".repeat(Event.MAX_NAME_LENGTH)));
     }
 }

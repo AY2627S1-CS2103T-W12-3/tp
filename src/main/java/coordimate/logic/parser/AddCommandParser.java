@@ -38,7 +38,6 @@ public class AddCommandParser implements Parser<AddCommand> {
     public static final String MESSAGE_REPEATED_REQUIRED_PARAMETER =
             "Each required parameter may only be specified once.";
     public static final String MESSAGE_EMPTY_REQUIRED_VALUE = "This field cannot be empty. Example: n/Aisha Tan";
-    public static final String MESSAGE_INVALID_TAG = "Invalid tag. Example: t/Logistics";
 
     private static final Pattern PARAMETER_PATTERN = Pattern.compile("(?<!\\S)([A-Za-z]+/)");
     private static final Set<String> ALLOWED_PREFIXES = Set.of(PREFIX_NAME.toString(), PREFIX_PHONE.toString(),
@@ -61,7 +60,7 @@ public class AddCommandParser implements Parser<AddCommand> {
         Name name = ParserUtil.parseName(arguments.getValue(PREFIX_NAME).orElseThrow());
         Phone phone = ParserUtil.parsePhone(arguments.getValue(PREFIX_PHONE).orElseThrow());
         Email email = ParserUtil.parseEmail(arguments.getValue(PREFIX_EMAIL).orElseThrow());
-        Role role = parseRole(arguments.getValue(PREFIX_ROLE).orElseThrow());
+        Role role = ParserUtil.parseRole(arguments.getValue(PREFIX_ROLE).orElseThrow());
         Birthday birthday = parseBirthday(arguments.getValue(PREFIX_BIRTHDAY).orElse(""));
         Address address = parseAddress(arguments.getValue(PREFIX_ADDRESS).orElse(""));
         Organisation organisation = parseOrganisation(arguments.getValue(PREFIX_ORGANISATION).orElse(""));
@@ -100,21 +99,8 @@ public class AddCommandParser implements Parser<AddCommand> {
         }
     }
 
-    private static Role parseRole(String value) throws ParseException {
-        if (!Role.isValidRole(value)) {
-            throw new ParseException(Role.MESSAGE_CONSTRAINTS);
-        }
-        return new Role(value);
-    }
-
     private static Birthday parseBirthday(String value) throws ParseException {
-        if (value.isEmpty()) {
-            return null;
-        }
-        if (!Birthday.isValidBirthday(value)) {
-            throw new ParseException(Birthday.MESSAGE_CONSTRAINTS);
-        }
-        return new Birthday(value);
+        return value.isEmpty() ? null : ParserUtil.parseBirthday(value);
     }
 
     private static Address parseAddress(String value) throws ParseException {
@@ -122,23 +108,11 @@ public class AddCommandParser implements Parser<AddCommand> {
     }
 
     private static Organisation parseOrganisation(String value) throws ParseException {
-        if (value.isEmpty()) {
-            return null;
-        }
-        if (!Organisation.isValidOrganisation(value)) {
-            throw new ParseException(Organisation.MESSAGE_CONSTRAINTS);
-        }
-        return new Organisation(value);
+        return value.isEmpty() ? null : ParserUtil.parseOrganisation(value);
     }
 
     private static Note parseNote(String value) throws ParseException {
-        if (value.isEmpty()) {
-            return null;
-        }
-        if (!Note.isValidNote(value)) {
-            throw new ParseException(Note.MESSAGE_CONSTRAINTS);
-        }
-        return new Note(value);
+        return value.isEmpty() ? null : ParserUtil.parseNote(value);
     }
 
     private static Set<Tag> parseTags(ArgumentMultimap arguments) throws ParseException {
@@ -148,10 +122,7 @@ public class AddCommandParser implements Parser<AddCommand> {
                 tags.clear();
                 continue;
             }
-            if (!Tag.isValidInputTagName(value)) {
-                throw new ParseException(MESSAGE_INVALID_TAG);
-            }
-            Tag tag = new Tag(value);
+            Tag tag = ParserUtil.parseTag(value);
             if (tags.stream().noneMatch(tag::isSameTag)) {
                 tags.add(tag);
             }

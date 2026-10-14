@@ -16,6 +16,7 @@ import coordimate.model.person.Note;
 import coordimate.model.person.Organisation;
 import coordimate.model.person.Phone;
 import coordimate.model.person.Role;
+import coordimate.model.tag.Tag;
 import coordimate.testutil.PersonBuilder;
 
 public class AddCommandParserTest {
@@ -114,9 +115,31 @@ public class AddCommandParserTest {
         assertParseFailure(parser, REQUIRED + " a/Bad\tAddress", Address.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, REQUIRED + " o/!", Organisation.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, REQUIRED + " m/Bad\nNote", Note.MESSAGE_CONSTRAINTS);
-        assertParseFailure(parser, REQUIRED + " t/Bad Tag", AddCommandParser.MESSAGE_INVALID_TAG);
-        assertParseFailure(parser, REQUIRED + " t/1234567890123456789012345678901",
-                AddCommandParser.MESSAGE_INVALID_TAG);
+        assertParseFailure(parser, REQUIRED + " t/Bad Tag", Tag.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, REQUIRED + " t/1234567890123456789012345678901", Tag.MESSAGE_CONSTRAINTS);
+    }
+
+    @Test
+    public void parse_fieldsAtAndOverMaximumLength_acceptedThenRejected() throws Exception {
+        String[][] cases = {
+            {"Logistics", "r/", "R".repeat(Role.MAX_LENGTH), Role.MESSAGE_CONSTRAINTS},
+            {null, "a/", "A".repeat(Address.MAX_LENGTH), Address.MESSAGE_CONSTRAINTS},
+            {null, "o/", "O".repeat(Organisation.MAX_LENGTH), Organisation.MESSAGE_CONSTRAINTS},
+            {null, "m/", "M".repeat(Note.MAX_LENGTH), Note.MESSAGE_CONSTRAINTS},
+            {null, "t/", "T".repeat(Tag.MAX_LENGTH), Tag.MESSAGE_CONSTRAINTS},
+        };
+        for (String[] c : cases) {
+            String atLimit = c[0] == null ? REQUIRED + " " + c[1] + c[2] : REQUIRED.replace(c[0], c[2]);
+            String overLimit = c[0] == null ? REQUIRED + " " + c[1] + c[2] + "X" : REQUIRED.replace(c[0], c[2] + "X");
+            parser.parse(atLimit);
+            assertParseFailure(parser, overLimit, c[3]);
+        }
+        parser.parse(REQUIRED.replace("Amy Bee", "N".repeat(Name.MAX_LENGTH)));
+        assertParseFailure(parser, REQUIRED.replace("Amy Bee", "N".repeat(Name.MAX_LENGTH + 1)),
+                Name.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, REQUIRED.replace("amy@gmail.com", "a".repeat(65) + "@gmail.com"),
+                Email.MESSAGE_CONSTRAINTS);
+        parser.parse(REQUIRED + " o/St. John's Ambulance (NUS)");
     }
 
     @Test

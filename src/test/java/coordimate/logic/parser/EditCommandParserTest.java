@@ -107,6 +107,24 @@ public class EditCommandParserTest {
     }
 
     @Test
+    public void parse_fieldsAtAndOverMaximumLength_acceptedThenRejected() throws Exception {
+        String[][] cases = {
+            {"n/", "N".repeat(Name.MAX_LENGTH), Name.MESSAGE_CONSTRAINTS},
+            {"r/", "R".repeat(Role.MAX_LENGTH), Role.MESSAGE_CONSTRAINTS},
+            {"a/", "A".repeat(Address.MAX_LENGTH), Address.MESSAGE_CONSTRAINTS},
+            {"o/", "O".repeat(Organisation.MAX_LENGTH), Organisation.MESSAGE_CONSTRAINTS},
+            {"m/", "M".repeat(Note.MAX_LENGTH), Note.MESSAGE_CONSTRAINTS},
+            {"t/", "T".repeat(Tag.MAX_LENGTH), Tag.MESSAGE_CONSTRAINTS},
+        };
+        for (String[] c : cases) {
+            parser.parse("1 " + c[0] + c[1]);
+            assertParseFailure(parser, "1 " + c[0] + c[1] + "X", c[2]);
+        }
+        assertParseFailure(parser, "1 e/" + "a".repeat(65) + "@gmail.com", Email.MESSAGE_CONSTRAINTS);
+        parser.parse("1 o/St. John's Ambulance (NUS)");
+    }
+
+    @Test
     public void parse_phoneAtCurrentLengthBoundaries_success() {
         for (String phone : new String[] {"1234567", "123456789012345"}) {
             EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withPhone(phone).build();
