@@ -34,7 +34,8 @@ public class CreateTagCommandTest {
     @Test
     public void execute_duplicateTag_throwsCommandException() {
         Model model = new ModelManager();
-        assertCommandFailure(new CreateTagCommand(new Tag("exco")), model, "This tag already exists.");
+        assertCommandFailure(new CreateTagCommand(new Tag("exco")), model,
+                "A tag with this name already exists. No changes were made.");
     }
 
     @Test

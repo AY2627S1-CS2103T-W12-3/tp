@@ -21,7 +21,7 @@ import coordimate.model.tag.Tag;
  */
 public class ParserUtil {
 
-    public static final String MESSAGE_INVALID_INDEX = "Index must be a positive integer.";
+    public static final String MESSAGE_INVALID_INDEX = "Index must be a positive integer. Example: 1";
 
     /**
      * Creates a format error containing the command's usage instructions.

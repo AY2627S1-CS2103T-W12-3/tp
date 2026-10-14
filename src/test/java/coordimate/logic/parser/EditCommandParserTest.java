@@ -1,5 +1,6 @@
 package coordimate.logic.parser;
 
+import static coordimate.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static coordimate.logic.commands.CommandTestUtil.ADDRESS_DESC_AMY;
 import static coordimate.logic.commands.CommandTestUtil.ADDRESS_DESC_BOB;
 import static coordimate.logic.commands.CommandTestUtil.EMAIL_DESC_AMY;
@@ -61,7 +62,7 @@ public class EditCommandParserTest {
         assertParseFailure(parser, "1", EditCommand.MESSAGE_NOT_EDITED);
 
         // no index and no field specified
-        assertParseFailure(parser, "", EditCommandParser.MESSAGE_INVALID_INDEX);
+        assertParseFailure(parser, "", String.format(MESSAGE_INVALID_COMMAND_FORMAT, EditCommand.MESSAGE_USAGE));
     }
 
     @Test

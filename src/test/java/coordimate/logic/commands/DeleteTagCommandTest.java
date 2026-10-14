@@ -47,7 +47,7 @@ public class DeleteTagCommandTest {
     public void execute_missingTag_throwsCommandException() {
         Model model = new ModelManager();
         assertCommandFailure(new DeleteTagCommand("Missing"), model,
-                "No such tag exists: Missing.");
+                "Tag Missing does not exist. Use a saved tag name.");
     }
 
     @Test

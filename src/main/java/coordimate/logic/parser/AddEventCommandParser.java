@@ -19,9 +19,9 @@ import coordimate.model.event.EventTime;
  */
 public class AddEventCommandParser implements Parser<AddEventCommand> {
     public static final String MESSAGE_UNKNOWN_PARAMETER =
-            "Unknown parameter. Example: addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00";
+            "Unknown parameter.\n" + AddEventCommand.MESSAGE_USAGE;
     public static final String MESSAGE_REPEATED_PARAMETER =
-            Messages.MESSAGE_REPEATED_REQUIRED_PARAMETER;
+            Messages.MESSAGE_REPEATED_REQUIRED_PARAMETER + "\n" + AddEventCommand.MESSAGE_USAGE;
 
     private static final Set<String> REQUIRED_PREFIXES = Set.of(PREFIX_EVENT_NAME.toString(),
             PREFIX_START_TIME.toString(), PREFIX_END_TIME.toString());

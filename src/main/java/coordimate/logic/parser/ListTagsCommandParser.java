@@ -10,13 +10,11 @@ import coordimate.logic.parser.exceptions.ParseException;
  */
 public class ListTagsCommandParser implements Parser<ListTagsCommand> {
 
-    public static final String MESSAGE_UNKNOWN_PARAMETERS = "Unknown parameters given.";
-
     @Override
     public ListTagsCommand parse(String args) throws ParseException {
         requireNonNull(args);
         if (!args.isBlank()) {
-            throw new ParseException(MESSAGE_UNKNOWN_PARAMETERS);
+            throw ParserUtil.createInvalidFormatException(ListTagsCommand.MESSAGE_USAGE);
         }
         return new ListTagsCommand();
     }

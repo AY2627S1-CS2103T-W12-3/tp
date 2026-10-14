@@ -14,10 +14,8 @@ import coordimate.logic.parser.exceptions.ParseException;
 
 /** Parses a single displayed index, name, phone number, or email address for deletion. */
 public class DeleteCommandParser implements Parser<DeleteCommand> {
-    public static final String MESSAGE_MISSING_IDENTIFIER =
-            "Please provide an index, name, phone number, or email. Example: delete n/Aisha Tan";
     public static final String MESSAGE_UNKNOWN_PARAMETER =
-            "Unknown parameter. Example: delete n/Aisha Tan";
+            "Unknown parameter.\n" + DeleteCommand.MESSAGE_USAGE;
     public static final String MESSAGE_MULTIPLE_IDENTIFIERS =
             "Specify exactly one contact identifier. Example: delete n/Aisha Tan";
     public static final String MESSAGE_INVALID_INDEX = "Invalid contact index. Example: delete 3";
@@ -29,7 +27,7 @@ public class DeleteCommandParser implements Parser<DeleteCommand> {
     public DeleteCommand parse(String args) throws ParseException {
         requireNonNull(args);
         if (args.isBlank()) {
-            throw new ParseException(MESSAGE_MISSING_IDENTIFIER);
+            throw ParserUtil.createInvalidFormatException(DeleteCommand.MESSAGE_USAGE);
         }
         PrefixParser.rejectUnknownParameters(args, PrefixParser.CONTACT_PARAMETER_PATTERN,
                 ALLOWED_PREFIXES, MESSAGE_UNKNOWN_PARAMETER);
@@ -58,7 +56,7 @@ public class DeleteCommandParser implements Parser<DeleteCommand> {
 
     private static DeleteCommand createDeleteCommandByDetail(IdentifierType type, String value) throws ParseException {
         if (value.isBlank()) {
-            throw new ParseException(MESSAGE_MISSING_IDENTIFIER);
+            throw ParserUtil.createInvalidFormatException(DeleteCommand.MESSAGE_USAGE);
         }
         return new DeleteCommand(type, value);
     }

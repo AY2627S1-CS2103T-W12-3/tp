@@ -1,6 +1,5 @@
 package coordimate.logic.parser;
 
-import static coordimate.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static coordimate.logic.parser.CliSyntax.PREFIX_ADDRESS;
 import static coordimate.logic.parser.CliSyntax.PREFIX_BIRTHDAY;
 import static coordimate.logic.parser.CliSyntax.PREFIX_EMAIL;
@@ -34,11 +33,10 @@ import coordimate.model.tag.Tag;
  */
 public class AddCommandParser implements Parser<AddCommand> {
     public static final String MESSAGE_UNKNOWN_PARAMETER =
-            "Unknown parameter. Example: r/Logistics";
+            "Unknown parameter.\n" + AddCommand.MESSAGE_USAGE;
     public static final String MESSAGE_REPEATED_REQUIRED_PARAMETER =
-            Messages.MESSAGE_REPEATED_REQUIRED_PARAMETER;
+            Messages.MESSAGE_REPEATED_REQUIRED_PARAMETER + "\n" + AddCommand.MESSAGE_USAGE;
     public static final String MESSAGE_EMPTY_REQUIRED_VALUE = "This field cannot be empty. Example: n/Aisha Tan";
-    public static final String MESSAGE_INVALID_TAG = "Invalid tag. Example: t/Logistics";
 
     private static final Set<String> ALLOWED_PREFIXES = Set.of(PREFIX_NAME.toString(), PREFIX_PHONE.toString(),
             PREFIX_EMAIL.toString(), PREFIX_ROLE.toString(), PREFIX_BIRTHDAY.toString(), PREFIX_ADDRESS.toString(),
@@ -52,10 +50,14 @@ public class AddCommandParser implements Parser<AddCommand> {
         ArgumentMultimap arguments = ArgumentTokenizer.tokenize(args, PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL,
                 PREFIX_ROLE, PREFIX_BIRTHDAY, PREFIX_ADDRESS, PREFIX_ORGANISATION, PREFIX_TAG, PREFIX_NOTE);
         if (!hasRequiredPrefixes(arguments) || !arguments.getPreamble().isEmpty()) {
-            throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE));
+            throw ParserUtil.createInvalidFormatException(AddCommand.MESSAGE_USAGE);
         }
         rejectRepeatedRequiredParameters(arguments);
-        arguments.verifyNoDuplicatePrefixesFor(PREFIX_BIRTHDAY, PREFIX_ADDRESS, PREFIX_ORGANISATION, PREFIX_NOTE);
+        try {
+            arguments.verifyNoDuplicatePrefixesFor(PREFIX_BIRTHDAY, PREFIX_ADDRESS, PREFIX_ORGANISATION, PREFIX_NOTE);
+        } catch (ParseException e) {
+            throw new ParseException(e.getMessage() + "\n" + AddCommand.MESSAGE_USAGE, e);
+        }
         rejectEmptyRequiredValues(arguments);
 
         Name name = ParserUtil.parseName(arguments.getValue(PREFIX_NAME).orElseThrow());
@@ -139,10 +141,7 @@ public class AddCommandParser implements Parser<AddCommand> {
                 tags.clear();
                 continue;
             }
-            if (!Tag.isValidInputTagName(value)) {
-                throw new ParseException(MESSAGE_INVALID_TAG);
-            }
-            Tag tag = new Tag(value);
+            Tag tag = ParserUtil.parseTag(value);
             if (tags.stream().noneMatch(tag::isSameTag)) {
                 tags.add(tag);
             }

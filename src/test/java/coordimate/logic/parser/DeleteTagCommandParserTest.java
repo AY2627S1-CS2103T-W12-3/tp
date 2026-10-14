@@ -1,5 +1,6 @@
 package coordimate.logic.parser;
 
+import static coordimate.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static coordimate.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static coordimate.logic.parser.CommandParserTestUtil.assertParseSuccess;
 import static coordimate.testutil.Assert.assertThrows;
@@ -11,6 +12,7 @@ import coordimate.logic.commands.DeleteTagCommand;
 public class DeleteTagCommandParserTest {
 
     private final DeleteTagCommandParser parser = new DeleteTagCommandParser();
+    private final String invalidFormat = String.format(MESSAGE_INVALID_COMMAND_FORMAT, DeleteTagCommand.MESSAGE_USAGE);
 
     @Test
     public void parse_validArguments_returnsDeleteTagCommand() {
@@ -20,20 +22,20 @@ public class DeleteTagCommandParserTest {
 
     @Test
     public void parse_missingPrefix_throwsParseException() {
-        assertParseFailure(parser, "", DeleteTagCommandParser.MESSAGE_NO_PREFIX);
-        assertParseFailure(parser, " Publicity", DeleteTagCommandParser.MESSAGE_NO_PREFIX);
+        assertParseFailure(parser, "", invalidFormat);
+        assertParseFailure(parser, " Publicity", invalidFormat);
     }
 
     @Test
     public void parse_missingTagName_throwsParseException() {
-        assertParseFailure(parser, " t/", DeleteTagCommandParser.MESSAGE_NO_TAG_NAME);
-        assertParseFailure(parser, " t/   ", DeleteTagCommandParser.MESSAGE_NO_TAG_NAME);
+        assertParseFailure(parser, " t/", invalidFormat);
+        assertParseFailure(parser, " t/   ", invalidFormat);
     }
 
     @Test
     public void parse_extraParameters_throwsParseException() {
-        assertParseFailure(parser, "Publicity t/Media", DeleteTagCommandParser.MESSAGE_UNKNOWN_PARAMETERS);
-        assertParseFailure(parser, " t/Publicity t/Media", DeleteTagCommandParser.MESSAGE_UNKNOWN_PARAMETERS);
+        assertParseFailure(parser, "Publicity t/Media", invalidFormat);
+        assertParseFailure(parser, " t/Publicity t/Media", DeleteTagCommandParser.MESSAGE_REPEATED_PARAMETER);
     }
 
     @Test

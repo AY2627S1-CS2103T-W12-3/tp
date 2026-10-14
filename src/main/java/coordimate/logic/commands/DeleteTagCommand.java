@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.Optional;
 
+import coordimate.logic.Messages;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.Model;
 import coordimate.model.tag.Tag;
@@ -14,9 +15,11 @@ import coordimate.model.tag.Tag;
 public class DeleteTagCommand extends MutatingTagCommand {
 
     public static final String COMMAND_WORD = "deletetag";
-    public static final String MESSAGE_USAGE = COMMAND_WORD + " t/TAG";
+    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Deletes a custom tag.\n"
+            + "Parameters: t/TAG\n"
+            + "Example: " + COMMAND_WORD + " t/Publicity";
     public static final String MESSAGE_SUCCESS = "%s successfully deleted.";
-    public static final String MESSAGE_TAG_NOT_FOUND = "No such tag exists: %s.";
+    public static final String MESSAGE_TAG_NOT_FOUND = Messages.MESSAGE_TAG_NOT_FOUND;
 
     private final String tagName;
 

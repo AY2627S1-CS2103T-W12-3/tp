@@ -20,10 +20,10 @@ import coordimate.model.event.Event;
 public class MarkAttendanceCommandParser implements Parser<MarkAttendanceCommand> {
 
     public static final String MESSAGE_UNKNOWN_PARAMETER =
-            "Unknown parameter. Example: markattendance evn/Final Concert mem/Alice Tan att/present";
+            "Unknown parameter.\n" + MarkAttendanceCommand.MESSAGE_USAGE;
     public static final String MESSAGE_REPEATED_PARAMETER =
-            Messages.MESSAGE_REPEATED_PARAMETER;
-    public static final String MESSAGE_INVALID_STATUS = "STATUS must be either \"present\" or \"absent\".";
+            Messages.MESSAGE_REPEATED_PARAMETER + "\n" + MarkAttendanceCommand.MESSAGE_USAGE;
+    public static final String MESSAGE_INVALID_STATUS = AttendanceStatus.MESSAGE_CONSTRAINTS;
 
     private static final Set<String> REQUIRED = Set.of(PREFIX_EVENT_NAME.toString(), PREFIX_MEMBER.toString(),
             PREFIX_ATTENDANCE.toString());

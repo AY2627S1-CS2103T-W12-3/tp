@@ -14,9 +14,9 @@ import coordimate.logic.parser.exceptions.ParseException;
  */
 public class DeleteEventCommandParser implements Parser<DeleteEventCommand> {
     public static final String MESSAGE_UNKNOWN_PARAMETER =
-            "Unknown parameter. Example: deleteevent evn/Logistics Meeting";
+            "Unknown parameter.\n" + DeleteEventCommand.MESSAGE_USAGE;
     public static final String MESSAGE_REPEATED_PARAMETER =
-            Messages.MESSAGE_REPEATED_PARAMETER;
+            Messages.MESSAGE_REPEATED_PARAMETER + "\n" + DeleteEventCommand.MESSAGE_USAGE;
 
     @Override
     public DeleteEventCommand parse(String args) throws ParseException {

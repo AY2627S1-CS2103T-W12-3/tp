@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.Objects;
 
+import coordimate.logic.Messages;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.Model;
 import coordimate.model.event.Event;
@@ -18,12 +19,11 @@ public class EditEventCommand extends Command {
             + "Parameters: evn/EVENT_NAME [nevn/NEW_EVENT_NAME] [st/NEW_START_TIME] [et/NEW_END_TIME]\n"
             + "Example: " + COMMAND_WORD + " evn/Final Concert st/08-08-2026 16:00";
     public static final String MESSAGE_SUCCESS = "Edited Event %s. Start Time: %s. End Time: %s.";
-    public static final String MESSAGE_EVENT_NOT_FOUND = "Event %s does not exist.";
-    public static final String MESSAGE_NOT_EDITED = "Please provide at least one field to edit.";
-    public static final String MESSAGE_EMPTY_NEW_NAME = "New event name must not be empty.";
+    public static final String MESSAGE_EVENT_NOT_FOUND = Messages.MESSAGE_EVENT_NOT_FOUND;
+    public static final String MESSAGE_NOT_EDITED = "Provide at least one field to edit.\n" + MESSAGE_USAGE;
+    public static final String MESSAGE_EMPTY_NEW_NAME = "New event name must not be empty. Example: nevn/Final Concert";
     public static final String MESSAGE_TIME_FORMAT =
-            "New start time and/or new end time are formatted as dd-MM-yyyy [HH:mm]. "
-            + "Time of day is optional. Example: 17-09-2026 16:30";
+            EventTime.MESSAGE_CONSTRAINTS;
     public static final String MESSAGE_DUPLICATE_EVENT =
             "This update conflicts with another saved event. No changes were made.";
     public static final String MESSAGE_SAVE_ERROR = "Event could not be saved. No changes were made.";

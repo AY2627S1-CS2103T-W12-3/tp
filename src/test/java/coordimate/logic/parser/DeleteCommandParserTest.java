@@ -1,5 +1,6 @@
 package coordimate.logic.parser;
 
+import static coordimate.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static coordimate.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static coordimate.logic.parser.CommandParserTestUtil.assertParseSuccess;
 import static coordimate.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
@@ -11,6 +12,7 @@ import coordimate.logic.commands.DeleteCommand.IdentifierType;
 
 public class DeleteCommandParserTest {
     private final DeleteCommandParser parser = new DeleteCommandParser();
+    private final String invalidFormat = String.format(MESSAGE_INVALID_COMMAND_FORMAT, DeleteCommand.MESSAGE_USAGE);
 
     @Test
     public void parse_eachIdentifier_success() {
@@ -23,10 +25,10 @@ public class DeleteCommandParserTest {
 
     @Test
     public void parse_missingOrEmptyIdentifier_failure() {
-        assertParseFailure(parser, "", DeleteCommandParser.MESSAGE_MISSING_IDENTIFIER);
-        assertParseFailure(parser, "n/", DeleteCommandParser.MESSAGE_MISSING_IDENTIFIER);
-        assertParseFailure(parser, "p/   ", DeleteCommandParser.MESSAGE_MISSING_IDENTIFIER);
-        assertParseFailure(parser, "e/", DeleteCommandParser.MESSAGE_MISSING_IDENTIFIER);
+        assertParseFailure(parser, "", invalidFormat);
+        assertParseFailure(parser, "n/", invalidFormat);
+        assertParseFailure(parser, "p/   ", invalidFormat);
+        assertParseFailure(parser, "e/", invalidFormat);
     }
 
     @Test

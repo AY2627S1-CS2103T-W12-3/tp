@@ -1,5 +1,6 @@
 package coordimate.logic.parser;
 
+import static coordimate.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static coordimate.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static coordimate.testutil.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -11,6 +12,7 @@ import coordimate.logic.commands.ListTagsCommand;
 public class ListTagsCommandParserTest {
 
     private final ListTagsCommandParser parser = new ListTagsCommandParser();
+    private final String invalidFormat = String.format(MESSAGE_INVALID_COMMAND_FORMAT, ListTagsCommand.MESSAGE_USAGE);
 
     @Test
     public void parse_noParameters_returnsListTagsCommand() throws Exception {
@@ -20,8 +22,8 @@ public class ListTagsCommandParserTest {
 
     @Test
     public void parse_extraParameters_throwsParseException() {
-        assertParseFailure(parser, "unexpected", ListTagsCommandParser.MESSAGE_UNKNOWN_PARAMETERS);
-        assertParseFailure(parser, "t/EXCO", ListTagsCommandParser.MESSAGE_UNKNOWN_PARAMETERS);
+        assertParseFailure(parser, "unexpected", invalidFormat);
+        assertParseFailure(parser, "t/EXCO", invalidFormat);
     }
 
     @Test

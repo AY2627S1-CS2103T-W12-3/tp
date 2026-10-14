@@ -119,6 +119,17 @@ How the parsing works:
 * When called upon to parse a user command, the `CoordiMateParser` class creates an `XYZCommandParser` (`XYZ` is a placeholder for the specific command name, e.g., `AddCommandParser`). The parser uses the other classes shown above to parse the user command and create an `XYZCommand` object (e.g., `AddCommand`). The `CoordiMateParser` returns that object as a `Command` object.
 * All `XYZCommandParser` classes, such as `AddCommandParser` and `DeleteCommandParser`, implement the `Parser` interface so they can be treated similarly where appropriate, for example during testing.
 
+Command error messages follow these conventions:
+
+* Use sentence case and full stops for explanations, without an `Error!` prefix or exclamation marks.
+* For malformed command syntax, use `ParserUtil.createInvalidFormatException(Command.MESSAGE_USAGE)`.
+  Usage text has a command description, `Parameters:`, and `Example:` on separate lines.
+* For unknown or repeated parameters, show the reason followed by the command's usage text.
+* For invalid field values, explain the constraint and provide an `Example:` of a valid value.
+* For execution errors, explain what failed and how to correct it. Reuse the templates in `Messages` for missing
+  contacts, events, and tags, and for unmatched or ambiguous contact identifiers.
+* Add `No changes were made.` when an attempted change is rejected without modifying the saved data.
+
 ### Model component
 **API** : [`Model.java`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/Model.java)
 

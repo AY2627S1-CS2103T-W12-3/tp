@@ -1,6 +1,5 @@
 package coordimate.logic.parser;
 
-import static coordimate.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static coordimate.logic.parser.CliSyntax.PREFIX_CONTACT;
 import static coordimate.logic.parser.CliSyntax.PREFIX_EVENT_NAME;
 import static java.util.Objects.requireNonNull;
@@ -74,10 +73,10 @@ final class EventContactsParser {
         ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(args, allowed);
         boolean isMissingPrefix = Arrays.stream(allowed).anyMatch(prefix -> argMultimap.getValue(prefix).isEmpty());
         if (!argMultimap.getPreamble().isEmpty() || isMissingPrefix) {
-            throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, usage));
+            throw ParserUtil.createInvalidFormatException(usage);
         }
         if (Arrays.stream(allowed).anyMatch(prefix -> argMultimap.getAllValues(prefix).size() > 1)) {
-            throw new ParseException(MESSAGE_REPEATED_PARAMETER);
+            throw new ParseException(MESSAGE_REPEATED_PARAMETER + "\n" + usage);
         }
         return argMultimap;
     }

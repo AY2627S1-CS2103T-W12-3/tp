@@ -62,7 +62,7 @@ public class MembersCommandTest {
     @Test
     public void execute_missingEvent_listUnchanged() {
         model.updateFilteredPersonList(person -> person.equals(BENSON));
-        assertEquals("Event Gala does not exist.",
+        assertEquals("Event Gala does not exist. Use a saved event name.",
                 assertThrows(CommandException.class, () -> new MembersCommand("Gala").execute(model)).getMessage());
         assertEquals(List.of(BENSON), model.getFilteredPersonList());
     }
