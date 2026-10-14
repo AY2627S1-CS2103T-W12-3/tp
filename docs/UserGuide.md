@@ -94,8 +94,23 @@ If the local contact data cannot be loaded or saved, CoordiMate reports an error
 
 Format: `add n/NAME p/PHONE e/EMAIL r/ROLE [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [t/TAG]... [m/NOTE]`
 
-Name, phone, email, and role are required. Birthday uses `dd-MM-yyyy` and cannot be in the future.
-New phone numbers must contain 7–15 digits. An optional leading `+`, spaces, hyphens, and brackets are allowed.
+Name, phone, email, and role are required. Each field accepts the following values; surrounding spaces are ignored:
+
+| Field | Constraints |
+|---|---|
+| `NAME` | 1 to 80 characters: letters, spaces, hyphens (`-`), apostrophes (`'`), and periods (`.`), with at least one letter. |
+| `PHONE` | 7 to 15 digits, optionally starting with `+`, with optional spaces, hyphens, and brackets. |
+| `EMAIL` | `local-part@domain`, at most 254 characters, with a local part of at most 64 characters. |
+| `ROLE` | 1 to 50 characters: letters, digits, spaces, hyphens, and slashes (`/`), with at least one letter or digit. |
+| `BIRTHDAY` | A real date in `dd-MM-yyyy` format that is not in the future. |
+| `ADDRESS` | 1 to 200 printable characters. |
+| `ORGANISATION` | 1 to 80 characters: letters, digits, spaces, and `-` `&` `.` `,` `'` `(` `)` `/`, with at least one letter or digit, e.g. `St. John's Ambulance`. |
+| `NOTE` | 1 to 500 printable characters. |
+| `TAG` | 1 to 30 letters or digits with no spaces. |
+
+"Printable" excludes line breaks and other control characters. A value that breaks these rules is rejected with a
+message stating the field's constraints, such as
+`Invalid organisation. Use 1 to 80 characters: letters, digits, spaces, and - & . , ' ( ) /, with at least one letter or digit. Example: o/NUS Student Affairs`.
 Address, organisation, and note are optional. An empty `b/`, `a/`, `o/`, or `m/` leaves that field unset,
 as does omitting it. Non-tag fields may appear only once; `t/TAG` may repeat. An empty `t/` clears the
 tags collected so far. A valid new tag is saved as a custom tag. Successful feedback is
@@ -118,8 +133,9 @@ Creates an event and saves it to the local data file.
 
 Format: `addevent evn/EVENT_NAME st/START_TIME et/END_TIME`
 
-Each parameter must appear once. Event names must contain a non-whitespace character;
-leading and trailing whitespace is removed. Names must be unique, ignoring case.
+Each parameter must appear once. Event names must contain 1 to 100 printable characters, so line breaks and
+other control characters are not allowed. Leading and trailing whitespace is removed. Names must be unique,
+ignoring case. A name that breaks these rules reports `Invalid event name. Use 1 to 100 printable characters. Example: evn/Final Concert`.
 Different events may share the same start and end times.
 
 Start and end times use `dd-MM-yyyy`, optionally followed by `HH:mm` in 24-hour format.
@@ -159,8 +175,8 @@ sets the new display name using the supplied capitalization.
 Provide at least one field to edit; omitted fields
 keep their existing values. Each parameter may appear only once.
 
-The new name must contain a non-whitespace character and must not duplicate another
-event's name, ignoring case. Start and end times use `dd-MM-yyyy [HH:mm]`; a date is
+The new name follows the same rules as in `addevent`: 1 to 100 printable characters, not duplicating
+another event's name, ignoring case. Start and end times use `dd-MM-yyyy [HH:mm]`; a date is
 required and a 24-hour time is optional. The updated start must not be after the
 updated end, using the same ordering rules as `addevent`.
 
@@ -176,6 +192,7 @@ Success: `Edited Event NUS Student Life Fair. Start Time: 09-10-2026. End Time: 
 |---|---|
 | No saved event has the supplied name, ignoring case. | `Event {EVENT_NAME} does not exist.` |
 | The new event name is empty. | `New event name must not be empty.` |
+| The event name or new event name is longer than 100 characters or contains a line break or other control character. | `Invalid event name. Use 1 to 100 printable characters. Example: evn/Final Concert` |
 | A new time is empty, invalid, or incorrectly formatted. | `New start time and/or new end time are formatted as dd-MM-yyyy [HH:mm]. Time of day is optional. Example: 17-09-2026 16:30` |
 | The new name duplicates another event. | `This update conflicts with another saved event. No changes were made.` |
 | No field is provided to edit. | `Please provide at least one field to edit.` |
@@ -200,6 +217,8 @@ Examples:
 Success: `Deleted Event Final Concert.`
 
 If the event does not exist, the command reports `Event {EVENT_NAME} does not exist.`
+An event name longer than 100 characters, or one containing a line break or other control character, reports
+`Invalid event name. Use 1 to 100 printable characters. Example: evn/Final Concert`.
 An unknown parameter reports `Unknown parameter. Example: deleteevent evn/Logistics Meeting`.
 If saving fails, the event and existing data file remain unchanged.
 
@@ -235,6 +254,7 @@ If some contacts were already assigned: `Assigned 1 member(s) to Final Concert. 
 | An index is not a positive integer. | `Contact indexes must be positive integers separated by spaces. Example: c/1 3 5` |
 | Every specified contact is already assigned. | `All specified contacts are already assigned to {EVENT_NAME}. No changes were made.` |
 | The event name is empty. | `Event name must not be empty.` |
+| The event name is longer than 100 characters or contains a line break or other control character. | `Invalid event name. Use 1 to 100 printable characters. Example: evn/Final Concert` |
 | `c/` has no indexes. | `Please specify at least one contact to assign.` |
 | `evn/` or `c/` is missing. | `Invalid command format!` followed by the command format |
 | A parameter is repeated. | `Each parameter may only be specified once.` |
@@ -273,6 +293,7 @@ If some contacts were not assigned: `Removed 1 member(s) from Final Concert. 1 c
 | An index is not a positive integer. | `Contact indexes must be positive integers separated by spaces. Example: c/1 3 5` |
 | None of the specified contacts are assigned. | `None of the specified contacts are assigned to {EVENT_NAME}. No changes were made.` |
 | The event name is empty. | `Event name must not be empty.` |
+| The event name is longer than 100 characters or contains a line break or other control character. | `Invalid event name. Use 1 to 100 printable characters. Example: evn/Final Concert` |
 | `c/` has no indexes. | `Please specify at least one contact to remove.` |
 | `evn/` or `c/` is missing. | `Invalid command format!` followed by the command format |
 | A parameter is repeated. | `Each parameter may only be specified once.` |
@@ -309,6 +330,7 @@ If the event has no members, the contact list is empty: `Final Concert has no me
 |---|---|
 | No saved event has the supplied name, ignoring case. | `Event {EVENT_NAME} does not exist.` |
 | The event name is empty. | `Event name must not be empty.` |
+| The event name is longer than 100 characters or contains a line break or other control character. | `Invalid event name. Use 1 to 100 printable characters. Example: evn/Final Concert` |
 | `evn/` is missing, or there is text before it. | `Invalid command format!` followed by the command format |
 | `evn/` is repeated. | `Each parameter may only be specified once.` |
 | An unknown parameter is used. | `Unknown parameter. Example: members evn/Final Concert` |
@@ -342,9 +364,10 @@ If the member already has the requested status, no changes are made:
 |---|---|
 | No saved event has the supplied name, ignoring case. | `Error! Event {EVENT_NAME} does not exist!` |
 | The supplied member is not assigned to the event, ignoring case. | `Error! {MEMBER_NAME} is not assigned to event {EVENT_NAME}!` |
-| The member name violates the constraints above. | `Invalid name. Example: n/Aisha Tan` |
+| The member name violates the constraints above. | `Invalid name. Use 1 to 80 characters: letters, spaces, hyphens, apostrophes, and periods, with at least one letter. Example: n/Aisha Tan` |
 | `STATUS` is not `present` or `absent`, ignoring case. | `STATUS must be either "present" or "absent"!` |
 | The event name is empty. | `Event name must not be empty.` |
+| The event name is longer than 100 characters or contains a line break or other control character. | `Invalid event name. Use 1 to 100 printable characters. Example: evn/Final Concert` |
 | A required parameter is missing, or the member name is empty. | `Invalid command format!` followed by the command format |
 | A parameter is repeated. | `Each parameter may only be specified once.` |
 | An unknown parameter is used. | `Unknown parameter. Example: markattendance evn/Final Concert mem/Alice Tan att/present` |
@@ -399,8 +422,7 @@ Success for `edittag Media t/Publicity`: `Media successfully renamed to Publicit
 | The new tag name is missing. | `New tag name is not defined.` |
 | The new tag name is blank. | `Tag name cannot be empty.` |
 | More than one `t/` prefix is supplied. | `Multiple tag names given.` |
-| The new tag contains spaces, symbols, or punctuation. | `Tag names should be alphanumeric with no spaces.` |
-| The new tag exceeds 30 characters. | `Tag names should not exceed 30 characters.` |
+| The new tag contains spaces, symbols, or punctuation, or exceeds 30 characters. | `Invalid tag. Use 1 to 30 letters or digits with no spaces. Example: t/Logistics` |
 | The new tag matches the current tag, ignoring capitalization. | `{NEW_TAG} is the same as {OLD_TAG}.` |
 | The new tag already exists. | `This tag already exists.` |
 
@@ -428,8 +450,7 @@ Success: `Created tag: Publicity.`
 | More than one `t/` prefix is supplied. | `Multiple tag names given.` |
 | Text appears before `t/`. | `Unknown parameters given.` |
 | The tag name is empty. | `Tag name cannot be empty.` |
-| The tag name contains spaces, symbols, or punctuation. | `Tag names should be alphanumeric with no spaces.` |
-| The tag name exceeds 30 characters. | `Tag names should not exceed 30 characters.` |
+| The tag name contains spaces, symbols, or punctuation, or exceeds 30 characters. | `Invalid tag. Use 1 to 30 letters or digits with no spaces. Example: t/Logistics` |
 | The tag name already exists, ignoring capitalization. | `This tag already exists.` |
 
 ### Listing all tags: `listtags`
