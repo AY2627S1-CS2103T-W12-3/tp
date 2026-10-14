@@ -40,7 +40,7 @@ public class DeleteEventCommandParser implements Parser<DeleteEventCommand> {
         if (valueStart < 0 || args.substring(valueStart).isBlank()) {
             throw invalidFormat();
         }
-        return new DeleteEventCommand(args.substring(valueStart));
+        return new DeleteEventCommand(ParserUtil.parseEventName(args.substring(valueStart)));
     }
 
     private ParseException invalidFormat() {

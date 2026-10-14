@@ -67,7 +67,8 @@ public class EditEventCommandParser implements Parser<EditEventCommand> {
         if (newName != null && newName.isEmpty()) {
             throw new ParseException(EditEventCommand.MESSAGE_EMPTY_NEW_NAME);
         }
-        return new EditEventCommand(eventName, newName,
+        return new EditEventCommand(ParserUtil.parseEventName(eventName),
+                newName == null ? null : ParserUtil.parseEventName(newName),
                 parseTime(values.get(PREFIX_START_TIME.toString())),
                 parseTime(values.get(PREFIX_END_TIME.toString())));
     }

@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import coordimate.logic.commands.DeleteEventCommand;
 import coordimate.logic.parser.exceptions.ParseException;
+import coordimate.model.event.Event;
 
 public class DeleteEventCommandParserTest {
     private final DeleteEventCommandParser parser = new DeleteEventCommandParser();
@@ -40,6 +41,7 @@ public class DeleteEventCommandParserTest {
     @Test
     public void parse_repeatedName_rejected() {
         assertError("evn/Fair evn/Concert", DeleteEventCommandParser.MESSAGE_REPEATED_PARAMETER);
+        assertError("evn/" + "E".repeat(Event.MAX_NAME_LENGTH + 1), Event.MESSAGE_NAME_CONSTRAINTS);
     }
 
     private void assertError(String input, String message) {

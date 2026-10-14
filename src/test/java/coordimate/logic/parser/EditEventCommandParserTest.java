@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 
 import coordimate.logic.commands.EditEventCommand;
 import coordimate.logic.parser.exceptions.ParseException;
+import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
 
 public class EditEventCommandParserTest {
@@ -33,6 +34,8 @@ public class EditEventCommandParserTest {
     public void parse_emptyOrMissingFields_rejected() {
         assertError(" evn/Fair", EditEventCommand.MESSAGE_NOT_EDITED);
         assertError(" evn/Fair nevn/  ", EditEventCommand.MESSAGE_EMPTY_NEW_NAME);
+        assertError(" evn/" + "E".repeat(Event.MAX_NAME_LENGTH + 1) + " st/09-10-2026", Event.MESSAGE_NAME_CONSTRAINTS);
+        assertError(" evn/Fair nevn/" + "E".repeat(Event.MAX_NAME_LENGTH + 1), Event.MESSAGE_NAME_CONSTRAINTS);
         assertError(" evn/Fair st/", EditEventCommand.MESSAGE_TIME_FORMAT);
         assertError(" evn/Fair et/", EditEventCommand.MESSAGE_TIME_FORMAT);
         for (String input : new String[] {"", "nevn/Fair", "evn/ nevn/Fair", "unexpected evn/Fair nevn/New"}) {

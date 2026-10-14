@@ -58,12 +58,9 @@ public class AddEventCommandParser implements Parser<AddEventCommand> {
         if (!values.containsKey(PREFIX_EVENT_NAME.toString())) {
             throw createInvalidFormatException();
         }
-        String name = values.get(PREFIX_EVENT_NAME.toString());
+        String name = ParserUtil.parseEventName(values.get(PREFIX_EVENT_NAME.toString()));
         String start = values.getOrDefault(PREFIX_START_TIME.toString(), "");
         String end = values.getOrDefault(PREFIX_END_TIME.toString(), "");
-        if (name.isEmpty()) {
-            throw new ParseException(Event.MESSAGE_EMPTY_NAME);
-        }
         if (start.isEmpty() || end.isEmpty()) {
             throw new ParseException(EventTime.MESSAGE_EMPTY);
         }

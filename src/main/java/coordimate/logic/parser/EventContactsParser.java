@@ -14,7 +14,6 @@ import java.util.regex.Pattern;
 import coordimate.commons.core.index.Index;
 import coordimate.commons.util.StringUtil;
 import coordimate.logic.parser.exceptions.ParseException;
-import coordimate.model.event.Event;
 
 /**
  * Parses the {@code evn/EVENT_NAME [c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...]} arguments shared by the commands
@@ -90,11 +89,7 @@ final class EventContactsParser {
     }
 
     private static String readEventName(ArgumentMultimap argMultimap) throws ParseException {
-        String eventName = argMultimap.getValue(PREFIX_EVENT_NAME).get().strip();
-        if (eventName.isEmpty()) {
-            throw new ParseException(Event.MESSAGE_EMPTY_NAME);
-        }
-        return eventName;
+        return ParserUtil.parseEventName(argMultimap.getValue(PREFIX_EVENT_NAME).get());
     }
 
     private static List<Index> parseContactIndexes(String value, String noContactsMessage) throws ParseException {

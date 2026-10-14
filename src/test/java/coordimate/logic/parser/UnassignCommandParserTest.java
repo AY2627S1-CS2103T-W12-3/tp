@@ -39,6 +39,7 @@ public class UnassignCommandParserTest {
     @Test
     public void parse_emptyValues_rejected() {
         assertError(" evn/ c/1", Event.MESSAGE_EMPTY_NAME);
+        assertError(" evn/" + "E".repeat(Event.MAX_NAME_LENGTH + 1) + " c/1", Event.MESSAGE_NAME_CONSTRAINTS);
         assertError(" evn/Final Concert c/", UnassignCommandParser.MESSAGE_NO_CONTACTS);
         assertError(" evn/Final Concert c/   ", UnassignCommandParser.MESSAGE_NO_CONTACTS);
     }

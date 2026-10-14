@@ -24,11 +24,16 @@ public class AddEventCommandParserTest {
                 new EventTime("09-10-2026"), new EventTime("10-10-2026")));
         assertEquals(fair, parser.parse(" evn/Student Life Fair st/09-10-2026 et/10-10-2026"));
         assertEquals(fair, parser.parse(" et/10-10-2026 evn/  Student Life Fair  st/09-10-2026"));
+        String longestName = "E".repeat(Event.MAX_NAME_LENGTH);
+        assertEquals(new AddEventCommand(new Event(longestName, new EventTime("09-10-2026"),
+                new EventTime("10-10-2026"))), parser.parse(" evn/" + longestName + " st/09-10-2026 et/10-10-2026"));
     }
 
     @Test
     public void parse_emptyValues_specificErrors() {
         assertError(" evn/ st/09-10-2026 et/10-10-2026", Event.MESSAGE_EMPTY_NAME);
+        assertError(" evn/" + "E".repeat(Event.MAX_NAME_LENGTH + 1) + " st/09-10-2026 et/10-10-2026",
+                Event.MESSAGE_NAME_CONSTRAINTS);
         assertError(" evn/Fair st/ et/10-10-2026", EventTime.MESSAGE_EMPTY);
         assertError(" evn/Fair st/09-10-2026 et/", EventTime.MESSAGE_EMPTY);
         assertError(" evn/Fair et/10-10-2026", EventTime.MESSAGE_EMPTY);

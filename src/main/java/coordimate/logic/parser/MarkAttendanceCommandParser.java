@@ -15,7 +15,6 @@ import java.util.regex.Pattern;
 import coordimate.logic.commands.MarkAttendanceCommand;
 import coordimate.logic.parser.exceptions.ParseException;
 import coordimate.model.event.AttendanceStatus;
-import coordimate.model.event.Event;
 
 /**
  * Parses an event name, member name, and attendance status, rejecting unknown or repeated parameters.
@@ -65,13 +64,10 @@ public class MarkAttendanceCommandParser implements Parser<MarkAttendanceCommand
             throw invalidFormat();
         }
 
-        String eventName = values.get(PREFIX_EVENT_NAME.toString());
+        String eventName = ParserUtil.parseEventName(values.get(PREFIX_EVENT_NAME.toString()));
         String memberName = values.get(PREFIX_MEMBER.toString());
         String statusText = values.get(PREFIX_ATTENDANCE.toString());
 
-        if (eventName.isEmpty()) {
-            throw new ParseException(Event.MESSAGE_EMPTY_NAME);
-        }
         if (memberName.isEmpty()) {
             throw invalidFormat();
         }

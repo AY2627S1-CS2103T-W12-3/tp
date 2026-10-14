@@ -35,6 +35,7 @@ public class MembersCommandParserTest {
     public void parse_emptyName_rejected() {
         assertError(" evn/", Event.MESSAGE_EMPTY_NAME);
         assertError(" evn/   ", Event.MESSAGE_EMPTY_NAME);
+        assertError(" evn/" + "E".repeat(Event.MAX_NAME_LENGTH + 1), Event.MESSAGE_NAME_CONSTRAINTS);
     }
 
     @Test

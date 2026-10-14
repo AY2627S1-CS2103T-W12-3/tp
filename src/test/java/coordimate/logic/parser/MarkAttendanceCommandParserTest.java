@@ -45,8 +45,10 @@ public class MarkAttendanceCommandParserTest {
     }
 
     @Test
-    public void parse_emptyEventName_rejected() {
+    public void parse_emptyOrInvalidEventName_rejected() {
         assertError(" evn/ mem/Alice Tan att/present", Event.MESSAGE_EMPTY_NAME);
+        assertError(" evn/" + "E".repeat(Event.MAX_NAME_LENGTH + 1) + " mem/Alice Tan att/present",
+                Event.MESSAGE_NAME_CONSTRAINTS);
     }
 
     @Test
