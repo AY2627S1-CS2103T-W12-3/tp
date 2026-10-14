@@ -1,12 +1,12 @@
 package coordimate.storage;
 
-import static coordimate.testutil.Assert.assertThrows;
 import static coordimate.testutil.TypicalPersons.ALICE;
 import static coordimate.testutil.TypicalPersons.HOON;
 import static coordimate.testutil.TypicalPersons.IDA;
 import static coordimate.testutil.TypicalPersons.getTypicalCoordiMate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -19,6 +19,7 @@ import org.junit.jupiter.api.io.TempDir;
 import coordimate.commons.exceptions.DataLoadingException;
 import coordimate.model.CoordiMate;
 import coordimate.model.ReadOnlyCoordiMate;
+import coordimate.model.event.Event;
 import coordimate.model.tag.Tag;
 
 public class JsonCoordiMateStorageTest {
@@ -60,6 +61,45 @@ public class JsonCoordiMateStorageTest {
     @Test
     public void readCoordiMate_invalidAndValidPersonCoordiMate_throwDataLoadingException() {
         assertThrows(DataLoadingException.class, () -> readCoordiMate("invalidAndValidPersonCoordiMate.json"));
+    }
+
+    @Test
+    public void readCoordiMate_invalidEvents_throwDataLoadingException() {
+        assertLoadFails("invalidEventCoordiMate.json", Event.MESSAGE_INVALID_TIME_ORDER);
+        assertLoadFails("invalidEventNameCoordiMate.json", Event.MESSAGE_EMPTY_NAME);
+        assertLoadFails("invalidAttendanceCoordiMate.json", JsonAdaptedEvent.MESSAGE_INVALID_ATTENDANCE_STATUS);
+        assertLoadFails("unassignedAttendanceCoordiMate.json", Event.MESSAGE_UNASSIGNED_ATTENDANCE);
+    }
+
+    @Test
+    public void readCoordiMate_invalidTag_throwDataLoadingException() {
+        assertLoadFails("invalidTagCoordiMate.json", Tag.MESSAGE_CONSTRAINTS);
+    }
+
+    @Test
+    public void readCoordiMate_duplicateEventsOrTags_throwDataLoadingException() {
+        assertLoadFails("duplicateEventCoordiMate.json", JsonSerializableCoordiMate.MESSAGE_DUPLICATE_EVENT);
+        assertLoadFails("duplicateTagCoordiMate.json", JsonSerializableCoordiMate.MESSAGE_DUPLICATE_TAG);
+    }
+
+    @Test
+    public void readCoordiMate_jsonNullOrMissingPersons_throwDataLoadingException() {
+        assertLoadFails("nullJsonCoordiMate.json", "JSON file must contain an object.");
+        assertLoadFails("missingPersonsCoordiMate.json", "Persons list must be present.");
+    }
+
+    /**
+     * Asserts that loading {@code fileName} from the test data folder fails, and that the innermost cause
+     * has {@code expectedMessage}, so the file is rejected for the intended reason.
+     */
+    private void assertLoadFails(String fileName, String expectedMessage) {
+        DataLoadingException exception =
+                assertThrows(DataLoadingException.class, () -> readCoordiMate(fileName), fileName);
+        Throwable rootCause = exception;
+        while (rootCause.getCause() != null) {
+            rootCause = rootCause.getCause();
+        }
+        assertEquals(expectedMessage, rootCause.getMessage(), fileName);
     }
 
     @Test

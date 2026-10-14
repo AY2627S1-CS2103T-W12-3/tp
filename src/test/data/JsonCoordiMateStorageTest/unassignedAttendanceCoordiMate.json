@@ -1,0 +1,35 @@
+{
+  "persons": [
+    {
+      "name": "Alice Pauline",
+      "phone": "94351253",
+      "email": "alice@example.com",
+      "address": "123, Jurong West Ave 6, #08-111",
+      "tags": [
+        "friends"
+      ]
+    },
+    {
+      "name": "Benson Meier",
+      "phone": "98765432",
+      "email": "johnd@example.com",
+      "address": "311, Clementi Ave 2, #02-25",
+      "tags": [
+        "friends"
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "Final Concert",
+      "startTime": "08-08-2026 15:00",
+      "endTime": "08-08-2026 18:00",
+      "members": [
+        "Alice Pauline"
+      ],
+      "attendance": {
+        "Benson Meier": "present"
+      }
+    }
+  ]
+}
