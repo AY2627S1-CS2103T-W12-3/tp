@@ -252,10 +252,10 @@ public class EventListPanel extends UiPart<Region> {
 
     private String getTagColorClass(String tagName) {
         return switch (tagName.toLowerCase(Locale.ROOT)) {
-        case "logistics" -> "event-member-tag-teal";
-        case "sponsor" -> "event-member-tag-amber";
-        case "publicity", "universitystaff" -> "event-member-tag-purple";
-        default -> "event-member-tag-blue";
+            case "logistics" -> "event-member-tag-teal";
+            case "sponsor" -> "event-member-tag-amber";
+            case "publicity", "universitystaff" -> "event-member-tag-purple";
+            default -> "event-member-tag-blue";
         };
     }
 

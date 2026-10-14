@@ -55,6 +55,7 @@ public class TagListViewModel {
         return memberCountText;
     }
 
+    /** Selects a tag whose matching contacts should be shown. */
     public void selectTag(String tagName) {
         selectedTagName = tagName;
         updateMemberNames();
