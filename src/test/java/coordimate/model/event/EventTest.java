@@ -72,6 +72,37 @@ public class EventTest {
     }
 
     @Test
+    public void isValidName() {
+        assertThrows(NullPointerException.class, () -> Event.isValidName(null));
+
+        assertFalse(Event.isValidName(""));
+        assertFalse(Event.isValidName(" \t\n"));
+        assertFalse(Event.isValidName("E".repeat(Event.MAX_NAME_LENGTH + 1))); // one over the limit
+        assertFalse(Event.isValidName("🎵".repeat(Event.MAX_NAME_LENGTH + 1)));
+        assertFalse(Event.isValidName("Final\nConcert")); // line break inside the name
+        assertFalse(Event.isValidName("Final\u0007Concert")); // control character
+
+        assertTrue(Event.isValidName("E"));
+        assertTrue(Event.isValidName("E".repeat(Event.MAX_NAME_LENGTH))); // at the limit
+        assertTrue(Event.isValidName("🎵".repeat(Event.MAX_NAME_LENGTH))); // supplementary characters count once
+        assertTrue(Event.isValidName("  " + "E".repeat(Event.MAX_NAME_LENGTH) + "  ")); // surrounding spaces ignored
+        assertTrue(Event.isValidName("Arts & Music Fair 2026 (Day 1)"));
+    }
+
+    @Test
+    public void constructor_invalidName_rejectedWithConstraints() {
+        assertEquals(Event.MESSAGE_EMPTY_NAME, assertThrows(IllegalArgumentException.class, () ->
+                new Event(" ", date, time)).getMessage());
+        assertEquals(Event.MESSAGE_NAME_CONSTRAINTS, assertThrows(IllegalArgumentException.class, () ->
+                new Event("E".repeat(Event.MAX_NAME_LENGTH + 1), date, time)).getMessage());
+        assertEquals(Event.MESSAGE_NAME_CONSTRAINTS, assertThrows(IllegalArgumentException.class, () ->
+                new Event("Final\u0007Concert", date, time)).getMessage());
+        assertEquals("E".repeat(Event.MAX_NAME_LENGTH),
+                new Event("E".repeat(Event.MAX_NAME_LENGTH), date, time).getName());
+        assertTrue(Event.MESSAGE_NAME_CONSTRAINTS.contains(String.valueOf(Event.MAX_NAME_LENGTH)));
+    }
+
+    @Test
     public void identity_sameNameDifferentTimes_isDuplicate() {
         Event event = new Event("Concert", date, time);
         Event differentTimes = new Event("Concert", date, date);

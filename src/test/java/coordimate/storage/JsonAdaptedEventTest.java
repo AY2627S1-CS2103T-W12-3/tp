@@ -77,11 +77,14 @@ public class JsonAdaptedEventTest {
             new JsonAdaptedEvent("Concert", "08-08-2026", "08-08-2026 24:00"),
             new JsonAdaptedEvent("Concert", "", "08-08-2026"),
             new JsonAdaptedEvent("Concert", "08-08-2026", " "),
-            new JsonAdaptedEvent("Concert", "08-08-2026 18:00", "08-08-2026 15:00")
+            new JsonAdaptedEvent("Concert", "08-08-2026 18:00", "08-08-2026 15:00"),
+            new JsonAdaptedEvent("E".repeat(Event.MAX_NAME_LENGTH + 1), "08-08-2026", "08-08-2026"),
+            new JsonAdaptedEvent("Final\u0007Concert", "08-08-2026", "08-08-2026")
         };
         String[] messages = {
             Event.MESSAGE_EMPTY_NAME, EventTime.MESSAGE_CONSTRAINTS, EventTime.MESSAGE_CONSTRAINTS,
-            EventTime.MESSAGE_EMPTY, EventTime.MESSAGE_EMPTY, Event.MESSAGE_INVALID_TIME_ORDER
+            EventTime.MESSAGE_EMPTY, EventTime.MESSAGE_EMPTY, Event.MESSAGE_INVALID_TIME_ORDER,
+            Event.MESSAGE_NAME_CONSTRAINTS, Event.MESSAGE_NAME_CONSTRAINTS
         };
         for (int i = 0; i < events.length; i++) {
             assertEquals(messages[i], assertThrows(IllegalValueException.class, events[i]::toModelType).getMessage());
