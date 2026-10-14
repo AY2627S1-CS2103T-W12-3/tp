@@ -4,14 +4,18 @@ import static coordimate.testutil.TypicalPersons.ALICE;
 import static coordimate.testutil.TypicalPersons.HOON;
 import static coordimate.testutil.TypicalPersons.IDA;
 import static coordimate.testutil.TypicalPersons.getTypicalCoordiMate;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -20,7 +24,10 @@ import coordimate.commons.exceptions.DataLoadingException;
 import coordimate.model.CoordiMate;
 import coordimate.model.ReadOnlyCoordiMate;
 import coordimate.model.event.Event;
+import coordimate.model.person.Person;
 import coordimate.model.tag.Tag;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 
 public class JsonCoordiMateStorageTest {
     private static final Path TEST_DATA_FOLDER = Paths.get("src", "test", "data", "JsonCoordiMateStorageTest");
@@ -132,6 +139,44 @@ public class JsonCoordiMateStorageTest {
     }
 
     @Test
+    public void saveCoordiMate_existingFile_replacedWithoutTemporaryFiles() throws Exception {
+        Path filePath = testFolder.resolve("coordimate.json");
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(filePath);
+        storage.saveCoordiMate(getTypicalCoordiMate());
+
+        CoordiMate smaller = new CoordiMate();
+        smaller.addPerson(HOON);
+        storage.saveCoordiMate(smaller);
+
+        assertEquals(smaller, new CoordiMate(storage.readCoordiMate().orElseThrow()));
+        assertEquals(List.of("coordimate.json"), listFileNames(testFolder));
+    }
+
+    @Test
+    public void saveCoordiMate_parentPathIsFile_throwsIoExceptionAndKeepsFile() throws Exception {
+        Path notAFolder = testFolder.resolve("data");
+        Files.writeString(notAFolder, "not a folder");
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(notAFolder.resolve("coordimate.json"));
+
+        assertThrows(IOException.class, () -> storage.saveCoordiMate(getTypicalCoordiMate()));
+        assertEquals("not a folder", Files.readString(notAFolder));
+        assertEquals(List.of("data"), listFileNames(testFolder));
+    }
+
+    @Test
+    public void saveCoordiMate_failureWhileWriting_existingFileUnchangedAndNoTemporaryFile() throws Exception {
+        Path filePath = testFolder.resolve("coordimate.json");
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(filePath);
+        storage.saveCoordiMate(getTypicalCoordiMate());
+        byte[] savedBytes = Files.readAllBytes(filePath);
+
+        assertThrows(IllegalStateException.class, () -> storage.saveCoordiMate(new FailingCoordiMate()));
+
+        assertArrayEquals(savedBytes, Files.readAllBytes(filePath));
+        assertEquals(List.of("coordimate.json"), listFileNames(testFolder));
+    }
+
+    @Test
     public void readAndSaveCoordiMate_allInOrder_success() throws Exception {
         Path filePath = testFolder.resolve("TempCoordiMate.json");
         CoordiMate original = getTypicalCoordiMate();
@@ -177,5 +222,31 @@ public class JsonCoordiMateStorageTest {
     @Test
     public void saveCoordiMate_nullFilePath_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> saveCoordiMate(new CoordiMate(), null));
+    }
+
+    private static List<String> listFileNames(Path folder) throws IOException {
+        try (Stream<Path> files = Files.list(folder)) {
+            return files.map(file -> file.getFileName().toString()).sorted().toList();
+        }
+    }
+
+    /**
+     * Fails while its data is being converted for saving, after the temporary file has been created.
+     */
+    private static class FailingCoordiMate implements ReadOnlyCoordiMate {
+        @Override
+        public ObservableList<Person> getPersonList() {
+            return FXCollections.observableArrayList(ALICE);
+        }
+
+        @Override
+        public ObservableList<Tag> getTagList() {
+            return FXCollections.observableArrayList();
+        }
+
+        @Override
+        public ObservableList<Event> getEventList() {
+            throw new IllegalStateException("Event data could not be read.");
+        }
     }
 }
