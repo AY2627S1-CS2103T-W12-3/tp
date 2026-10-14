@@ -19,6 +19,8 @@ import coordimate.model.event.AttendanceStatus;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
 import coordimate.model.person.Name;
+import coordimate.model.person.Person;
+import coordimate.testutil.PersonBuilder;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -27,6 +29,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.SplitPane;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
@@ -63,7 +66,7 @@ public class EventListPanelTest {
 
             assertEquals("Members (3)", getLabel(root, "memberCount").getText());
             assertCounts(root, "1 Present", "1 Absent", "1 Not marked");
-            assertMembers(root, "Alice Tan", "Present", "Bob Lim", "Absent", "Charlie Ng", "Not marked");
+            assertMembers(root, "Alice Tan", "● present", "Bob Lim", "● absent", "Charlie Ng", "● unmarked");
         });
     }
 
@@ -78,16 +81,16 @@ public class EventListPanelTest {
 
             events.setAll(event.withAttendance(ALICE, AttendanceStatus.ABSENT));
             assertCounts(root, "0 Present", "1 Absent", "1 Not marked");
-            assertMembers(root, "Alice Tan", "Absent", "Bob Lim", "Not marked");
+            assertMembers(root, "Alice Tan", "● absent", "Bob Lim", "● unmarked");
 
             events.setAll(events.getFirst().withAttendance(ALICE, AttendanceStatus.PRESENT));
             assertCounts(root, "1 Present", "0 Absent", "1 Not marked");
-            assertMembers(root, "Alice Tan", "Present", "Bob Lim", "Not marked");
+            assertMembers(root, "Alice Tan", "● present", "Bob Lim", "● unmarked");
             assertEquals(events.getFirst(), getEventList(root).getSelectionModel().getSelectedItem());
 
             events.setAll(event(List.of(BOB), Map.of()));
             assertCounts(root, "0 Present", "0 Absent", "1 Not marked");
-            assertMembers(root, "Bob Lim", "Not marked");
+            assertMembers(root, "Bob Lim", "● unmarked");
         });
     }
 
@@ -103,6 +106,27 @@ public class EventListPanelTest {
             assertEquals("Members (0)", getLabel(root, "memberCount").getText());
             Label hint = (Label) getMembers(root).getChildren().getFirst();
             assertEquals("No members assigned yet. Assign contacts with assign.", hint.getText());
+        });
+    }
+
+    @Test
+    public void selectEvent_showsMemberListStyleWithContactRoleOrganisationAndTags() throws Exception {
+        runOnJavaFxThread(() -> {
+            Person alice = new PersonBuilder().withName(ALICE.getFullName()).withRole("Treasurer")
+                    .withOrganisation("Student Union").withTags("Finance", "Publicity").build();
+            Region root = new EventListPanel(FXCollections.observableArrayList(event(List.of(ALICE), Map.of())),
+                    FXCollections.observableArrayList(alice)).getRoot();
+            new Scene(root);
+            root.applyCss();
+
+            HBox row = (HBox) getMembers(root).getChildren().getFirst();
+            assertEquals("1.", ((Label) row.getChildren().get(0)).getText());
+            VBox memberDetails = (VBox) row.getChildren().get(2);
+            FlowPane identityLine = (FlowPane) memberDetails.getChildren().get(0);
+            assertEquals("Alice Tan", ((Label) identityLine.getChildren().get(0)).getText());
+            assertEquals("Finance", ((Label) identityLine.getChildren().get(1)).getText());
+            assertEquals("Publicity", ((Label) identityLine.getChildren().get(2)).getText());
+            assertEquals("Treasurer · Student Union", ((Label) memberDetails.getChildren().get(1)).getText());
         });
     }
 
@@ -155,9 +179,11 @@ public class EventListPanelTest {
         assertEquals(namesAndStatuses.length / 2, members.getChildren().size());
         for (int index = 0; index < namesAndStatuses.length; index += 2) {
             HBox row = (HBox) members.getChildren().get(index / 2);
-            Label name = (Label) row.getChildren().get(0);
-            assertEquals((index / 2 + 1) + ". " + namesAndStatuses[index], name.getText());
-            assertEquals(namesAndStatuses[index + 1], ((Label) row.getChildren().get(1)).getText());
+            VBox details = (VBox) row.getChildren().get(2);
+            FlowPane identityLine = (FlowPane) details.getChildren().get(0);
+            Label name = (Label) identityLine.getChildren().get(0);
+            assertEquals(namesAndStatuses[index], name.getText());
+            assertEquals(namesAndStatuses[index + 1], ((Label) row.getChildren().get(3)).getText());
         }
     }
 

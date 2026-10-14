@@ -175,7 +175,7 @@ public class MainWindow extends UiPart<Stage> {
         personListPanel = new PersonListPanel(logic.getFilteredPersonList(), logic.getEventList());
         personListPanelPlaceholder.getChildren().add(personListPanel.getRoot());
 
-        eventListPanel = new EventListPanel(logic.getEventList());
+        eventListPanel = new EventListPanel(logic.getEventList(), logic.getFilteredPersonList());
         eventListPanelPlaceholder.getChildren().add(eventListPanel.getRoot());
         TagListViewModel tagListViewModel = new TagListViewModel(logic.getTagList());
         tagListView.setItems(tagListViewModel.getTagNames());

@@ -140,7 +140,7 @@
     -fx-text-fill: #f0f6fc;
 }
 .contact-header, .event-header { -fx-min-height: 58; }
-.contact-avatar, .event-avatar {
+.contact-avatar {
     -fx-alignment: center;
     -fx-min-width: 50;
     -fx-min-height: 50;
@@ -152,7 +152,6 @@
     -fx-font-size: 18px;
     -fx-font-weight: bold;
 }
-.event-avatar { -fx-background-color: #4f46e5; -fx-background-radius: 12; }
 .section-divider { -fx-background-color: #212734; -fx-min-height: 1; -fx-max-height: 1; }
 .contact-details-scroll, .contact-details-scroll > .viewport,
 .event-details-scroll, .event-details-scroll > .viewport {
@@ -166,7 +165,10 @@
     -fx-border-color: #2b3446;
     -fx-border-radius: 7;
 }
-.contact-details-card .detail-value { -fx-font-family: "JetBrains Mono", "Consolas", monospace; }
+.contact-details-card .detail-value {
+    -fx-font-family: "JetBrains Mono", "Consolas", monospace;
+    -fx-font-weight: bold;
+}
 .note-card { -fx-font-family: "Inter", "Segoe UI", sans-serif; }
 .time-tile {
     -fx-padding: 12;
@@ -235,13 +237,47 @@
 .event-overview .label { -fx-font-family: "JetBrains Mono", "Consolas", monospace; -fx-font-size: 11px; }
 .attendance-member-row {
     -fx-alignment: center-left;
-    -fx-padding: 10 12;
+    -fx-padding: 12 14;
     -fx-background-color: #1b202a;
     -fx-background-radius: 5;
     -fx-border-color: #2b3446;
     -fx-border-radius: 5;
 }
-.attendance-badge { -fx-padding: 4 8; -fx-background-radius: 4; -fx-border-radius: 4; -fx-border-width: 1; }
+.event-member-index {
+    -fx-min-width: 20;
+    -fx-font-family: "JetBrains Mono", "Consolas", monospace;
+    -fx-font-weight: bold;
+    -fx-text-fill: #8bb8fc;
+}
+.event-member-avatar {
+    -fx-alignment: center;
+    -fx-min-width: 36;
+    -fx-min-height: 36;
+    -fx-pref-width: 36;
+    -fx-pref-height: 36;
+    -fx-background-radius: 18;
+    -fx-border-radius: 18;
+    -fx-border-width: 1;
+    -fx-font-weight: bold;
+}
+.event-member-avatar-purple { -fx-background-color: #282363; -fx-border-color: #5346a8; -fx-text-fill: #c4b5fd; }
+.event-member-avatar-teal { -fx-background-color: #083344; -fx-border-color: #0891b2; -fx-text-fill: #67e8f9; }
+.event-member-avatar-amber { -fx-background-color: #451a03; -fx-border-color: #b45309; -fx-text-fill: #fcd34d; }
+.event-member-details { -fx-spacing: 4; }
+.event-member-name { -fx-font-weight: bold; -fx-text-fill: #f0f6fc; }
+.event-member-metadata { -fx-font-size: 12px; -fx-text-fill: #94a3b8; }
+.event-member-tag {
+    -fx-padding: 2 7;
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
+    -fx-border-width: 1;
+    -fx-font-size: 11px;
+}
+.event-member-tag-blue { -fx-background-color: #172554; -fx-border-color: #3730a3; -fx-text-fill: #a5b4fc; }
+.event-member-tag-purple { -fx-background-color: #3b0764; -fx-border-color: #7e22ce; -fx-text-fill: #d8b4fe; }
+.event-member-tag-teal { -fx-background-color: #083344; -fx-border-color: #0891b2; -fx-text-fill: #67e8f9; }
+.event-member-tag-amber { -fx-background-color: #451a03; -fx-border-color: #b45309; -fx-text-fill: #fcd34d; }
+.attendance-badge { -fx-padding: 5 9; -fx-background-radius: 4; -fx-border-radius: 4; -fx-border-width: 1; -fx-font-weight: bold; }
 .attendance-present { -fx-background-color: #064e3b; -fx-border-color: #10b981; -fx-text-fill: #34d399; }
 .attendance-absent { -fx-background-color: #450a0a; -fx-border-color: #ef4444; -fx-text-fill: #f87171; }
 .attendance-unmarked { -fx-background-color: #1e2433; -fx-border-color: #334155; -fx-text-fill: #94a3b8; }

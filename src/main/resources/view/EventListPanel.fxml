@@ -22,8 +22,7 @@
     <VBox spacing="24" styleClass="event-details-section">
       <Label text="EVENT DETAILS" styleClass="section-heading" />
       <VBox fx:id="eventDetails" spacing="24">
-        <HBox alignment="CENTER_LEFT" spacing="14" styleClass="event-header">
-          <Label text="▣" styleClass="event-avatar" />
+        <HBox alignment="CENTER_LEFT" styleClass="event-header">
           <Label fx:id="selectedName" text="No event selected" wrapText="true" styleClass="event-title" />
         </HBox>
         <Region styleClass="section-divider" prefHeight="1" />
