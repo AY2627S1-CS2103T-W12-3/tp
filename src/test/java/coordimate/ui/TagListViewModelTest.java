@@ -14,30 +14,30 @@ import javafx.collections.ObservableList;
 public class TagListViewModelTest {
 
     @Test
-    public void construct_nullTags_throwsNullPointerException() {
+    public void constructor_nullTags_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> new TagListViewModel(null));
     }
 
     @Test
-    public void construct_tags_exposesNamesAndCount() {
+    public void constructor_tags_exposesNamesAndCount() {
         ObservableList<Tag> tags = FXCollections.observableArrayList(
                 new Tag("EXCO"), new Tag("Sponsor"));
 
         TagListViewModel viewModel = new TagListViewModel(tags);
 
         assertEquals(List.of("EXCO", "Sponsor"), viewModel.getTagNames());
-        assertEquals("Tags (2)", viewModel.getTagCountTextProperty().get());
+        assertEquals("Tags (2)", viewModel.tagCountTextProperty().get());
     }
 
     @Test
-    public void changeSourceList_updatesNamesAndCount() {
+    public void sourceListChanges_updatesNamesAndCount() {
         ObservableList<Tag> tags = FXCollections.observableArrayList(new Tag("EXCO"));
         TagListViewModel viewModel = new TagListViewModel(tags);
 
         tags.add(new Tag("Publicity"));
 
         assertEquals(List.of("EXCO", "Publicity"), viewModel.getTagNames());
-        assertEquals("Tags (2)", viewModel.getTagCountTextProperty().get());
+        assertEquals("Tags (2)", viewModel.tagCountTextProperty().get());
     }
 
     @Test

@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 
 public class CommandResultTest {
     @Test
-    public void checkEquals() {
+    public void equals() {
         CommandResult commandResult = new CommandResult("feedback");
 
         // same values -> returns true
@@ -44,7 +44,7 @@ public class CommandResultTest {
     }
 
     @Test
-    public void checkHashCode() {
+    public void hashcode() {
         CommandResult commandResult = new CommandResult("feedback");
 
         // same values -> returns same hashcode
@@ -67,7 +67,7 @@ public class CommandResultTest {
     }
 
     @Test
-    public void checkToStringMethod() {
+    public void toStringMethod() {
         CommandResult commandResult = new CommandResult("feedback");
         String expected = CommandResult.class.getCanonicalName() + "{feedbackToUser="
                 + commandResult.getFeedbackToUser() + ", showHelp=" + commandResult.shouldShowHelp()

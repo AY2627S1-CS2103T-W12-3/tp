@@ -60,12 +60,12 @@ public class CommandTestUtil {
     public static final EditCommand.EditPersonDescriptor DESC_BOB;
 
     static {
-        DESC_AMY = new EditPersonDescriptorBuilder().setName(VALID_NAME_AMY)
-                .setPhone(VALID_PHONE_AMY).setEmail(VALID_EMAIL_AMY).setAddress(VALID_ADDRESS_AMY)
-                .setTags(VALID_TAG_FRIEND).build();
-        DESC_BOB = new EditPersonDescriptorBuilder().setName(VALID_NAME_BOB)
-                .setPhone(VALID_PHONE_BOB).setEmail(VALID_EMAIL_BOB).setAddress(VALID_ADDRESS_BOB)
-                .setTags(VALID_TAG_HUSBAND, VALID_TAG_FRIEND).build();
+        DESC_AMY = new EditPersonDescriptorBuilder().withName(VALID_NAME_AMY)
+                .withPhone(VALID_PHONE_AMY).withEmail(VALID_EMAIL_AMY).withAddress(VALID_ADDRESS_AMY)
+                .withTags(VALID_TAG_FRIEND).build();
+        DESC_BOB = new EditPersonDescriptorBuilder().withName(VALID_NAME_BOB)
+                .withPhone(VALID_PHONE_BOB).withEmail(VALID_EMAIL_BOB).withAddress(VALID_ADDRESS_BOB)
+                .withTags(VALID_TAG_HUSBAND, VALID_TAG_FRIEND).build();
     }
 
     /**

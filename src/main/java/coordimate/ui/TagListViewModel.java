@@ -33,7 +33,7 @@ public class TagListViewModel {
         return unmodifiableTagNames;
     }
 
-    public StringBinding getTagCountTextProperty() {
+    public StringBinding tagCountTextProperty() {
         return tagCountText;
     }
 

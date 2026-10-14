@@ -153,7 +153,7 @@ public class ArgumentTokenizerTest {
     }
 
     @Test
-    public void checkEqualsMethod() {
+    public void equalsMethod() {
         Prefix aaa = new Prefix("aaa");
 
         assertEquals(aaa, aaa);

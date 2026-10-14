@@ -29,7 +29,7 @@ public class EditTagCommandTest {
     public void execute_existingTag_renamesTagAndUpdatesContacts() {
         CoordiMate data = new CoordiMate();
         data.addTag(PUBLICITY);
-        Person taggedAlice = new PersonBuilder(ALICE).setTags("Publicity", "EXCO").build();
+        Person taggedAlice = new PersonBuilder(ALICE).withTags("Publicity", "EXCO").build();
         data.addPerson(taggedAlice);
         data.addPerson(BENSON);
         Model model = new ModelManager(data, new UserPrefs());
@@ -46,14 +46,14 @@ public class EditTagCommandTest {
 
     @Test
     public void execute_missingTag_throwsCommandException() {
-        Model model = createModelWithCustomTags(PUBLICITY);
+        Model model = modelWithCustomTags(PUBLICITY);
         assertCommandFailure(new EditTagCommand("Missing", MEDIA), model,
                 "No such tag exists: Missing.");
     }
 
     @Test
     public void execute_sameTagIgnoringCase_throwsCommandException() {
-        Model model = createModelWithCustomTags(PUBLICITY);
+        Model model = modelWithCustomTags(PUBLICITY);
         assertCommandFailure(new EditTagCommand("publicity", new Tag("PUBLICITY")), model,
                 "PUBLICITY is the same as Publicity.");
     }
@@ -72,13 +72,13 @@ public class EditTagCommandTest {
 
     @Test
     public void execute_duplicateTag_throwsCommandException() {
-        Model model = createModelWithCustomTags(PUBLICITY, MEDIA);
+        Model model = modelWithCustomTags(PUBLICITY, MEDIA);
         assertCommandFailure(new EditTagCommand("Publicity", MEDIA), model,
                 "This tag already exists.");
     }
 
     @Test
-    public void checkEquals() {
+    public void equals() {
         EditTagCommand command = new EditTagCommand("Publicity", MEDIA);
         EditTagCommand sameCommand = new EditTagCommand("Publicity", new Tag("Media"));
 
@@ -91,13 +91,13 @@ public class EditTagCommandTest {
     }
 
     @Test
-    public void rejectNullArguments_throwNullPointerException() {
+    public void nullArguments_throwNullPointerException() {
         assertThrows(NullPointerException.class, () -> new EditTagCommand(null, MEDIA));
         assertThrows(NullPointerException.class, () -> new EditTagCommand("Publicity", null));
         assertThrows(NullPointerException.class, () -> new EditTagCommand("Publicity", MEDIA).execute(null));
     }
 
-    private Model createModelWithCustomTags(Tag... tags) {
+    private Model modelWithCustomTags(Tag... tags) {
         CoordiMate data = new CoordiMate();
         for (Tag tag : tags) {
             data.addTag(tag);

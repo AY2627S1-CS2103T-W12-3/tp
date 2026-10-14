@@ -28,7 +28,7 @@ import coordimate.model.person.Name;
 public class UnassignCommandTest {
     private final EventTime start = new EventTime("08-08-2026 15:00");
     private final EventTime end = new EventTime("08-08-2026 18:00");
-    private final Event concert = createEvent(ALICE.getName(), BENSON.getName(), CARL.getName());
+    private final Event concert = event(ALICE.getName(), BENSON.getName(), CARL.getName());
     private final Event fair = new Event("Fair", new EventTime("09-10-2026"), new EventTime("10-10-2026"),
             List.of(ALICE.getName()));
     private ModelManager model;
@@ -44,34 +44,34 @@ public class UnassignCommandTest {
     public void execute_singleMember_success() throws Exception {
         assertEquals("Removed 1 member(s) from Final Concert.",
                 unassign("Final Concert", 2).execute(model).getFeedbackToUser());
-        assertEquals(List.of(createEvent(ALICE.getName(), CARL.getName()), fair), model.getCoordiMate().getEventList());
+        assertEquals(List.of(event(ALICE.getName(), CARL.getName()), fair), model.getCoordiMate().getEventList());
     }
 
     @Test
     public void execute_multipleMembers_remainingKeepOrder() throws Exception {
         assertEquals("Removed 2 member(s) from Final Concert.",
                 unassign("Final Concert", 3, 1).execute(model).getFeedbackToUser());
-        assertEquals(createEvent(BENSON.getName()), model.getCoordiMate().getEventList().getFirst());
+        assertEquals(event(BENSON.getName()), model.getCoordiMate().getEventList().getFirst());
     }
 
     @Test
     public void execute_allMembers_eventHasNoMembers() throws Exception {
         unassign("Final Concert", 1, 2, 3).execute(model);
-        assertEquals(createEvent(), model.getCoordiMate().getEventList().getFirst());
+        assertEquals(event(), model.getCoordiMate().getEventList().getFirst());
     }
 
     @Test
     public void execute_differentCaseEventName_usesSavedName() throws Exception {
         assertEquals("Removed 1 member(s) from Final Concert.",
                 unassign("fINAL cONCERT", 1).execute(model).getFeedbackToUser());
-        assertEquals(createEvent(BENSON.getName(), CARL.getName()), model.getCoordiMate().getEventList().getFirst());
+        assertEquals(event(BENSON.getName(), CARL.getName()), model.getCoordiMate().getEventList().getFirst());
     }
 
     @Test
     public void execute_someNotAssigned_removesOnlyMembers() throws Exception {
         assertEquals("Removed 1 member(s) from Final Concert. 2 contact(s) were not assigned.",
                 unassign("Final Concert", 4, 2, 5).execute(model).getFeedbackToUser());
-        assertEquals(createEvent(ALICE.getName(), CARL.getName()), model.getCoordiMate().getEventList().getFirst());
+        assertEquals(event(ALICE.getName(), CARL.getName()), model.getCoordiMate().getEventList().getFirst());
     }
 
     @Test
@@ -111,7 +111,7 @@ public class UnassignCommandTest {
         model.updateFilteredPersonList(person -> person.equals(BENSON) || person.equals(DANIEL));
         assertEquals("Removed 1 member(s) from Final Concert. 1 contact(s) were not assigned.",
                 unassign("Final Concert", 1, 2).execute(model).getFeedbackToUser());
-        assertEquals(createEvent(ALICE.getName(), CARL.getName()), model.getCoordiMate().getEventList().getFirst());
+        assertEquals(event(ALICE.getName(), CARL.getName()), model.getCoordiMate().getEventList().getFirst());
         assertThrows(CommandException.class, () -> unassign("Final Concert", 3).execute(model));
     }
 
@@ -126,25 +126,25 @@ public class UnassignCommandTest {
     }
 
     @Test
-    public void checkEqualityAndNullArguments() {
+    public void equalityAndNullArguments() {
         UnassignCommand command = unassign("Final Concert", 1, 2);
         assertEquals(command, unassign(" Final Concert ", 1, 2));
         assertEquals(command.hashCode(), unassign("Final Concert", 1, 2).hashCode());
         assertNotEquals(command, unassign("Final Concert", 2, 1));
         assertNotEquals(command, unassign("Fair", 1, 2));
-        assertNotEquals(command, new AssignCommand("Final Concert", List.of(Index.createFromOneBased(1),
-                Index.createFromOneBased(2))));
+        assertNotEquals(command, new AssignCommand("Final Concert", List.of(Index.fromOneBased(1),
+                Index.fromOneBased(2))));
         assertNotEquals(command, null);
         assertThrows(NullPointerException.class, () -> command.execute(null));
-        assertThrows(NullPointerException.class, () -> new UnassignCommand(null, List.of(Index.createFromOneBased(1))));
+        assertThrows(NullPointerException.class, () -> new UnassignCommand(null, List.of(Index.fromOneBased(1))));
         assertThrows(NullPointerException.class, () -> new UnassignCommand("Final Concert", null));
     }
 
     private static UnassignCommand unassign(String eventName, Integer... oneBasedIndexes) {
-        return new UnassignCommand(eventName, Arrays.stream(oneBasedIndexes).map(Index::createFromOneBased).toList());
+        return new UnassignCommand(eventName, Arrays.stream(oneBasedIndexes).map(Index::fromOneBased).toList());
     }
 
-    private Event createEvent(Name... members) {
+    private Event event(Name... members) {
         return new Event("Final Concert", start, end, List.of(members));
     }
 }

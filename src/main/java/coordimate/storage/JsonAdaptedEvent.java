@@ -72,10 +72,10 @@ class JsonAdaptedEvent {
     public JsonAdaptedEvent(Event source) {
         this(source.getName(), source.getStartTime().toString(), source.getEndTime().toString(),
                 source.getMembers().stream().map(Name::toString).toList(),
-                convertToAttendanceStrings(source));
+                toAttendanceStrings(source));
     }
 
-    private static Map<String, String> convertToAttendanceStrings(Event source) {
+    private static Map<String, String> toAttendanceStrings(Event source) {
         Map<String, String> result = new LinkedHashMap<>();
         source.getAttendanceRecord().forEach((memberName, status) -> result.put(memberName.toString(),
                 status.toString()));
@@ -87,7 +87,7 @@ class JsonAdaptedEvent {
      *
      * @throws IllegalValueException If required fields are missing or violate event constraints.
      */
-    public Event convertToModelType() throws IllegalValueException {
+    public Event toModelType() throws IllegalValueException {
         if (name == null || startTime == null || endTime == null) {
             throw new IllegalValueException("Event name, start time and end time must be present.");
         }
@@ -112,7 +112,7 @@ class JsonAdaptedEvent {
 
     private AttendanceStatus parseStatus(String value) throws IllegalValueException {
         try {
-            return AttendanceStatus.parseFromString(value);
+            return AttendanceStatus.fromString(value);
         } catch (IllegalArgumentException e) {
             throw new IllegalValueException(MESSAGE_INVALID_ATTENDANCE_STATUS);
         }

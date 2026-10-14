@@ -75,7 +75,7 @@ public class MembersCommandTest {
     }
 
     @Test
-    public void checkEqualityAndNullArguments() {
+    public void equalityAndNullArguments() {
         MembersCommand command = new MembersCommand("Final Concert");
         assertEquals(command, new MembersCommand(" Final Concert "));
         assertEquals(command.hashCode(), new MembersCommand("Final Concert").hashCode());

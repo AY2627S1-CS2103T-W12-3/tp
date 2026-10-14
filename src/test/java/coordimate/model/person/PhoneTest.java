@@ -10,12 +10,12 @@ import org.junit.jupiter.api.Test;
 public class PhoneTest {
 
     @Test
-    public void construct_null_throwsNullPointerException() {
+    public void constructor_null_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> new Phone(null));
     }
 
     @Test
-    public void construct_invalidPhone_throwsIllegalArgumentException() {
+    public void constructor_invalidPhone_throwsIllegalArgumentException() {
         String invalidPhone = "";
         assertThrows(IllegalArgumentException.class, () -> new Phone(invalidPhone));
     }
@@ -63,17 +63,17 @@ public class PhoneTest {
     }
 
     @Test
-    public void construct_legacyPhone_retainsOriginalNumber() {
+    public void constructor_legacyPhone_retainsOriginalNumber() {
         assertEquals("123", new Phone("123").getValue());
     }
 
     @Test
-    public void construct_surroundingSpaces_trimmed() {
+    public void constructor_surroundingSpaces_trimmed() {
         assertEquals("91234567", new Phone(" 91234567 ").getValue());
     }
 
     @Test
-    public void checkEquals() {
+    public void equals() {
         Phone phone = new Phone("9999999");
 
         // same values -> returns true

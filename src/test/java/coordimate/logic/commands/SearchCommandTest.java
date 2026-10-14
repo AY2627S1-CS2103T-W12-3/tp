@@ -46,7 +46,7 @@ public class SearchCommandTest {
     }
 
     @Test
-    public void checkEquals() {
+    public void equals() {
         ContactMatchesKeywordPredicate firstPredicate = new ContactMatchesKeywordPredicate("Alice");
         ContactMatchesKeywordPredicate secondPredicate = new ContactMatchesKeywordPredicate("Benson");
 

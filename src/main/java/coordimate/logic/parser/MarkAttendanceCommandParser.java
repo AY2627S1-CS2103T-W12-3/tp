@@ -53,7 +53,7 @@ public class MarkAttendanceCommandParser implements Parser<MarkAttendanceCommand
 
         AttendanceStatus status;
         try {
-            status = AttendanceStatus.parseFromString(statusText);
+            status = AttendanceStatus.fromString(statusText);
         } catch (IllegalArgumentException e) {
             throw new ParseException(MESSAGE_INVALID_STATUS);
         }

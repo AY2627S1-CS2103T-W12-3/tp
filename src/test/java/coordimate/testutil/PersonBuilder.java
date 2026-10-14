@@ -66,7 +66,7 @@ public class PersonBuilder {
     /**
      * Sets the {@code Name} of the {@code Person} that we are building.
      */
-    public PersonBuilder setName(String name) {
+    public PersonBuilder withName(String name) {
         this.name = new Name(name);
         return this;
     }
@@ -74,7 +74,7 @@ public class PersonBuilder {
     /**
      * Parses the {@code tags} into a {@code Set<Tag>} and sets it to the {@code Person} that we are building.
      */
-    public PersonBuilder setTags(String ... tags) {
+    public PersonBuilder withTags(String ... tags) {
         this.tags = SampleDataUtil.getTagSet(tags);
         return this;
     }
@@ -82,7 +82,7 @@ public class PersonBuilder {
     /**
      * Sets the {@code Address} of the {@code Person} that we are building.
      */
-    public PersonBuilder setAddress(String address) {
+    public PersonBuilder withAddress(String address) {
         this.address = new Address(address);
         return this;
     }
@@ -90,7 +90,7 @@ public class PersonBuilder {
     /**
      * Leaves the contact without an address.
      */
-    public PersonBuilder clearAddress() {
+    public PersonBuilder withoutAddress() {
         address = null;
         return this;
     }
@@ -98,7 +98,7 @@ public class PersonBuilder {
     /**
      * Sets the {@code Phone} of the {@code Person} that we are building.
      */
-    public PersonBuilder setPhone(String phone) {
+    public PersonBuilder withPhone(String phone) {
         this.phone = new Phone(phone);
         return this;
     }
@@ -106,7 +106,7 @@ public class PersonBuilder {
     /**
      * Sets the {@code Email} of the {@code Person} that we are building.
      */
-    public PersonBuilder setEmail(String email) {
+    public PersonBuilder withEmail(String email) {
         this.email = new Email(email);
         return this;
     }
@@ -114,7 +114,7 @@ public class PersonBuilder {
     /**
      * Sets the contact's role.
      */
-    public PersonBuilder setRole(String role) {
+    public PersonBuilder withRole(String role) {
         this.role = new Role(role);
         return this;
     }
@@ -122,13 +122,13 @@ public class PersonBuilder {
     /**
      * Sets the contact's birthday.
      */
-    public PersonBuilder setBirthday(String birthday) {
+    public PersonBuilder withBirthday(String birthday) {
         this.birthday = new Birthday(birthday);
         return this;
     }
 
     /** Leaves the contact without a birthday. */
-    public PersonBuilder clearBirthday() {
+    public PersonBuilder withoutBirthday() {
         birthday = null;
         return this;
     }
@@ -136,13 +136,13 @@ public class PersonBuilder {
     /**
      * Sets the contact's organization.
      */
-    public PersonBuilder setOrganisation(String organisation) {
+    public PersonBuilder withOrganisation(String organisation) {
         this.organisation = new Organisation(organisation);
         return this;
     }
 
     /** Leaves the contact without an organisation. */
-    public PersonBuilder clearOrganisation() {
+    public PersonBuilder withoutOrganisation() {
         organisation = null;
         return this;
     }
@@ -150,13 +150,13 @@ public class PersonBuilder {
     /**
      * Sets the contact's note.
      */
-    public PersonBuilder setNote(String note) {
+    public PersonBuilder withNote(String note) {
         this.note = new Note(note);
         return this;
     }
 
     /** Leaves the contact without a note. */
-    public PersonBuilder clearNote() {
+    public PersonBuilder withoutNote() {
         note = null;
         return this;
     }

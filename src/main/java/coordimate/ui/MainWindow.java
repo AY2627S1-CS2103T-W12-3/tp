@@ -161,7 +161,7 @@ public class MainWindow extends UiPart<Stage> {
         eventsTab.textProperty().bind(Bindings.size(logic.getEventList()).asString("Events (%d)"));
         contactsView.textProperty().bind(contactsTab.textProperty());
         eventsView.textProperty().bind(eventsTab.textProperty());
-        tagsView.textProperty().bind(tagListViewModel.getTagCountTextProperty());
+        tagsView.textProperty().bind(tagListViewModel.tagCountTextProperty());
         views.getSelectionModel().selectedItemProperty().addListener((observable, oldTab, tab) -> {
             contactsView.setSelected(tab == contactsTab);
             eventsView.setSelected(tab == eventsTab);

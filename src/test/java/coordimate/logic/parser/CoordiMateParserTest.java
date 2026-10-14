@@ -57,7 +57,7 @@ public class CoordiMateParserTest {
     public void parseCommand_assign() throws Exception {
         AssignCommand command = (AssignCommand) parser.parseCommand(
                 AssignCommand.COMMAND_WORD + " evn/Final Concert c/1 3");
-        assertEquals(new AssignCommand("Final Concert", List.of(INDEX_FIRST_PERSON, Index.createFromOneBased(3))),
+        assertEquals(new AssignCommand("Final Concert", List.of(INDEX_FIRST_PERSON, Index.fromOneBased(3))),
                 command);
     }
 
@@ -65,7 +65,7 @@ public class CoordiMateParserTest {
     public void parseCommand_unassign() throws Exception {
         UnassignCommand command = (UnassignCommand) parser.parseCommand(
                 UnassignCommand.COMMAND_WORD + " evn/Final Concert c/1 3");
-        assertEquals(new UnassignCommand("Final Concert", List.of(INDEX_FIRST_PERSON, Index.createFromOneBased(3))),
+        assertEquals(new UnassignCommand("Final Concert", List.of(INDEX_FIRST_PERSON, Index.fromOneBased(3))),
                 command);
     }
 
@@ -123,7 +123,7 @@ public class CoordiMateParserTest {
 
     @Test
     public void parseCommand_editByTarget() throws Exception {
-        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().setRole("Logistics").build();
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withRole("Logistics").build();
 
         EditCommand command = (EditCommand) parser.parseCommand("edit target/alice@example.com r/Logistics");
 

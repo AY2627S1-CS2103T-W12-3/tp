@@ -34,16 +34,16 @@ public class DeleteEventIntegrationTest {
 
     @Test
     public void execute_delete_savedAndReloadedWithOtherEventsAndContacts() throws Exception {
-        ModelManager model = createModel();
+        ModelManager model = newModel();
         JsonCoordiMateStorage storage = new JsonCoordiMateStorage(temporaryFolder.resolve("data.json"));
-        Logic logic = createLogic(model, storage);
+        Logic logic = newLogic(model, storage);
         assertEquals("Deleted Event Final Concert.",
                 logic.execute("deleteevent evn/final concert").getFeedbackToUser());
         assertEquals(List.of(fair), model.getCoordiMate().getEventList());
         assertEquals(List.of(AMY), model.getCoordiMate().getPersonList());
         assertEquals(model.getCoordiMate(), storage.readCoordiMate().orElseThrow());
         ModelManager reloaded = new ModelManager(storage.readCoordiMate().orElseThrow(), model.getUserPrefs());
-        assertEquals("Deleted Event Student Life Fair.", createLogic(reloaded, storage)
+        assertEquals("Deleted Event Student Life Fair.", newLogic(reloaded, storage)
                 .execute("deleteevent evn/sTuDeNt LiFe FaIr").getFeedbackToUser());
         assertEquals(List.of(), reloaded.getCoordiMate().getEventList());
         assertEquals(reloaded.getCoordiMate(), storage.readCoordiMate().orElseThrow());
@@ -51,12 +51,12 @@ public class DeleteEventIntegrationTest {
 
     @Test
     public void execute_missingOrInexactName_modelAndFileUnchanged() throws Exception {
-        ModelManager model = createModel();
+        ModelManager model = newModel();
         JsonCoordiMateStorage storage = new JsonCoordiMateStorage(temporaryFolder.resolve("data.json"));
         storage.saveCoordiMate(model.getCoordiMate());
         String beforeFile = Files.readString(storage.getCoordiMateFilePath());
         CoordiMate before = new CoordiMate(model.getCoordiMate());
-        Logic logic = createLogic(model, storage);
+        Logic logic = newLogic(model, storage);
         for (String name : new String[] {"Missing", "Final", "Final  Concert"}) {
             assertEquals("Event " + name + " does not exist.", assertThrows(
                     CommandException.class, () -> logic.execute("deleteevent evn/" + name)).getMessage());
@@ -67,7 +67,7 @@ public class DeleteEventIntegrationTest {
 
     @Test
     public void execute_saveFailure_modelAndFileUnchanged() throws Exception {
-        ModelManager model = createModel();
+        ModelManager model = newModel();
         Path path = temporaryFolder.resolve("data.json");
         new JsonCoordiMateStorage(path).saveCoordiMate(model.getCoordiMate());
         CoordiMate before = new CoordiMate(model.getCoordiMate());
@@ -78,14 +78,14 @@ public class DeleteEventIntegrationTest {
                 throw new IOException("Disk full");
             }
         };
-        Logic failingLogic = createLogic(model, failingStorage);
+        Logic failingLogic = newLogic(model, failingStorage);
         assertEquals(DeleteEventCommand.MESSAGE_SAVE_ERROR, assertThrows(
                 CommandException.class, () -> failingLogic.execute("deleteevent evn/Final Concert")).getMessage());
         assertEquals(before, model.getCoordiMate());
         assertEquals(beforeFile, Files.readString(path));
     }
 
-    private ModelManager createModel() {
+    private ModelManager newModel() {
         ModelManager model = new ModelManager();
         model.addEvent(concert);
         model.addEvent(fair);
@@ -93,7 +93,7 @@ public class DeleteEventIntegrationTest {
         return model;
     }
 
-    private Logic createLogic(ModelManager model, JsonCoordiMateStorage storage) {
+    private Logic newLogic(ModelManager model, JsonCoordiMateStorage storage) {
         return new LogicManager(model, new StorageManager(storage,
                 new JsonUserPrefsStorage(temporaryFolder.resolve("prefs.json"))));
     }

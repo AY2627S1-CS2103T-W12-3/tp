@@ -27,10 +27,10 @@ public class AddCommandParserTest {
 
     @Test
     public void parse_allFieldsPresent_success() {
-        AddCommand expected = new AddCommand(new PersonBuilder().setRole("Logistics")
-                .setBirthday("18-06-2004").setAddress("21 Kent Ridge Road, #03-12")
-                .setOrganisation("NUS Student Affairs").setNote("Handles venue bookings")
-                .setTags("EXCO", "Publicity").build());
+        AddCommand expected = new AddCommand(new PersonBuilder().withRole("Logistics")
+                .withBirthday("18-06-2004").withAddress("21 Kent Ridge Road, #03-12")
+                .withOrganisation("NUS Student Affairs").withNote("Handles venue bookings")
+                .withTags("EXCO", "Publicity").build());
 
         assertParseSuccess(parser, " m/Handles venue bookings t/EXCO" + REQUIRED
                 + " o/NUS Student Affairs b/18-06-2004 t/Publicity a/21 Kent Ridge Road, #03-12", expected);
@@ -38,8 +38,8 @@ public class AddCommandParserTest {
 
     @Test
     public void parse_optionalFieldsOmittedOrEmpty_unset() {
-        AddCommand expected = new AddCommand(new PersonBuilder().setRole("Logistics").clearAddress()
-                .setTags().build());
+        AddCommand expected = new AddCommand(new PersonBuilder().withRole("Logistics").withoutAddress()
+                .withTags().build());
 
         assertParseSuccess(parser, REQUIRED, expected);
         assertParseSuccess(parser, REQUIRED + " b/ a/ o/ m/ t/", expected);
@@ -48,8 +48,8 @@ public class AddCommandParserTest {
 
     @Test
     public void parse_repeatedTagsAndCaseVariants_uniqueTags() {
-        AddCommand expected = new AddCommand(new PersonBuilder().setRole("Logistics")
-                .clearAddress().setTags("EXCO", "Publicity").build());
+        AddCommand expected = new AddCommand(new PersonBuilder().withRole("Logistics")
+                .withoutAddress().withTags("EXCO", "Publicity").build());
 
         assertParseSuccess(parser, REQUIRED + " t/EXCO t/exco t/Publicity", expected);
         assertParseSuccess(parser, REQUIRED + " t/ t/EXCO t/Publicity", expected);
@@ -129,8 +129,8 @@ public class AddCommandParserTest {
     @Test
     public void parse_phoneAtCurrentLengthBoundaries_success() {
         for (String phone : new String[] {"1234567", "123456789012345"}) {
-            AddCommand expected = new AddCommand(new PersonBuilder().setRole("Logistics")
-                    .setPhone(phone).clearAddress().setTags().build());
+            AddCommand expected = new AddCommand(new PersonBuilder().withRole("Logistics")
+                    .withPhone(phone).withoutAddress().withTags().build());
             assertParseSuccess(parser, REQUIRED.replace("85355255", phone), expected);
         }
     }

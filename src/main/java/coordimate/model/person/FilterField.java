@@ -20,7 +20,7 @@ public enum FilterField {
     /**
      * Returns the field matching {@code fieldName}, ignoring case, or empty if none matches.
      */
-    public static Optional<FilterField> findByFieldName(String fieldName) {
+    public static Optional<FilterField> fromFieldName(String fieldName) {
         return Arrays.stream(values()).filter(field -> field.fieldName.equalsIgnoreCase(fieldName)).findFirst();
     }
 }

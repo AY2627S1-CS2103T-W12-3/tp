@@ -23,7 +23,7 @@ public class MainAppTest {
     public Path testFolder;
 
     @Test
-    public void construct_defaultPaths_success() {
+    public void constructor_defaultPaths_success() {
         assertNotNull(new MainApp());
     }
 

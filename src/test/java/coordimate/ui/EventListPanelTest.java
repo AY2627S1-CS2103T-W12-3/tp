@@ -73,11 +73,11 @@ public class EventListPanelTest {
             new Scene(root);
             root.applyCss();
 
-            events.setAll(event.copyWithAttendance(ALICE, AttendanceStatus.ABSENT));
+            events.setAll(event.withAttendance(ALICE, AttendanceStatus.ABSENT));
             assertCounts(root, "0 Present", "1 Absent", "1 Not marked");
             assertMembers(root, "Alice Tan", "Absent", "Bob Lim", "Not marked");
 
-            events.setAll(events.getFirst().copyWithAttendance(ALICE, AttendanceStatus.PRESENT));
+            events.setAll(events.getFirst().withAttendance(ALICE, AttendanceStatus.PRESENT));
             assertCounts(root, "1 Present", "0 Absent", "1 Not marked");
             assertMembers(root, "Alice Tan", "Present", "Bob Lim", "Not marked");
             assertEquals(events.getFirst(), getEventList(root).getSelectionModel().getSelectedItem());

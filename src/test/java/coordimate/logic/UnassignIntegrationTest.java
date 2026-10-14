@@ -39,12 +39,12 @@ public class UnassignIntegrationTest {
     public void execute_unassign_savedAndReloadedWithRemainingAttendance() throws Exception {
         ModelManager model = new ModelManager(getTypicalCoordiMate(), new UserPrefs());
         JsonCoordiMateStorage storage = new JsonCoordiMateStorage(temporaryFolder.resolve("data.json"));
-        Logic logic = createLogic(model, storage);
+        Logic logic = newLogic(model, storage);
         logic.execute(ADD);
         logic.execute(ASSIGN);
         Event assigned = model.getCoordiMate().getEventList().getFirst();
-        model.setEvent(assigned, assigned.copyWithAttendance(ALICE.getName(), AttendanceStatus.PRESENT)
-                .copyWithAttendance(BENSON.getName(), AttendanceStatus.ABSENT));
+        model.setEvent(assigned, assigned.withAttendance(ALICE.getName(), AttendanceStatus.PRESENT)
+                .withAttendance(BENSON.getName(), AttendanceStatus.ABSENT));
 
         assertEquals("Removed 1 member(s) from Final Concert.",
                 logic.execute("unassign evn/final concert c/1").getFeedbackToUser());
@@ -59,7 +59,7 @@ public class UnassignIntegrationTest {
     public void execute_filteredContactList_removesDisplayedContact() throws Exception {
         ModelManager model = new ModelManager(getTypicalCoordiMate(), new UserPrefs());
         JsonCoordiMateStorage storage = new JsonCoordiMateStorage(temporaryFolder.resolve("data.json"));
-        Logic logic = createLogic(model, storage);
+        Logic logic = newLogic(model, storage);
         logic.execute(ADD);
         logic.execute(ASSIGN);
         model.updateFilteredPersonList(person -> person.equals(CARL));
@@ -76,7 +76,7 @@ public class UnassignIntegrationTest {
     public void execute_saveFailure_modelAndFileUnchanged() throws Exception {
         ModelManager model = new ModelManager(getTypicalCoordiMate(), new UserPrefs());
         Path path = temporaryFolder.resolve("data.json");
-        Logic logic = createLogic(model, new JsonCoordiMateStorage(path));
+        Logic logic = newLogic(model, new JsonCoordiMateStorage(path));
         logic.execute(ADD);
         logic.execute(ASSIGN);
         CoordiMate before = new CoordiMate(model.getCoordiMate());
@@ -88,12 +88,12 @@ public class UnassignIntegrationTest {
             }
         };
         assertEquals(UnassignCommand.MESSAGE_SAVE_ERROR, assertThrows(CommandException.class, () ->
-                createLogic(model, failingStorage).execute("unassign evn/Final Concert c/1")).getMessage());
+                newLogic(model, failingStorage).execute("unassign evn/Final Concert c/1")).getMessage());
         assertEquals(before, model.getCoordiMate());
         assertEquals(beforeFile, Files.readString(path));
     }
 
-    private Logic createLogic(ModelManager model, JsonCoordiMateStorage storage) {
+    private Logic newLogic(ModelManager model, JsonCoordiMateStorage storage) {
         return new LogicManager(model, new StorageManager(storage,
                 new JsonUserPrefsStorage(temporaryFolder.resolve("prefs.json"))));
     }

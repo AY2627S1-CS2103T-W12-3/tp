@@ -53,7 +53,7 @@ public class FilterCommandParser implements Parser<FilterCommand> {
             if (value.isEmpty()) {
                 throw new ParseException(MESSAGE_EMPTY_VALUE);
             }
-            FilterField field = FilterField.findByFieldName(fieldName)
+            FilterField field = FilterField.fromFieldName(fieldName)
                     .orElseThrow(() -> new ParseException(MESSAGE_INVALID_FIELD));
             criteria.add(new FilterCriterion(field, value));
         }

@@ -33,94 +33,91 @@ public class JsonSerializableCoordiMateTest {
     private static final Path UNKNOWN_MEMBER_FILE = TEST_DATA_FOLDER.resolve("unknownMemberCoordiMate.json");
 
     @Test
-    public void convertToModelType_typicalPersonsFile_success() throws Exception {
+    public void toModelType_typicalPersonsFile_success() throws Exception {
         JsonSerializableCoordiMate dataFromFile = JsonUtil.readJsonFile(TYPICAL_PERSONS_FILE,
                 JsonSerializableCoordiMate.class).get();
-        CoordiMate coordiMateFromFile = dataFromFile.convertToModelType();
+        CoordiMate coordiMateFromFile = dataFromFile.toModelType();
         CoordiMate typicalPersonsCoordiMate = TypicalPersons.getTypicalCoordiMate();
         assertEquals(coordiMateFromFile, typicalPersonsCoordiMate);
     }
 
     @Test
-    public void serializeAndDeserialize_personRole_preserved() throws Exception {
+    public void jsonRoundTrip_personRole_preserved() throws Exception {
         CoordiMate source = new CoordiMate();
-        Person contact = new PersonBuilder().setRole("Logistics").build();
+        Person contact = new PersonBuilder().withRole("Logistics").build();
         source.addPerson(contact);
 
-        String json = JsonUtil.serializeToJsonString(new JsonSerializableCoordiMate(source));
-        CoordiMate restored = JsonUtil.deserializeFromJsonString(json,
-                JsonSerializableCoordiMate.class).convertToModelType();
+        String json = JsonUtil.toJsonString(new JsonSerializableCoordiMate(source));
+        CoordiMate restored = JsonUtil.fromJsonString(json, JsonSerializableCoordiMate.class).toModelType();
 
         assertEquals(List.of(contact), restored.getPersonList());
     }
 
     @Test
-    public void serializeAndDeserialize_optionalContactDetails_preserved() throws Exception {
+    public void jsonRoundTrip_optionalContactDetails_preserved() throws Exception {
         CoordiMate source = new CoordiMate();
-        Person contact = new PersonBuilder().setBirthday("18-06-2004")
-                .setOrganisation("NUS Student Affairs").setNote("Handles venue bookings").build();
+        Person contact = new PersonBuilder().withBirthday("18-06-2004")
+                .withOrganisation("NUS Student Affairs").withNote("Handles venue bookings").build();
         source.addPerson(contact);
 
-        String json = JsonUtil.serializeToJsonString(new JsonSerializableCoordiMate(source));
-        CoordiMate restored = JsonUtil.deserializeFromJsonString(json,
-                JsonSerializableCoordiMate.class).convertToModelType();
+        String json = JsonUtil.toJsonString(new JsonSerializableCoordiMate(source));
+        CoordiMate restored = JsonUtil.fromJsonString(json, JsonSerializableCoordiMate.class).toModelType();
 
         assertEquals(List.of(contact), restored.getPersonList());
     }
 
     @Test
-    public void serializeAndDeserialize_contactWithoutAddress_remainsUnset() throws Exception {
+    public void jsonRoundTrip_contactWithoutAddress_remainsUnset() throws Exception {
         CoordiMate source = new CoordiMate();
-        Person contact = new PersonBuilder().clearAddress().build();
+        Person contact = new PersonBuilder().withoutAddress().build();
         source.addPerson(contact);
 
-        String json = JsonUtil.serializeToJsonString(new JsonSerializableCoordiMate(source));
-        CoordiMate restored = JsonUtil.deserializeFromJsonString(json,
-                JsonSerializableCoordiMate.class).convertToModelType();
+        String json = JsonUtil.toJsonString(new JsonSerializableCoordiMate(source));
+        CoordiMate restored = JsonUtil.fromJsonString(json, JsonSerializableCoordiMate.class).toModelType();
 
         assertEquals(List.of(contact), restored.getPersonList());
     }
 
     @Test
-    public void convertToModelType_invalidPersonFile_throwsIllegalValueException() throws Exception {
+    public void toModelType_invalidPersonFile_throwsIllegalValueException() throws Exception {
         JsonSerializableCoordiMate dataFromFile = JsonUtil.readJsonFile(INVALID_PERSON_FILE,
                 JsonSerializableCoordiMate.class).get();
-        assertThrows(IllegalValueException.class, dataFromFile::convertToModelType);
+        assertThrows(IllegalValueException.class, dataFromFile::toModelType);
     }
 
     @Test
-    public void convertToModelType_duplicatePersons_throwsIllegalValueException() throws Exception {
+    public void toModelType_duplicatePersons_throwsIllegalValueException() throws Exception {
         JsonSerializableCoordiMate dataFromFile = JsonUtil.readJsonFile(DUPLICATE_PERSON_FILE,
                 JsonSerializableCoordiMate.class).get();
         assertThrows(IllegalValueException.class, JsonSerializableCoordiMate.MESSAGE_DUPLICATE_PERSON,
-                dataFromFile::convertToModelType);
+                dataFromFile::toModelType);
     }
 
     @Test
-    public void convertToModelType_duplicateNamesIgnoringCase_throwsIllegalValueException() {
-        Person differentAlice = new PersonBuilder(BENSON).setName("  aLiCe pAuLiNe  ").build();
+    public void toModelType_duplicateNamesIgnoringCase_throwsIllegalValueException() {
+        Person differentAlice = new PersonBuilder(BENSON).withName("  aLiCe pAuLiNe  ").build();
         JsonSerializableCoordiMate data = new JsonSerializableCoordiMate(
                 List.of(new JsonAdaptedPerson(ALICE), new JsonAdaptedPerson(differentAlice)), List.of());
 
         assertThrows(IllegalValueException.class, JsonSerializableCoordiMate.MESSAGE_DUPLICATE_PERSON,
-                data::convertToModelType);
+                data::toModelType);
     }
 
     @Test
-    public void convertToModelType_events_preservedDuringRoundTrip() throws Exception {
+    public void toModelType_events_preservedDuringRoundTrip() throws Exception {
         CoordiMate source = TypicalPersons.getTypicalCoordiMate();
         source.addEvent(new Event("Concert", new EventTime("08-08-2026"), new EventTime("08-08-2026 18:00")));
         source.addEvent(new Event("Fair", new EventTime("09-08-2026"), new EventTime("10-08-2026")));
-        CoordiMate restored = new JsonSerializableCoordiMate(source).convertToModelType();
+        CoordiMate restored = new JsonSerializableCoordiMate(source).toModelType();
         assertEquals(source.getPersonList(), restored.getPersonList());
         assertEquals(source.getEventList(), restored.getEventList());
         assertEquals(source.getTagList(), restored.getTagList());
     }
 
     @Test
-    public void convertToModelType_eventMembersFile_membersLoadedAndMissingFieldIsEmpty() throws Exception {
+    public void toModelType_eventMembersFile_membersLoadedAndMissingFieldIsEmpty() throws Exception {
         CoordiMate coordiMate = JsonUtil.readJsonFile(EVENT_MEMBERS_FILE, JsonSerializableCoordiMate.class)
-                .get().convertToModelType();
+                .get().toModelType();
         List<Event> expected = List.of(
                 new Event("Final Concert", new EventTime("08-08-2026 15:00"), new EventTime("08-08-2026 18:00"),
                         List.of(BENSON.getName(), ALICE.getName())),
@@ -129,106 +126,104 @@ public class JsonSerializableCoordiMateTest {
     }
 
     @Test
-    public void convertToModelType_eventMembers_preservedDuringRoundTrip() throws Exception {
+    public void toModelType_eventMembers_preservedDuringRoundTrip() throws Exception {
         CoordiMate source = TypicalPersons.getTypicalCoordiMate();
         source.addEvent(new Event("Concert", new EventTime("08-08-2026"), new EventTime("08-08-2026 18:00"),
                 List.of(CARL.getName(), ALICE.getName())));
-        CoordiMate restored = new JsonSerializableCoordiMate(source).convertToModelType();
+        CoordiMate restored = new JsonSerializableCoordiMate(source).toModelType();
         assertEquals(source, restored);
     }
 
     @Test
-    public void convertToModelType_unknownMember_throwsIllegalValueException() throws Exception {
+    public void toModelType_unknownMember_throwsIllegalValueException() throws Exception {
         JsonSerializableCoordiMate dataFromFile = JsonUtil.readJsonFile(UNKNOWN_MEMBER_FILE,
                 JsonSerializableCoordiMate.class).get();
         assertThrows(IllegalValueException.class, JsonSerializableCoordiMate.MESSAGE_UNKNOWN_MEMBER,
-                dataFromFile::convertToModelType);
+                dataFromFile::toModelType);
     }
 
     @Test
-    public void convertToModelType_duplicateEventNames_throwsIllegalValueException() {
+    public void toModelType_duplicateEventNames_throwsIllegalValueException() {
         List<JsonAdaptedEvent> events = List.of(
                 new JsonAdaptedEvent("Concert", "08-08-2026", "08-08-2026"),
                 new JsonAdaptedEvent(" Concert ", "09-08-2026", "10-08-2026"));
         JsonSerializableCoordiMate data = new JsonSerializableCoordiMate(List.of(), events);
         assertThrows(IllegalValueException.class, JsonSerializableCoordiMate.MESSAGE_DUPLICATE_EVENT,
-                data::convertToModelType);
+                data::toModelType);
     }
 
     @Test
-    public void convertToModelType_customTags_preservedDuringRoundTrip() throws Exception {
+    public void toModelType_customTags_preservedDuringRoundTrip() throws Exception {
         CoordiMate source = new CoordiMate();
         source.addTag(new Tag("Publicity"));
 
-        CoordiMate restored = new JsonSerializableCoordiMate(source).convertToModelType();
+        CoordiMate restored = new JsonSerializableCoordiMate(source).toModelType();
 
         assertEquals(source.getTagList(), restored.getTagList());
     }
 
     @Test
-    public void convertToModelType_renamedDefaultTag_preservedDuringRoundTrip() throws Exception {
+    public void toModelType_renamedDefaultTag_preservedDuringRoundTrip() throws Exception {
         CoordiMate source = new CoordiMate();
         source.setTag(new Tag("EXCO"), new Tag("Committee"));
 
-        CoordiMate restored = new JsonSerializableCoordiMate(source).convertToModelType();
+        CoordiMate restored = new JsonSerializableCoordiMate(source).toModelType();
 
         assertEquals(source.getTagList(), restored.getTagList());
     }
 
     @Test
-    public void convertToModelType_missingTags_addsDefaultTags() throws Exception {
+    public void toModelType_missingTags_addsDefaultTags() throws Exception {
         JsonSerializableCoordiMate data = new JsonSerializableCoordiMate(List.of(), List.of());
 
-        CoordiMate restored = data.convertToModelType();
+        CoordiMate restored = data.toModelType();
 
         assertEquals(new CoordiMate().getTagList(), restored.getTagList());
     }
 
     @Test
-    public void convertToModelType_deletedTags_preservedDuringRoundTrip() throws Exception {
+    public void toModelType_deletedTags_preservedDuringRoundTrip() throws Exception {
         CoordiMate source = new CoordiMate();
         source.getTagList().stream().toList().forEach(source::removeTag);
 
-        CoordiMate restored = new JsonSerializableCoordiMate(source).convertToModelType();
+        CoordiMate restored = new JsonSerializableCoordiMate(source).toModelType();
 
         assertEquals(List.of(), restored.getTagList());
     }
 
     @Test
-    public void convertToModelType_duplicateTagNames_throwsIllegalValueException() {
+    public void toModelType_duplicateTagNames_throwsIllegalValueException() {
         List<JsonAdaptedTag> tags = List.of(new JsonAdaptedTag("Publicity"), new JsonAdaptedTag("publicity"));
         JsonSerializableCoordiMate data = new JsonSerializableCoordiMate(List.of(), List.of(), tags);
 
         assertThrows(IllegalValueException.class, JsonSerializableCoordiMate.MESSAGE_DUPLICATE_TAG,
-                data::convertToModelType);
+                data::toModelType);
     }
 
     @Test
-    public void convertToModelType_invalidTag_throwsIllegalValueException() {
+    public void toModelType_invalidTag_throwsIllegalValueException() {
         JsonSerializableCoordiMate data = new JsonSerializableCoordiMate(List.of(), List.of(),
                 List.of(new JsonAdaptedTag("invalid tag")));
 
-        assertThrows(IllegalValueException.class, data::convertToModelType);
+        assertThrows(IllegalValueException.class, data::toModelType);
     }
 
     @Test
-    public void convertToModelType_nullListEntries_throwsIllegalValueException() {
+    public void toModelType_nullListEntries_throwsIllegalValueException() {
         JsonSerializableCoordiMate nullPerson = new JsonSerializableCoordiMate(
                 Arrays.asList((JsonAdaptedPerson) null), List.of());
         assertThrows(IllegalValueException.class, "Persons list must not contain null entries.",
-                nullPerson::convertToModelType);
+                nullPerson::toModelType);
         JsonSerializableCoordiMate nullEvent = new JsonSerializableCoordiMate(List.of(),
                 Arrays.asList((JsonAdaptedEvent) null));
-        assertThrows(IllegalValueException.class, "Events list must not contain null entries.",
-                nullEvent::convertToModelType);
+        assertThrows(IllegalValueException.class, "Events list must not contain null entries.", nullEvent::toModelType);
         JsonSerializableCoordiMate nullTag = new JsonSerializableCoordiMate(List.of(), List.of(),
                 Arrays.asList((JsonAdaptedTag) null));
-        assertThrows(IllegalValueException.class, "Tags list must not contain null entries.",
-                nullTag::convertToModelType);
+        assertThrows(IllegalValueException.class, "Tags list must not contain null entries.", nullTag::toModelType);
     }
 
     @Test
-    public void construct_missingPersons_throwsIllegalArgumentException() {
+    public void constructor_missingPersons_throwsIllegalArgumentException() {
         String message = "Persons list must be present.";
         assertThrows(IllegalArgumentException.class, message, () -> new JsonSerializableCoordiMate(null, List.of()));
     }

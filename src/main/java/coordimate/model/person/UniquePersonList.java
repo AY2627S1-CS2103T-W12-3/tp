@@ -103,7 +103,7 @@ public class UniquePersonList implements Iterable<Person> {
     /**
      * Returns the backing list as an unmodifiable {@code ObservableList}.
      */
-    public ObservableList<Person> getUnmodifiableObservableList() {
+    public ObservableList<Person> asUnmodifiableObservableList() {
         return unmodifiablePersons;
     }
 

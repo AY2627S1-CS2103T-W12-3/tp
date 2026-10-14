@@ -36,7 +36,7 @@ public class CoordiMateTest {
     private final CoordiMate coordiMate = new CoordiMate();
 
     @Test
-    public void construct() {
+    public void constructor() {
         assertEquals(List.of(), coordiMate.getPersonList());
         assertEquals(List.of(new Tag("EXCO"), new Tag("Sponsor"), new Tag("UniversityStaff"),
                 new Tag("Logistics")), coordiMate.getTagList());
@@ -57,7 +57,7 @@ public class CoordiMateTest {
     @Test
     public void resetData_withDuplicatePersons_throwsDuplicatePersonException() {
         // Two persons with the same identity fields
-        Person editedAlice = new PersonBuilder(ALICE).setAddress(VALID_ADDRESS_BOB).setTags(VALID_TAG_HUSBAND)
+        Person editedAlice = new PersonBuilder(ALICE).withAddress(VALID_ADDRESS_BOB).withTags(VALID_TAG_HUSBAND)
                 .build();
         List<Person> newPersons = List.of(ALICE, editedAlice);
         CoordiMateStub newData = new CoordiMateStub(newPersons);
@@ -84,7 +84,7 @@ public class CoordiMateTest {
     @Test
     public void hasPerson_personWithSameIdentityFieldsInCoordiMate_returnsTrue() {
         coordiMate.addPerson(ALICE);
-        Person editedAlice = new PersonBuilder(ALICE).setAddress(VALID_ADDRESS_BOB).setTags(VALID_TAG_HUSBAND)
+        Person editedAlice = new PersonBuilder(ALICE).withAddress(VALID_ADDRESS_BOB).withTags(VALID_TAG_HUSBAND)
                 .build();
         assertTrue(coordiMate.hasPerson(editedAlice));
     }
@@ -92,7 +92,7 @@ public class CoordiMateTest {
     @Test
     public void addPerson_sameNameWithDifferentPhoneAndEmail_throwsDuplicatePersonException() {
         coordiMate.addPerson(ALICE);
-        Person differentAlice = new PersonBuilder(BENSON).setName(ALICE.getName().toString()).build();
+        Person differentAlice = new PersonBuilder(BENSON).withName(ALICE.getName().toString()).build();
         assertThrows(DuplicatePersonException.class, () -> coordiMate.addPerson(differentAlice));
 
         assertEquals(List.of(ALICE), coordiMate.getPersonList());
@@ -102,25 +102,24 @@ public class CoordiMateTest {
     public void removePerson_assignedContact_removedFromEveryEvent() {
         addContactsAndEvents();
         coordiMate.removePerson(ALICE);
-        assertEquals(List.of(createEvent("Concert", BENSON.getName(), CARL.getName()),
-                createEvent("Fair", CARL.getName()), createEvent("Meeting")), coordiMate.getEventList());
+        assertEquals(List.of(event("Concert", BENSON.getName(), CARL.getName()),
+                event("Fair", CARL.getName()), event("Meeting")), coordiMate.getEventList());
     }
 
     @Test
     public void setPerson_renamedContact_renamedInEveryEventInPlace() {
         addContactsAndEvents();
-        Person renamedAlice = new PersonBuilder(ALICE).setName("Alice Tan").build();
+        Person renamedAlice = new PersonBuilder(ALICE).withName("Alice Tan").build();
         coordiMate.setPerson(ALICE, renamedAlice);
-        assertEquals(List.of(createEvent("Concert", BENSON.getName(), renamedAlice.getName(), CARL.getName()),
-                createEvent("Fair", CARL.getName(), renamedAlice.getName()),
-                createEvent("Meeting")), coordiMate.getEventList());
+        assertEquals(List.of(event("Concert", BENSON.getName(), renamedAlice.getName(), CARL.getName()),
+                event("Fair", CARL.getName(), renamedAlice.getName()), event("Meeting")), coordiMate.getEventList());
     }
 
     @Test
     public void setPerson_nameUnchanged_eventsUnchanged() {
         addContactsAndEvents();
         List<Event> before = List.copyOf(coordiMate.getEventList());
-        coordiMate.setPerson(ALICE, new PersonBuilder(ALICE).setAddress(VALID_ADDRESS_BOB).build());
+        coordiMate.setPerson(ALICE, new PersonBuilder(ALICE).withAddress(VALID_ADDRESS_BOB).build());
         assertEquals(before, coordiMate.getEventList());
     }
 
@@ -128,7 +127,7 @@ public class CoordiMateTest {
     public void setPerson_duplicatePhone_eventsUnchanged() {
         addContactsAndEvents();
         List<Event> before = List.copyOf(coordiMate.getEventList());
-        Person aliceWithBensonPhone = new PersonBuilder(ALICE).setPhone(BENSON.getPhone().toString()).build();
+        Person aliceWithBensonPhone = new PersonBuilder(ALICE).withPhone(BENSON.getPhone().toString()).build();
         assertThrows(DuplicatePersonException.class, () -> coordiMate.setPerson(ALICE, aliceWithBensonPhone));
         assertEquals(before, coordiMate.getEventList());
         assertEquals(List.of(ALICE, BENSON, CARL), coordiMate.getPersonList());
@@ -138,7 +137,7 @@ public class CoordiMateTest {
     public void setPerson_renameConflictsWithEventMember_noChanges() {
         addContactsAndEvents();
         List<Event> before = List.copyOf(coordiMate.getEventList());
-        Person aliceAsBenson = new PersonBuilder(ALICE).setName(BENSON.getName().toString()).build();
+        Person aliceAsBenson = new PersonBuilder(ALICE).withName(BENSON.getName().toString()).build();
 
         assertThrows(MemberNameConflictException.class, () -> coordiMate.setPerson(ALICE, aliceAsBenson));
         assertEquals(before, coordiMate.getEventList());
@@ -149,49 +148,49 @@ public class CoordiMateTest {
     public void removePerson_withAttendance_removesOnlyTheirAttendance() {
         addContactsAndEventsWithAttendance();
         coordiMate.removePerson(ALICE);
-        assertEquals(List.of(createEvent("Concert", Map.of(BENSON.getName(), AttendanceStatus.ABSENT),
+        assertEquals(List.of(event("Concert", Map.of(BENSON.getName(), AttendanceStatus.ABSENT),
                 BENSON.getName(), CARL.getName()),
-                createEvent("Fair", Map.of(CARL.getName(), AttendanceStatus.PRESENT), CARL.getName()),
-                createEvent("Meeting")), coordiMate.getEventList());
+                event("Fair", Map.of(CARL.getName(), AttendanceStatus.PRESENT), CARL.getName()),
+                event("Meeting")), coordiMate.getEventList());
     }
 
     @Test
     public void setPerson_renamedContactWithAttendance_attendanceMovedToNewName() {
         addContactsAndEventsWithAttendance();
-        Person renamedAlice = new PersonBuilder(ALICE).setName("Alice Tan").build();
+        Person renamedAlice = new PersonBuilder(ALICE).withName("Alice Tan").build();
         coordiMate.setPerson(ALICE, renamedAlice);
         Name newName = renamedAlice.getName();
-        assertEquals(List.of(createEvent("Concert", Map.of(newName, AttendanceStatus.PRESENT,
+        assertEquals(List.of(event("Concert", Map.of(newName, AttendanceStatus.PRESENT,
                 BENSON.getName(), AttendanceStatus.ABSENT), BENSON.getName(), newName, CARL.getName()),
-                createEvent("Fair", Map.of(CARL.getName(), AttendanceStatus.PRESENT), CARL.getName(), newName),
-                createEvent("Meeting")), coordiMate.getEventList());
+                event("Fair", Map.of(CARL.getName(), AttendanceStatus.PRESENT), CARL.getName(), newName),
+                event("Meeting")), coordiMate.getEventList());
     }
 
     private void addContactsAndEventsWithAttendance() {
         coordiMate.addPerson(ALICE);
         coordiMate.addPerson(BENSON);
         coordiMate.addPerson(CARL);
-        coordiMate.addEvent(createEvent("Concert", Map.of(ALICE.getName(), AttendanceStatus.PRESENT,
+        coordiMate.addEvent(event("Concert", Map.of(ALICE.getName(), AttendanceStatus.PRESENT,
                 BENSON.getName(), AttendanceStatus.ABSENT), BENSON.getName(), ALICE.getName(), CARL.getName()));
-        coordiMate.addEvent(createEvent("Fair", Map.of(CARL.getName(), AttendanceStatus.PRESENT),
+        coordiMate.addEvent(event("Fair", Map.of(CARL.getName(), AttendanceStatus.PRESENT),
                 CARL.getName(), ALICE.getName()));
-        coordiMate.addEvent(createEvent("Meeting"));
+        coordiMate.addEvent(event("Meeting"));
     }
 
     private void addContactsAndEvents() {
         coordiMate.addPerson(ALICE);
         coordiMate.addPerson(BENSON);
         coordiMate.addPerson(CARL);
-        coordiMate.addEvent(createEvent("Concert", BENSON.getName(), ALICE.getName(), CARL.getName()));
-        coordiMate.addEvent(createEvent("Fair", CARL.getName(), ALICE.getName()));
-        coordiMate.addEvent(createEvent("Meeting"));
+        coordiMate.addEvent(event("Concert", BENSON.getName(), ALICE.getName(), CARL.getName()));
+        coordiMate.addEvent(event("Fair", CARL.getName(), ALICE.getName()));
+        coordiMate.addEvent(event("Meeting"));
     }
 
-    private static Event createEvent(String name, Name... members) {
+    private static Event event(String name, Name... members) {
         return new Event(name, new EventTime("08-08-2026"), new EventTime("08-08-2026"), List.of(members));
     }
 
-    private static Event createEvent(String name, Map<Name, AttendanceStatus> attendance, Name... members) {
+    private static Event event(String name, Map<Name, AttendanceStatus> attendance, Name... members) {
         return new Event(name, new EventTime("08-08-2026"), new EventTime("08-08-2026"), List.of(members),
                 attendance);
     }
@@ -250,10 +249,10 @@ public class CoordiMateTest {
 
     @Test
     public void removeTag_existingTag_removesTagFromListAndContacts() {
-        Person taggedAlice = new PersonBuilder(ALICE).setRole("Logistics").setBirthday("18-06-2004")
-                .setOrganisation("NUS Student Affairs").setNote("Handles venue bookings")
-                .setTags("EXCO", "Sponsor").build();
-        Person taggedBenson = new PersonBuilder(BENSON).clearAddress().setTags("EXCO").build();
+        Person taggedAlice = new PersonBuilder(ALICE).withRole("Logistics").withBirthday("18-06-2004")
+                .withOrganisation("NUS Student Affairs").withNote("Handles venue bookings")
+                .withTags("EXCO", "Sponsor").build();
+        Person taggedBenson = new PersonBuilder(BENSON).withoutAddress().withTags("EXCO").build();
         coordiMate.addPerson(taggedAlice);
         coordiMate.addPerson(taggedBenson);
 
@@ -261,8 +260,8 @@ public class CoordiMateTest {
 
         assertEquals(List.of(new Tag("Sponsor"), new Tag("UniversityStaff"), new Tag("Logistics")),
                 coordiMate.getTagList());
-        assertEquals(new PersonBuilder(taggedAlice).setTags("Sponsor").build(), coordiMate.getPersonList().get(0));
-        assertEquals(new PersonBuilder(taggedBenson).setTags().build(), coordiMate.getPersonList().get(1));
+        assertEquals(new PersonBuilder(taggedAlice).withTags("Sponsor").build(), coordiMate.getPersonList().get(0));
+        assertEquals(new PersonBuilder(taggedBenson).withTags().build(), coordiMate.getPersonList().get(1));
     }
 
     @Test
@@ -275,10 +274,10 @@ public class CoordiMateTest {
     public void setTag_customTag_replacesTagInListAndContacts() {
         Tag publicity = new Tag("Publicity");
         Tag media = new Tag("Media");
-        Person taggedAlice = new PersonBuilder(ALICE).setRole("Logistics").setBirthday("18-06-2004")
-                .setOrganisation("NUS Student Affairs").setNote("Handles venue bookings")
-                .setTags("Publicity", "EXCO").build();
-        Person taggedBenson = new PersonBuilder(BENSON).clearAddress().setTags("Publicity").build();
+        Person taggedAlice = new PersonBuilder(ALICE).withRole("Logistics").withBirthday("18-06-2004")
+                .withOrganisation("NUS Student Affairs").withNote("Handles venue bookings")
+                .withTags("Publicity", "EXCO").build();
+        Person taggedBenson = new PersonBuilder(BENSON).withoutAddress().withTags("Publicity").build();
         coordiMate.addTag(publicity);
         coordiMate.addPerson(taggedAlice);
         coordiMate.addPerson(taggedBenson);
@@ -290,16 +289,16 @@ public class CoordiMateTest {
         assertEquals(List.of("EXCO", "Media"), coordiMate.getPersonList().get(0).getTags().stream()
                 .map(Tag::getTagName).sorted().toList());
         assertEquals(List.of(media), coordiMate.getPersonList().get(1).getTags().stream().toList());
-        assertEquals(new PersonBuilder(taggedAlice).setTags("Media", "EXCO").build(),
+        assertEquals(new PersonBuilder(taggedAlice).withTags("Media", "EXCO").build(),
                 coordiMate.getPersonList().get(0));
-        assertEquals(new PersonBuilder(taggedBenson).setTags("Media").build(),
+        assertEquals(new PersonBuilder(taggedBenson).withTags("Media").build(),
                 coordiMate.getPersonList().get(1));
     }
 
     @Test
     public void setTag_defaultTag_replacesTagInListAndContacts() {
         Tag committee = new Tag("Committee");
-        Person taggedAlice = new PersonBuilder(ALICE).setTags("EXCO").build();
+        Person taggedAlice = new PersonBuilder(ALICE).withTags("EXCO").build();
         coordiMate.addPerson(taggedAlice);
 
         coordiMate.setTag(new Tag("exco"), committee);
@@ -329,7 +328,7 @@ public class CoordiMateTest {
     }
 
     @Test
-    public void checkToStringMethod() {
+    public void toStringMethod() {
         String expected = CoordiMate.class.getCanonicalName() + "{persons=" + coordiMate.getPersonList()
                 + ", tags=" + coordiMate.getTagList() + ", events=" + coordiMate.getEventList() + "}";
         assertEquals(expected, coordiMate.toString());

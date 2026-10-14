@@ -35,19 +35,18 @@ public class AddEventIntegrationTest {
         ModelManager model = new ModelManager();
         model.addPerson(AMY);
         JsonCoordiMateStorage storage = new JsonCoordiMateStorage(temporaryFolder.resolve("data.json"));
-        Logic logic = createLogic(model, storage);
+        Logic logic = newLogic(model, storage);
         assertEquals("Created Event Fair. Start Time: 09-10-2026. End Time: 10-10-2026.",
                 logic.execute(COMMAND).getFeedbackToUser());
         assertEquals(model.getCoordiMate(), storage.readCoordiMate().orElseThrow());
         ModelManager reloaded = new ModelManager(storage.readCoordiMate().orElseThrow(), model.getUserPrefs());
         assertEquals("Fair", reloaded.getCoordiMate().getEventList().getFirst().getName());
         assertEquals(AddEventCommand.MESSAGE_DUPLICATE_EVENT,
-                assertThrows(CommandException.class, () ->
-                        createLogic(reloaded, storage).execute(COMMAND)).getMessage());
+                assertThrows(CommandException.class, () -> newLogic(reloaded, storage).execute(COMMAND)).getMessage());
         String differentCase = "addevent evn/fair st/11-10-2026 et/12-10-2026";
         assertEquals(AddEventCommand.MESSAGE_DUPLICATE_EVENT,
                 assertThrows(CommandException.class, () ->
-                createLogic(reloaded, storage).execute(differentCase)).getMessage());
+                newLogic(reloaded, storage).execute(differentCase)).getMessage());
     }
 
     @Test
@@ -67,8 +66,7 @@ public class AddEventIntegrationTest {
                 }
             };
             assertEquals(AddEventCommand.MESSAGE_SAVE_ERROR,
-                    assertThrows(CommandException.class, () ->
-                            createLogic(model, storage).execute(COMMAND)).getMessage());
+                    assertThrows(CommandException.class, () -> newLogic(model, storage).execute(COMMAND)).getMessage());
             assertEquals(beforeModel, model.getCoordiMate());
             assertEquals(beforeFile, Files.readString(path));
         }
@@ -78,7 +76,7 @@ public class AddEventIntegrationTest {
     public void execute_startAfterEnd_modelAndFileUnchanged() throws Exception {
         ModelManager model = new ModelManager();
         JsonCoordiMateStorage storage = new JsonCoordiMateStorage(temporaryFolder.resolve("data.json"));
-        Logic logic = createLogic(model, storage);
+        Logic logic = newLogic(model, storage);
         logic.execute(COMMAND);
         CoordiMate beforeModel = new CoordiMate(model.getCoordiMate());
         String beforeFile = Files.readString(storage.getCoordiMateFilePath());
@@ -108,7 +106,7 @@ public class AddEventIntegrationTest {
             Path path = temporaryFolder.resolve("corrupt.json");
             Files.writeString(path, contents);
             ModelManager model = new ModelManager();
-            Logic logic = createLogic(model, new JsonCoordiMateStorage(path));
+            Logic logic = newLogic(model, new JsonCoordiMateStorage(path));
             assertEquals(AddEventCommand.MESSAGE_LOAD_ERROR,
                     assertThrows(CommandException.class, () -> logic.execute(COMMAND)).getMessage());
             assertTrue(model.getCoordiMate().getEventList().isEmpty());
@@ -123,7 +121,7 @@ public class AddEventIntegrationTest {
         JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path);
         assertTrue(storage.readCoordiMate().orElseThrow().getEventList().isEmpty());
         ModelManager model = new ModelManager();
-        createLogic(model, storage).execute(COMMAND);
+        newLogic(model, storage).execute(COMMAND);
         assertEquals(model.getCoordiMate(), storage.readCoordiMate().orElseThrow());
     }
 
@@ -140,7 +138,7 @@ public class AddEventIntegrationTest {
         }
     }
 
-    private Logic createLogic(ModelManager model, JsonCoordiMateStorage storage) {
+    private Logic newLogic(ModelManager model, JsonCoordiMateStorage storage) {
         return new LogicManager(model, new StorageManager(storage,
                 new JsonUserPrefsStorage(temporaryFolder.resolve("prefs.json"))));
     }

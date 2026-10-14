@@ -114,7 +114,7 @@ public final class Event {
      * Returns a copy of this event with {@code member}'s attendance set to {@code status}.
      * {@code member} must already be assigned to this event.
      */
-    public Event copyWithAttendance(Name member, AttendanceStatus status) {
+    public Event withAttendance(Name member, AttendanceStatus status) {
         requireNonNull(member);
         requireNonNull(status);
         if (!hasMember(member)) {

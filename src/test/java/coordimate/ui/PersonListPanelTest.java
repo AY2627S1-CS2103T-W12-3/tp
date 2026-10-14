@@ -78,12 +78,12 @@ public class PersonListPanelTest {
     }
 
     @Test
-    public void showContactWithAllDetails_showsSavedValues() throws Exception {
+    public void contactWithAllDetails_showsSavedValues() throws Exception {
         runOnJavaFxThread(() -> {
-            Person contact = new PersonBuilder(ALICE).setRole("Logistics Lead")
-                    .setBirthday("18-06-2004").setAddress("21 Kent Ridge Road, #03-12")
-                    .setOrganisation("NUS Student Affairs").setNote("Handles venue bookings")
-                    .setTags("EXCO", "Logistics").build();
+            Person contact = new PersonBuilder(ALICE).withRole("Logistics Lead")
+                    .withBirthday("18-06-2004").withAddress("21 Kent Ridge Road, #03-12")
+                    .withOrganisation("NUS Student Affairs").withNote("Handles venue bookings")
+                    .withTags("EXCO", "Logistics").build();
             Region root = new PersonListPanel(FXCollections.observableArrayList(contact)).getRoot();
             new Scene(root);
             root.applyCss();
@@ -101,9 +101,9 @@ public class PersonListPanelTest {
     }
 
     @Test
-    public void showContactWithoutOptionalFields_showsPlaceholdersOnlyInDetails() throws Exception {
+    public void contactWithoutOptionalFields_showsPlaceholdersOnlyInDetails() throws Exception {
         runOnJavaFxThread(() -> {
-            Person contact = new PersonBuilder(ALICE).clearAddress().setTags().build();
+            Person contact = new PersonBuilder(ALICE).withoutAddress().withTags().build();
             Region root = new PersonListPanel(FXCollections.observableArrayList(contact)).getRoot();
             new Scene(root);
             root.applyCss();
@@ -186,9 +186,9 @@ public class PersonListPanelTest {
             list.getSelectionModel().select(BENSON);
             return new PanelFixture(persons, displayedPersons, root, list);
         });
-        Person updatedBenson = new PersonBuilder(BENSON).setName("Benson Tan")
-                .setRole("President").clearAddress().setNote("Updated note")
-                .setTags().build();
+        Person updatedBenson = new PersonBuilder(BENSON).withName("Benson Tan")
+                .withRole("President").withoutAddress().withNote("Updated note")
+                .withTags().build();
 
         runOnJavaFxThread(() -> fixture.persons().setAll(ALICE, updatedBenson));
 

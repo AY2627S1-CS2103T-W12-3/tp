@@ -36,7 +36,7 @@ public class CommandBoxTest {
     }
 
     @Test
-    public void enterBlankCommand_onlySentWhenDeletionConfirmationIsPending() throws Exception {
+    public void blankEnter_onlySentWhenDeletionConfirmationIsPending() throws Exception {
         FutureTask<Void> task = new FutureTask<>(() -> {
             List<String> submitted = new ArrayList<>();
             AtomicBoolean pending = new AtomicBoolean(false);

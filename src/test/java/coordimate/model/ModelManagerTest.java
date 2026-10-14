@@ -22,14 +22,14 @@ public class ModelManagerTest {
     private ModelManager modelManager = new ModelManager();
 
     @Test
-    public void construct() {
+    public void constructor() {
         assertEquals(new UserPrefs(), modelManager.getUserPrefs());
         assertEquals(new GuiSettings(), modelManager.getGuiSettings());
         assertEquals(new CoordiMate(), new CoordiMate(modelManager.getCoordiMate()));
     }
 
     @Test
-    public void construct_validUserPrefs_copiesUserPrefs() {
+    public void constructor_validUserPrefs_copiesUserPrefs() {
         UserPrefs userPrefs = new UserPrefs();
         userPrefs.setGuiSettings(new GuiSettings(1, 2, 3, 4));
         modelManager = new ModelManager(new CoordiMate(), userPrefs);
@@ -96,7 +96,7 @@ public class ModelManagerTest {
     }
 
     @Test
-    public void applyTagOperations_nullArguments_throwNullPointerException() {
+    public void tagOperations_nullArguments_throwNullPointerException() {
         assertThrows(NullPointerException.class, () -> modelManager.hasTag(null));
         assertThrows(NullPointerException.class, () -> modelManager.addTag(null));
         assertThrows(NullPointerException.class, () -> modelManager.setTag(null, new Tag("Media")));
@@ -113,8 +113,8 @@ public class ModelManagerTest {
     }
 
     @Test
-    public void checkEquals() {
-        CoordiMate coordiMate = new CoordiMateBuilder().addPerson(ALICE).addPerson(BENSON).build();
+    public void equals() {
+        CoordiMate coordiMate = new CoordiMateBuilder().withPerson(ALICE).withPerson(BENSON).build();
         CoordiMate differentCoordiMate = new CoordiMate();
         UserPrefs userPrefs = new UserPrefs();
 

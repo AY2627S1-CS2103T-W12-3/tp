@@ -50,7 +50,7 @@ public class DeleteCommandTest {
 
     @Test
     public void execute_invalidIndexUnfilteredList_throwsCommandException() {
-        Index outOfBoundIndex = Index.createFromOneBased(model.getFilteredPersonList().size() + 1);
+        Index outOfBoundIndex = Index.fromOneBased(model.getFilteredPersonList().size() + 1);
         DeleteCommand deleteCommand = new DeleteCommand(outOfBoundIndex);
 
         assertCommandFailure(deleteCommand, model,
@@ -107,8 +107,8 @@ public class DeleteCommandTest {
 
     @Test
     public void resolveMatches_ambiguousName_showsOnlyDisplayedIndex() {
-        Person otherAlice = new PersonBuilder(ALICE).setPhone("22222222")
-                .setEmail("other@example.com").build();
+        Person otherAlice = new PersonBuilder(ALICE).withPhone("22222222")
+                .withEmail("other@example.com").build();
         DeleteCommand command = new DeleteCommand(IdentifierType.NAME, "Alice Pauline");
 
         CommandException exception = assertThrows(CommandException.class, () ->
@@ -122,13 +122,13 @@ public class DeleteCommandTest {
     }
 
     @Test
-    public void formatConfirmationPrompt_containsContactAndQuestion() {
+    public void confirmationPrompt_containsContactAndQuestion() {
         assertEquals("Contact found:\nName: Alice Pauline\nPhone: 94351253\nEmail: alice@example.com\n"
-                + "Role: NA\nConfirm deletion? [y/N]", DeleteCommand.formatConfirmationPrompt(ALICE));
+                + "Role: NA\nConfirm deletion? [y/N]", DeleteCommand.confirmationPrompt(ALICE));
     }
 
     @Test
-    public void checkEquals() {
+    public void equals() {
         DeleteCommand deleteFirstCommand = new DeleteCommand(INDEX_FIRST_PERSON);
         DeleteCommand deleteSecondCommand = new DeleteCommand(INDEX_SECOND_PERSON);
 
@@ -150,8 +150,8 @@ public class DeleteCommandTest {
     }
 
     @Test
-    public void checkToStringMethod() {
-        Index targetIndex = Index.createFromOneBased(1);
+    public void toStringMethod() {
+        Index targetIndex = Index.fromOneBased(1);
         DeleteCommand deleteCommand = new DeleteCommand(targetIndex);
         String expected = DeleteCommand.class.getCanonicalName() + "{targetIndex=" + targetIndex
                 + ", identifierType=null, identifier=null, resolvedTarget=null}";

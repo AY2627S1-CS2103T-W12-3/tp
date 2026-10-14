@@ -27,7 +27,7 @@ import javafx.collections.ObservableList;
 public class AddCommandTest {
 
     @Test
-    public void construct_nullPerson_throwsNullPointerException() {
+    public void constructor_nullPerson_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> new AddCommand(null));
     }
 
@@ -53,9 +53,9 @@ public class AddCommandTest {
     }
 
     @Test
-    public void checkEquals() {
-        Person alice = new PersonBuilder().setName("Alice").build();
-        Person bob = new PersonBuilder().setName("Bob").build();
+    public void equals() {
+        Person alice = new PersonBuilder().withName("Alice").build();
+        Person bob = new PersonBuilder().withName("Bob").build();
         AddCommand addAliceCommand = new AddCommand(alice);
         AddCommand addBobCommand = new AddCommand(bob);
 
@@ -77,7 +77,7 @@ public class AddCommandTest {
     }
 
     @Test
-    public void checkToStringMethod() {
+    public void toStringMethod() {
         AddCommand addCommand = new AddCommand(ALICE);
         String expected = AddCommand.class.getCanonicalName() + "{toAdd=" + ALICE + "}";
         assertEquals(expected, addCommand.toString());

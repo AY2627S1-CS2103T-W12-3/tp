@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 public class NoteTest {
 
     @Test
-    public void construct_invalidNote_throwsIllegalArgumentException() {
+    public void constructor_invalidNote_throwsIllegalArgumentException() {
         assertThrows(NullPointerException.class, () -> new Note(null));
         assertThrows(IllegalArgumentException.class, () -> new Note(" "));
     }

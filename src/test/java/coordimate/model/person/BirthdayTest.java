@@ -15,7 +15,7 @@ public class BirthdayTest {
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd-MM-uuuu");
 
     @Test
-    public void construct_invalidBirthday_throwsIllegalArgumentException() {
+    public void constructor_invalidBirthday_throwsIllegalArgumentException() {
         assertThrows(NullPointerException.class, () -> new Birthday(null));
         assertThrows(IllegalArgumentException.class, () -> new Birthday("30-02-2004"));
     }

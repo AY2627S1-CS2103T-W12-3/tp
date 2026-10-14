@@ -9,17 +9,17 @@ import org.junit.jupiter.api.Test;
 public class FilterCriterionTest {
 
     @Test
-    public void construct_nullField_throwsNullPointerException() {
+    public void constructor_nullField_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> new FilterCriterion(null, "friend"));
     }
 
     @Test
-    public void construct_nullValue_throwsNullPointerException() {
+    public void constructor_nullValue_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> new FilterCriterion(FilterField.TAG, null));
     }
 
     @Test
-    public void checkEquals() {
+    public void equals() {
         FilterCriterion criterion = new FilterCriterion(FilterField.TAG, "friend");
 
         // same object -> returns true

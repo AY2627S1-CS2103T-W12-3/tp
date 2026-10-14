@@ -28,7 +28,7 @@ public class DeleteTagCommandTest {
     public void execute_existingTag_deletesTagAndUpdatesContacts() {
         CoordiMate data = new CoordiMate();
         data.addTag(PUBLICITY);
-        Person taggedAlice = new PersonBuilder(ALICE).setTags("Publicity", "EXCO").build();
+        Person taggedAlice = new PersonBuilder(ALICE).withTags("Publicity", "EXCO").build();
         data.addPerson(taggedAlice);
         data.addPerson(BENSON);
         Model model = new ModelManager(data, new UserPrefs());
@@ -51,7 +51,7 @@ public class DeleteTagCommandTest {
     }
 
     @Test
-    public void checkEquals() {
+    public void equals() {
         DeleteTagCommand command = new DeleteTagCommand("Publicity");
         DeleteTagCommand sameCommand = new DeleteTagCommand("Publicity");
 
@@ -63,7 +63,7 @@ public class DeleteTagCommandTest {
     }
 
     @Test
-    public void rejectNullArguments_throwNullPointerException() {
+    public void nullArguments_throwNullPointerException() {
         assertThrows(NullPointerException.class, () -> new DeleteTagCommand(null));
         assertThrows(NullPointerException.class, () -> new DeleteTagCommand("Publicity").execute(null));
     }

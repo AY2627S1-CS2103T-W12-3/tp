@@ -9,7 +9,7 @@ public enum AttendanceStatus {
     /**
      * Returns the status matching {@code value} ("present" or "absent"), ignoring case.
      */
-    public static AttendanceStatus parseFromString(String value) {
+    public static AttendanceStatus fromString(String value) {
         return switch (value.toLowerCase()) {
             case "present" -> PRESENT;
             case "absent" -> ABSENT;

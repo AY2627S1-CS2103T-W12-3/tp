@@ -168,10 +168,10 @@ public class CoordiMate implements ReadOnlyCoordiMate {
             throw new IllegalArgumentException("Tag does not exist.");
         }
 
-        List<Tag> remainingTags = tags.getUnmodifiableObservableList().stream()
+        List<Tag> remainingTags = tags.asUnmodifiableObservableList().stream()
                 .filter(tag -> !tag.isSameTag(target))
                 .toList();
-        List<Person> updatedPersons = persons.getUnmodifiableObservableList().stream()
+        List<Person> updatedPersons = persons.asUnmodifiableObservableList().stream()
                 .map(person -> removeTagFromPerson(person, target))
                 .toList();
         tags.setTags(remainingTags);
@@ -192,10 +192,10 @@ public class CoordiMate implements ReadOnlyCoordiMate {
             throw new IllegalArgumentException("Tag already exists.");
         }
 
-        List<Tag> editedTags = tags.getUnmodifiableObservableList().stream()
+        List<Tag> editedTags = tags.asUnmodifiableObservableList().stream()
                 .map(tag -> tag.isSameTag(target) ? editedTag : tag)
                 .toList();
-        List<Person> editedPersons = persons.getUnmodifiableObservableList().stream()
+        List<Person> editedPersons = persons.asUnmodifiableObservableList().stream()
                 .map(person -> replaceTag(person, target, editedTag))
                 .toList();
         tags.setTags(editedTags);
@@ -204,7 +204,7 @@ public class CoordiMate implements ReadOnlyCoordiMate {
 
     @Override
     public ObservableList<Tag> getTagList() {
-        return tags.getUnmodifiableObservableList();
+        return tags.asUnmodifiableObservableList();
     }
 
     /**
@@ -338,7 +338,7 @@ public class CoordiMate implements ReadOnlyCoordiMate {
 
     @Override
     public ObservableList<Person> getPersonList() {
-        return persons.getUnmodifiableObservableList();
+        return persons.asUnmodifiableObservableList();
     }
 
     @Override

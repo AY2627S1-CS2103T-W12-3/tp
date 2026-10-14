@@ -10,20 +10,20 @@ import org.junit.jupiter.api.Test;
 public class FilterFieldTest {
 
     @Test
-    public void findByFieldName_validNames_returnsMatchingField() {
-        assertEquals(Optional.of(FilterField.TAG), FilterField.findByFieldName("tag"));
-        assertEquals(Optional.of(FilterField.TAG), FilterField.findByFieldName("TAG"));
-        assertEquals(Optional.of(FilterField.TAG), FilterField.findByFieldName("Tag"));
-        assertEquals(Optional.of(FilterField.EVENT), FilterField.findByFieldName("event"));
-        assertEquals(Optional.of(FilterField.EVENT), FilterField.findByFieldName("EVENT"));
-        assertEquals(Optional.of(FilterField.ORGANISATION), FilterField.findByFieldName("organisation"));
-        assertEquals(Optional.of(FilterField.ORGANISATION), FilterField.findByFieldName("Organisation"));
+    public void fromFieldName_validNames_returnsMatchingField() {
+        assertEquals(Optional.of(FilterField.TAG), FilterField.fromFieldName("tag"));
+        assertEquals(Optional.of(FilterField.TAG), FilterField.fromFieldName("TAG"));
+        assertEquals(Optional.of(FilterField.TAG), FilterField.fromFieldName("Tag"));
+        assertEquals(Optional.of(FilterField.EVENT), FilterField.fromFieldName("event"));
+        assertEquals(Optional.of(FilterField.EVENT), FilterField.fromFieldName("EVENT"));
+        assertEquals(Optional.of(FilterField.ORGANISATION), FilterField.fromFieldName("organisation"));
+        assertEquals(Optional.of(FilterField.ORGANISATION), FilterField.fromFieldName("Organisation"));
     }
 
     @Test
-    public void findByFieldName_unknownName_returnsEmpty() {
-        assertTrue(FilterField.findByFieldName("favourite").isEmpty());
-        assertTrue(FilterField.findByFieldName("").isEmpty());
-        assertTrue(FilterField.findByFieldName("unknown").isEmpty());
+    public void fromFieldName_unknownName_returnsEmpty() {
+        assertTrue(FilterField.fromFieldName("favourite").isEmpty());
+        assertTrue(FilterField.fromFieldName("").isEmpty());
+        assertTrue(FilterField.fromFieldName("unknown").isEmpty());
     }
 }

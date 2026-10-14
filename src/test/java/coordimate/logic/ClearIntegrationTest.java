@@ -31,11 +31,11 @@ public class ClearIntegrationTest {
 
     @Test
     public void execute_success_savedAndReloaded() throws Exception {
-        ModelManager model = createModel();
+        ModelManager model = newModel();
         JsonCoordiMateStorage storage = new JsonCoordiMateStorage(temporaryFolder.resolve("data.json"));
         storage.saveCoordiMate(model.getCoordiMate());
 
-        assertEquals(ClearCommand.MESSAGE_SUCCESS, createLogic(model, storage).execute("clear").getFeedbackToUser());
+        assertEquals(ClearCommand.MESSAGE_SUCCESS, newLogic(model, storage).execute("clear").getFeedbackToUser());
         assertEquals(new CoordiMate(), model.getCoordiMate());
         ReadOnlyCoordiMate reloaded = storage.readCoordiMate().orElseThrow();
         assertEquals(new CoordiMate(), reloaded);
@@ -44,7 +44,7 @@ public class ClearIntegrationTest {
 
     @Test
     public void execute_saveFailure_modelAndFileUnchanged() throws Exception {
-        ModelManager model = createModel();
+        ModelManager model = newModel();
         Path path = temporaryFolder.resolve("data.json");
         new JsonCoordiMateStorage(path).saveCoordiMate(model.getCoordiMate());
         CoordiMate beforeModel = new CoordiMate(model.getCoordiMate());
@@ -58,7 +58,7 @@ public class ClearIntegrationTest {
         };
 
         CommandException exception = assertThrows(CommandException.class, () ->
-                createLogic(model, failingStorage).execute("clear"));
+                newLogic(model, failingStorage).execute("clear"));
         assertEquals(ClearCommand.MESSAGE_SAVE_ERROR, exception.getMessage());
         assertSame(failure, exception.getCause());
         assertEquals(beforeModel, model.getCoordiMate());
@@ -67,20 +67,20 @@ public class ClearIntegrationTest {
 
     @Test
     public void execute_invalidStoredData_modelAndFileUnchanged() throws Exception {
-        ModelManager model = createModel();
+        ModelManager model = newModel();
         Path path = temporaryFolder.resolve("data.json");
         String invalidFile = "invalid json";
         Files.writeString(path, invalidFile);
         CoordiMate beforeModel = new CoordiMate(model.getCoordiMate());
 
         CommandException exception = assertThrows(CommandException.class, () ->
-                createLogic(model, new JsonCoordiMateStorage(path)).execute("clear"));
+                newLogic(model, new JsonCoordiMateStorage(path)).execute("clear"));
         assertEquals(ClearCommand.MESSAGE_LOAD_ERROR, exception.getMessage());
         assertEquals(beforeModel, model.getCoordiMate());
         assertEquals(invalidFile, Files.readString(path));
     }
 
-    private ModelManager createModel() {
+    private ModelManager newModel() {
         ModelManager model = new ModelManager();
         model.addPerson(AMY);
         model.addTag(new Tag("Publicity"));
@@ -89,7 +89,7 @@ public class ClearIntegrationTest {
         return model;
     }
 
-    private Logic createLogic(ModelManager model, JsonCoordiMateStorage storage) {
+    private Logic newLogic(ModelManager model, JsonCoordiMateStorage storage) {
         return new LogicManager(model, new StorageManager(storage,
                 new JsonUserPrefsStorage(temporaryFolder.resolve("prefs.json"))));
     }

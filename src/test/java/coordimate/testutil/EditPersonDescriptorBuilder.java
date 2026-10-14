@@ -50,7 +50,7 @@ public class EditPersonDescriptorBuilder {
     /**
      * Sets the {@code Name} of the {@code EditPersonDescriptor} that we are building.
      */
-    public EditPersonDescriptorBuilder setName(String name) {
+    public EditPersonDescriptorBuilder withName(String name) {
         descriptor.setName(new Name(name));
         return this;
     }
@@ -58,7 +58,7 @@ public class EditPersonDescriptorBuilder {
     /**
      * Sets the {@code Phone} of the {@code EditPersonDescriptor} that we are building.
      */
-    public EditPersonDescriptorBuilder setPhone(String phone) {
+    public EditPersonDescriptorBuilder withPhone(String phone) {
         descriptor.setPhone(new Phone(phone));
         return this;
     }
@@ -66,7 +66,7 @@ public class EditPersonDescriptorBuilder {
     /**
      * Sets the {@code Email} of the {@code EditPersonDescriptor} that we are building.
      */
-    public EditPersonDescriptorBuilder setEmail(String email) {
+    public EditPersonDescriptorBuilder withEmail(String email) {
         descriptor.setEmail(new Email(email));
         return this;
     }
@@ -74,55 +74,55 @@ public class EditPersonDescriptorBuilder {
     /**
      * Sets the {@code Address} of the {@code EditPersonDescriptor} that we are building.
      */
-    public EditPersonDescriptorBuilder setAddress(String address) {
+    public EditPersonDescriptorBuilder withAddress(String address) {
         descriptor.setAddress(new Address(address));
         return this;
     }
 
     /** Sets the role to edit. */
-    public EditPersonDescriptorBuilder setRole(String role) {
+    public EditPersonDescriptorBuilder withRole(String role) {
         descriptor.setRole(new Role(role));
         return this;
     }
 
     /** Sets the birthday to edit. */
-    public EditPersonDescriptorBuilder setBirthday(String birthday) {
+    public EditPersonDescriptorBuilder withBirthday(String birthday) {
         descriptor.setBirthday(new Birthday(birthday));
         return this;
     }
 
     /** Marks the birthday for clearing. */
-    public EditPersonDescriptorBuilder clearBirthday() {
+    public EditPersonDescriptorBuilder withoutBirthday() {
         descriptor.setBirthday(null);
         return this;
     }
 
     /** Marks the address for clearing. */
-    public EditPersonDescriptorBuilder clearAddress() {
+    public EditPersonDescriptorBuilder withoutAddress() {
         descriptor.setAddress(null);
         return this;
     }
 
     /** Sets the organisation to edit. */
-    public EditPersonDescriptorBuilder setOrganisation(String organisation) {
+    public EditPersonDescriptorBuilder withOrganisation(String organisation) {
         descriptor.setOrganisation(new Organisation(organisation));
         return this;
     }
 
     /** Marks the organisation for clearing. */
-    public EditPersonDescriptorBuilder clearOrganisation() {
+    public EditPersonDescriptorBuilder withoutOrganisation() {
         descriptor.setOrganisation(null);
         return this;
     }
 
     /** Sets the note to edit. */
-    public EditPersonDescriptorBuilder setNote(String note) {
+    public EditPersonDescriptorBuilder withNote(String note) {
         descriptor.setNote(new Note(note));
         return this;
     }
 
     /** Marks the note for clearing. */
-    public EditPersonDescriptorBuilder clearNote() {
+    public EditPersonDescriptorBuilder withoutNote() {
         descriptor.setNote(null);
         return this;
     }
@@ -131,7 +131,7 @@ public class EditPersonDescriptorBuilder {
      * Parses the {@code tags} into a {@code Set<Tag>} and sets it to the {@code EditPersonDescriptor}
      * that we are building.
      */
-    public EditPersonDescriptorBuilder setTags(String... tags) {
+    public EditPersonDescriptorBuilder withTags(String... tags) {
         Set<Tag> tagSet = Stream.of(tags).map(Tag::new).collect(Collectors.toSet());
         descriptor.setTags(tagSet);
         return this;

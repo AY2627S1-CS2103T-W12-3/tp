@@ -12,38 +12,38 @@ public class IndexTest {
     @Test
     public void createOneBasedIndex() {
         // invalid index
-        assertThrows(IndexOutOfBoundsException.class, () -> Index.createFromOneBased(0));
+        assertThrows(IndexOutOfBoundsException.class, () -> Index.fromOneBased(0));
 
         // check equality using the same base
-        assertEquals(1, Index.createFromOneBased(1).getOneBased());
-        assertEquals(5, Index.createFromOneBased(5).getOneBased());
+        assertEquals(1, Index.fromOneBased(1).getOneBased());
+        assertEquals(5, Index.fromOneBased(5).getOneBased());
 
         // convert from one-based index to zero-based index
-        assertEquals(0, Index.createFromOneBased(1).getZeroBased());
-        assertEquals(4, Index.createFromOneBased(5).getZeroBased());
+        assertEquals(0, Index.fromOneBased(1).getZeroBased());
+        assertEquals(4, Index.fromOneBased(5).getZeroBased());
     }
 
     @Test
     public void createZeroBasedIndex() {
         // invalid index
-        assertThrows(IndexOutOfBoundsException.class, () -> Index.createFromZeroBased(-1));
+        assertThrows(IndexOutOfBoundsException.class, () -> Index.fromZeroBased(-1));
 
         // check equality using the same base
-        assertEquals(0, Index.createFromZeroBased(0).getZeroBased());
-        assertEquals(5, Index.createFromZeroBased(5).getZeroBased());
+        assertEquals(0, Index.fromZeroBased(0).getZeroBased());
+        assertEquals(5, Index.fromZeroBased(5).getZeroBased());
 
         // convert from zero-based index to one-based index
-        assertEquals(1, Index.createFromZeroBased(0).getOneBased());
-        assertEquals(6, Index.createFromZeroBased(5).getOneBased());
+        assertEquals(1, Index.fromZeroBased(0).getOneBased());
+        assertEquals(6, Index.fromZeroBased(5).getOneBased());
     }
 
     @Test
-    public void checkEquals() {
-        final Index fifthPersonIndex = Index.createFromOneBased(5);
+    public void equals() {
+        final Index fifthPersonIndex = Index.fromOneBased(5);
 
         // same values -> returns true
-        assertTrue(fifthPersonIndex.equals(Index.createFromOneBased(5)));
-        assertTrue(fifthPersonIndex.equals(Index.createFromZeroBased(4)));
+        assertTrue(fifthPersonIndex.equals(Index.fromOneBased(5)));
+        assertTrue(fifthPersonIndex.equals(Index.fromZeroBased(4)));
 
         // same object -> returns true
         assertTrue(fifthPersonIndex.equals(fifthPersonIndex));
@@ -55,12 +55,12 @@ public class IndexTest {
         assertFalse(fifthPersonIndex.equals(5.0f));
 
         // different index -> returns false
-        assertFalse(fifthPersonIndex.equals(Index.createFromOneBased(1)));
+        assertFalse(fifthPersonIndex.equals(Index.fromOneBased(1)));
     }
 
     @Test
-    public void checkToStringMethod() {
-        Index index = Index.createFromZeroBased(0);
+    public void toStringMethod() {
+        Index index = Index.fromZeroBased(0);
         String expected = Index.class.getCanonicalName() + "{zeroBasedIndex=" + index.getZeroBased() + "}";
         assertEquals(expected, index.toString());
     }
