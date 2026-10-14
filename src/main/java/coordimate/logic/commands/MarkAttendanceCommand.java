@@ -42,25 +42,37 @@ public class MarkAttendanceCommand extends Command {
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
-        Event target = model.getCoordiMate().getEventList().stream()
-                .filter(event -> event.getName().equalsIgnoreCase(eventName)).findFirst()
-                .orElseThrow(() -> new CommandException(String.format(MESSAGE_EVENT_NOT_FOUND, eventName)));
+        Event matchingEvent = findMatchingEvent(model);
+        Name matchingMember = findMatchingMember(matchingEvent);
 
-        Name matchingMember = target.getMembers().stream()
+        if (hasMatchingAttendanceStatus(matchingEvent, matchingMember)) {
+            return new CommandResult(
+                    String.format(MESSAGE_ALREADY_MARKED, matchingMember, status, matchingEvent.getName()));
+        }
+
+        Event updatedEvent = matchingEvent.withAttendance(matchingMember, status);
+        model.setEvent(matchingEvent, updatedEvent);
+
+        return new CommandResult(String.format(MESSAGE_SUCCESS, matchingMember, status, matchingEvent.getName()));
+    }
+
+    private Event findMatchingEvent(Model model) throws CommandException {
+        return model.getCoordiMate().getEventList().stream()
+                .filter(event -> event.getName().equalsIgnoreCase(eventName))
+                .findFirst()
+                .orElseThrow(() -> new CommandException(String.format(MESSAGE_EVENT_NOT_FOUND, eventName)));
+    }
+
+    private Name findMatchingMember(Event event) throws CommandException {
+        return event.getMembers().stream()
                 .filter(member -> member.getFullName().equalsIgnoreCase(memberName.getFullName()))
                 .findFirst()
                 .orElseThrow(() -> new CommandException(
-                        String.format(MESSAGE_MEMBER_NOT_ASSIGNED, memberName, target.getName())));
+                        String.format(MESSAGE_MEMBER_NOT_ASSIGNED, memberName, event.getName())));
+    }
 
-        if (target.getAttendance(matchingMember).map(status::equals).orElse(false)) {
-            return new CommandResult(
-                    String.format(MESSAGE_ALREADY_MARKED, matchingMember, status, target.getName()));
-        }
-
-        Event updated = target.withAttendance(matchingMember, status);
-        model.setEvent(target, updated);
-
-        return new CommandResult(String.format(MESSAGE_SUCCESS, matchingMember, status, target.getName()));
+    private boolean hasMatchingAttendanceStatus(Event event, Name member) {
+        return event.getAttendance(member).map(status::equals).orElse(false);
     }
 
     @Override

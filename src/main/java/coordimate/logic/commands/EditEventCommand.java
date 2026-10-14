@@ -46,30 +46,42 @@ public class EditEventCommand extends Command {
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
+        validateEditRequest();
+        Event target = findTargetEvent(model);
+        Event editedEvent = createEditedEvent(target);
+        if (!target.isSameEvent(editedEvent) && model.hasEvent(editedEvent)) {
+            throw new CommandException(MESSAGE_DUPLICATE_EVENT);
+        }
+
+        model.setEvent(target, editedEvent);
+        return new CommandResult(String.format(MESSAGE_SUCCESS,
+                editedEvent.getName(), editedEvent.getStartTime(), editedEvent.getEndTime()));
+    }
+
+    private void validateEditRequest() throws CommandException {
         if (newName == null && newStartTime == null && newEndTime == null) {
             throw new CommandException(MESSAGE_NOT_EDITED);
         }
         if (newName != null && newName.isEmpty()) {
             throw new CommandException(MESSAGE_EMPTY_NEW_NAME);
         }
-        Event target = model.getCoordiMate().getEventList().stream()
+    }
+
+    private Event findTargetEvent(Model model) throws CommandException {
+        return model.getCoordiMate().getEventList().stream()
                 .filter(event -> event.getName().equalsIgnoreCase(eventName)).findFirst()
                 .orElseThrow(() -> new CommandException(String.format(MESSAGE_EVENT_NOT_FOUND, eventName)));
-        Event editedEvent;
+    }
+
+    private Event createEditedEvent(Event target) throws CommandException {
         try {
-            editedEvent = new Event(newName == null ? target.getName() : newName,
+            return new Event(newName == null ? target.getName() : newName,
                     newStartTime == null ? target.getStartTime() : newStartTime,
                     newEndTime == null ? target.getEndTime() : newEndTime, target.getMembers(),
                     target.getAttendanceRecord());
         } catch (IllegalArgumentException e) {
             throw new CommandException(e.getMessage(), e);
         }
-        if (!target.isSameEvent(editedEvent) && model.hasEvent(editedEvent)) {
-            throw new CommandException(MESSAGE_DUPLICATE_EVENT);
-        }
-        model.setEvent(target, editedEvent);
-        return new CommandResult(String.format(MESSAGE_SUCCESS,
-                editedEvent.getName(), editedEvent.getStartTime(), editedEvent.getEndTime()));
     }
 
     /**
