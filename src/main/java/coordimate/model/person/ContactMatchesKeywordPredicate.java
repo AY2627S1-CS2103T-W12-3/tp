@@ -8,15 +8,15 @@ import java.util.function.Predicate;
 import coordimate.commons.util.ToStringBuilder;
 
 /**
- * Tests that a {@code Person}'s name, phone, email, or address contains the given
- * keyword as a case-insensitive substring.
+ * Tests that a {@code Person}'s name, phone, email, address, or organisation contains
+ * the given keyword as a case-insensitive substring.
  */
 public class ContactMatchesKeywordPredicate implements Predicate<Person> {
     private final String keyword;
 
     /**
-     * Creates a predicate that matches contacts whose name, phone, email, or address
-     * contains {@code keyword}, ignoring case.
+     * Creates a predicate that matches contacts whose name, phone, email, address, or
+     * organisation contains {@code keyword}, ignoring case.
      */
     public ContactMatchesKeywordPredicate(String keyword) {
         requireNonNull(keyword);
@@ -24,8 +24,8 @@ public class ContactMatchesKeywordPredicate implements Predicate<Person> {
     }
 
     /**
-     * Returns true if {@code person}'s name, phone, email, or address contains the
-     * keyword as a case-insensitive substring.
+     * Returns true if {@code person}'s name, phone, email, address, or organisation
+     * contains the keyword as a case-insensitive substring.
      */
     @Override
     public boolean test(Person person) {
@@ -34,6 +34,9 @@ public class ContactMatchesKeywordPredicate implements Predicate<Person> {
                 || person.getPhone().getValue().toLowerCase(Locale.ROOT).contains(lowerKeyword)
                 || person.getEmail().getValue().toLowerCase(Locale.ROOT).contains(lowerKeyword)
                 || person.getAddress().map(address -> address.getValue().toLowerCase(Locale.ROOT)
+                        .contains(lowerKeyword))
+                        .orElse(false)
+                || person.getOrganisation().map(organisation -> organisation.getValue().toLowerCase(Locale.ROOT)
                         .contains(lowerKeyword))
                         .orElse(false);
     }

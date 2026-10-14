@@ -487,11 +487,11 @@ Examples:
 
 ### Searching contacts: `search`
 
-Lists contacts whose name, phone number, email, or address contains the given keyword or phrase.
+Lists contacts whose name, phone number, email, address, or organisation contains the given keyword or phrase.
 
 Format: `search KEYWORD`
 
-* Matching is case-insensitive across all four fields; for example, `hans` matches `Hans`.
+* Matching is case-insensitive across all five fields; for example, `hans` matches `Hans`.
 * Partial words match; for example, `Han` matches `Hans`.
 * The entire keyword is matched as one substring within a field. Spaces and word order matter:
   `search Hans Bo` matches `Hans Bo Yang`, but does not match `Bo Hans` or separate contacts named `Hans` and `Bo`.
@@ -506,6 +506,7 @@ Examples:
 * `search 9123` matches a phone number containing `9123`, such as `91234567`.
 * `search EXAMPLE.COM` matches email addresses containing `example.com`, regardless of case.
 * `search jurong west` matches addresses containing `Jurong West`.
+* `search student affairs` matches organisations containing `Student Affairs`, such as `NUS Student Affairs`.
 
 ### Deleting a contact: `delete`
 
