@@ -179,9 +179,10 @@ Creates an event and saves it to the local data file.
 
 Format: `addevent evn/EVENT_NAME st/START_TIME et/END_TIME`
 
-Each parameter must appear once. Event names must contain 1 to 100 printable characters, so line breaks and
-other control characters are not allowed. Leading and trailing whitespace is removed. Names must be unique,
-ignoring case. An overlong name reports `Event name must not exceed 100 characters. Example: evn/Final Concert`.
+Each parameter must appear once. Leading and trailing whitespace is removed before an event name is checked.
+The resulting name must contain 1 to 100 printable characters; line breaks and other control characters within
+the name are rejected. Names must be unique, ignoring case.
+An overlong name reports `Event name must not exceed 100 characters. Example: evn/Final Concert`.
 An invalid character reports `Invalid event name. Use letters, digits, spaces, or punctuation. Example: evn/Final-Concert`.
 Different events may share the same start and end times.
 
