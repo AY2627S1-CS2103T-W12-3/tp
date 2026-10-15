@@ -131,6 +131,46 @@ public class EventListPanelTest {
     }
 
     @Test
+    public void contactChanges_refreshSelectedEventMemberDetails() throws Exception {
+        runOnJavaFxThread(() -> {
+            Person original = new PersonBuilder().withName(ALICE.getFullName()).withRole("Treasurer")
+                    .withOrganisation("Student Union").withTags("Finance").build();
+            ObservableList<Person> persons = FXCollections.observableArrayList(original);
+            Event event = event(List.of(ALICE), Map.of(ALICE, AttendanceStatus.ABSENT));
+            Region root = new EventListPanel(FXCollections.observableArrayList(event), persons).getRoot();
+            new Scene(root);
+            root.applyCss();
+
+            HBox row = (HBox) getMembers(root).getChildren().getFirst();
+            assertTrue(row.getChildren().get(3).getStyleClass().contains("attendance-absent"));
+            assertEquals("Treasurer · Student Union", memberMetadata(row));
+
+            persons.setAll(new PersonBuilder().withName(ALICE.getFullName()).withRole("Logistics Lead")
+                    .withOrganisation("NUS").withTags("Logistics", "Sponsor", "UniversityStaff").build());
+
+            row = (HBox) getMembers(root).getChildren().getFirst();
+            VBox details = (VBox) row.getChildren().get(2);
+            FlowPane identityLine = (FlowPane) details.getChildren().get(0);
+            assertEquals("Logistics", ((Label) identityLine.getChildren().get(1)).getText());
+            assertEquals("Sponsor", ((Label) identityLine.getChildren().get(2)).getText());
+            assertEquals("UniversityStaff", ((Label) identityLine.getChildren().get(3)).getText());
+            assertTrue(((Label) identityLine.getChildren().get(1)).getStyleClass()
+                    .contains("event-member-tag-teal"));
+            assertTrue(((Label) identityLine.getChildren().get(2)).getStyleClass()
+                    .contains("event-member-tag-amber"));
+            assertTrue(((Label) identityLine.getChildren().get(3)).getStyleClass()
+                    .contains("event-member-tag-purple"));
+            assertTrue(((Label) row.getChildren().get(1)).getStyleClass().contains("event-member-avatar-teal"));
+            assertEquals("Logistics Lead · NUS", memberMetadata(row));
+
+            persons.setAll(new PersonBuilder().withName(ALICE.getFullName()).withRole("Sponsor Liaison")
+                    .withOrganisation("Student Union").withTags("Sponsor").build());
+            row = (HBox) getMembers(root).getChildren().getFirst();
+            assertTrue(((Label) row.getChildren().get(1)).getStyleClass().contains("event-member-avatar-amber"));
+        });
+    }
+
+    @Test
     public void eventCard_showsMemberAndAttendanceOverview() throws Exception {
         runOnJavaFxThread(() -> {
             Event event = event(List.of(ALICE, BOB, CHARLIE),
@@ -189,6 +229,11 @@ public class EventListPanelTest {
 
     private static VBox getMembers(Region root) {
         return (VBox) root.lookup("#members");
+    }
+
+    private static String memberMetadata(HBox row) {
+        VBox details = (VBox) row.getChildren().get(2);
+        return ((Label) details.getChildren().get(1)).getText();
     }
 
     private static Label getLabel(Region root, String id) {

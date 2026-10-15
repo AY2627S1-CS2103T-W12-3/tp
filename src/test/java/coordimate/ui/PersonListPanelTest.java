@@ -172,6 +172,12 @@ public class PersonListPanelTest {
             HBox updatedRow = (HBox) assigned.getChildren().getFirst();
             assertEquals("Present", ((Label) updatedRow.getChildren().getLast()).getText());
 
+            events.setAll(event.withAttendance(ALICE.getName(), AttendanceStatus.ABSENT));
+            HBox absentRow = (HBox) assigned.getChildren().getFirst();
+            Label absentStatus = (Label) absentRow.getChildren().getLast();
+            assertEquals("Absent", absentStatus.getText());
+            assertTrue(absentStatus.getStyleClass().contains("attendance-absent"));
+
             events.clear();
             assertEquals("0 events", getLabel(root, "assignedEventCount").getText());
             assertEquals("No events assigned.", ((Label) assigned.getChildren().getFirst()).getText());
