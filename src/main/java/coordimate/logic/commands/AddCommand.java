@@ -23,7 +23,7 @@ public class AddCommand extends Command {
 
     public static final String COMMAND_WORD = "add";
 
-    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Saves a contact in CoordiMate. "
+    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Saves a contact in CoordiMate.\n"
             + "Parameters: "
             + PREFIX_NAME + "NAME "
             + PREFIX_PHONE + "PHONE "
@@ -44,7 +44,7 @@ public class AddCommand extends Command {
 
     public static final String MESSAGE_SUCCESS = "Contact saved successfully: %1$s";
     public static final String MESSAGE_DUPLICATE_PERSON = "A contact with this name, phone number, or email "
-            + "already exists.\nNo changes were made.";
+            + "already exists. No changes were made.";
     public static final String MESSAGE_SAVE_ERROR = "Contact could not be saved. No changes were made.";
     public static final String MESSAGE_LOAD_ERROR =
             "Contact data could not be loaded. Please check the local data file.";

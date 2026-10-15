@@ -48,14 +48,14 @@ public class EditTagCommandTest {
     public void execute_missingTag_throwsCommandException() {
         Model model = modelWithCustomTags(PUBLICITY);
         assertCommandFailure(new EditTagCommand("Missing", MEDIA), model,
-                "No such tag exists: Missing.");
+                "Tag Missing does not exist. Use a saved tag name.");
     }
 
     @Test
     public void execute_sameTagIgnoringCase_throwsCommandException() {
         Model model = modelWithCustomTags(PUBLICITY);
         assertCommandFailure(new EditTagCommand("publicity", new Tag("PUBLICITY")), model,
-                "PUBLICITY is the same as Publicity.");
+                "Tag Publicity already has that name. No changes were made.");
     }
 
     @Test
@@ -74,7 +74,7 @@ public class EditTagCommandTest {
     public void execute_duplicateTag_throwsCommandException() {
         Model model = modelWithCustomTags(PUBLICITY, MEDIA);
         assertCommandFailure(new EditTagCommand("Publicity", MEDIA), model,
-                "This tag already exists.");
+                "A tag with this name already exists. No changes were made.");
     }
 
     @Test

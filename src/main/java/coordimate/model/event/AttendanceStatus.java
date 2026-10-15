@@ -6,6 +6,9 @@ package coordimate.model.event;
 public enum AttendanceStatus {
     PRESENT, ABSENT;
 
+    public static final String MESSAGE_CONSTRAINTS =
+            "Invalid attendance status. Use present or absent. Example: att/present";
+
     /**
      * Returns the status matching {@code value} ("present" or "absent"), ignoring case.
      */
@@ -13,7 +16,7 @@ public enum AttendanceStatus {
         return switch (value.toLowerCase()) {
             case "present" -> PRESENT;
             case "absent" -> ABSENT;
-            default -> throw new IllegalArgumentException("STATUS must be either \"present\" or \"absent\"!");
+            default -> throw new IllegalArgumentException(MESSAGE_CONSTRAINTS);
         };
     }
 

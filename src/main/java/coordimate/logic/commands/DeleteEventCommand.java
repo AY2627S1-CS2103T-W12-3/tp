@@ -2,6 +2,7 @@ package coordimate.logic.commands;
 
 import static java.util.Objects.requireNonNull;
 
+import coordimate.logic.Messages;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.Model;
 import coordimate.model.event.Event;
@@ -11,9 +12,11 @@ import coordimate.model.event.Event;
  */
 public class DeleteEventCommand extends Command {
     public static final String COMMAND_WORD = "deleteevent";
-    public static final String MESSAGE_USAGE = "deleteevent evn/EVENT_NAME";
+    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Deletes an event.\n"
+            + "Parameters: evn/EVENT_NAME\n"
+            + "Example: " + COMMAND_WORD + " evn/Final Concert";
     public static final String MESSAGE_SUCCESS = "Deleted Event %s.";
-    public static final String MESSAGE_EVENT_NOT_FOUND = "Event %s does not exist.";
+    public static final String MESSAGE_EVENT_NOT_FOUND = Messages.MESSAGE_EVENT_NOT_FOUND;
     public static final String MESSAGE_SAVE_ERROR = "Event could not be deleted. No changes were made.";
 
     private final String eventName;

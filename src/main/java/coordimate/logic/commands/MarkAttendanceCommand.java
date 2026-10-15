@@ -2,6 +2,7 @@ package coordimate.logic.commands;
 
 import static java.util.Objects.requireNonNull;
 
+import coordimate.logic.Messages;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.Model;
 import coordimate.model.event.AttendanceStatus;
@@ -14,12 +15,15 @@ import coordimate.model.person.Name;
 public class MarkAttendanceCommand extends Command {
 
     public static final String COMMAND_WORD = "markattendance";
-    public static final String MESSAGE_USAGE = "markattendance evn/EVENT_NAME mem/MEMBER_NAME att/STATUS";
+    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Marks a member as present or absent.\n"
+            + "Parameters: evn/EVENT_NAME mem/MEMBER_NAME att/STATUS\n"
+            + "Example: " + COMMAND_WORD + " evn/Final Concert mem/Alice Tan att/present";
     public static final String MESSAGE_SUCCESS = "Marked %s as %s for Event %s.";
     public static final String MESSAGE_ALREADY_MARKED =
-            "%s is already marked as %s for Event %s. No changes were made.";
-    public static final String MESSAGE_EVENT_NOT_FOUND = "Error! Event %s does not exist!";
-    public static final String MESSAGE_MEMBER_NOT_ASSIGNED = "Error! %s is not assigned to event %s!";
+            "%s is already marked as %s for event %s. No changes were made.";
+    public static final String MESSAGE_EVENT_NOT_FOUND = Messages.MESSAGE_EVENT_NOT_FOUND;
+    public static final String MESSAGE_MEMBER_NOT_ASSIGNED = "%s is not assigned to event %s. "
+            + "Assign the contact to the event before marking attendance.";
     public static final String MESSAGE_SAVE_ERROR = "Attendance could not be saved. No changes were made.";
 
     private final String eventName;

@@ -1,5 +1,6 @@
 package coordimate.logic.parser;
 
+import static coordimate.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static coordimate.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static coordimate.logic.parser.CommandParserTestUtil.assertParseSuccess;
 
@@ -11,18 +12,19 @@ import coordimate.model.person.ContactMatchesKeywordPredicate;
 public class SearchCommandParserTest {
 
     private final SearchCommandParser parser = new SearchCommandParser();
+    private final String invalidFormat = String.format(MESSAGE_INVALID_COMMAND_FORMAT, SearchCommand.MESSAGE_USAGE);
 
     @Test
     public void parse_emptyArg_throwsParseException() {
-        assertParseFailure(parser, "", SearchCommandParser.MESSAGE_EMPTY_KEYWORD);
-        assertParseFailure(parser, "   ", SearchCommandParser.MESSAGE_EMPTY_KEYWORD);
-        assertParseFailure(parser, " \n \t ", SearchCommandParser.MESSAGE_EMPTY_KEYWORD);
+        assertParseFailure(parser, "", invalidFormat);
+        assertParseFailure(parser, "   ", invalidFormat);
+        assertParseFailure(parser, " \n \t ", invalidFormat);
     }
 
     @Test
     public void parse_quotedOnlyArg_throwsParseException() {
-        assertParseFailure(parser, "\"\"", SearchCommandParser.MESSAGE_EMPTY_KEYWORD);
-        assertParseFailure(parser, "\"   \"", SearchCommandParser.MESSAGE_EMPTY_KEYWORD);
+        assertParseFailure(parser, "\"\"", invalidFormat);
+        assertParseFailure(parser, "\"   \"", invalidFormat);
     }
 
     @Test

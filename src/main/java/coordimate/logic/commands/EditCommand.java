@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import coordimate.commons.core.index.Index;
 import coordimate.commons.util.CollectionUtil;
 import coordimate.commons.util.ToStringBuilder;
+import coordimate.logic.Messages;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.Model;
 import coordimate.model.event.MemberNameConflictException;
@@ -68,7 +69,7 @@ public class EditCommand extends Command {
 
     public static final String MESSAGE_EDIT_PERSON_SUCCESS = "Contact updated successfully:\n%1$s";
     public static final String MESSAGE_NOT_EDITED =
-            "Please provide at least one field or tag operation to edit. Example: edit 2 r/Logistics";
+            "Provide at least one field or tag operation to edit.\n" + MESSAGE_USAGE;
     public static final String MESSAGE_DUPLICATE_PERSON =
             "This update conflicts with another saved contact. No changes were made.";
     public static final String MESSAGE_SAVE_ERROR = "Contact could not be saved. No changes were made.";
@@ -76,12 +77,10 @@ public class EditCommand extends Command {
             "Contact data could not be loaded. Please check the local data file.";
     public static final String MESSAGE_MEMBER_NAME_CONFLICT =
             "Cannot rename this contact because an event already has a member with that name. No changes were made.";
-    public static final String MESSAGE_NO_MATCH =
-            "No contact matches that identifier. Use an exact saved name, phone number, or email address.";
-    public static final String MESSAGE_AMBIGUOUS_MATCH = "Multiple contacts match that identifier:\n%1$s\n"
-            + "Retry with a unique phone or email, or a displayed index if shown.";
+    public static final String MESSAGE_NO_MATCH = Messages.MESSAGE_CONTACT_NO_MATCH;
+    public static final String MESSAGE_AMBIGUOUS_MATCH = Messages.MESSAGE_CONTACT_AMBIGUOUS_MATCH;
     public static final String MESSAGE_INVALID_INDEX =
-            "No contact exists at index %1$d. Please use an index from the current list.";
+            Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX;
 
     private final Index index;
     private final String targetIdentifier;

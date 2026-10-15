@@ -61,7 +61,7 @@ public class UnassignCommandParserTest {
         for (String unknown : new String[] {" x/1", " r/Logistics", " mem/Alex Yeoh", " /et 1"}) {
             assertError(" evn/Final Concert c/1" + unknown, UnassignCommandParser.MESSAGE_UNKNOWN_PARAMETER);
         }
-        assertEquals("Unknown parameter. Example: unassign evn/Final Concert c/2 3",
+        assertEquals("Unknown parameter.\n" + UnassignCommand.MESSAGE_USAGE,
                 assertThrows(ParseException.class, () -> parser.parse(" x/1 evn/Final Concert c/1")).getMessage());
     }
 

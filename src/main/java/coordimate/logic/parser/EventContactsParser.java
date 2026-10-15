@@ -1,6 +1,5 @@
 package coordimate.logic.parser;
 
-import static coordimate.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static coordimate.logic.parser.CliSyntax.PREFIX_CONTACT;
 import static coordimate.logic.parser.CliSyntax.PREFIX_EVENT_NAME;
 import static java.util.Objects.requireNonNull;
@@ -8,11 +7,10 @@ import static java.util.Objects.requireNonNull;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import coordimate.commons.core.index.Index;
 import coordimate.commons.util.StringUtil;
+import coordimate.logic.Messages;
 import coordimate.logic.parser.exceptions.ParseException;
 import coordimate.model.event.Event;
 
@@ -21,12 +19,10 @@ import coordimate.model.event.Event;
  * that view or change an event's members, rejecting unknown or repeated parameters.
  */
 final class EventContactsParser {
-    static final String MESSAGE_REPEATED_PARAMETER = "Each parameter may only be specified once.";
+    static final String MESSAGE_REPEATED_PARAMETER =
+            Messages.MESSAGE_REPEATED_PARAMETER;
     static final String MESSAGE_INVALID_CONTACT_INDEXES =
             "Contact indexes must be positive integers separated by spaces. Example: c/1 3 5";
-
-    // Same parameter pattern as the other event commands, so all of them reject the same unknown parameters.
-    private static final Pattern PARAMETER_PATTERN = Pattern.compile("(?<!\\S)([A-Za-z]+/|/[A-Za-z]+)");
 
     /**
      * The event name and contact indexes given to a command.
@@ -71,20 +67,16 @@ final class EventContactsParser {
             Prefix... allowed) throws ParseException {
         requireNonNull(args);
         List<String> allowedPrefixes = Arrays.stream(allowed).map(Prefix::toString).toList();
-        Matcher matcher = PARAMETER_PATTERN.matcher(args);
-        while (matcher.find()) {
-            if (!allowedPrefixes.contains(matcher.group())) {
-                throw new ParseException(unknownParameterMessage);
-            }
-        }
+        PrefixParser.rejectUnknownParameters(args, PrefixParser.EVENT_PARAMETER_PATTERN,
+                allowedPrefixes, unknownParameterMessage);
 
         ArgumentMultimap argMultimap = ArgumentTokenizer.tokenize(args, allowed);
         boolean isMissingPrefix = Arrays.stream(allowed).anyMatch(prefix -> argMultimap.getValue(prefix).isEmpty());
         if (!argMultimap.getPreamble().isEmpty() || isMissingPrefix) {
-            throw new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, usage));
+            throw ParserUtil.createInvalidFormatException(usage);
         }
         if (Arrays.stream(allowed).anyMatch(prefix -> argMultimap.getAllValues(prefix).size() > 1)) {
-            throw new ParseException(MESSAGE_REPEATED_PARAMETER);
+            throw new ParseException(MESSAGE_REPEATED_PARAMETER + "\n" + usage);
         }
         return argMultimap;
     }

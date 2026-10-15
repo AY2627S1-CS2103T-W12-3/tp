@@ -12,7 +12,9 @@ import coordimate.model.event.EventMembersPredicate;
  */
 public class MembersCommand extends Command {
     public static final String COMMAND_WORD = "members";
-    public static final String MESSAGE_USAGE = "members evn/EVENT_NAME";
+    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Lists the members of an event.\n"
+            + "Parameters: evn/EVENT_NAME\n"
+            + "Example: " + COMMAND_WORD + " evn/Final Concert";
     public static final String MESSAGE_SHOW_ALL_HINT = " Use list to show all contacts.";
     public static final String MESSAGE_SUCCESS = "Listed %d member(s) of %s." + MESSAGE_SHOW_ALL_HINT;
     public static final String MESSAGE_NO_MEMBERS = "%s has no members assigned." + MESSAGE_SHOW_ALL_HINT;

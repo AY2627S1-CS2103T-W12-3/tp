@@ -13,6 +13,9 @@ import coordimate.model.tag.Tag;
 public class ListTagsCommand extends Command {
 
     public static final String COMMAND_WORD = "listtags";
+    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Lists all saved tags.\n"
+            + "Parameters: none\n"
+            + "Example: " + COMMAND_WORD;
 
     public static final String MESSAGE_SUCCESS = "Here is the list of all existing tags.%nTags: %s.";
 

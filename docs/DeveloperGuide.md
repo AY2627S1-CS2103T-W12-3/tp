@@ -119,6 +119,17 @@ How the parsing works:
 * When called upon to parse a user command, the `CoordiMateParser` class creates an `XYZCommandParser` (`XYZ` is a placeholder for the specific command name, e.g., `AddCommandParser`). The parser uses the other classes shown above to parse the user command and create an `XYZCommand` object (e.g., `AddCommand`). The `CoordiMateParser` returns that object as a `Command` object.
 * All `XYZCommandParser` classes, such as `AddCommandParser` and `DeleteCommandParser`, implement the `Parser` interface so they can be treated similarly where appropriate, for example during testing.
 
+Command error messages follow these conventions:
+
+* Use sentence case and full stops for explanations, without an `Error!` prefix or exclamation marks.
+* For malformed command syntax, use `ParserUtil.createInvalidFormatException(Command.MESSAGE_USAGE)`.
+  Usage text has a command description, `Parameters:`, and `Example:` on separate lines.
+* For unknown or repeated parameters, show the reason followed by the command's usage text.
+* For invalid field values, explain the constraint and provide an `Example:` of a valid value.
+* For execution errors, explain what failed and how to correct it. Reuse the templates in `Messages` for missing
+  contacts, events, and tags, and for unmatched or ambiguous contact identifiers.
+* Add `No changes were made.` when an attempted change is rejected without modifying the saved data.
+
 ### Model component
 **API** : [`Model.java`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/Model.java)
 
@@ -293,50 +304,50 @@ _{Explain here how the data archiving feature will be implemented}_
 
 Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unlikely to have) - `*`
 
-| Priority | As a … | I want to … | So that I can … |
-|----------|--------|-------------|-----------------|
-| `* * *` | first-time user | view a tutorial | learn how to navigate CoordiMate |
-| `* *` | returning user | access the tutorial again | refresh my memory when I forget how to use CoordiMate |
-| `* * *` | Exco member | save a contact's details | keep track of the people I know |
-| `* * *` | Exco member | edit a saved contact | correct or update the contact's information |
-| `* * *` | Exco member | delete a contact | remove an entry that is no longer needed |
-| `* * *` | Exco member | save a contact's email address | keep a complete record of the contact's information |
-| `* *` | Exco member | record additional details about a contact | keep relevant background information at hand |
-| `* *` | Exco member | record a contact's birthday | remember to wish the contact well |
-| `*` | Exco member | attach multiple phone numbers or email addresses to a contact | record the contact's different personal and work details |
-| `*` | Exco member | attach a photo to a contact | associate the contact's face with their name |
-| `*` | Exco member entering data quickly | enter phone numbers containing extra whitespace or dashes | avoid manually reformatting phone numbers |
-| `*` | Exco member entering data quickly | enter Telegram handles with or without the `@` symbol | avoid manually reformatting handles |
-| `* * *` | event lead | search and filter contacts by name, tag, or role | retrieve specific contact information quickly |
-| `* *` | Exco member | filter contacts by their assigned colour | find contacts in a particular group quickly |
-| `*` | Exco member | have urgent contacts appear at the top of the contact list | identify them quickly |
-| `* *` | experienced user | colour-code contacts by role or group | identify their roles or groups quickly |
-| `* *` | Exco member | assign a colour to a contact | distinguish that contact visually |
-| `*` | Exco member | choose from a set of default colours | assign colours without configuring them myself |
-| `*` | Exco member | change a contact's assigned colour | keep the colour accurate when the contact's role or group changes |
-| `* * *` | Exco member | assign tags to contacts | categorize contacts for later retrieval |
-| `* *` | Exco member | choose from a set of common default tags | categorize contacts quickly |
-| `* *` | Exco member | create custom tags | categorize contacts in ways not covered by the default tags |
-| `* * *` | Exco member | create an event with a name and date | keep a record around which I can organize contacts and attendance |
-| `* * *` | Exco member | assign a member to an event | track who is involved in that event |
-| `* * *` | Exco member | remove a member from an event | correct the assignment when someone is no longer involved |
-| `* * *` | Exco member | view the members assigned to an event | see the committee allocation at a glance |
-| `* *` | Exco member | create future events and assign members to them | plan committee allocation ahead of time |
-| `*` | user with limited time | have the most frequently used event appear first | access it without extra navigation |
-| `*` | forgetful Exco member | receive reminders for upcoming events | avoid missing them |
-| `*` | forgetful Exco member | see everyone assigned to an event | avoid overlooking a participant |
-| `* * *` | Exco member who organizes events | track attendance for an event | monitor participation |
-| `* * *` | Exco member | mark a member as present or absent for an event | keep an accurate attendance record |
-| `* *` | Exco member | view the counts of present and absent members for an event | gauge overall turnout quickly |
-| `* *` | Exco member | view the members marked absent for an event | follow up with them individually |
-| `*` | Exco member | view the edit history of attendance records | see when a member's status was changed and avoid disputes |
-| `*` | Exco member | export attendance records | use them for reporting or record-keeping |
-| `*` | Exco member | archive contacts | declutter my active contact list without permanently deleting entries |
-| `*` | Exco member | archive past events | keep my event list focused on current and upcoming events |
-| `*` | Exco member | access archived contacts and events | retrieve historical information when needed |
+| Priority | As a … | I want to … | So that I can …                                                                                 |
+|----------|--------|-------------|-------------------------------------------------------------------------------------------------|
+| `* * *` | first-time user | view a tutorial | learn how to navigate CoordiMate                                                                |
+| `* *` | returning user | access the tutorial again | refresh my memory when I forget how to use CoordiMate                                           |
+| `* * *` | Exco member | save a contact's details | keep track of the people I know                                                                 |
+| `* * *` | Exco member | edit a saved contact | correct or update the contact's information                                                     |
+| `* * *` | Exco member | delete a contact | remove an entry that is no longer needed                                                        |
+| `* * *` | Exco member | save a contact's email address | keep a complete record of the contact's information                                             |
+| `* *` | Exco member | record additional details about a contact | keep relevant background information at hand                                                    |
+| `* *` | Exco member | record a contact's birthday | remember to wish the contact well                                                               |
+| `*` | Exco member | attach multiple phone numbers or email addresses to a contact | record the contact's different personal and work details                                        |
+| `*` | Exco member | attach a photo to a contact | associate the contact's face with their name                                                    |
+| `*` | Exco member entering data quickly | enter phone numbers containing extra whitespace or dashes | avoid manually reformatting phone numbers                                                       |
+| `*` | Exco member entering data quickly | enter Telegram handles with or without the `@` symbol | avoid manually reformatting handles                                                             |
+| `* * *` | event lead | search and filter contacts by name, tag, or role | retrieve specific contact information quickly                                                   |
+| `* *` | Exco member | filter contacts by their assigned colour | search contacts in a particular group quickly                                                   |
+| `*` | Exco member | have urgent contacts appear at the top of the contact list | identify them quickly                                                                           |
+| `* *` | experienced user | colour-code contacts by role or group | identify their roles or groups quickly                                                          |
+| `* *` | Exco member | assign a colour to a contact | distinguish that contact visually                                                               |
+| `*` | Exco member | choose from a set of default colours | assign colours without configuring them myself                                                  |
+| `*` | Exco member | change a contact's assigned colour | keep the colour accurate when the contact's role or group changes                               |
+| `* * *` | Exco member | assign tags to contacts | categorize contacts for later retrieval                                                         |
+| `* *` | Exco member | choose from a set of common default tags | categorize contacts quickly                                                                     |
+| `* *` | Exco member | create custom tags | categorize contacts in ways not covered by the default tags                                     |
+| `* * *` | Exco member | create an event with a name and date | keep a record around which I can organize contacts and attendance                               |
+| `* * *` | Exco member | assign a member to an event | track who is involved in that event                                                             |
+| `* * *` | Exco member | remove a member from an event | correct the assignment when someone is no longer involved                                       |
+| `* * *` | Exco member | view the members assigned to an event | see the committee allocation at a glance                                                        |
+| `* *` | Exco member | create future events and assign members to them | plan committee allocation ahead of time                                                         |
+| `*` | user with limited time | have the most frequently used event appear first | access it without extra navigation                                                              |
+| `*` | forgetful Exco member | receive reminders for upcoming events | avoid missing them                                                                              |
+| `*` | forgetful Exco member | see everyone assigned to an event | avoid overlooking a participant                                                                 |
+| `* * *` | Exco member who organizes events | track attendance for an event | monitor participation                                                                           |
+| `* * *` | Exco member | mark a member as present or absent for an event | keep an accurate attendance record                                                              |
+| `* *` | Exco member | view the counts of present and absent members for an event | gauge overall turnout quickly                                                                   |
+| `* *` | Exco member | view the members marked absent for an event | follow up with them individually                                                                |
+| `*` | Exco member | view the edit history of attendance records | see when a member's status was changed and avoid disputes                                       |
+| `*` | Exco member | export attendance records | use them for reporting or record-keeping                                                        |
+| `*` | Exco member | archive contacts | declutter my active contact list without permanently deleting entries                           |
+| `*` | Exco member | archive past events | keep my event list focused on current and upcoming events                                       |
+| `*` | Exco member | access archived contacts and events | retrieve historical information when needed                                                     |
 | `*` | Exco member | mark a contact as on leave until a specified date | remember that the contact is temporarily unavailable without manually clearing the status later |
-| `* *` | Exco member | switch between the Contacts and Events views | navigate between contact and event information easily |
-| `*` | user who values a pleasant interface | switch between light and dark modes | adjust the display to suit my environment |
+| `* *` | Exco member | switch between the Contacts and Events views | navigate between contact and event information easily                                           |
+| `*` | user who values a pleasant interface | switch between light and dark modes | adjust the display to suit my environment                                                       |
 
 ### Use cases
 
@@ -387,7 +398,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
     Use case ends.
 
-**Use case: Find contacts**
+**Use case: Search contacts**
 
 **System:** CoordiMate
 
@@ -397,7 +408,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **MSS**
 
-1. Event lead requests to find contacts using one or more names, tags, or roles.
+1. Event lead requests to search contacts using one or more names, tags, or roles.
 2. CoordiMate displays the contacts that match the given criteria.
 
    Use case ends.

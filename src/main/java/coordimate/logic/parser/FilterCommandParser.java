@@ -17,12 +17,7 @@ import coordimate.model.person.FilterField;
  * Parses one or more FIELD/VALUE pairs into filter criteria, combined with AND logic.
  */
 public class FilterCommandParser implements Parser<FilterCommand> {
-
-    public static final String MESSAGE_EMPTY_COMMAND = "Filter field cannot be empty.";
-    public static final String MESSAGE_EMPTY_VALUE = "Filter value cannot be empty.";
-    public static final String MESSAGE_INVALID_FIELD =
-            "Invalid filter field. Supported fields: tag, event, organisation.";
-    public static final String MESSAGE_UNCLOSED_QUOTE = "Unclosed quotation mark.";
+    public static final String MESSAGE_UNKNOWN_PARAMETER = "Unknown parameter.\n" + FilterCommand.MESSAGE_USAGE;
 
     private static final Pattern FIELD_PATTERN = Pattern.compile("(?<!\\S)([A-Za-z]+)/");
 
@@ -31,15 +26,15 @@ public class FilterCommandParser implements Parser<FilterCommand> {
         requireNonNull(args);
         String trimmed = args.strip();
         if (trimmed.isEmpty()) {
-            throw new ParseException(MESSAGE_EMPTY_COMMAND);
+            throw ParserUtil.createInvalidFormatException(FilterCommand.MESSAGE_USAGE);
         }
 
         List<MatchResult> fieldTokens = findFieldTokens(trimmed);
         if (fieldTokens.isEmpty() || fieldTokens.get(0).start() != 0) {
-            throw new ParseException(MESSAGE_EMPTY_COMMAND);
+            throw ParserUtil.createInvalidFormatException(FilterCommand.MESSAGE_USAGE);
         }
         if (hasUnclosedQuoteBeforeField(trimmed)) {
-            throw new ParseException(MESSAGE_UNCLOSED_QUOTE);
+            throw ParserUtil.createInvalidFormatException(FilterCommand.MESSAGE_USAGE);
         }
 
         List<FilterCriterion> criteria = new ArrayList<>();
@@ -51,10 +46,10 @@ public class FilterCommandParser implements Parser<FilterCommand> {
             String value = stripQuotes(trimmed.substring(valueStart, valueEnd).strip());
 
             if (value.isEmpty()) {
-                throw new ParseException(MESSAGE_EMPTY_VALUE);
+                throw ParserUtil.createInvalidFormatException(FilterCommand.MESSAGE_USAGE);
             }
             FilterField field = FilterField.fromFieldName(fieldName)
-                    .orElseThrow(() -> new ParseException(MESSAGE_INVALID_FIELD));
+                    .orElseThrow(() -> new ParseException(MESSAGE_UNKNOWN_PARAMETER));
             criteria.add(new FilterCriterion(field, value));
         }
 

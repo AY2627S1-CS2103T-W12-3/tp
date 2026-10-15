@@ -16,6 +16,7 @@ import coordimate.model.person.Note;
 import coordimate.model.person.Organisation;
 import coordimate.model.person.Phone;
 import coordimate.model.person.Role;
+import coordimate.model.tag.Tag;
 import coordimate.testutil.PersonBuilder;
 
 public class AddCommandParserTest {
@@ -88,13 +89,16 @@ public class AddCommandParserTest {
     @Test
     public void parse_repeatedOptionalNonTagField_rejected() {
         assertParseFailure(parser, REQUIRED + " b/ b/18-06-2004",
-                Messages.getErrorMessageForDuplicatePrefixes(CliSyntax.PREFIX_BIRTHDAY));
+                Messages.getErrorMessageForDuplicatePrefixes(CliSyntax.PREFIX_BIRTHDAY)
+                        + "\n" + AddCommand.MESSAGE_USAGE);
         assertParseFailure(parser, REQUIRED + " a/Somewhere a/Elsewhere",
-                Messages.getErrorMessageForDuplicatePrefixes(CliSyntax.PREFIX_ADDRESS));
+                Messages.getErrorMessageForDuplicatePrefixes(CliSyntax.PREFIX_ADDRESS)
+                        + "\n" + AddCommand.MESSAGE_USAGE);
         assertParseFailure(parser, REQUIRED + " o/NUS o/NTU",
-                Messages.getErrorMessageForDuplicatePrefixes(CliSyntax.PREFIX_ORGANISATION));
+                Messages.getErrorMessageForDuplicatePrefixes(CliSyntax.PREFIX_ORGANISATION)
+                        + "\n" + AddCommand.MESSAGE_USAGE);
         assertParseFailure(parser, REQUIRED + " m/First m/Second",
-                Messages.getErrorMessageForDuplicatePrefixes(CliSyntax.PREFIX_NOTE));
+                Messages.getErrorMessageForDuplicatePrefixes(CliSyntax.PREFIX_NOTE) + "\n" + AddCommand.MESSAGE_USAGE);
     }
 
     @Test
@@ -114,9 +118,9 @@ public class AddCommandParserTest {
         assertParseFailure(parser, REQUIRED + " a/Bad\tAddress", Address.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, REQUIRED + " o/!", Organisation.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, REQUIRED + " m/Bad\nNote", Note.MESSAGE_CONSTRAINTS);
-        assertParseFailure(parser, REQUIRED + " t/Bad Tag", AddCommandParser.MESSAGE_INVALID_TAG);
+        assertParseFailure(parser, REQUIRED + " t/Bad Tag", Tag.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, REQUIRED + " t/1234567890123456789012345678901",
-                AddCommandParser.MESSAGE_INVALID_TAG);
+                Tag.MESSAGE_LENGTH_CONSTRAINTS);
     }
 
     @Test
