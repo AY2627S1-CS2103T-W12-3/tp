@@ -446,6 +446,11 @@ If the member already has the requested status, no changes are made:
 | A parameter is repeated. | `Parameter {PREFIX} may only be specified once.` |
 | An unknown parameter is used. | `Unknown parameter: {PREFIX}.` |
 
+Attendance is shown beside each member when the event is selected in the **Events** tab.
+Removing a member with `unassign`, or deleting the contact, also removes that member's attendance for the event.
+If saving fails, the attendance is not changed and the command reports
+`Attendance could not be saved. No changes were made.`
+
 ### Listing all contacts: `list`
 
 Shows a list of all contacts in CoordiMate, removing any search, filter, or members view.
@@ -473,7 +478,9 @@ Success: `{TAG_NAME} successfully deleted.`
 |---|---|
 | The `t/` prefix is missing. | `Invalid command format.` |
 | The tag name is empty. | `Tag name must not be empty. Example: t/Publicity` |
-| The specified tag does not exist. | `No such tag exists: {TAG_NAME}.` |
+| More than one `t/` prefix is supplied. | `Parameter t/ may only be specified once.` |
+| The specified tag does not exist. | `Tag {TAG_NAME} does not exist. Use a saved tag name.` |
+
 ### Editing a tag: `edittag`
 
 Renames an existing tag, including a default tag, and updates it wherever it is applied across contacts.
@@ -492,15 +499,15 @@ Success for `edittag Media t/Publicity`: `Media successfully renamed to Publicit
 
 | Condition | Error message |
 |---|---|
-| The current tag does not exist. | `No such tag exists: {OLD_TAG}.` |
+| The current tag does not exist. | `Tag {OLD_TAG} does not exist. Use a saved tag name.` |
 | The `t/` prefix is missing. | `Invalid command format.` |
 | The current tag name is missing. | `Invalid command format.` |
-| The new tag name is missing. | `Invalid command format.` |
 | The new tag name is blank. | `Tag name must not be empty. Example: t/Publicity` |
 | More than one `t/` prefix is supplied. | `Parameter t/ may only be specified once.` |
-| The new tag contains spaces, symbols, or punctuation, or exceeds 30 characters. | `Invalid tag. Use 1 to 30 letters or digits with no spaces. Example: t/Logistics` |
-| The new tag matches the current tag, ignoring capitalization. | `{NEW_TAG} is the same as {OLD_TAG}.` |
-| The new tag already exists. | `This tag already exists.` |
+| The new tag contains spaces, symbols, or punctuation. | `Invalid tag name. Use letters and numbers without spaces. Example: t/Publicity` |
+| The new tag exceeds 30 characters. | `Tag name must not exceed 30 characters. Example: t/Publicity` |
+| The new tag matches the current tag, ignoring capitalization. | `Tag {OLD_TAG} already has that name. No changes were made.` |
+| The new tag already exists. | `A tag with this name already exists. No changes were made.` |
 
 ### Adding a tag: `addtag`
 
@@ -526,8 +533,9 @@ Success: `Created tag: Publicity.`
 | More than one `t/` prefix is supplied. | `Parameter t/ may only be specified once.` |
 | Text appears before `t/`. | `Invalid command format.` |
 | The tag name is empty. | `Tag name must not be empty. Example: t/Publicity` |
-| The tag name contains spaces, symbols, or punctuation, or exceeds 30 characters. | `Invalid tag. Use 1 to 30 letters or digits with no spaces. Example: t/Logistics` |
-| The tag name already exists, ignoring capitalization. | `This tag already exists.` |
+| The tag name contains spaces, symbols, or punctuation. | `Invalid tag name. Use letters and numbers without spaces. Example: t/Publicity` |
+| The tag name exceeds 30 characters. | `Tag name must not exceed 30 characters. Example: t/Publicity` |
+| The tag name already exists, ignoring capitalization. | `A tag with this name already exists. No changes were made.` |
 
 ### Listing all tags: `listtags`
 
