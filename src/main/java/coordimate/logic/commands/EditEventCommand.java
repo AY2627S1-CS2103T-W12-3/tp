@@ -17,6 +17,7 @@ public class EditEventCommand extends Command {
     public static final String COMMAND_WORD = "editevent";
     public static final String MESSAGE_USAGE = COMMAND_WORD + ": Edits an event.\n"
             + "Parameters: evn/EVENT_NAME [nevn/NEW_EVENT_NAME] [st/NEW_START_TIME] [et/NEW_END_TIME]\n"
+            + "At least one of nevn/, st/, or et/ is required.\n"
             + "Example: " + COMMAND_WORD + " evn/Final Concert st/08-08-2026 16:00";
     public static final String MESSAGE_SUCCESS = "Edited Event %s. Start Time: %s. End Time: %s.";
     public static final String MESSAGE_EVENT_NOT_FOUND = Messages.MESSAGE_EVENT_NOT_FOUND;

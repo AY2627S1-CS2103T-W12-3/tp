@@ -51,7 +51,7 @@ public class EditCommand extends Command {
 
     public static final String MESSAGE_USAGE = COMMAND_WORD + ": Edits the details of a saved contact. "
             + "Existing values will be overwritten by the input values.\n"
-            + "Parameters: INDEX or " + PREFIX_TARGET + "IDENTIFIER "
+            + "Parameters: (INDEX | " + PREFIX_TARGET + "IDENTIFIER) "
             + "[" + PREFIX_NAME + "NAME] "
             + "[" + PREFIX_PHONE + "PHONE] "
             + "[" + PREFIX_EMAIL + "EMAIL] "
@@ -63,6 +63,7 @@ public class EditCommand extends Command {
             + "[" + PREFIX_TAG + "TAG]... "
             + "[" + PREFIX_ADD_TAG + "TAG]... "
             + "[" + PREFIX_REMOVE_TAG + "TAG]...\n"
+            + "Choose either INDEX or target/IDENTIFIER and provide at least one field or tag operation.\n"
             + "Example: " + COMMAND_WORD + " 1 "
             + PREFIX_PHONE + "91234567 "
             + PREFIX_EMAIL + "johndoe@example.com";

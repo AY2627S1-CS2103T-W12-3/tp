@@ -1,19 +1,98 @@
-#copyButton, #helpMessage {
-    -fx-text-fill: white;
-}
-
-#copyButton {
-    -fx-background-color: dimgray;
-}
-
-#copyButton:hover {
-    -fx-background-color: gray;
-}
-
-#copyButton:armed {
-    -fx-background-color: darkgray;
+.root {
+    -fx-font-family: "Inter", "Segoe UI", sans-serif;
+    -fx-background-color: #101319;
 }
 
 #helpMessageContainer {
-    -fx-background-color: derive(#1d1d1d, 20%);
+    -fx-background-color: #101319;
+    -fx-padding: 14;
+}
+
+#helpMessage,
+#copyButton,
+#closeButton,
+.help-heading,
+.syntax-note {
+    -fx-text-fill: #f0f6fc;
+}
+
+.help-heading {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-padding: 0 0 4px 0;
+}
+
+.syntax-note {
+    -fx-font-style: italic;
+    -fx-opacity: 0.9;
+}
+
+#commandTable {
+    -fx-background-color: #171c26;
+    -fx-control-inner-background: #171c26;
+    -fx-border-color: #0ea5e9;
+    -fx-border-width: 2px;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+    -fx-padding: 0;
+}
+
+#commandTable .column-header-background,
+#commandTable .column-header,
+#commandTable .filler {
+    -fx-background-color: #1c2735;
+}
+
+#commandTable .column-header,
+#commandTable .filler {
+    -fx-border-color: #303a47;
+    -fx-border-width: 0 1px 1px 0;
+}
+
+#commandTable .column-header .label {
+    -fx-text-fill: #f0f6fc;
+    -fx-font-weight: bold;
+}
+
+#commandTable .table-row-cell,
+#commandTable .table-row-cell:odd,
+#commandTable .table-row-cell:empty {
+    -fx-background-color: #171c26;
+}
+
+#commandTable .table-cell {
+    -fx-background-color: transparent;
+    -fx-border-color: #303a47;
+    -fx-border-width: 0 1px 1px 0;
+    -fx-padding: 8px;
+    -fx-text-fill: #f0f6fc;
+    -fx-wrap-text: true;
+}
+
+#commandTable .table-row-cell:filled:selected {
+    -fx-background-color: #171c26;
+}
+
+#commandTable .table-row-cell:filled:selected .table-cell {
+    -fx-text-fill: #f0f6fc;
+}
+
+#copyButton,
+#closeButton {
+    -fx-background-color: #132233;
+    -fx-border-color: #0ea5e9;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+    -fx-text-fill: #38bdf8;
+    -fx-padding: 8 14;
+}
+
+#copyButton:hover,
+#closeButton:hover {
+    -fx-background-color: #1f2633;
+}
+
+#copyButton:armed,
+#closeButton:armed {
+    -fx-background-color: #263748;
 }

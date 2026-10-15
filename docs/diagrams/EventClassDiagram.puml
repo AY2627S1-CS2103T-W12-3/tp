@@ -1,0 +1,27 @@
+@startuml
+!include style.puml
+skinparam arrowThickness 1.1
+skinparam arrowColor MODEL_COLOR
+skinparam classBackgroundColor MODEL_COLOR
+
+Package Model as ModelPackage <<Rectangle>>{
+Class CoordiMate
+Class Person
+Class Name
+Class Event
+Class EventTime
+Class "<<enumeration>>\nAttendanceStatus" as AttendanceStatus
+}
+
+CoordiMate --> "~*" Person
+CoordiMate --> "~*" Event
+
+Person *--> "1" Name
+
+Event *--> "2" EventTime
+Event --> "~* members" Name
+Event --> "~* attendance" AttendanceStatus
+
+Person -[hidden]right-> Event
+EventTime -[hidden]right-> AttendanceStatus
+@enduml
