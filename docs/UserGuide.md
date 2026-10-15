@@ -253,23 +253,26 @@ Success: `Edited Event NUS Student Life Fair. Start Time: 09-10-2026. End Time: 
 
 | Condition | Error message |
 |---|---|
-| No saved event has the supplied name, ignoring case. | `Event {EVENT_NAME} does not exist.` |
-| The new event name is empty. | `New event name must not be empty. Example: nevn/Final Concert` |
+| `evn/` is missing, or there is text before the first parameter. | `Invalid command format.` |
+| No saved event has the supplied name, ignoring case. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
+| The event name is empty or contains only whitespace. | `Event name must not be empty. Example: evn/Final Concert` |
+| The new event name is empty or contains only whitespace. | `New event name must not be empty. Example: nevn/Final Concert` |
 | The event name is longer than 100 characters. | `Event name must not exceed 100 characters. Example: evn/Final Concert` |
 | The new event name is longer than 100 characters. | `Event name must not exceed 100 characters. Example: nevn/Final Concert` |
 | The event name contains a line break or other control character. | `Invalid event name. Use letters, digits, spaces, or punctuation. Example: evn/Final-Concert` |
 | The new event name contains a line break or other control character. | `Invalid event name. Use letters, digits, spaces, or punctuation. Example: nevn/Final-Concert` |
-| The new start time is empty. | `Start time must not be empty. Example: st/17-09-2026 16:30` |
-| The new end time is empty. | `End time must not be empty. Example: et/17-09-2026 18:30` |
+| `st/` is supplied, but its value is empty or contains only whitespace. | `Start time must not be empty. Example: st/17-09-2026 16:30` |
+| `et/` is supplied, but its value is empty or contains only whitespace. | `End time must not be empty. Example: et/17-09-2026 18:30` |
 | The new start time is invalid or incorrectly formatted. | `Invalid event time. Use dd-MM-yyyy with an optional time in HH:mm format. Example: st/17-09-2026 16:30` |
 | The new end time is invalid or incorrectly formatted. | `Invalid event time. Use dd-MM-yyyy with an optional time in HH:mm format. Example: et/17-09-2026 16:30` |
 | The new name duplicates another event. | `This update conflicts with another saved event. No changes were made.` |
-| No field is provided to edit. | `Please provide at least one field to edit.` |
+| `evn/` has a valid name, but none of `nevn/`, `st/`, or `et/` is supplied. | `Provide at least one field to edit.` |
 | A parameter is repeated. | `Parameter {PREFIX} may only be specified once.` |
 | An unknown parameter is used. | `Unknown parameter: {PREFIX}.` |
-| The updated start is after the updated end. | `Start time must not be after end time.` |
+| The updated start is after the updated end. | `Start time must not be after end time. Example: st/17-09-2026 16:30 et/17-09-2026 18:30` |
 
-If saving fails, the event and existing data file remain unchanged.
+If saving fails, the command reports `Event could not be saved. No changes were made.`
+The event and existing data file remain unchanged.
 
 ### Deleting an event: `deleteevent`
 
