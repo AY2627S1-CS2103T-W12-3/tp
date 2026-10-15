@@ -130,8 +130,12 @@
     -fx-font-weight: bold;
     -fx-text-fill: #38bdf8;
 }
-.detail-caption, .command-hint, .contact-selection-hint {
+.detail-caption, .contact-selection-hint {
     -fx-text-fill: #8b949e;
+    -fx-font-size: 12px;
+}
+.command-hint {
+    -fx-fill: #8b949e;
     -fx-font-size: 12px;
 }
 .contact-selection-hint { -fx-padding: 18 0; }

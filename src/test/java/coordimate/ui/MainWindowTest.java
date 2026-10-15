@@ -31,6 +31,8 @@ import javafx.scene.control.ToggleButton;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
 import javafx.stage.Stage;
 
 /**
@@ -64,7 +66,7 @@ public class MainWindowTest {
             stage.getScene().getRoot().applyCss();
 
             TabPane views = (TabPane) stage.getScene().getRoot().lookup("#views");
-            Label prefixHelp = (Label) stage.getScene().getRoot().lookup("#prefixHelp");
+            TextFlow prefixHelp = (TextFlow) stage.getScene().getRoot().lookup("#prefixHelp");
             ToggleButton events = (ToggleButton) stage.getScene().getRoot().lookup("#eventsView");
             ToggleButton tags = (ToggleButton) stage.getScene().getRoot().lookup("#tagsView");
             ToggleButton contacts = (ToggleButton) stage.getScene().getRoot().lookup("#contactsView");
@@ -73,14 +75,14 @@ public class MainWindowTest {
             stage.getScene().getRoot().applyCss();
             assertEquals("Events", views.getSelectionModel().getSelectedItem().getText().split(" ")[0]);
             assertEquals("Bold", events.getFont().getStyle());
-            assertTrue(prefixHelp.getText().contains("evn/Event"));
+            assertTrue(getPrefixHelpText(prefixHelp).contains("evn/Event"));
 
             tags.fire();
             stage.getScene().getRoot().applyCss();
             assertEquals("Tags", views.getSelectionModel().getSelectedItem().getText());
             assertEquals("Bold", tags.getFont().getStyle());
             assertEquals("Regular", events.getFont().getStyle());
-            assertTrue(prefixHelp.getText().contains("t/Tag"));
+            assertTrue(getPrefixHelpText(prefixHelp).contains("t/Tag"));
             @SuppressWarnings("unchecked")
             ListView<String> tagList = (ListView<String>) stage.getScene().getRoot().lookup("#tagListView");
             tagList.getSelectionModel().selectFirst();
@@ -94,7 +96,7 @@ public class MainWindowTest {
             stage.getScene().getRoot().applyCss();
             assertTrue(views.getSelectionModel().getSelectedItem().getText().startsWith("Contacts"));
             assertEquals("Bold", contacts.getFont().getStyle());
-            assertTrue(prefixHelp.getText().contains("n/Name"));
+            assertTrue(getPrefixHelpText(prefixHelp).contains("n/Name"));
             stage.close();
             return null;
         });
@@ -132,11 +134,12 @@ public class MainWindowTest {
             HBox addRow = (HBox) stage.getScene().getRoot().lookup(".cheat-row");
             addRow.getOnMouseClicked().handle(null);
             TextField commandInput = (TextField) stage.getScene().getRoot().lookup(".text-field");
-            Label prefixHelp = (Label) stage.getScene().getRoot().lookup("#prefixHelp");
+            TextFlow prefixHelp = (TextFlow) stage.getScene().getRoot().lookup("#prefixHelp");
             assertEquals("add", commandInput.getText());
-            assertTrue(prefixHelp.getText().startsWith("Format: add n/NAME p/PHONE e/EMAIL r/ROLE"));
-            assertTrue(prefixHelp.getText().contains("[t/TAG]... [m/NOTE]"));
-            assertTrue(prefixHelp.getText().contains("Example: add n/Aisha Tan"));
+            String hintText = getPrefixHelpText(prefixHelp);
+            assertTrue(hintText.startsWith("Format: add n/NAME p/PHONE e/EMAIL r/ROLE"));
+            assertTrue(hintText.contains("[t/TAG]... [m/NOTE]"));
+            assertTrue(hintText.contains("\nExample: add n/Aisha Tan"));
 
             stage.close();
             return null;
@@ -239,5 +242,9 @@ public class MainWindowTest {
     private static KeyEvent keyEvent(KeyCode keyCode) {
         return new KeyEvent(KeyEvent.KEY_PRESSED, "", "", keyCode,
                 false, false, false, false);
+    }
+
+    private static String getPrefixHelpText(TextFlow prefixHelp) {
+        return ((Text) prefixHelp.getChildren().getFirst()).getText();
     }
 }

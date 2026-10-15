@@ -12,6 +12,8 @@
 <?import javafx.scene.control.ToggleButton?>
 <?import javafx.scene.control.ToggleGroup?>
 <?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.text.Text?>
+<?import javafx.scene.text.TextFlow?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.HBox?>
@@ -121,8 +123,10 @@
         <StackPane fx:id="resultDisplayPlaceholder" VBox.vgrow="NEVER" />
         <StackPane fx:id="commandBoxPlaceholder" styleClass="command-container" VBox.vgrow="NEVER" />
         <HBox alignment="CENTER_LEFT" styleClass="prefix-help">
-          <Label fx:id="prefixHelp" text="Prefixes: n/Name  p/Phone  e/Email  r/Role  t/Tag  m/Note"
-                 wrapText="true" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="command-hint" />
+          <TextFlow fx:id="prefixHelp" maxWidth="Infinity" HBox.hgrow="ALWAYS"
+                    accessibleText="Command format and example">
+            <Text text="Prefixes: n/Name  p/Phone  e/Email  r/Role  t/Tag  m/Note" styleClass="command-hint" />
+          </TextFlow>
         </HBox>
         <StackPane fx:id="statusbarPlaceholder" VBox.vgrow="NEVER" />
       </VBox>

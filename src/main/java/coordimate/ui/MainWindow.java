@@ -39,6 +39,8 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
 import javafx.stage.Stage;
 
 /**
@@ -70,9 +72,9 @@ public class MainWindow extends UiPart<Stage> {
                     + "Example: editevent evn/Final Concert nevn/Grand Concert"),
             Map.entry("deleteevent", "Format: deleteevent evn/EVENT_NAME\n"
                     + "Example: deleteevent evn/Final Concert"),
-            Map.entry("assign", "Format: assign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]\n"
+            Map.entry("assign", "Format: assign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...\n"
                     + "Example: assign evn/Final Concert c/2 3"),
-            Map.entry("unassign", "Format: unassign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]\n"
+            Map.entry("unassign", "Format: unassign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...\n"
                     + "Example: unassign evn/Final Concert c/2 3"),
             Map.entry("members", "Format: members evn/EVENT_NAME\nExample: members evn/Final Concert"),
             Map.entry("markattendance", "Format: markattendance evn/EVENT_NAME mem/MEMBER_NAME att/STATUS\n"
@@ -133,7 +135,7 @@ public class MainWindow extends UiPart<Stage> {
     private VBox tagsCommands;
 
     @FXML
-    private Label prefixHelp;
+    private TextFlow prefixHelp;
 
     @FXML
     private TabPane views;
@@ -261,7 +263,7 @@ public class MainWindow extends UiPart<Stage> {
             contactsView.setSelected(tab == contactsTab);
             eventsView.setSelected(tab == eventsTab);
             tagsView.setSelected(tab == tagsTab);
-            prefixHelp.setText(tab == eventsTab ? "Prefixes: evn/Event  st/Start  et/End  c/Contact"
+            setPrefixHelpText(tab == eventsTab ? "Prefixes: evn/Event  st/Start  et/End  c/Contact"
                     : tab == tagsTab ? "Prefixes: t/Tag"
                     : "Prefixes: n/Name  p/Phone  e/Email  r/Role  t/Tag  m/Note");
         });
@@ -303,8 +305,15 @@ public class MainWindow extends UiPart<Stage> {
         String commandHelp = COMMAND_HELP_TEXT.get(command);
         if (commandHelp != null) {
             commandBox.setCommand(command);
-            prefixHelp.setText(commandHelp);
+            setPrefixHelpText(commandHelp);
         }
+    }
+
+    private void setPrefixHelpText(String text) {
+        Text hint = new Text(text);
+        hint.getStyleClass().add("command-hint");
+        prefixHelp.getChildren().setAll(hint);
+        prefixHelp.setAccessibleText(text);
     }
 
     private Label createMemberTag(String tagName) {

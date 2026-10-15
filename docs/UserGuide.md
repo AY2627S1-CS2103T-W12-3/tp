@@ -264,7 +264,7 @@ If saving fails, the event and existing data file remain unchanged.
 
 Assigns one or more contacts to an existing event as members and saves the change.
 
-Format: `assign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]`
+Format: `assign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...`
 
 * `EVENT_NAME` must match a saved event name, ignoring case. Leading and trailing whitespace is removed.
 * `CONTACT_INDEX` refers to the index number shown in the displayed contact list. If the list is filtered (e.g. after `search`), the index refers to the filtered list. Use `list` to show everyone again. Separate several indexes with spaces. Each index **must be a positive integer starting at 1**.
@@ -303,7 +303,7 @@ If saving fails, no contacts are assigned and the existing data file remains unc
 
 Removes one or more members from an existing event and saves the change. The contacts themselves are not deleted.
 
-Format: `unassign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]`
+Format: `unassign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...`
 
 * `EVENT_NAME` must match a saved event name, ignoring case. Leading and trailing whitespace is removed.
 * `CONTACT_INDEX` refers to the index number shown in the displayed contact list, as in `assign`. If the list is filtered (e.g. after `search`), the index refers to the filtered list. Use `list` to show everyone again. Separate several indexes with spaces. Each index **must be a positive integer starting at 1**.
@@ -592,7 +592,7 @@ To narrow contacts by an exact tag, event, or organisation instead, use [`filter
 
 Lists the contacts that have a given tag, are members of a given event, or belong to a given organisation.
 
-Format: `filter FIELD/VALUE [MORE_FIELD/VALUE]...`
+Format: `filter FIELD/VALUE [FIELD/VALUE]...`
 
 * `FIELD` is `tag`, `event`, or `organisation`, ignoring case. These are full words, not the prefixes used by
   other commands; for example, use `tag/EXCO`, not `t/EXCO`.
@@ -737,8 +737,8 @@ Action | Format, Examples
 **Add event** | `addevent evn/EVENT_NAME st/START_TIME et/END_TIME`<br> e.g., `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`
 **Edit event** | `editevent evn/EVENT_NAME [nevn/NEW_EVENT_NAME] [st/NEW_START_TIME] [et/NEW_END_TIME]`<br> e.g., `editevent evn/Final Concert st/08-08-2026 16:00 et/08-08-2026 19:00`
 **Delete event** | `deleteevent evn/EVENT_NAME`<br> e.g., `deleteevent evn/Final Concert`
-**Assign** | `assign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]`<br> e.g., `assign evn/Final Concert c/1 4 5`
-**Unassign** | `unassign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]`<br> e.g., `unassign evn/Final Concert c/2 3`
+**Assign** | `assign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...`<br> e.g., `assign evn/Final Concert c/1 4 5`
+**Unassign** | `unassign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...`<br> e.g., `unassign evn/Final Concert c/2 3`
 **Members** | `members evn/EVENT_NAME`<br> e.g., `members evn/Final Concert`
 **Mark attendance** | `markattendance evn/EVENT_NAME mem/MEMBER_NAME att/STATUS`<br> e.g., `markattendance evn/Final Concert mem/Alex Yeoh att/present`
 **Add tag** | `addtag t/TAG`<br> e.g., `addtag t/Publicity`
