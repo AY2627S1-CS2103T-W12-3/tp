@@ -56,7 +56,7 @@
 ## Features
 
 Every command error is followed by the relevant command's description, `Parameters:`, and `Example:`.
-The error tables below show the explanation before that usage text.
+Error messages shown below omit that usage text.
 
 <box type="info" seamless>
 
@@ -215,12 +215,13 @@ correct it, then press Enter or click **Retry**.
 |---|---|
 | An event with the same name already exists, ignoring case. | `An event with this name already exists. No changes were made.` |
 | The event name is empty. | `Event name must not be empty. Example: evn/Final Concert` |
-| `st/` or `et/` is missing or empty. | `Event time must not be empty. Example: st/17-09-2026 16:30` |
+| All required parameters are present, but `st/` contains only whitespace. | `Start time must not be empty. Example: st/17-09-2026 16:30` |
+| All required parameters are present, but `et/` contains only whitespace. | `End time must not be empty. Example: et/17-09-2026 18:30` |
 | A time is invalid or incorrectly formatted. | `Invalid event time. Use dd-MM-yyyy with an optional time in HH:mm format. Example: st/17-09-2026 16:30` |
 | The start is after the end. | `Start time must not be after end time. Example: st/17-09-2026 16:30 et/17-09-2026 18:30` |
-| `evn/` is missing, or there is text before the first parameter. | `Invalid command format.` followed by the command usage |
-| A parameter is repeated. | `Each required parameter may only be specified once.` followed by the command usage |
-| An unknown parameter is used. | `Unknown parameter.` followed by the command usage |
+| Any required parameter (`evn/`, `st/`, or `et/`) is missing, or there is text before the first parameter. | `Invalid command format.` |
+| A parameter is repeated. | `Parameter {PREFIX} may only be specified once.` |
+| An unknown parameter is used. | `Unknown parameter: {PREFIX}.` |
 
 If saving fails, no event is added and the command reports `Event could not be saved. No changes were made.`
 If the existing data file is invalid, the command reports a load error and leaves the file untouched.
@@ -550,7 +551,7 @@ their tags, role, and organisation.
 Success: `Here is the list of all existing tags.` followed by `Tags: ` and the tag names, separated by commas.
 
 Unlike `list`, `listtags` does not ignore extra text: `listtags 123` is rejected with
-`Invalid command format.` followed by the command usage.
+`Invalid command format.`
 
 ### Editing a contact: `edit`
 
@@ -610,7 +611,7 @@ Format: `search KEYWORD`
 * The entire keyword is matched as one substring within a field. Spaces and word order matter:
   `search Hans Bo` matches `Hans Bo Yang`, but does not match `Bo Hans` or separate contacts named `Hans` and `Bo`.
 * Surrounding quotation marks are optional: `search "Jurong West"` and `search Jurong West` give the same results.
-* Leading and trailing spaces are ignored. An empty keyword is rejected with usage instructions.
+* Leading and trailing spaces are ignored. An empty keyword is rejected.
 * Search checks all saved contacts, including those hidden by the current search or filter.
 * Results replace the displayed contact list. Use their displayed indexes in subsequent commands, or `list` to show everyone.
 * If nothing matches, the displayed list is empty and a no-matches message is shown.
@@ -673,10 +674,10 @@ If every value exists but no contact matches all the filters, the displayed list
 | Condition | Error message |
 |---|---|
 | No saved tag, event, or organisation has the supplied value. | `No saved tag, event, or organisation matches that value. Use a value from the saved data.` |
-| `FIELD` is not `tag`, `event`, or `organisation`. | `Unknown parameter.` followed by the command usage |
-| No filter is given, or there is text before the first field. | `Invalid command format.` followed by the command usage |
-| A field has no value. | `Invalid command format.` followed by the command usage |
-| A quotation mark is not closed and another field follows it. | `Invalid command format.` followed by the command usage |
+| `FIELD` is not `tag`, `event`, or `organisation`. | `Unknown parameter.` |
+| No filter is given, or there is text before the first field. | `Invalid command format.` |
+| A field has no value. | `Invalid command format.` |
+| A quotation mark is not closed and another field follows it. | `Invalid command format.` |
 
 ### Deleting a contact: `delete`
 
