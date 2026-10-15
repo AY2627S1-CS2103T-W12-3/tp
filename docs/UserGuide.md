@@ -57,6 +57,15 @@
 
 Every command error is followed by the relevant command's description, `Parameters:`, and `Example:`.
 Error messages shown below omit that usage text.
+Conditions in the error tables assume the rest of the command is valid. If a command has several errors,
+the first one encountered during validation is reported. Placeholders such as `{PREFIX}` and `{EVENT_NAME}`
+are replaced with the actual parameter prefix, name, index, or other details.
+
+| Condition | Error message |
+|---|---|
+| The input is empty or contains only whitespace. | `Invalid command format.` |
+| The command word is unknown or uses the wrong capitalization. | `Unknown command. Use help to see the available commands. Example: help` |
+| Existing data cannot be loaded before a command changes saved data. | `Saved data could not be loaded. Check the local data file.` |
 
 <box type="info" seamless>
 
@@ -173,6 +182,29 @@ Examples:
 * `add n/Aisha Tan p/+6591234567 e/aisha@example.com r/Logistics t/EXCO m/Handles venue bookings`
 * `add n/Mr Lim p/90801110 e/lim@example.com o/NUS Student Affairs r/University Staff t/UniversityStaff`
 
+| Condition | Error message |
+|---|---|
+| Any required prefix (`n/`, `p/`, `e/`, or `r/`) is missing, or there is text before the first parameter. | `Invalid command format.` |
+| A non-tag parameter is repeated. | `Parameter {PREFIX} may only be specified once.` |
+| An unknown parameter is used. | `Unknown parameter: {PREFIX}.` |
+| The name is empty or contains only whitespace. | `Name must not be empty. Example: n/Aisha Tan` |
+| The phone number is empty or contains only whitespace. | `Phone number must not be empty. Example: p/+6591234567` |
+| The email is empty or contains only whitespace. | `Email must not be empty. Example: e/aish@example.com` |
+| The role is empty or contains only whitespace. | `Role must not be empty. Example: r/Logistics Lead` |
+| The name violates its constraints. | `Invalid name. Use 1 to 80 characters: letters, spaces, hyphens, apostrophes, and periods, with at least one letter. Example: n/Aisha Tan` |
+| The phone number violates its constraints. | `Invalid phone number. Use 7 to 15 digits, optionally starting with +, with optional spaces, hyphens, and brackets. Example: p/+6591234567` |
+| The email violates its constraints. | `Invalid email. Use local-part@domain, at most 254 characters, with a local part of at most 64 characters. Example: e/aish@example.com` |
+| The role violates its constraints. | `Invalid role. Use 1 to 50 characters: letters, digits, spaces, hyphens, and slashes, with at least one letter or digit. Example: r/Logistics Lead` |
+| A non-empty birthday is invalid, incorrectly formatted, or in the future. | `Invalid birthday. Use a real date in dd-MM-yyyy format that is not in the future. Example: b/18-06-2004` |
+| A non-empty address exceeds 200 characters or contains a control character. | `Invalid address. Use 1 to 200 printable characters. Example: a/21 Kent Ridge Road, #03-12` |
+| A non-empty organisation violates its constraints. | `Invalid organisation. Use 1 to 80 characters: letters, digits, spaces, and - & . , ' ( ) /, with at least one letter or digit. Example: o/NUS Student Affairs` |
+| A non-empty note exceeds 500 characters or contains a control character. | `Invalid note. Use 1 to 500 printable characters. Example: m/Handles venue bookings` |
+| A non-empty tag contains spaces, symbols, or punctuation. | `Invalid tag name. Use letters and numbers without spaces. Example: t/Publicity` |
+| A tag exceeds 30 characters. | `Tag name must not exceed 30 characters. Example: t/Publicity` |
+| Another contact has the same name, phone number, or email. | `A contact with this name, phone number, or email already exists.` |
+
+If saving fails, the command reports `Contact could not be saved. No changes were made.`
+
 ### Adding an event: `addevent`
 
 Creates an event and saves it to the local data file.
@@ -191,7 +223,7 @@ Date-only values are saved without a time of day.
 
 The start must not be after the end. Equal start and end values are allowed.
 Dates are compared first. On the same date, times are compared only when both are
-specified. Invalid ordering reports: `Start time must not be after end time.`
+specified.
 
 Examples:
 
@@ -330,17 +362,18 @@ If some contacts were already assigned: `Assigned 1 member(s) to Final Concert. 
 |---|---|
 | No saved event has the supplied name, ignoring case. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
 | An index is larger than the displayed contact list. | `No contact exists at index {CONTACT_INDEX}. Use an index from the current contact list.` |
-| An index is not a positive integer. | `Contact indexes must be positive integers separated by spaces. Example: c/1 3 5` |
+| An index is not written as digits representing a value from 1 to 2147483647. | `Contact indexes must be positive integers separated by spaces. Example: c/1 3 5` |
 | Every specified contact is already assigned. | `All specified contacts are already assigned to {EVENT_NAME}. No changes were made.` |
 | The event name is empty. | `Event name must not be empty. Example: evn/Final Concert` |
 | The event name is longer than 100 characters. | `Event name must not exceed 100 characters. Example: evn/Final Concert` |
 | The event name contains a line break or other control character. | `Invalid event name. Use letters, digits, spaces, or punctuation. Example: evn/Final-Concert` |
 | `c/` has no indexes. | `Contact indexes must not be empty. Example: c/1 3 5` |
-| `evn/` or `c/` is missing. | `Invalid command format.` |
+| `evn/` or `c/` is missing, or there is text before the first parameter. | `Invalid command format.` |
 | A parameter is repeated. | `Parameter {PREFIX} may only be specified once.` |
 | An unknown parameter is used. | `Unknown parameter: {PREFIX}.` |
 
-If saving fails, no contacts are assigned and the existing data file remains unchanged.
+If saving fails, the command reports `Assignment could not be saved. No changes were made.`
+No contacts are assigned and the existing data file remains unchanged.
 
 ### Removing members from an event: `unassign`
 
@@ -370,17 +403,18 @@ If some contacts were not assigned: `Removed 1 member(s) from Final Concert. 1 c
 |---|---|
 | No saved event has the supplied name, ignoring case. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
 | An index is larger than the displayed contact list. | `No contact exists at index {CONTACT_INDEX}. Use an index from the current contact list.` |
-| An index is not a positive integer. | `Contact indexes must be positive integers separated by spaces. Example: c/1 3 5` |
+| An index is not written as digits representing a value from 1 to 2147483647. | `Contact indexes must be positive integers separated by spaces. Example: c/1 3 5` |
 | None of the specified contacts are assigned. | `None of the specified contacts are assigned to {EVENT_NAME}. No changes were made.` |
 | The event name is empty. | `Event name must not be empty. Example: evn/Final Concert` |
 | The event name is longer than 100 characters. | `Event name must not exceed 100 characters. Example: evn/Final Concert` |
 | The event name contains a line break or other control character. | `Invalid event name. Use letters, digits, spaces, or punctuation. Example: evn/Final-Concert` |
 | `c/` has no indexes. | `Contact indexes must not be empty. Example: c/1 3 5` |
-| `evn/` or `c/` is missing. | `Invalid command format.` |
+| `evn/` or `c/` is missing, or there is text before the first parameter. | `Invalid command format.` |
 | A parameter is repeated. | `Parameter {PREFIX} may only be specified once.` |
 | An unknown parameter is used. | `Unknown parameter: {PREFIX}.` |
 
-If saving fails, no members are removed and the existing data file remains unchanged.
+If saving fails, the command reports `Unassignment could not be saved. No changes were made.`
+No members are removed and the existing data file remains unchanged.
 
 ### Viewing members of an event: `members`
 
@@ -409,7 +443,7 @@ If the event has no members, the contact list is empty: `Final Concert has no me
 
 | Condition | Error message |
 |---|---|
-| No saved event has the supplied name, ignoring case. | `Event {EVENT_NAME} does not exist.` |
+| No saved event has the supplied name, ignoring case. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
 | The event name is empty. | `Event name must not be empty. Example: evn/Final Concert` |
 | The event name is longer than 100 characters. | `Event name must not exceed 100 characters. Example: evn/Final Concert` |
 | The event name contains a line break or other control character. | `Invalid event name. Use letters, digits, spaces, or punctuation. Example: evn/Final-Concert` |
@@ -451,7 +485,7 @@ If the member already has the requested status, no changes are made:
 | The event name is empty. | `Event name must not be empty. Example: evn/Final Concert` |
 | The event name is longer than 100 characters. | `Event name must not exceed 100 characters. Example: evn/Final Concert` |
 | The event name contains a line break or other control character. | `Invalid event name. Use letters, digits, spaces, or punctuation. Example: evn/Final-Concert` |
-| A required parameter is missing. | `Invalid command format.` |
+| Any required parameter (`evn/`, `mem/`, or `att/`) is missing, or there is text before the first parameter. | `Invalid command format.` |
 | The member name is empty. | `Member name must not be empty. Example: mem/Aisha Tan` |
 | The attendance status is empty. | `Attendance status must not be empty. Example: att/present` |
 | A parameter is repeated. | `Parameter {PREFIX} may only be specified once.` |
@@ -487,10 +521,13 @@ Success: `{TAG_NAME} successfully deleted.`
 
 | Condition | Error message |
 |---|---|
-| The `t/` prefix is missing. | `Invalid command format.` |
+| The `t/` prefix is missing, or there is text before it. | `Invalid command format.` |
 | The tag name is empty. | `Tag name must not be empty. Example: t/Publicity` |
 | More than one `t/` prefix is supplied. | `Parameter t/ may only be specified once.` |
+| An unknown parameter is used. | `Unknown parameter: {PREFIX}.` |
 | The specified tag does not exist. | `Tag {TAG_NAME} does not exist. Use a saved tag name.` |
+
+If saving fails, the command reports `Tag could not be saved. No changes were made.`
 
 ### Editing a tag: `edittag`
 
@@ -515,10 +552,13 @@ Success for `edittag Media t/Publicity`: `Media successfully renamed to Publicit
 | The current tag name is missing. | `Invalid command format.` |
 | The new tag name is blank. | `Tag name must not be empty. Example: t/Publicity` |
 | More than one `t/` prefix is supplied. | `Parameter t/ may only be specified once.` |
+| An unknown parameter is used. | `Unknown parameter: {PREFIX}.` |
 | The new tag contains spaces, symbols, or punctuation. | `Invalid tag name. Use letters and numbers without spaces. Example: t/Publicity` |
 | The new tag exceeds 30 characters. | `Tag name must not exceed 30 characters. Example: t/Publicity` |
 | The new tag matches the current tag, ignoring capitalization. | `Tag {OLD_TAG} already has that name. No changes were made.` |
 | The new tag already exists. | `A tag with this name already exists. No changes were made.` |
+
+If saving fails, the command reports `Tag could not be saved. No changes were made.`
 
 ### Adding a tag: `addtag`
 
@@ -543,10 +583,13 @@ Success: `Created tag: Publicity.`
 | The `t/` prefix is missing. | `Invalid command format.` |
 | More than one `t/` prefix is supplied. | `Parameter t/ may only be specified once.` |
 | Text appears before `t/`. | `Invalid command format.` |
+| An unknown parameter is used. | `Unknown parameter: {PREFIX}.` |
 | The tag name is empty. | `Tag name must not be empty. Example: t/Publicity` |
 | The tag name contains spaces, symbols, or punctuation. | `Invalid tag name. Use letters and numbers without spaces. Example: t/Publicity` |
 | The tag name exceeds 30 characters. | `Tag name must not exceed 30 characters. Example: t/Publicity` |
 | The tag name already exists, ignoring capitalization. | `A tag with this name already exists. No changes were made.` |
+
+If saving fails, the command reports `Tag could not be saved. No changes were made.`
 
 ### Listing all tags: `listtags`
 
@@ -573,7 +616,7 @@ Or: `edit target/IDENTIFIER [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [
 * Edits the contact at the specified `INDEX`. The index refers to the index number shown in the displayed contact list. The index **must be a positive integer starting at 1**.
 * Alternatively, `target/IDENTIFIER` finds an exact saved name, phone number, or email address across all contacts, including those hidden by the current search or filter. Names and emails ignore letter case; phone numbers ignore spaces, hyphens, and brackets. Supply either an index or `target/`, not both.
 * If several contacts match an identifier, the command lists each match's name, phone, and email. An index appears only for a match in the current displayed list. Retry with a unique phone or email, or a displayed index.
-* If no contact matches `target/`, the command reports an error. An index outside the displayed list reports `No contact exists at index INDEX. Please use an index from the current list.`
+* If no contact matches `target/`, or the index is outside the displayed list, the command reports an error.
 * Provide at least one field or tag operation. Omitted fields retain their existing values.
 * Name, phone, email, and role cannot be cleared. Use `b/`, `a/`, `o/`, or `m/` with no value to clear that optional field.
 * Birthday uses `dd-MM-yyyy` and cannot be in the future. Edited values follow the same validation rules as `add`.
@@ -609,6 +652,32 @@ Examples:
 *  `edit target/alice@example.com r/Vice-President` Updates a contact even if the current list is filtered.
 *  `edit 3 at/Sponsor rt/Logistics` Adds Sponsor, then removes Logistics without changing other tags.
 
+Edited contact fields use the same validation error messages as [`add`](#adding-a-contact-add).
+Empty optional fields (`b/`, `a/`, `o/`, `m/`, and `t/`) clear those values and are accepted.
+Additional errors are listed below.
+
+| Condition | Error message |
+|---|---|
+| No arguments are supplied. | `Invalid command format.` |
+| `target/` is omitted and the index is missing, is not a positive integer, or exceeds the supported integer range. | `Invalid contact index. Example: edit 2 r/President` |
+| A positive index is larger than the displayed contact list. | `No contact exists at index {INDEX}. Use an index from the current contact list.` |
+| Text or an index appears before `target/`. | `Specify exactly one contact identifier.` |
+| `target/` is empty or contains only whitespace. | `Contact identifier must not be empty. Example: target/aisha@example.com` |
+| No saved contact matches `target/`. | `No contact matches that identifier. Use an exact saved name, phone number, or email address.` |
+| Several contacts match `target/`. | `Multiple contacts match that identifier:`<br>matching contact details<br>`Use a displayed index, phone number, or email address to identify the contact.` |
+| A valid identifier is supplied without any fields or tag operations to edit. | `Provide at least one field or tag operation to edit.` |
+| A parameter other than `t/`, `at/`, or `rt/` is repeated. | `Parameter {PREFIX} may only be specified once.` |
+| An unknown parameter is used. | `Unknown parameter: {PREFIX}.` |
+| `t/` is combined with `at/` or `rt/`. | `Use either t/ to replace tags, or at/ and rt/ to add or remove them.` |
+| `at/` is empty or contains only whitespace. | `Tag name must not be empty. Example: at/Publicity` |
+| `rt/` is empty or contains only whitespace. | `Tag name must not be empty. Example: rt/Publicity` |
+| An `at/` tag contains spaces, symbols, or punctuation. | `Invalid tag name. Use letters and numbers without spaces. Example: at/Publicity` |
+| An `rt/` tag contains spaces, symbols, or punctuation. | `Invalid tag name. Use letters and numbers without spaces. Example: rt/Publicity` |
+| An `at/` tag exceeds 30 characters. | `Tag name must not exceed 30 characters. Example: at/Publicity` |
+| An `rt/` tag exceeds 30 characters. | `Tag name must not exceed 30 characters. Example: rt/Publicity` |
+| The updated name, phone number, or email conflicts with another saved contact. | `This update conflicts with another saved contact. No changes were made.` |
+| Renaming the contact would duplicate a member name in an event. | `Cannot rename this contact because an event already has a member with that name. No changes were made.` |
+
 ### Searching contacts: `search`
 
 Lists contacts whose name, phone number, email, address, or organisation contains the given keyword or phrase.
@@ -635,6 +704,10 @@ Examples:
 Success: `1 contact(s) found matching "John".`
 
 If nothing matches: `No contacts found matching "John".`
+
+| Condition | Error message |
+|---|---|
+| The keyword is missing, contains only whitespace, or is empty after surrounding quotation marks are removed. | `Invalid command format.` |
 
 To narrow contacts by an exact tag, event, or organisation instead, use [`filter`](#filtering-contacts-filter).
 
@@ -683,9 +756,11 @@ If every value exists but no contact matches all the filters, the displayed list
 | Condition | Error message |
 |---|---|
 | No saved tag, event, or organisation has the supplied value. | `No saved tag, event, or organisation matches that value. Use a value from the saved data.` |
-| `FIELD` is not `tag`, `event`, or `organisation`. | `Unknown parameter.` |
-| No filter is given, or there is text before the first field. | `Invalid command format.` |
-| A field has no value. | `Invalid command format.` |
+| An alphabetic `FIELD/` prefix is not `tag/`, `event/`, or `organisation/`, ignoring case. | `Unknown parameter: {PREFIX}.` |
+| No filter is given, the input does not start with a `FIELD/` prefix, or there is text before the first field. | `Invalid command format.` |
+| `tag/` has no value, contains only whitespace, or has an empty quoted value. | `Filter value must not be empty. Example: tag/Publicity` |
+| `event/` has no value, contains only whitespace, or has an empty quoted value. | `Filter value must not be empty. Example: event/Final Concert` |
+| `organisation/` has no value, contains only whitespace, or has an empty quoted value. | `Filter value must not be empty. Example: organisation/NUS Student Affairs` |
 | A quotation mark is not closed and another field follows it. | `Invalid command format.` |
 
 ### Deleting a contact: `delete`
@@ -713,6 +788,23 @@ Examples:
 
 On confirmation, feedback is `Contact deleted successfully: NAME.` Missing, invalid, unknown, repeated, and
 non-matching identifiers are rejected without opening a confirmation prompt.
+
+| Condition | Error message |
+|---|---|
+| No identifier is supplied. | `Invalid command format.` |
+| An unprefixed identifier is not a positive integer or exceeds the supported integer range. | `Invalid contact index. Example: delete 3` |
+| A positive index is larger than the displayed contact list. | `No contact exists at index {INDEX}. Use an index from the current contact list.` |
+| Different prefixed identifiers are combined, or text or an index appears before a prefixed identifier. | `Specify exactly one contact identifier. Example: delete n/Aisha Tan` |
+| `n/` is empty or contains only whitespace. | `Contact identifier must not be empty. Example: n/Aisha Tan` |
+| `p/` is empty or contains only whitespace. | `Contact identifier must not be empty. Example: p/+6591234567` |
+| `e/` is empty or contains only whitespace. | `Contact identifier must not be empty. Example: e/aish@example.com` |
+| A parameter is repeated. | `Parameter {PREFIX} may only be specified once.` |
+| An unknown parameter is used. | `Unknown parameter: {PREFIX}.` |
+| No saved contact matches the identifier. | `No contact matches that identifier. Use an exact saved name, phone number, or email address.` |
+| Several contacts match the identifier. | `Multiple contacts match that identifier:`<br>matching contact details<br>`Use a displayed index, phone number, or email address to identify the contact.` |
+
+Cancelling reports `Deletion cancelled. No changes were made.`
+If saving a confirmed deletion fails, the command reports `Contact could not be saved. No changes were made.`
 
 ### Clearing all entries: `clear`
 
@@ -746,6 +838,16 @@ A command that changes your data is saved to the data file **before** the change
 cannot be saved, the command is rejected with an error such as `Event could not be saved. No changes were made.`
 and both the app and the data file stay as they were, so what you see always matches what is saved.
 
+Commands that do not change saved data also attempt to save after running. A save failure reports one of
+the following messages; a command may already have changed the displayed view when this happens.
+
+| Condition | Error message |
+|---|---|
+| Saving is denied by file permissions. | `Data could not be saved to {DETAILS}. Check write permissions for the file and its folder.` |
+| Another file error prevents saving. | `Data could not be saved. Check the local data file. Details: {DETAILS}` |
+
+`{DETAILS}` is supplied by the operating system and can include a file path or an explanation of the failure.
+
 ### Editing the data file
 
 CoordiMate data is saved automatically as a JSON file `[JAR file location]/data/coordimate.json`. Advanced users are welcome to update data directly by editing that data file.
@@ -753,7 +855,7 @@ CoordiMate data is saved automatically as a JSON file `[JAR file location]/data/
 <box type="warning" seamless>
 
 **Caution:**
-If your changes make the data file invalid, CoordiMate starts with an empty dataset at the next run. While the file is invalid, commands that change data (such as `add`, `addevent`, and `clear`) are rejected with `Contact data could not be loaded. Please check the local data file.` and leave the file untouched, so that you can close the app and fix it. However, a command that only changes what is displayed (such as `list`, `search`, or `filter`) saves the data currently in the app, which **replaces the invalid file**. We therefore recommend backing up the file before editing it.<br>
+If your changes make the data file invalid, CoordiMate starts with an empty dataset at the next run. While the file is invalid, commands that change data (such as `add`, `addevent`, and `clear`) are rejected with `Saved data could not be loaded. Check the local data file.` and leave the file untouched, so that you can close the app and fix it. However, a command that only changes what is displayed (such as `list`, `search`, or `filter`) saves the data currently in the app, which **replaces the invalid file**. We therefore recommend backing up the file before editing it.<br>
 Each name in an event's `members` list must exactly match the name of a saved contact, or the data file is invalid.<br>
 Furthermore, certain edits can cause CoordiMate to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </box>
