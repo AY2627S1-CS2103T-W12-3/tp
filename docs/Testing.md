@@ -21,6 +21,7 @@ You can run tests in two ways.
     test class, or a test and choose `Run 'ABC'`
 * **Method 2: Using Gradle**
   * Open a console and run the command `gradlew clean test` (Mac/Linux: `./gradlew clean test`)
+  * To run the same checks as CI, run `gradlew check` (Mac/Linux: `./gradlew check`). Besides the tests, this runs the code style checks and fails if line or branch coverage is below the minimum set in `build.gradle` (see [Code coverage](DevOps.md#code-coverage)).
 
 <box type="info" seamless>
 
