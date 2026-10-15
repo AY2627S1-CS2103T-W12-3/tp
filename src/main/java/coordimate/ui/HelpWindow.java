@@ -61,7 +61,7 @@ public class HelpWindow extends UiPart<Stage> {
                     "evn/EVENT_NAME [nevn/NEW_EVENT_NAME] [st/NEW_START_TIME] [et/NEW_END_TIME]"),
             commandUsage(EditTagCommand.COMMAND_WORD, "OLD_TAG t/NEW_TAG"),
             commandUsage(ExitCommand.COMMAND_WORD, ""),
-            commandUsage(FilterCommand.COMMAND_WORD, "FIELD/VALUE"),
+            commandUsage(FilterCommand.COMMAND_WORD, "FIELD/VALUE [FIELD/VALUE]..."),
             commandUsage(HelpCommand.COMMAND_WORD, ""),
             commandUsage(ListCommand.COMMAND_WORD, ""),
             commandUsage(ListTagsCommand.COMMAND_WORD, ""),

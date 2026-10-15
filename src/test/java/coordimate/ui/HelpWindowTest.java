@@ -49,6 +49,11 @@ public class HelpWindowTest {
                     .anyMatch(usage -> usage.command().equals(commandWord)), commandWord);
         }
         assertEquals(COMMAND_WORDS.size(), HelpWindow.COMMAND_USAGES.size());
+        assertEquals("filter FIELD/VALUE [FIELD/VALUE]...", HelpWindow.COMMAND_USAGES.stream()
+                .filter(usage -> usage.command().equals("filter"))
+                .findFirst()
+                .orElseThrow()
+                .format());
     }
 
     @Test
