@@ -96,10 +96,15 @@ A command that breaks a constraint is rejected and makes no changes.
 
 <box type="info" seamless>
 
-**Note:** Within any value, a space followed by letters and a `/` is read as the start of another parameter.
+**Note:** In commands that accept multiple prefixed parameters, such as `add` and `addevent`, text within 
+a value that looks like another parameter—a space followed by letters and `/`—is read as the start of 
+another parameter.
 For example, `addevent evn/Planning tag/review ...` is rejected with an unknown-parameter error, and in
 `m/Check a/v setup` the text after `a/` is read as the address. Write such text without the space before it,
 or without the `/`, e.g. `m/Check AV setup`.
+
+Commands parse their arguments differently. For example, `search` treats the entire remainder as its keyword,
+while tag commands tokenize only their recognised `t/` prefix.
 </box>
 
 ### Viewing help: `help`
@@ -422,6 +427,8 @@ Success: `{TAG_NAME} successfully deleted.`
 |---|---|
 | The `t/` prefix is missing. | `No prefix given.` |
 | No tag name is provided. | `No tag name given.` |
+| Text appears before `t/`. | `Unknown parameters given.` |
+| More than one `t/` prefix is supplied. | `Unknown parameters given.` |
 | The specified tag does not exist. | `No such tag exists: {TAG_NAME}.` |
 
 ### Editing a tag: `edittag`
