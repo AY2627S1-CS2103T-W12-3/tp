@@ -179,6 +179,11 @@ public class LogicManager implements Logic {
     }
 
     @Override
+    public ObservableList<Person> getPersonList() {
+        return model.getCoordiMate().getPersonList();
+    }
+
+    @Override
     public ObservableList<Event> getEventList() {
         return model.getCoordiMate().getEventList();
     }

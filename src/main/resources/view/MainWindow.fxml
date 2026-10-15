@@ -11,13 +11,17 @@
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.ToggleButton?>
 <?import javafx.scene.control.ToggleGroup?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.text.Text?>
+<?import javafx.scene.text.TextFlow?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.Region?>
 
 <fx:root type="javafx.stage.Stage" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
-         title="CoordiMate" minWidth="450" minHeight="600" onCloseRequest="#handleExit">
+         title="CoordiMate" minWidth="830" minHeight="650" onCloseRequest="#handleExit">
   <icons>
     <Image url="@/images/coordimate_32.png" />
   </icons>
@@ -25,10 +29,19 @@
     <Scene>
       <stylesheets>
         <URL value="@DarkTheme.css" />
-        <URL value="@Extensions.css" />
       </stylesheets>
 
-      <VBox>
+      <VBox styleClass="app-shell">
+        <HBox alignment="CENTER_LEFT" styleClass="app-header" spacing="12">
+          <HBox spacing="7" styleClass="window-dots">
+            <Label text="●" styleClass="window-close-dot" />
+            <Label text="●" styleClass="window-minimize-dot" />
+            <Label text="●" styleClass="window-zoom-dot" />
+          </HBox>
+          <Label text="◈" styleClass="brand-mark" />
+          <Label text="CoordiMate" styleClass="app-title" HBox.hgrow="ALWAYS" maxWidth="Infinity" />
+          <Label text="DESKTOP  /  CLI" styleClass="header-meta" />
+        </HBox>
         <MenuBar fx:id="menuBar" VBox.vgrow="NEVER">
           <Menu mnemonicParsing="false" text="File">
             <MenuItem mnemonicParsing="false" onAction="#handleExit" text="Exit" />
@@ -42,13 +55,42 @@
           <fx:define>
             <ToggleGroup fx:id="viewToggleGroup" />
           </fx:define>
-          <VBox spacing="10" styleClass="view-navigation" minWidth="140" prefWidth="140">
+          <VBox spacing="8" styleClass="view-navigation" minWidth="200" prefWidth="210">
+            <Label text="VIEWS" styleClass="sidebar-caption" />
             <ToggleButton fx:id="contactsView" text="Contacts" selected="true" toggleGroup="$viewToggleGroup"
                           onAction="#showContacts" styleClass="view-button" maxWidth="Infinity" />
             <ToggleButton fx:id="eventsView" text="Events" toggleGroup="$viewToggleGroup"
                           onAction="#showEvents" styleClass="view-button" maxWidth="Infinity" />
             <ToggleButton fx:id="tagsView" text="Tags" toggleGroup="$viewToggleGroup"
                           onAction="#showTags" styleClass="view-button" maxWidth="Infinity" />
+            <VBox fx:id="contactsCommands" spacing="6" styleClass="command-cheatsheet">
+              <HBox alignment="CENTER_LEFT"><Label text="COMMANDS" styleClass="sidebar-caption" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="Purpose" styleClass="sidebar-caption" /></HBox>
+              <HBox styleClass="cheat-row"><Label text="add" styleClass="cheat-name, cheat-blue" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="new contact" styleClass="cheat-description" /></HBox>
+              <HBox styleClass="cheat-row"><Label text="edit" styleClass="cheat-name, cheat-blue" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="modify" styleClass="cheat-description" /></HBox>
+              <HBox styleClass="cheat-row"><Label text="delete" styleClass="cheat-name, cheat-red" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="remove" styleClass="cheat-description" /></HBox>
+              <HBox styleClass="cheat-row"><Label text="search" styleClass="cheat-name, cheat-yellow" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="find" styleClass="cheat-description" /></HBox>
+              <HBox styleClass="cheat-row"><Label text="filter" styleClass="cheat-name, cheat-teal" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="narrow" styleClass="cheat-description" /></HBox>
+              <HBox styleClass="cheat-row"><Label text="list" styleClass="cheat-name, cheat-purple" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="show all" styleClass="cheat-description" /></HBox>
+            </VBox>
+            <VBox fx:id="eventsCommands" spacing="6" styleClass="command-cheatsheet" visible="false" managed="false">
+              <HBox alignment="CENTER_LEFT"><Label text="COMMANDS" styleClass="sidebar-caption" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="Purpose" styleClass="sidebar-caption" /></HBox>
+              <HBox styleClass="cheat-row"><Label text="addevent" styleClass="cheat-name, cheat-blue" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="new event" styleClass="cheat-description" /></HBox>
+              <HBox styleClass="cheat-row"><Label text="editevent" styleClass="cheat-name, cheat-blue" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="modify" styleClass="cheat-description" /></HBox>
+              <HBox styleClass="cheat-row"><Label text="deleteevent" styleClass="cheat-name, cheat-red" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="remove" styleClass="cheat-description" /></HBox>
+              <HBox styleClass="cheat-row"><Label text="assign" styleClass="cheat-name, cheat-yellow" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="add member" styleClass="cheat-description" /></HBox>
+              <HBox styleClass="cheat-row"><Label text="unassign" styleClass="cheat-name, cheat-yellow" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="remove mem" styleClass="cheat-description" /></HBox>
+              <HBox styleClass="cheat-row"><Label text="members" styleClass="cheat-name, cheat-purple" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="view details" styleClass="cheat-description" /></HBox>
+              <HBox styleClass="cheat-row"><Label text="markattendance" styleClass="cheat-name, cheat-teal" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="set status" styleClass="cheat-description" /></HBox>
+            </VBox>
+            <VBox fx:id="tagsCommands" spacing="6" styleClass="command-cheatsheet" visible="false" managed="false">
+              <HBox alignment="CENTER_LEFT"><Label text="COMMANDS" styleClass="sidebar-caption" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="Purpose" styleClass="sidebar-caption" /></HBox>
+              <HBox styleClass="cheat-row"><Label text="listtags" styleClass="cheat-name, cheat-purple" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="show all" styleClass="cheat-description" /></HBox>
+              <HBox styleClass="cheat-row"><Label text="addtag" styleClass="cheat-name, cheat-blue" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="create" styleClass="cheat-description" /></HBox>
+              <HBox styleClass="cheat-row"><Label text="edittag" styleClass="cheat-name, cheat-blue" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="rename" styleClass="cheat-description" /></HBox>
+              <HBox styleClass="cheat-row"><Label text="deletetag" styleClass="cheat-name, cheat-red" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="remove" styleClass="cheat-description" /></HBox>
+            </VBox>
+            <Region VBox.vgrow="ALWAYS" />
+            <Label text="●  Local workspace" styleClass="sidebar-footer" />
           </VBox>
           <TabPane fx:id="views" tabClosingPolicy="UNAVAILABLE" styleClass="workspace-tabs"
                    HBox.hgrow="ALWAYS" minWidth="0" minHeight="0">
@@ -59,16 +101,33 @@
               <StackPane fx:id="eventListPanelPlaceholder" styleClass="workspace-content" />
             </Tab>
             <Tab fx:id="tagsTab" text="Tags">
-              <VBox spacing="12" styleClass="tag-workspace">
-                <Label text="Saved tags" styleClass="section-heading" />
-                <ListView fx:id="tagListView" VBox.vgrow="ALWAYS" minWidth="0" minHeight="0"
-                          accessibleText="All saved tags." styleClass="tag-list" />
-              </VBox>
+              <SplitPane fx:id="tagSplitPane" dividerPositions="0.47" styleClass="tag-workspace">
+                <VBox spacing="12" minWidth="0" styleClass="tag-list-section">
+                  <Label text="TAG LIST" styleClass="section-heading" />
+                  <ListView fx:id="tagListView" VBox.vgrow="ALWAYS" minWidth="0" minHeight="0"
+                            accessibleText="All saved tags." styleClass="tag-list" />
+                </VBox>
+                <VBox spacing="16" minWidth="0" styleClass="tag-details-section">
+                  <Label text="TAG DETAILS" styleClass="section-heading" />
+                  <Label fx:id="selectedTagName" text="Select a tag" wrapText="true" styleClass="contact-name" />
+                  <Label fx:id="tagMemberCount" text="Members (0)" styleClass="section-heading" />
+                  <ListView fx:id="tagMemberListView" VBox.vgrow="ALWAYS" minWidth="0" minHeight="0"
+                            accessibleText="Contacts assigned to the selected tag." styleClass="tag-member-list" />
+                  <Label text="Use addtag, edittag, and deletetag in the command box to manage saved tags."
+                         wrapText="true" styleClass="detail-caption" />
+                </VBox>
+              </SplitPane>
             </Tab>
           </TabPane>
         </HBox>
         <StackPane fx:id="resultDisplayPlaceholder" VBox.vgrow="NEVER" />
         <StackPane fx:id="commandBoxPlaceholder" styleClass="command-container" VBox.vgrow="NEVER" />
+        <HBox alignment="CENTER_LEFT" styleClass="prefix-help">
+          <TextFlow fx:id="prefixHelp" maxWidth="Infinity" HBox.hgrow="ALWAYS"
+                    accessibleText="Command format and example">
+            <Text text="Prefixes: n/Name  p/Phone  e/Email  r/Role  t/Tag  m/Note" styleClass="command-hint" />
+          </TextFlow>
+        </HBox>
         <StackPane fx:id="statusbarPlaceholder" VBox.vgrow="NEVER" />
       </VBox>
     </Scene>

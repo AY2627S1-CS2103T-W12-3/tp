@@ -40,7 +40,7 @@ public class ResultDisplay extends UiPart<Region> {
     public ResultDisplay() {
         super(FXML);
         feedbackIcon.setImage(infoIcon);
-        resultDisplay.setText("Ready. Choose Contacts or Events, then enter a command.");
+        resultDisplay.setText("Ready. Choose Contacts, Events, or Tags, then enter a command.");
     }
 
     /**

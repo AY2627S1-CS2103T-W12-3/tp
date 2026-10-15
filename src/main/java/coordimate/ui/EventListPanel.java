@@ -3,20 +3,26 @@ package coordimate.ui;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 
 import coordimate.model.event.AttendanceStatus;
 import coordimate.model.event.Event;
 import coordimate.model.person.Name;
+import coordimate.model.person.Person;
+import coordimate.model.tag.Tag;
 import javafx.beans.binding.Bindings;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
 import javafx.geometry.Orientation;
+import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MultipleSelectionModel;
 import javafx.scene.control.SplitPane;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -72,12 +78,21 @@ public class EventListPanel extends UiPart<Region> {
     private Label selectionHint;
 
     private int lastSelectedIndex = -1;
+    private final ObservableList<Person> persons;
 
     /**
      * Observes saved events and stacks the panes when the window is narrow.
      */
     public EventListPanel(ObservableList<Event> events) {
+        this(events, javafx.collections.FXCollections.observableArrayList());
+    }
+
+    /**
+     * Observes events and contacts so assigned members show their saved contact details.
+     */
+    public EventListPanel(ObservableList<Event> events, ObservableList<Person> persons) {
         super(FXML);
+        this.persons = getPersonSource(persons);
         eventListView.setItems(events);
         eventListView.setCellFactory(list -> new EventListCell());
         eventListView.setPlaceholder(new Label("No events yet. Create one with addevent."));
@@ -90,8 +105,10 @@ public class EventListPanel extends UiPart<Region> {
             }
         });
         events.addListener((ListChangeListener<Event>) change -> keepSelectionAfterChange());
+        this.persons.addListener((ListChangeListener<Person>) change ->
+                showDetails(eventListView.getSelectionModel().getSelectedItem()));
         eventSplitPane.widthProperty().addListener((observable, oldWidth, width) ->
-                eventSplitPane.setOrientation(width.doubleValue() < 680
+                eventSplitPane.setOrientation(width.doubleValue() < 760
                 ? Orientation.VERTICAL : Orientation.HORIZONTAL));
         showDetails(null);
         eventListView.getSelectionModel().selectFirst();
@@ -149,8 +166,24 @@ public class EventListPanel extends UiPart<Region> {
         }
         for (int index = 0; index < event.getMembers().size(); index++) {
             Name member = event.getMembers().get(index);
-            members.getChildren().add(createMemberRow(index + 1, member, event.getAttendance(member).orElse(null)));
+            members.getChildren().add(createMemberRow(index + 1, member,
+                    event.getAttendance(member).orElse(null), findPerson(member)));
         }
+    }
+
+    private Person findPerson(Name memberName) {
+        return persons.stream()
+                .filter(person -> person.getName().equals(memberName))
+                .findFirst()
+                .orElse(null);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static ObservableList<Person> getPersonSource(ObservableList<Person> persons) {
+        if (persons instanceof FilteredList<?> filteredPersons) {
+            return (ObservableList<Person>) filteredPersons.getSource();
+        }
+        return persons;
     }
 
     private void updateAttendanceCounts(Event event) {
@@ -170,29 +203,104 @@ public class EventListPanel extends UiPart<Region> {
         return hint;
     }
 
-    private HBox createMemberRow(int number, Name member, AttendanceStatus status) {
-        Label name = new Label(number + ". " + member);
+    private HBox createMemberRow(int number, Name member, AttendanceStatus status, Person person) {
+        Label index = new Label(number + ".");
+        index.getStyleClass().add("event-member-index");
+
+        Label avatar = new Label(initials(member.getFullName()));
+        avatar.getStyleClass().add("event-member-avatar");
+        avatar.getStyleClass().add(getAvatarColorClass(person));
+
+        Label name = new Label(member.getFullName());
         name.setWrapText(true);
         name.setMinWidth(0);
-        name.getStyleClass().add("detail-value");
-        HBox.setHgrow(name, Priority.ALWAYS);
+        name.getStyleClass().add("event-member-name");
 
-        HBox row = new HBox(12, name, createStatusBadge(status));
+        FlowPane identityLine = new FlowPane(8, 4);
+        identityLine.setAlignment(Pos.CENTER_LEFT);
+        identityLine.getStyleClass().add("event-member-identity");
+        identityLine.getChildren().add(name);
+        if (person != null) {
+            person.getTags().stream()
+                    .sorted((left, right) -> String.CASE_INSENSITIVE_ORDER.compare(
+                            left.getTagName(), right.getTagName()))
+                    .map(Tag::getTagName)
+                    .map(this::createMemberTag)
+                    .forEach(identityLine.getChildren()::add);
+        }
+
+        Label subtitle = new Label(formatMemberDetails(person));
+        subtitle.setWrapText(true);
+        subtitle.setMinWidth(0);
+        subtitle.getStyleClass().add("event-member-metadata");
+
+        VBox memberDetails = new VBox(4, identityLine, subtitle);
+        memberDetails.getStyleClass().add("event-member-details");
+        HBox.setHgrow(memberDetails, Priority.ALWAYS);
+
+        HBox row = new HBox(12, index, avatar, memberDetails, createStatusBadge(status));
         row.getStyleClass().add("attendance-member-row");
         return row;
+    }
+
+    private Label createMemberTag(String tagName) {
+        Label tag = new Label(tagName);
+        tag.getStyleClass().add("event-member-tag");
+        tag.getStyleClass().add(getTagColorClass(tagName));
+        return tag;
+    }
+
+    private String getTagColorClass(String tagName) {
+        return switch (tagName.toLowerCase(Locale.ROOT)) {
+            case "logistics" -> "event-member-tag-teal";
+            case "sponsor" -> "event-member-tag-amber";
+            case "publicity", "universitystaff" -> "event-member-tag-purple";
+            default -> "event-member-tag-blue";
+        };
+    }
+
+    private String getAvatarColorClass(Person person) {
+        if (person == null) {
+            return "event-member-avatar-purple";
+        }
+        if (person.getTags().stream().anyMatch(tag -> tag.getTagName().equalsIgnoreCase("logistics"))) {
+            return "event-member-avatar-teal";
+        }
+        if (person.getTags().stream().anyMatch(tag -> tag.getTagName().equalsIgnoreCase("sponsor"))) {
+            return "event-member-avatar-amber";
+        }
+        return "event-member-avatar-purple";
+    }
+
+    private String initials(String fullName) {
+        String[] parts = fullName.strip().split("\\s+");
+        String result = parts[0].substring(0, 1);
+        if (parts.length > 1) {
+            result += parts[parts.length - 1].substring(0, 1);
+        }
+        return result.toUpperCase(Locale.ROOT);
+    }
+
+    private String formatMemberDetails(Person person) {
+        if (person == null) {
+            return "Contact details unavailable";
+        }
+        StringBuilder details = new StringBuilder(person.getRole().getValue());
+        person.getOrganisation().ifPresent(organisation -> details.append(" · ").append(organisation.getValue()));
+        return details.toString();
     }
 
     private Label createStatusBadge(AttendanceStatus status) {
         String text;
         String styleClass;
         if (status == null) {
-            text = "Not marked";
+            text = "● unmarked";
             styleClass = "attendance-unmarked";
         } else if (status == AttendanceStatus.PRESENT) {
-            text = "Present";
+            text = "● present";
             styleClass = "attendance-present";
         } else {
-            text = "Absent";
+            text = "● absent";
             styleClass = "attendance-absent";
         }
         Label badge = new Label(text);
@@ -219,17 +327,27 @@ public class EventListPanel extends UiPart<Region> {
     }
 
     /**
-     * Displays an event's name and start and end times in a list card.
+     * Displays an event's timing and attendance overview in a list card.
      */
     private static class EventListCell extends ListCell<Event> {
         private final Label name = new Label();
         private final Label times = new Label();
-        private final VBox card = new VBox(8, name, times);
+        private final Label memberTotal = new Label();
+        private final Label presentTotal = new Label();
+        private final Label absentTotal = new Label();
+        private final Label unmarkedTotal = new Label();
+        private final HBox overview = new HBox(10, memberTotal, presentTotal, absentTotal, unmarkedTotal);
+        private final VBox card = new VBox(8, name, times, overview);
 
         EventListCell() {
             card.getStyleClass().add("event-card");
             name.getStyleClass().add("event-card-name");
             times.getStyleClass().add("detail-caption");
+            memberTotal.getStyleClass().add("event-member-total");
+            presentTotal.getStyleClass().add("attendance-present-text");
+            absentTotal.getStyleClass().add("attendance-absent-text");
+            unmarkedTotal.getStyleClass().add("attendance-unmarked-text");
+            overview.getStyleClass().add("event-overview");
             name.setWrapText(true);
             times.setWrapText(true);
             card.maxWidthProperty().bind(widthProperty().subtract(24));
@@ -244,7 +362,28 @@ public class EventListPanel extends UiPart<Region> {
             } else {
                 name.setText((getIndex() + 1) + ". " + event.getName());
                 times.setText(event.getStartTime() + " to " + event.getEndTime());
+                updateOverview(event);
                 setGraphic(card);
+            }
+        }
+
+        private void updateOverview(Event event) {
+            int members = event.getMembers().size();
+            if (members == 0) {
+                memberTotal.setText("No members assigned");
+            } else {
+                memberTotal.setText(members + (members == 1 ? " member" : " members"));
+            }
+            long present = event.getAttendanceRecord().values().stream()
+                    .filter(status -> status == AttendanceStatus.PRESENT).count();
+            long absent = event.getAttendanceRecord().values().stream()
+                    .filter(status -> status == AttendanceStatus.ABSENT).count();
+            presentTotal.setText(present + " present");
+            absentTotal.setText(absent + " absent");
+            unmarkedTotal.setText((members - present - absent) + " unmarked");
+            for (Label count : new Label[]{presentTotal, absentTotal, unmarkedTotal}) {
+                count.setVisible(members > 0);
+                count.setManaged(members > 0);
             }
         }
     }

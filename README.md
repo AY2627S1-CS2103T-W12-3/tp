@@ -1,5 +1,6 @@
 [![CI Status](https://github.com/AY2627S1-CS2103T-W12-3/tp/workflows/Java%20CI/badge.svg)](https://github.com/AY2627S1-CS2103T-W12-3/tp/actions)
 # CoordiMate
+
 ![Ui](docs/images/Ui.png)
 * **CoordiMate** is a desktop app that helps university CCA EXCO members organise committee information and coordinate their work.
 * It lets users manage contacts and tags, plan events, assign members, and track attendance.

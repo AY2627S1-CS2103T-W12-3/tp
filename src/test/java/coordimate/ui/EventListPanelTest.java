@@ -1,6 +1,7 @@
 package coordimate.ui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.awt.GraphicsEnvironment;
@@ -18,12 +19,17 @@ import coordimate.model.event.AttendanceStatus;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
 import coordimate.model.person.Name;
+import coordimate.model.person.Person;
+import coordimate.testutil.PersonBuilder;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.geometry.Orientation;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.SplitPane;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
@@ -60,7 +66,7 @@ public class EventListPanelTest {
 
             assertEquals("Members (3)", getLabel(root, "memberCount").getText());
             assertCounts(root, "1 Present", "1 Absent", "1 Not marked");
-            assertMembers(root, "Alice Tan", "Present", "Bob Lim", "Absent", "Charlie Ng", "Not marked");
+            assertMembers(root, "Alice Tan", "● present", "Bob Lim", "● absent", "Charlie Ng", "● unmarked");
         });
     }
 
@@ -75,16 +81,16 @@ public class EventListPanelTest {
 
             events.setAll(event.withAttendance(ALICE, AttendanceStatus.ABSENT));
             assertCounts(root, "0 Present", "1 Absent", "1 Not marked");
-            assertMembers(root, "Alice Tan", "Absent", "Bob Lim", "Not marked");
+            assertMembers(root, "Alice Tan", "● absent", "Bob Lim", "● unmarked");
 
             events.setAll(events.getFirst().withAttendance(ALICE, AttendanceStatus.PRESENT));
             assertCounts(root, "1 Present", "0 Absent", "1 Not marked");
-            assertMembers(root, "Alice Tan", "Present", "Bob Lim", "Not marked");
+            assertMembers(root, "Alice Tan", "● present", "Bob Lim", "● unmarked");
             assertEquals(events.getFirst(), getEventList(root).getSelectionModel().getSelectedItem());
 
             events.setAll(event(List.of(BOB), Map.of()));
             assertCounts(root, "0 Present", "0 Absent", "1 Not marked");
-            assertMembers(root, "Bob Lim", "Not marked");
+            assertMembers(root, "Bob Lim", "● unmarked");
         });
     }
 
@@ -103,6 +109,101 @@ public class EventListPanelTest {
         });
     }
 
+    @Test
+    public void selectEvent_showsMemberListStyleWithContactRoleOrganisationAndTags() throws Exception {
+        runOnJavaFxThread(() -> {
+            Person alice = new PersonBuilder().withName(ALICE.getFullName()).withRole("Treasurer")
+                    .withOrganisation("Student Union").withTags("Finance", "Publicity").build();
+            Region root = new EventListPanel(FXCollections.observableArrayList(event(List.of(ALICE), Map.of())),
+                    FXCollections.observableArrayList(alice)).getRoot();
+            new Scene(root);
+            root.applyCss();
+
+            HBox row = (HBox) getMembers(root).getChildren().getFirst();
+            assertEquals("1.", ((Label) row.getChildren().get(0)).getText());
+            VBox memberDetails = (VBox) row.getChildren().get(2);
+            FlowPane identityLine = (FlowPane) memberDetails.getChildren().get(0);
+            assertEquals("Alice Tan", ((Label) identityLine.getChildren().get(0)).getText());
+            assertEquals("Finance", ((Label) identityLine.getChildren().get(1)).getText());
+            assertEquals("Publicity", ((Label) identityLine.getChildren().get(2)).getText());
+            assertEquals("Treasurer · Student Union", ((Label) memberDetails.getChildren().get(1)).getText());
+        });
+    }
+
+    @Test
+    public void contactChanges_refreshSelectedEventMemberDetails() throws Exception {
+        runOnJavaFxThread(() -> {
+            Person original = new PersonBuilder().withName(ALICE.getFullName()).withRole("Treasurer")
+                    .withOrganisation("Student Union").withTags("Finance").build();
+            ObservableList<Person> persons = FXCollections.observableArrayList(original);
+            Event event = event(List.of(ALICE), Map.of(ALICE, AttendanceStatus.ABSENT));
+            Region root = new EventListPanel(FXCollections.observableArrayList(event), persons).getRoot();
+            new Scene(root);
+            root.applyCss();
+
+            HBox row = (HBox) getMembers(root).getChildren().getFirst();
+            assertTrue(row.getChildren().get(3).getStyleClass().contains("attendance-absent"));
+            assertEquals("Treasurer · Student Union", memberMetadata(row));
+
+            persons.setAll(new PersonBuilder().withName(ALICE.getFullName()).withRole("Logistics Lead")
+                    .withOrganisation("NUS").withTags("Logistics", "Sponsor", "UniversityStaff").build());
+
+            row = (HBox) getMembers(root).getChildren().getFirst();
+            VBox details = (VBox) row.getChildren().get(2);
+            FlowPane identityLine = (FlowPane) details.getChildren().get(0);
+            assertEquals("Logistics", ((Label) identityLine.getChildren().get(1)).getText());
+            assertEquals("Sponsor", ((Label) identityLine.getChildren().get(2)).getText());
+            assertEquals("UniversityStaff", ((Label) identityLine.getChildren().get(3)).getText());
+            assertTrue(((Label) identityLine.getChildren().get(1)).getStyleClass()
+                    .contains("event-member-tag-teal"));
+            assertTrue(((Label) identityLine.getChildren().get(2)).getStyleClass()
+                    .contains("event-member-tag-amber"));
+            assertTrue(((Label) identityLine.getChildren().get(3)).getStyleClass()
+                    .contains("event-member-tag-purple"));
+            assertTrue(((Label) row.getChildren().get(1)).getStyleClass().contains("event-member-avatar-teal"));
+            assertEquals("Logistics Lead · NUS", memberMetadata(row));
+
+            persons.setAll(new PersonBuilder().withName(ALICE.getFullName()).withRole("Sponsor Liaison")
+                    .withOrganisation("Student Union").withTags("Sponsor").build());
+            row = (HBox) getMembers(root).getChildren().getFirst();
+            assertTrue(((Label) row.getChildren().get(1)).getStyleClass().contains("event-member-avatar-amber"));
+        });
+    }
+
+    @Test
+    public void eventCard_showsMemberAndAttendanceOverview() throws Exception {
+        runOnJavaFxThread(() -> {
+            Event event = event(List.of(ALICE, BOB, CHARLIE),
+                    Map.of(ALICE, AttendanceStatus.PRESENT, BOB, AttendanceStatus.ABSENT));
+            Region root = new EventListPanel(FXCollections.observableArrayList(event)).getRoot();
+            new Scene(root, 900, 600);
+            root.resize(900, 600);
+            root.applyCss();
+            root.layout();
+
+            HBox overview = (HBox) root.lookup(".event-overview");
+            assertNotNull(overview);
+            assertEquals("3 members", ((Label) overview.getChildren().get(0)).getText());
+            assertEquals("1 present", ((Label) overview.getChildren().get(1)).getText());
+            assertEquals("1 absent", ((Label) overview.getChildren().get(2)).getText());
+            assertEquals("1 unmarked", ((Label) overview.getChildren().get(3)).getText());
+        });
+    }
+
+    @Test
+    public void resize_narrowWindowStacksEventPanes() throws Exception {
+        runOnJavaFxThread(() -> {
+            SplitPane pane = (SplitPane) new EventListPanel(FXCollections.observableArrayList()).getRoot();
+            new Scene(pane);
+            pane.resize(900, 500);
+            assertEquals(Orientation.HORIZONTAL, pane.getOrientation());
+            assertEquals(460, ((Region) pane.getItems().get(1)).getMinWidth());
+
+            pane.resize(700, 500);
+            assertEquals(Orientation.VERTICAL, pane.getOrientation());
+        });
+    }
+
     private static Event event(List<Name> members, Map<Name, AttendanceStatus> attendance) {
         return new Event("Team Dinner", DATE, DATE, members, attendance);
     }
@@ -118,14 +219,21 @@ public class EventListPanelTest {
         assertEquals(namesAndStatuses.length / 2, members.getChildren().size());
         for (int index = 0; index < namesAndStatuses.length; index += 2) {
             HBox row = (HBox) members.getChildren().get(index / 2);
-            Label name = (Label) row.getChildren().get(0);
-            assertEquals((index / 2 + 1) + ". " + namesAndStatuses[index], name.getText());
-            assertEquals(namesAndStatuses[index + 1], ((Label) row.getChildren().get(1)).getText());
+            VBox details = (VBox) row.getChildren().get(2);
+            FlowPane identityLine = (FlowPane) details.getChildren().get(0);
+            Label name = (Label) identityLine.getChildren().get(0);
+            assertEquals(namesAndStatuses[index], name.getText());
+            assertEquals(namesAndStatuses[index + 1], ((Label) row.getChildren().get(3)).getText());
         }
     }
 
     private static VBox getMembers(Region root) {
         return (VBox) root.lookup("#members");
+    }
+
+    private static String memberMetadata(HBox row) {
+        VBox details = (VBox) row.getChildren().get(2);
+        return ((Label) details.getChildren().get(1)).getText();
     }
 
     private static Label getLabel(Region root, String id) {

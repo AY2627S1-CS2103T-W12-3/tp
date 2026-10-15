@@ -88,6 +88,13 @@ The `UI` component,
   displays the filtered contact list beside a details pane, follows a selected contact when an edit replaces that
   list entry, and clears the selection when the contact leaves the list. The details pane displays all saved contact
   fields, showing a placeholder for unset optional fields and no tag chips for an empty tag set.
+  It also derives assigned-event rows from the live event list. The Events view resolves each assigned
+  member to contact role, organisation, and tags, and refreshes when contact data changes. Contact and
+  event views keep their details pane above a minimum width, then stack the list above details when the
+  window is narrow. Sidebar command rows insert only the command word into the command box and show its
+  format and an example; rows also support keyboard activation. Selecting a tag shows all saved contacts
+  assigned to it, independent of the current contact filter, and refreshes names, roles, organisations, and tags
+  when contact data changes.
 * keeps a reference to the `Logic` component, because the `UI` relies on the `Logic` to execute commands.
 * depends on some classes in the `Model` component because it displays `Person` objects from the model.
 

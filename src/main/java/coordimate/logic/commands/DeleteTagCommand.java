@@ -15,7 +15,7 @@ import coordimate.model.tag.Tag;
 public class DeleteTagCommand extends MutatingTagCommand {
 
     public static final String COMMAND_WORD = "deletetag";
-    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Deletes a custom tag.\n"
+    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Deletes a saved tag.\n"
             + "Parameters: t/TAG\n"
             + "Example: " + COMMAND_WORD + " t/Publicity";
     public static final String MESSAGE_SUCCESS = "%s successfully deleted.";

@@ -1,6 +1,8 @@
 package coordimate.ui;
 
 import java.nio.file.Path;
+import java.util.Locale;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import coordimate.commons.core.GuiSettings;
@@ -10,18 +12,35 @@ import coordimate.logic.commands.AddEventCommand;
 import coordimate.logic.commands.CommandResult;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.logic.parser.exceptions.ParseException;
+import coordimate.model.person.Person;
+import coordimate.model.tag.Tag;
 import javafx.beans.binding.Bindings;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.geometry.Orientation;
+import javafx.geometry.Pos;
+import javafx.scene.AccessibleRole;
+import javafx.scene.Cursor;
+import javafx.scene.Node;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.SplitPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TextInputControl;
 import javafx.scene.control.ToggleButton;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
 import javafx.stage.Stage;
 
 /**
@@ -31,6 +50,41 @@ import javafx.stage.Stage;
 public class MainWindow extends UiPart<Stage> {
 
     private static final String FXML = "MainWindow.fxml";
+    private static final Map<String, String> COMMAND_HELP_TEXT = Map.ofEntries(
+            Map.entry("add", "Format: add n/NAME p/PHONE e/EMAIL r/ROLE [b/BIRTHDAY] [a/ADDRESS]"
+                    + " [o/ORGANISATION] [t/TAG]... [m/NOTE]\n"
+                    + "Example: add n/Aisha Tan p/+6591234567 e/aisha@example.com r/Logistics t/EXCO"),
+            Map.entry("edit", "Format: edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY]"
+                    + " [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [t/TAG]... [at/TAG]... [rt/TAG]...\n"
+                    + "Or: edit target/IDENTIFIER [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY]"
+                    + " [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [t/TAG]... [at/TAG]... [rt/TAG]...\n"
+                    + "Example: edit 1 p/91234567 e/johndoe@example.com"),
+            Map.entry("delete", "Format: delete INDEX (or n/NAME, p/PHONE, or e/EMAIL)\n"
+                    + "Example: delete e/aisha@example.com"),
+            Map.entry("search", "Format: search KEYWORD\nExample: search jurong west"),
+            Map.entry("filter", "Format: filter FIELD/VALUE [FIELD/VALUE]...\n"
+                    + "Example: filter tag/friend organisation/NUS"),
+            Map.entry("list", "Format: list\nExample: list"),
+            Map.entry("addevent", "Format: addevent evn/EVENT_NAME st/START_TIME et/END_TIME\n"
+                    + "Example: addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00"),
+            Map.entry("editevent", "Format: editevent evn/EVENT_NAME [nevn/NEW_EVENT_NAME]"
+                    + " [st/NEW_START_TIME] [et/NEW_END_TIME]\n"
+                    + "Provide at least one field to edit.\n"
+                    + "Example: editevent evn/Final Concert nevn/Grand Concert"),
+            Map.entry("deleteevent", "Format: deleteevent evn/EVENT_NAME\n"
+                    + "Example: deleteevent evn/Final Concert"),
+            Map.entry("assign", "Format: assign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...\n"
+                    + "Example: assign evn/Final Concert c/2 3"),
+            Map.entry("unassign", "Format: unassign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...\n"
+                    + "Example: unassign evn/Final Concert c/2 3"),
+            Map.entry("members", "Format: members evn/EVENT_NAME\nExample: members evn/Final Concert"),
+            Map.entry("markattendance", "Format: markattendance evn/EVENT_NAME mem/MEMBER_NAME att/STATUS\n"
+                    + "Example: markattendance evn/Final Concert mem/Alex Yeoh att/present"),
+            Map.entry("listtags", "Format: listtags\nExample: listtags"),
+            Map.entry("addtag", "Format: addtag t/TAG\nExample: addtag t/ProductionCrew"),
+            Map.entry("edittag", "Format: edittag OLD_TAG t/NEW_TAG\n"
+                    + "Example: edittag Production t/ProductionCrew"),
+            Map.entry("deletetag", "Format: deletetag t/TAG\nExample: deletetag t/ProductionCrew"));
 
     private final Logger logger = LogsCenter.getLogger(getClass());
 
@@ -43,6 +97,7 @@ public class MainWindow extends UiPart<Stage> {
     private EventListPanel eventListPanel;
     private ResultDisplay resultDisplay;
     private HelpWindow helpWindow;
+    private CommandBox commandBox;
 
     @FXML
     private StackPane commandBoxPlaceholder;
@@ -58,6 +113,30 @@ public class MainWindow extends UiPart<Stage> {
 
     @FXML
     private ListView<String> tagListView;
+
+    @FXML
+    private Label selectedTagName;
+
+    @FXML
+    private Label tagMemberCount;
+
+    @FXML
+    private ListView<Person> tagMemberListView;
+
+    @FXML
+    private SplitPane tagSplitPane;
+
+    @FXML
+    private VBox contactsCommands;
+
+    @FXML
+    private VBox eventsCommands;
+
+    @FXML
+    private VBox tagsCommands;
+
+    @FXML
+    private TextFlow prefixHelp;
 
     @FXML
     private TabPane views;
@@ -150,13 +229,32 @@ public class MainWindow extends UiPart<Stage> {
      * Fills up all the placeholders of this window.
      */
     void fillInnerParts() {
-        personListPanel = new PersonListPanel(logic.getFilteredPersonList());
+        personListPanel = new PersonListPanel(logic.getFilteredPersonList(), logic.getEventList());
         personListPanelPlaceholder.getChildren().add(personListPanel.getRoot());
 
-        eventListPanel = new EventListPanel(logic.getEventList());
+        eventListPanel = new EventListPanel(logic.getEventList(), logic.getFilteredPersonList());
         eventListPanelPlaceholder.getChildren().add(eventListPanel.getRoot());
-        TagListViewModel tagListViewModel = new TagListViewModel(logic.getTagList());
+        TagListViewModel tagListViewModel = new TagListViewModel(logic.getTagList(), logic.getPersonList());
         tagListView.setItems(tagListViewModel.getTagNames());
+        tagMemberListView.setItems(tagListViewModel.getMembers());
+        tagMemberListView.setCellFactory(list -> new TagMemberListCell());
+        tagMemberCount.textProperty().bind(tagListViewModel.memberCountTextProperty());
+        tagMemberListView.setPlaceholder(new Label("Select a tag to view its members."));
+        tagListView.getSelectionModel().selectedItemProperty().addListener((observable, oldTag, tag) -> {
+            selectedTagName.setText(tag == null ? "Select a tag" : tag);
+            tagListViewModel.selectTag(tag);
+            tagMemberListView.setPlaceholder(new Label(tag == null
+                    ? "Select a tag to view its members." : "No contacts use this tag."));
+        });
+        tagSplitPane.widthProperty().addListener((observable, oldWidth, width) ->
+                tagSplitPane.setOrientation(width.doubleValue() < 650
+                        ? Orientation.VERTICAL : Orientation.HORIZONTAL));
+        contactsCommands.visibleProperty().bind(contactsView.selectedProperty());
+        contactsCommands.managedProperty().bind(contactsCommands.visibleProperty());
+        eventsCommands.visibleProperty().bind(eventsView.selectedProperty());
+        eventsCommands.managedProperty().bind(eventsCommands.visibleProperty());
+        tagsCommands.visibleProperty().bind(tagsView.selectedProperty());
+        tagsCommands.managedProperty().bind(tagsCommands.visibleProperty());
         contactsTab.textProperty().bind(Bindings.size(logic.getFilteredPersonList()).asString("Contacts (%d)"));
         eventsTab.textProperty().bind(Bindings.size(logic.getEventList()).asString("Events (%d)"));
         contactsView.textProperty().bind(contactsTab.textProperty());
@@ -165,6 +263,10 @@ public class MainWindow extends UiPart<Stage> {
         views.getSelectionModel().selectedItemProperty().addListener((observable, oldTab, tab) -> {
             contactsView.setSelected(tab == contactsTab);
             eventsView.setSelected(tab == eventsTab);
+            tagsView.setSelected(tab == tagsTab);
+            setPrefixHelpText(tab == eventsTab ? "Prefixes: evn/Event  st/Start  et/End  c/Contact"
+                    : tab == tagsTab ? "Prefixes: t/Tag"
+                    : "Prefixes: n/Name  p/Phone  e/Email  r/Role  t/Tag  m/Note");
         });
 
         resultDisplay = new ResultDisplay();
@@ -173,16 +275,138 @@ public class MainWindow extends UiPart<Stage> {
         StatusBarFooter statusBarFooter = new StatusBarFooter(dataFilePath);
         statusbarPlaceholder.getChildren().add(statusBarFooter.getRoot());
 
-        CommandBox commandBox = new CommandBox(this::executeCommand, logic::isAwaitingDeleteConfirmation);
+        commandBox = new CommandBox(this::executeCommand, logic::isAwaitingDeleteConfirmation);
         commandBoxPlaceholder.getChildren().add(commandBox.getRoot());
+        makeCommandRowsInteractive(contactsCommands);
+        makeCommandRowsInteractive(eventsCommands);
+        makeCommandRowsInteractive(tagsCommands);
+    }
+
+    private void makeCommandRowsInteractive(VBox commandList) {
+        for (Node child : commandList.getChildren()) {
+            if (!(child instanceof HBox row) || !row.getStyleClass().contains("cheat-row")) {
+                continue;
+            }
+            String command = ((Label) row.getChildren().get(0)).getText();
+            row.setAccessibleRole(AccessibleRole.BUTTON);
+            row.setAccessibleText("Insert " + command + " command");
+            row.setFocusTraversable(true);
+            row.setCursor(Cursor.HAND);
+            row.setOnMouseClicked(event -> selectCommand(command));
+            row.setOnKeyPressed(event -> {
+                if (event.getCode() == KeyCode.ENTER || event.getCode() == KeyCode.SPACE) {
+                    selectCommand(command);
+                    event.consume();
+                }
+            });
+        }
+    }
+
+    private void selectCommand(String command) {
+        String commandHelp = COMMAND_HELP_TEXT.get(command);
+        if (commandHelp != null) {
+            commandBox.setCommand(command);
+            setPrefixHelpText(commandHelp);
+        }
+    }
+
+    private void setPrefixHelpText(String text) {
+        Text hint = new Text(text);
+        hint.getStyleClass().add("command-hint");
+        prefixHelp.getChildren().setAll(hint);
+        prefixHelp.setAccessibleText(text);
+    }
+
+    private Label createMemberTag(String tagName) {
+        Label tag = new Label(tagName);
+        tag.getStyleClass().addAll("event-member-tag", getTagColorClass(tagName));
+        return tag;
+    }
+
+    private String getTagColorClass(String tagName) {
+        return switch (tagName.toLowerCase(Locale.ROOT)) {
+            case "logistics" -> "event-member-tag-teal";
+            case "sponsor" -> "event-member-tag-amber";
+            case "publicity", "universitystaff" -> "event-member-tag-purple";
+            default -> "event-member-tag-blue";
+        };
+    }
+
+    private String getAvatarColorClass(Person person) {
+        if (person.getTags().stream().anyMatch(tag -> tag.getTagName().equalsIgnoreCase("logistics"))) {
+            return "event-member-avatar-teal";
+        }
+        if (person.getTags().stream().anyMatch(tag -> tag.getTagName().equalsIgnoreCase("sponsor"))) {
+            return "event-member-avatar-amber";
+        }
+        return "event-member-avatar-purple";
+    }
+
+    private String initials(String fullName) {
+        String[] parts = fullName.strip().split("\\s+");
+        String result = parts[0].substring(0, 1);
+        if (parts.length > 1) {
+            result += parts[parts.length - 1].substring(0, 1);
+        }
+        return result.toUpperCase(Locale.ROOT);
+    }
+
+    private String formatMemberDetails(Person person) {
+        StringBuilder details = new StringBuilder(person.getRole().getValue());
+        person.getOrganisation().ifPresent(organisation -> details.append(" · ").append(organisation.getValue()));
+        return details.toString();
+    }
+
+    private class TagMemberListCell extends ListCell<Person> {
+        @Override
+        protected void updateItem(Person person, boolean empty) {
+            super.updateItem(person, empty);
+            setText(null);
+            if (empty || person == null) {
+                setGraphic(null);
+                return;
+            }
+
+            Label avatar = new Label(initials(person.getName().getFullName()));
+            avatar.getStyleClass().addAll("event-member-avatar", getAvatarColorClass(person));
+
+            Label name = new Label(person.getName().getFullName());
+            name.setWrapText(true);
+            name.setMinWidth(0);
+            name.getStyleClass().add("event-member-name");
+
+            FlowPane identityLine = new FlowPane(8, 4);
+            identityLine.setAlignment(Pos.CENTER_LEFT);
+            identityLine.getStyleClass().add("event-member-identity");
+            identityLine.getChildren().add(name);
+            person.getTags().stream()
+                    .sorted((left, right) -> String.CASE_INSENSITIVE_ORDER.compare(
+                            left.getTagName(), right.getTagName()))
+                    .map(Tag::getTagName)
+                    .map(MainWindow.this::createMemberTag)
+                    .forEach(identityLine.getChildren()::add);
+
+            Label subtitle = new Label(formatMemberDetails(person));
+            subtitle.setWrapText(true);
+            subtitle.setMinWidth(0);
+            subtitle.getStyleClass().add("event-member-metadata");
+
+            VBox details = new VBox(4, identityLine, subtitle);
+            details.getStyleClass().add("event-member-details");
+            HBox.setHgrow(details, Priority.ALWAYS);
+
+            HBox row = new HBox(12, avatar, details);
+            row.getStyleClass().add("tag-member-row");
+            setGraphic(row);
+        }
     }
 
     /**
      * Sets the default size based on {@code guiSettings}.
      */
     private void setWindowDefaultSize(GuiSettings guiSettings) {
-        primaryStage.setHeight(guiSettings.getWindowHeight());
-        primaryStage.setWidth(guiSettings.getWindowWidth());
+        primaryStage.setHeight(Math.max(guiSettings.getWindowHeight(), primaryStage.getMinHeight()));
+        primaryStage.setWidth(Math.max(guiSettings.getWindowWidth(), primaryStage.getMinWidth()));
         if (guiSettings.getWindowCoordinates() != null) {
             primaryStage.setX(guiSettings.getWindowCoordinates().getX());
             primaryStage.setY(guiSettings.getWindowCoordinates().getY());
@@ -202,6 +426,7 @@ public class MainWindow extends UiPart<Stage> {
     }
 
     void show() {
+        primaryStage.setMaximized(true);
         primaryStage.show();
     }
 
