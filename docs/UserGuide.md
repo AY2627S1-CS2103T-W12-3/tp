@@ -288,12 +288,18 @@ Examples:
 
 Success: `Deleted Event Final Concert.`
 
-If the event does not exist, the command reports `Event {EVENT_NAME} does not exist.`
-An event name longer than 100 characters reports
-`Event name must not exceed 100 characters. Example: evn/Final Concert`.
-An invalid character reports `Invalid event name. Use letters, digits, spaces, or punctuation. Example: evn/Final-Concert`.
-An unknown parameter reports `Unknown parameter: {PREFIX}.`.
-If saving fails, the event and existing data file remain unchanged.
+| Condition | Error message |
+|---|---|
+| `evn/` is missing, or there is text before `evn/`. | `Invalid command format.` |
+| The event name is empty or contains only whitespace. | `Event name must not be empty. Example: evn/Final Concert` |
+| No saved event has the supplied name, ignoring case. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
+| The event name is longer than 100 characters. | `Event name must not exceed 100 characters. Example: evn/Final Concert` |
+| The event name contains a line break or other control character. | `Invalid event name. Use letters, digits, spaces, or punctuation. Example: evn/Final-Concert` |
+| `evn/` is repeated. | `Parameter evn/ may only be specified once.` |
+| An unknown parameter is used. | `Unknown parameter: {PREFIX}.` |
+
+If saving fails, the command reports `Event could not be deleted. No changes were made.`
+The event and existing data file remain unchanged.
 
 ### Assigning members to an event: `assign`
 
