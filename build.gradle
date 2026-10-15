@@ -29,21 +29,49 @@ test {
     finalizedBy jacocoTestReport
 }
 
-task coverage(type: JacocoReport) {
-    dependsOn test
-    sourceDirectories.from files(sourceSets.main.allSource.srcDirs)
-    classDirectories.from files(sourceSets.main.output)
-    executionData.from files(jacocoTestReport.executionData)
+// Minimum line and branch coverage that `check` (and therefore CI) enforces. Raise it as coverage improves.
+def minimumCoverage = 0.90
+
+// Makes a JaCoCo task read the main code and the coverage data recorded by the tests.
+def readTestCoverage = { task ->
+    task.dependsOn test
+    task.sourceDirectories.from files(sourceSets.main.allSource.srcDirs)
+    task.classDirectories.from files(sourceSets.main.output)
+    task.executionData.from files(jacocoTestReport.executionData)
     afterEvaluate {
-        classDirectories.from files(classDirectories.files.collect {
+        task.classDirectories.from files(task.classDirectories.files.collect {
             fileTree(dir: it, exclude: ['**/*.jar'])
         })
     }
+}
+
+task coverage(type: JacocoReport) {
+    readTestCoverage(it)
     reports {
         html.required = true
         xml.required = true
     }
 }
+
+task coverageVerification(type: JacocoCoverageVerification) {
+    readTestCoverage(it)
+    violationRules {
+        rule {
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = minimumCoverage
+            }
+            limit {
+                counter = 'BRANCH'
+                value = 'COVEREDRATIO'
+                minimum = minimumCoverage
+            }
+        }
+    }
+}
+
+check.dependsOn coverageVerification
 
 dependencies {
     String jUnitVersion = '5.14.4'
