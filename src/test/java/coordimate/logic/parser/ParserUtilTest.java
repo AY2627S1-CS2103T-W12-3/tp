@@ -241,7 +241,7 @@ public class ParserUtilTest {
     public void parseEventName_variousValues() throws Exception {
         assertThrows(NullPointerException.class, () -> ParserUtil.parseEventName(null));
         assertThrows(ParseException.class, Event.MESSAGE_EMPTY_NAME, () -> ParserUtil.parseEventName(WHITESPACE));
-        assertThrows(ParseException.class, Event.MESSAGE_NAME_CONSTRAINTS, () ->
+        assertThrows(ParseException.class, Event.MESSAGE_NAME_LENGTH_CONSTRAINTS, () ->
                 ParserUtil.parseEventName("E".repeat(Event.MAX_NAME_LENGTH + 1)));
         assertThrows(ParseException.class, Event.MESSAGE_NAME_CONSTRAINTS, () ->
                 ParserUtil.parseEventName("Final\u0007Concert"));

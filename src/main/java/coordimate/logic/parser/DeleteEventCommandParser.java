@@ -14,7 +14,7 @@ import coordimate.logic.parser.exceptions.ParseException;
  */
 public class DeleteEventCommandParser implements Parser<DeleteEventCommand> {
     public static final String MESSAGE_UNKNOWN_PARAMETER =
-            "Unknown parameter.\n" + DeleteEventCommand.MESSAGE_USAGE;
+            Messages.MESSAGE_UNKNOWN_PARAMETER + "\n" + DeleteEventCommand.MESSAGE_USAGE;
     public static final String MESSAGE_REPEATED_PARAMETER =
             Messages.MESSAGE_REPEATED_PARAMETER + "\n" + DeleteEventCommand.MESSAGE_USAGE;
 
@@ -25,17 +25,17 @@ public class DeleteEventCommandParser implements Parser<DeleteEventCommand> {
         int valueStart = -1;
         while (matcher.find()) {
             if (!PREFIX_EVENT_NAME.toString().equals(matcher.group())) {
-                throw new ParseException(MESSAGE_UNKNOWN_PARAMETER);
+                throw new ParseException(String.format(MESSAGE_UNKNOWN_PARAMETER, matcher.group()));
             }
             if (valueStart >= 0) {
-                throw new ParseException(MESSAGE_REPEATED_PARAMETER);
+                throw new ParseException(String.format(MESSAGE_REPEATED_PARAMETER, PREFIX_EVENT_NAME));
             }
             if (!args.substring(0, matcher.start()).isBlank()) {
                 throw createInvalidFormatException();
             }
             valueStart = matcher.end();
         }
-        if (valueStart < 0 || args.substring(valueStart).isBlank()) {
+        if (valueStart < 0) {
             throw createInvalidFormatException();
         }
         return new DeleteEventCommand(ParserUtil.parseEventName(args.substring(valueStart)));

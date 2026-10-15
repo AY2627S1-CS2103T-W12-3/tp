@@ -28,7 +28,7 @@ final class PrefixParser {
         Matcher matcher = pattern.matcher(args);
         while (matcher.find()) {
             if (!allowedPrefixes.contains(matcher.group())) {
-                throw new ParseException(unknownParameterMessage);
+                throw new ParseException(String.format(unknownParameterMessage, matcher.group()));
             }
         }
     }
@@ -54,10 +54,10 @@ final class PrefixParser {
             }
             String prefix = matcher.group();
             if (!allowedPrefixes.contains(prefix)) {
-                throw new ParseException(unknownParameterMessage);
+                throw new ParseException(String.format(unknownParameterMessage, prefix));
             }
             if (values.containsKey(prefix)) {
-                throw new ParseException(repeatedParameterMessage);
+                throw new ParseException(String.format(repeatedParameterMessage, prefix));
             }
             previousPrefix = prefix;
             valueStart = matcher.end();

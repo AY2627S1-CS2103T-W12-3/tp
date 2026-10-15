@@ -1,5 +1,6 @@
 package coordimate.logic.parser;
 
+import static coordimate.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -33,17 +34,20 @@ public class AddEventCommandParserTest {
     public void parse_emptyValues_specificErrors() {
         assertError(" evn/ st/09-10-2026 et/10-10-2026", Event.MESSAGE_EMPTY_NAME);
         assertError(" evn/" + "E".repeat(Event.MAX_NAME_LENGTH + 1) + " st/09-10-2026 et/10-10-2026",
-                Event.MESSAGE_NAME_CONSTRAINTS);
-        assertError(" evn/Fair st/ et/10-10-2026", EventTime.MESSAGE_EMPTY);
-        assertError(" evn/Fair st/09-10-2026 et/", EventTime.MESSAGE_EMPTY);
-        assertError(" evn/Fair et/10-10-2026", EventTime.MESSAGE_EMPTY);
-        assertError(" evn/Fair st/09-10-2026", EventTime.MESSAGE_EMPTY);
+                Event.MESSAGE_NAME_LENGTH_CONSTRAINTS);
+        assertError(" evn/Fair st/ et/10-10-2026", "Start time must not be empty. Example: st/17-09-2026 16:30");
+        assertError(" evn/Fair st/09-10-2026 et/", "End time must not be empty. Example: et/17-09-2026 18:30");
+        assertError(" evn/Fair et/10-10-2026",
+                String.format(MESSAGE_INVALID_COMMAND_FORMAT, AddEventCommand.MESSAGE_USAGE));
+        assertError(" evn/Fair st/09-10-2026",
+                String.format(MESSAGE_INVALID_COMMAND_FORMAT, AddEventCommand.MESSAGE_USAGE));
     }
 
     @Test
     public void parse_incorrectDates_formatError() {
         assertError(" evn/Fair st/31-02-2026 et/10-10-2026", EventTime.MESSAGE_CONSTRAINTS);
-        assertError(" evn/Fair st/09-10-2026 et/10-10-2026 24:00", EventTime.MESSAGE_CONSTRAINTS);
+        assertError(" evn/Fair st/09-10-2026 et/10-10-2026 24:00",
+                EventTime.MESSAGE_CONSTRAINTS.replace("Example: st/", "Example: et/"));
     }
 
     @Test
@@ -55,15 +59,17 @@ public class AddEventCommandParserTest {
     @Test
     public void parse_unknownOrRepeatedParameters_rejected() {
         String valid = " evn/Fair st/09-10-2026 et/10-10-2026";
-        assertError(valid + " r/Logistics", AddEventCommandParser.MESSAGE_UNKNOWN_PARAMETER);
-        assertError(" x/foo" + valid, AddEventCommandParser.MESSAGE_UNKNOWN_PARAMETER);
+        assertError(valid + " r/Logistics", String.format(AddEventCommandParser.MESSAGE_UNKNOWN_PARAMETER, "r/"));
+        assertError(" x/foo" + valid, String.format(AddEventCommandParser.MESSAGE_UNKNOWN_PARAMETER, "x/"));
         for (String repeated : new String[] {" evn/Fair", " st/09-10-2026", " et/10-10-2026"}) {
-            assertError(valid + repeated, AddEventCommandParser.MESSAGE_REPEATED_PARAMETER);
+            String prefix = repeated.substring(0, repeated.indexOf('/') + 1).strip();
+            assertError(valid + repeated,
+                    String.format(AddEventCommandParser.MESSAGE_REPEATED_PARAMETER, prefix));
         }
         assertError(" evn/Fair st/09-10-2026 /et 10-10-2026",
-                AddEventCommandParser.MESSAGE_UNKNOWN_PARAMETER);
+                String.format(AddEventCommandParser.MESSAGE_UNKNOWN_PARAMETER, "/et"));
         assertError(" evn/Fair evn/Fair st/09-10-2026 et/10-10-2026",
-                AddEventCommandParser.MESSAGE_REPEATED_PARAMETER);
+                String.format(AddEventCommandParser.MESSAGE_REPEATED_PARAMETER, "evn/"));
         assertThrows(ParseException.class, () -> parser.parse("unexpected" + valid));
         assertThrows(ParseException.class, () -> parser.parse(" st/09-10-2026 et/10-10-2026"));
     }

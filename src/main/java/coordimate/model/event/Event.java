@@ -17,9 +17,11 @@ import coordimate.model.person.PrintableText;
  */
 public final class Event {
     public static final int MAX_NAME_LENGTH = 100;
-    public static final String MESSAGE_EMPTY_NAME = "Event name must not be empty.";
-    public static final String MESSAGE_NAME_CONSTRAINTS = "Invalid event name. Use 1 to " + MAX_NAME_LENGTH
-            + " printable characters. Example: evn/Final Concert";
+    public static final String MESSAGE_EMPTY_NAME = "Event name must not be empty. Example: evn/Final Concert";
+    public static final String MESSAGE_NAME_LENGTH_CONSTRAINTS = "Event name must not exceed " + MAX_NAME_LENGTH
+            + " characters. Example: evn/Final Concert";
+    public static final String MESSAGE_NAME_CONSTRAINTS = "Invalid event name. Use letters, digits, spaces, "
+            + "or punctuation. Example: evn/Final-Concert";
     public static final String MESSAGE_INVALID_TIME_ORDER = "Start time must not be after end time. "
             + "Example: st/17-09-2026 16:30 et/17-09-2026 18:30";
     public static final String MESSAGE_DUPLICATE_MEMBER = "An event must not list the same member more than once.";
@@ -57,6 +59,9 @@ public final class Event {
         this.name = requireNonNull(name).strip();
         if (this.name.isEmpty()) {
             throw new IllegalArgumentException(MESSAGE_EMPTY_NAME);
+        }
+        if (this.name.codePointCount(0, this.name.length()) > MAX_NAME_LENGTH) {
+            throw new IllegalArgumentException(MESSAGE_NAME_LENGTH_CONSTRAINTS);
         }
         if (!isValidName(this.name)) {
             throw new IllegalArgumentException(MESSAGE_NAME_CONSTRAINTS);

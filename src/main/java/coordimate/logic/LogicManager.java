@@ -64,6 +64,17 @@ public class LogicManager implements Logic {
 
     @Override
     public CommandResult execute(String commandText) throws CommandException, ParseException {
+        String commandWord = pendingDelete == null ? commandText.strip().split("\\s+", 2)[0]
+                : DeleteCommand.COMMAND_WORD;
+        try {
+            return executeCommand(commandText);
+        } catch (CommandException e) {
+            throw new CommandException(Messages.withUsage(e.getMessage(), CoordiMateParser.getUsage(commandWord)),
+                    e.getCause() == null ? e : e.getCause());
+        }
+    }
+
+    private CommandResult executeCommand(String commandText) throws CommandException, ParseException {
         logger.info("----------------[USER COMMAND][" + commandText + "]");
 
         if (pendingDelete != null) {

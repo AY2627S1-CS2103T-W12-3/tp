@@ -137,7 +137,8 @@ public class DeleteCommandIntegrationTest {
 
             CommandException exception = assertThrows(CommandException.class, () -> logic.execute("y"));
 
-            assertEquals(DeleteCommand.MESSAGE_SAVE_ERROR, exception.getMessage());
+            assertEquals(Messages.withUsage(DeleteCommand.MESSAGE_SAVE_ERROR,
+                    DeleteCommand.MESSAGE_USAGE), exception.getMessage());
             assertSame(failure, exception.getCause());
             assertFalse(logic.isAwaitingDeleteConfirmation());
             assertEquals(beforeModel, model.getCoordiMate());
@@ -154,7 +155,8 @@ public class DeleteCommandIntegrationTest {
         Logic logic = newLogic(model, new JsonCoordiMateStorage(path));
 
         CommandException firstError = assertThrows(CommandException.class, () -> logic.execute("delete 1"));
-        assertEquals(DeleteCommand.MESSAGE_LOAD_ERROR, firstError.getMessage());
+        assertEquals(Messages.withUsage(DeleteCommand.MESSAGE_LOAD_ERROR,
+                DeleteCommand.MESSAGE_USAGE), firstError.getMessage());
         assertTrue(firstError.getCause() instanceof DataLoadingException);
         assertFalse(logic.isAwaitingDeleteConfirmation());
         assertEquals(beforeModel, model.getCoordiMate());
@@ -163,7 +165,8 @@ public class DeleteCommandIntegrationTest {
         logic.execute("delete 1");
         Files.writeString(path, "not json");
         CommandException secondError = assertThrows(CommandException.class, () -> logic.execute("y"));
-        assertEquals(DeleteCommand.MESSAGE_LOAD_ERROR, secondError.getMessage());
+        assertEquals(Messages.withUsage(DeleteCommand.MESSAGE_LOAD_ERROR,
+                DeleteCommand.MESSAGE_USAGE), secondError.getMessage());
         assertFalse(logic.isAwaitingDeleteConfirmation());
         assertEquals(beforeModel, model.getCoordiMate());
         assertEquals("not json", Files.readString(path));

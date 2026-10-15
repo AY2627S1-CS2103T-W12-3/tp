@@ -59,7 +59,8 @@ public class ClearIntegrationTest {
 
         CommandException exception = assertThrows(CommandException.class, () ->
                 newLogic(model, failingStorage).execute("clear"));
-        assertEquals(ClearCommand.MESSAGE_SAVE_ERROR, exception.getMessage());
+        assertEquals(Messages.withUsage(ClearCommand.MESSAGE_SAVE_ERROR,
+                ClearCommand.MESSAGE_USAGE), exception.getMessage());
         assertSame(failure, exception.getCause());
         assertEquals(beforeModel, model.getCoordiMate());
         assertEquals(beforeFile, Files.readString(path));
@@ -75,7 +76,8 @@ public class ClearIntegrationTest {
 
         CommandException exception = assertThrows(CommandException.class, () ->
                 newLogic(model, new JsonCoordiMateStorage(path)).execute("clear"));
-        assertEquals(ClearCommand.MESSAGE_LOAD_ERROR, exception.getMessage());
+        assertEquals(Messages.withUsage(ClearCommand.MESSAGE_LOAD_ERROR,
+                ClearCommand.MESSAGE_USAGE), exception.getMessage());
         assertEquals(beforeModel, model.getCoordiMate());
         assertEquals(invalidFile, Files.readString(path));
     }

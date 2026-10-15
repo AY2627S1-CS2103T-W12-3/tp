@@ -69,7 +69,7 @@ public class EditEventIntegrationTest {
         logic.execute("addevent evn/NUS Student Life Fair st/09-10-2026 et/10-10-2026");
         CoordiMate before = new CoordiMate(model.getCoordiMate());
         String beforeFile = Files.readString(storage.getCoordiMateFilePath());
-        assertEquals(EditEventCommand.MESSAGE_DUPLICATE_EVENT,
+        assertEquals(Messages.withUsage(EditEventCommand.MESSAGE_DUPLICATE_EVENT, EditEventCommand.MESSAGE_USAGE),
                 assertThrows(CommandException.class, () -> logic.execute(EDIT)).getMessage());
         assertEquals(before, model.getCoordiMate());
         assertEquals(beforeFile, Files.readString(storage.getCoordiMateFilePath()));
@@ -88,7 +88,7 @@ public class EditEventIntegrationTest {
                 throw new IOException("Disk full");
             }
         };
-        assertEquals(EditEventCommand.MESSAGE_SAVE_ERROR,
+        assertEquals(Messages.withUsage(EditEventCommand.MESSAGE_SAVE_ERROR, EditEventCommand.MESSAGE_USAGE),
                 assertThrows(CommandException.class, () -> newLogic(model, failingStorage).execute(EDIT)).getMessage());
         assertEquals(before, model.getCoordiMate());
         assertEquals(beforeFile, Files.readString(path));

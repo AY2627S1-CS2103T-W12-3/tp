@@ -93,13 +93,13 @@ public class EventTest {
     public void constructor_invalidName_rejectedWithConstraints() {
         assertEquals(Event.MESSAGE_EMPTY_NAME, assertThrows(IllegalArgumentException.class, () ->
                 new Event(" ", date, time)).getMessage());
-        assertEquals(Event.MESSAGE_NAME_CONSTRAINTS, assertThrows(IllegalArgumentException.class, () ->
+        assertEquals(Event.MESSAGE_NAME_LENGTH_CONSTRAINTS, assertThrows(IllegalArgumentException.class, () ->
                 new Event("E".repeat(Event.MAX_NAME_LENGTH + 1), date, time)).getMessage());
         assertEquals(Event.MESSAGE_NAME_CONSTRAINTS, assertThrows(IllegalArgumentException.class, () ->
                 new Event("Final\u0007Concert", date, time)).getMessage());
         assertEquals("E".repeat(Event.MAX_NAME_LENGTH),
                 new Event("E".repeat(Event.MAX_NAME_LENGTH), date, time).getName());
-        assertTrue(Event.MESSAGE_NAME_CONSTRAINTS.contains(String.valueOf(Event.MAX_NAME_LENGTH)));
+        assertTrue(Event.MESSAGE_NAME_LENGTH_CONSTRAINTS.contains(String.valueOf(Event.MAX_NAME_LENGTH)));
     }
 
     @Test

@@ -67,7 +67,8 @@ public class UnassignIntegrationTest {
         assertEquals(List.of(ALICE.getName(), BENSON.getName()),
                 model.getCoordiMate().getEventList().getFirst().getMembers());
         assertEquals(List.of(CARL), model.getFilteredPersonList());
-        assertEquals(String.format(UnassignCommand.MESSAGE_CONTACT_NOT_FOUND, 2),
+        assertEquals(Messages.withUsage(String.format(UnassignCommand.MESSAGE_CONTACT_NOT_FOUND,
+                2), UnassignCommand.MESSAGE_USAGE),
                 assertThrows(CommandException.class, () -> logic.execute("unassign evn/Final Concert c/2"))
                         .getMessage());
     }
@@ -87,7 +88,8 @@ public class UnassignIntegrationTest {
                 throw new IOException("Disk full");
             }
         };
-        assertEquals(UnassignCommand.MESSAGE_SAVE_ERROR, assertThrows(CommandException.class, () ->
+        assertEquals(Messages.withUsage(UnassignCommand.MESSAGE_SAVE_ERROR,
+                UnassignCommand.MESSAGE_USAGE), assertThrows(CommandException.class, () ->
                 newLogic(model, failingStorage).execute("unassign evn/Final Concert c/1")).getMessage());
         assertEquals(before, model.getCoordiMate());
         assertEquals(beforeFile, Files.readString(path));

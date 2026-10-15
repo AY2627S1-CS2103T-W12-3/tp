@@ -14,7 +14,8 @@ import coordimate.model.tag.Tag;
  * Parses input arguments and creates a {@link CreateTagCommand}.
  */
 public class CreateTagCommandParser implements Parser<CreateTagCommand> {
-    public static final String MESSAGE_UNKNOWN_PARAMETER = "Unknown parameter.\n" + CreateTagCommand.MESSAGE_USAGE;
+    public static final String MESSAGE_UNKNOWN_PARAMETER =
+            Messages.MESSAGE_UNKNOWN_PARAMETER + "\n" + CreateTagCommand.MESSAGE_USAGE;
     public static final String MESSAGE_REPEATED_PARAMETER =
             Messages.MESSAGE_REPEATED_PARAMETER + "\n" + CreateTagCommand.MESSAGE_USAGE;
 
@@ -35,13 +36,11 @@ public class CreateTagCommandParser implements Parser<CreateTagCommand> {
             throw ParserUtil.createInvalidFormatException(CreateTagCommand.MESSAGE_USAGE);
         }
         if (argMultimap.getAllValues(PREFIX_TAG).size() > 1) {
-            throw new ParseException(MESSAGE_REPEATED_PARAMETER);
+            throw new ParseException(String.format(MESSAGE_REPEATED_PARAMETER, PREFIX_TAG));
         }
 
         String tagName = argMultimap.getValue(PREFIX_TAG).orElseThrow();
-        if (tagName.isEmpty()) {
-            throw ParserUtil.createInvalidFormatException(CreateTagCommand.MESSAGE_USAGE);
-        }
+        ParserUtil.requireValue(tagName, "Tag name", "t/Publicity");
         Tag tag = ParserUtil.parseTag(tagName);
         return new CreateTagCommand(tag);
     }

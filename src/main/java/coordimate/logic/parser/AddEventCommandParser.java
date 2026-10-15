@@ -19,7 +19,7 @@ import coordimate.model.event.EventTime;
  */
 public class AddEventCommandParser implements Parser<AddEventCommand> {
     public static final String MESSAGE_UNKNOWN_PARAMETER =
-            "Unknown parameter.\n" + AddEventCommand.MESSAGE_USAGE;
+            Messages.MESSAGE_UNKNOWN_PARAMETER + "\n" + AddEventCommand.MESSAGE_USAGE;
     public static final String MESSAGE_REPEATED_PARAMETER =
             Messages.MESSAGE_REPEATED_REQUIRED_PARAMETER + "\n" + AddEventCommand.MESSAGE_USAGE;
 
@@ -36,13 +36,13 @@ public class AddEventCommandParser implements Parser<AddEventCommand> {
             throw createInvalidFormatException();
         }
         String name = ParserUtil.parseEventName(values.get(PREFIX_EVENT_NAME.toString()));
-        String start = values.getOrDefault(PREFIX_START_TIME.toString(), "");
-        String end = values.getOrDefault(PREFIX_END_TIME.toString(), "");
-        if (start.isEmpty() || end.isEmpty()) {
-            throw new ParseException(EventTime.MESSAGE_EMPTY);
+        if (!values.containsKey(PREFIX_START_TIME.toString()) || !values.containsKey(PREFIX_END_TIME.toString())) {
+            throw createInvalidFormatException();
         }
+        EventTime start = ParserUtil.parseEventTime(values.get(PREFIX_START_TIME.toString()), PREFIX_START_TIME);
+        EventTime end = ParserUtil.parseEventTime(values.get(PREFIX_END_TIME.toString()), PREFIX_END_TIME);
         try {
-            return new AddEventCommand(new Event(name, new EventTime(start), new EventTime(end)));
+            return new AddEventCommand(new Event(name, start, end));
         } catch (IllegalArgumentException e) {
             throw new ParseException(e.getMessage(), e);
         }

@@ -37,7 +37,7 @@ public class EditCommandParser implements Parser<EditCommand> {
     public static final String MESSAGE_REPEATED_PARAMETER =
             Messages.MESSAGE_REPEATED_PARAMETER + "\n" + EditCommand.MESSAGE_USAGE;
     public static final String MESSAGE_UNKNOWN_PARAMETER =
-            "Unknown parameter.\n" + EditCommand.MESSAGE_USAGE;
+            Messages.MESSAGE_UNKNOWN_PARAMETER + "\n" + EditCommand.MESSAGE_USAGE;
     public static final String MESSAGE_MULTIPLE_IDENTIFIERS =
             "Specify exactly one contact identifier.\n" + EditCommand.MESSAGE_USAGE;
     public static final String MESSAGE_EMPTY_TARGET =
@@ -130,14 +130,11 @@ public class EditCommandParser implements Parser<EditCommand> {
     }
 
     private static void rejectRepeatedParameters(ArgumentMultimap arguments) throws ParseException {
-        if (arguments.getAllValues(PREFIX_NAME).size() > 1 || arguments.getAllValues(PREFIX_PHONE).size() > 1
-                || arguments.getAllValues(PREFIX_EMAIL).size() > 1 || arguments.getAllValues(PREFIX_ROLE).size() > 1
-                || arguments.getAllValues(PREFIX_BIRTHDAY).size() > 1
-                || arguments.getAllValues(PREFIX_ADDRESS).size() > 1
-                || arguments.getAllValues(PREFIX_ORGANISATION).size() > 1
-                || arguments.getAllValues(PREFIX_NOTE).size() > 1
-                || arguments.getAllValues(PREFIX_TARGET).size() > 1) {
-            throw new ParseException(MESSAGE_REPEATED_PARAMETER);
+        for (Prefix prefix : new Prefix[] {PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL, PREFIX_ROLE,
+            PREFIX_BIRTHDAY, PREFIX_ADDRESS, PREFIX_ORGANISATION, PREFIX_NOTE, PREFIX_TARGET}) {
+            if (arguments.getAllValues(prefix).size() > 1) {
+                throw new ParseException(String.format(MESSAGE_REPEATED_PARAMETER, prefix));
+            }
         }
     }
 
@@ -166,10 +163,12 @@ public class EditCommandParser implements Parser<EditCommand> {
         for (PrefixedValue argument : arguments.getArgumentsInOrder()) {
             if (argument.prefix().equals(PREFIX_ADD_TAG)) {
                 descriptor.addTagOperation(
-                        new TagOperation(TagOperationType.ADD, ParserUtil.parseTag(argument.value())));
+                        new TagOperation(TagOperationType.ADD, ParserUtil.parseTag(argument.value(),
+                                argument.prefix())));
             } else if (argument.prefix().equals(PREFIX_REMOVE_TAG)) {
                 descriptor.addTagOperation(
-                        new TagOperation(TagOperationType.REMOVE, ParserUtil.parseTag(argument.value())));
+                        new TagOperation(TagOperationType.REMOVE, ParserUtil.parseTag(argument.value(),
+                                argument.prefix())));
             }
         }
     }

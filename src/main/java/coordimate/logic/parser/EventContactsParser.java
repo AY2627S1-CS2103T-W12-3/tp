@@ -74,8 +74,10 @@ final class EventContactsParser {
         if (!argMultimap.getPreamble().isEmpty() || isMissingPrefix) {
             throw ParserUtil.createInvalidFormatException(usage);
         }
-        if (Arrays.stream(allowed).anyMatch(prefix -> argMultimap.getAllValues(prefix).size() > 1)) {
-            throw new ParseException(MESSAGE_REPEATED_PARAMETER + "\n" + usage);
+        for (Prefix prefix : allowed) {
+            if (argMultimap.getAllValues(prefix).size() > 1) {
+                throw new ParseException(String.format(MESSAGE_REPEATED_PARAMETER, prefix) + "\n" + usage);
+            }
         }
         return argMultimap;
     }

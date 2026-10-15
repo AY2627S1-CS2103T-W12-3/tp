@@ -84,7 +84,7 @@ public class JsonAdaptedEventTest {
         String[] messages = {
             Event.MESSAGE_EMPTY_NAME, EventTime.MESSAGE_CONSTRAINTS, EventTime.MESSAGE_CONSTRAINTS,
             EventTime.MESSAGE_EMPTY, EventTime.MESSAGE_EMPTY, Event.MESSAGE_INVALID_TIME_ORDER,
-            Event.MESSAGE_NAME_CONSTRAINTS, Event.MESSAGE_NAME_CONSTRAINTS
+            Event.MESSAGE_NAME_LENGTH_CONSTRAINTS, Event.MESSAGE_NAME_CONSTRAINTS
         };
         for (int i = 0; i < events.length; i++) {
             assertEquals(messages[i], assertThrows(IllegalValueException.class, events[i]::toModelType).getMessage());

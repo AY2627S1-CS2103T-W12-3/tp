@@ -8,6 +8,7 @@ import static java.util.Objects.requireNonNull;
 import java.util.Set;
 
 import coordimate.commons.core.index.Index;
+import coordimate.logic.Messages;
 import coordimate.logic.commands.DeleteCommand;
 import coordimate.logic.commands.DeleteCommand.IdentifierType;
 import coordimate.logic.parser.exceptions.ParseException;
@@ -15,7 +16,7 @@ import coordimate.logic.parser.exceptions.ParseException;
 /** Parses a single displayed index, name, phone number, or email address for deletion. */
 public class DeleteCommandParser implements Parser<DeleteCommand> {
     public static final String MESSAGE_UNKNOWN_PARAMETER =
-            "Unknown parameter.\n" + DeleteCommand.MESSAGE_USAGE;
+            Messages.MESSAGE_UNKNOWN_PARAMETER + "\n" + DeleteCommand.MESSAGE_USAGE;
     public static final String MESSAGE_MULTIPLE_IDENTIFIERS =
             "Specify exactly one contact identifier. Example: delete n/Aisha Tan";
     public static final String MESSAGE_INVALID_INDEX = "Invalid contact index. Example: delete 3";
@@ -32,6 +33,11 @@ public class DeleteCommandParser implements Parser<DeleteCommand> {
         PrefixParser.rejectUnknownParameters(args, PrefixParser.CONTACT_PARAMETER_PATTERN,
                 ALLOWED_PREFIXES, MESSAGE_UNKNOWN_PARAMETER);
         ArgumentMultimap arguments = ArgumentTokenizer.tokenize(" " + args, PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL);
+        try {
+            arguments.verifyNoDuplicatePrefixesFor(PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL);
+        } catch (ParseException e) {
+            throw new ParseException(Messages.withUsage(e.getMessage(), DeleteCommand.MESSAGE_USAGE), e);
+        }
         int prefixCount = arguments.getAllValues(PREFIX_NAME).size()
                 + arguments.getAllValues(PREFIX_PHONE).size() + arguments.getAllValues(PREFIX_EMAIL).size();
         if (prefixCount > 1 || (prefixCount == 1 && !arguments.getPreamble().isEmpty())) {
@@ -55,9 +61,12 @@ public class DeleteCommandParser implements Parser<DeleteCommand> {
     }
 
     private static DeleteCommand createDeleteCommandByDetail(IdentifierType type, String value) throws ParseException {
-        if (value.isBlank()) {
-            throw ParserUtil.createInvalidFormatException(DeleteCommand.MESSAGE_USAGE);
-        }
+        String example = switch (type) {
+            case NAME -> "n/Aisha Tan";
+            case PHONE -> "p/+6591234567";
+            case EMAIL -> "e/aish@example.com";
+        };
+        ParserUtil.requireValue(value, "Contact identifier", example);
         return new DeleteCommand(type, value);
     }
 }

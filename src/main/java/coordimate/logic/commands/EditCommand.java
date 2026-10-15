@@ -74,7 +74,7 @@ public class EditCommand extends Command {
             "This update conflicts with another saved contact. No changes were made.";
     public static final String MESSAGE_SAVE_ERROR = "Contact could not be saved. No changes were made.";
     public static final String MESSAGE_LOAD_ERROR =
-            "Contact data could not be loaded. Please check the local data file.";
+            Messages.MESSAGE_LOAD_ERROR;
     public static final String MESSAGE_MEMBER_NAME_CONFLICT =
             "Cannot rename this contact because an event already has a member with that name. No changes were made.";
     public static final String MESSAGE_NO_MATCH = Messages.MESSAGE_CONTACT_NO_MATCH;

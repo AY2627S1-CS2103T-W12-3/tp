@@ -64,7 +64,8 @@ public class AddCommandPersistenceTest {
         CommandException exception = assertThrows(CommandException.class, () ->
                 logic.execute("add n/  aMy bEe  p/82345678 e/new@example.com r/Logistics"));
 
-        assertEquals(AddCommand.MESSAGE_DUPLICATE_PERSON, exception.getMessage());
+        assertEquals(Messages.withUsage(AddCommand.MESSAGE_DUPLICATE_PERSON,
+                AddCommand.MESSAGE_USAGE), exception.getMessage());
         assertEquals(beforeModel, model.getCoordiMate());
         assertEquals(beforeFile, Files.readString(path));
     }
@@ -89,7 +90,8 @@ public class AddCommandPersistenceTest {
 
             Logic logic = newLogic(model, storage);
             CommandException exception = assertThrows(CommandException.class, () -> logic.execute(COMMAND));
-            assertEquals(AddCommand.MESSAGE_SAVE_ERROR, exception.getMessage());
+            assertEquals(Messages.withUsage(AddCommand.MESSAGE_SAVE_ERROR,
+                    AddCommand.MESSAGE_USAGE), exception.getMessage());
             assertSame(failure, exception.getCause());
             assertEquals(beforeModel, model.getCoordiMate());
             assertTrue(model.getFilteredPersonList().isEmpty());
@@ -109,7 +111,8 @@ public class AddCommandPersistenceTest {
 
             Logic logic = newLogic(model, new JsonCoordiMateStorage(path));
             CommandException exception = assertThrows(CommandException.class, () -> logic.execute(COMMAND));
-            assertEquals(AddCommand.MESSAGE_LOAD_ERROR, exception.getMessage());
+            assertEquals(Messages.withUsage(AddCommand.MESSAGE_LOAD_ERROR,
+                    AddCommand.MESSAGE_USAGE), exception.getMessage());
             assertEquals(beforeModel, model.getCoordiMate());
             assertEquals(contents, Files.readString(path));
         }

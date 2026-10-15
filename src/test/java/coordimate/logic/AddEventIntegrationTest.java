@@ -41,10 +41,10 @@ public class AddEventIntegrationTest {
         assertEquals(model.getCoordiMate(), storage.readCoordiMate().orElseThrow());
         ModelManager reloaded = new ModelManager(storage.readCoordiMate().orElseThrow(), model.getUserPrefs());
         assertEquals("Fair", reloaded.getCoordiMate().getEventList().getFirst().getName());
-        assertEquals(AddEventCommand.MESSAGE_DUPLICATE_EVENT,
+        assertEquals(Messages.withUsage(AddEventCommand.MESSAGE_DUPLICATE_EVENT, AddEventCommand.MESSAGE_USAGE),
                 assertThrows(CommandException.class, () -> newLogic(reloaded, storage).execute(COMMAND)).getMessage());
         String differentCase = "addevent evn/fair st/11-10-2026 et/12-10-2026";
-        assertEquals(AddEventCommand.MESSAGE_DUPLICATE_EVENT,
+        assertEquals(Messages.withUsage(AddEventCommand.MESSAGE_DUPLICATE_EVENT, AddEventCommand.MESSAGE_USAGE),
                 assertThrows(CommandException.class, () ->
                 newLogic(reloaded, storage).execute(differentCase)).getMessage());
     }
@@ -65,7 +65,7 @@ public class AddEventIntegrationTest {
                     throw failure;
                 }
             };
-            assertEquals(AddEventCommand.MESSAGE_SAVE_ERROR,
+            assertEquals(Messages.withUsage(AddEventCommand.MESSAGE_SAVE_ERROR, AddEventCommand.MESSAGE_USAGE),
                     assertThrows(CommandException.class, () -> newLogic(model, storage).execute(COMMAND)).getMessage());
             assertEquals(beforeModel, model.getCoordiMate());
             assertEquals(beforeFile, Files.readString(path));
@@ -81,7 +81,7 @@ public class AddEventIntegrationTest {
         CoordiMate beforeModel = new CoordiMate(model.getCoordiMate());
         String beforeFile = Files.readString(storage.getCoordiMateFilePath());
         String reversed = "addevent evn/Concert st/08-08-2026 18:00 et/08-08-2026 15:00";
-        assertEquals(Event.MESSAGE_INVALID_TIME_ORDER,
+        assertEquals(Messages.withUsage(Event.MESSAGE_INVALID_TIME_ORDER, AddEventCommand.MESSAGE_USAGE),
                 assertThrows(ParseException.class, () -> logic.execute(reversed)).getMessage());
         assertEquals(beforeModel, model.getCoordiMate());
         assertEquals(beforeFile, Files.readString(storage.getCoordiMateFilePath()));
@@ -107,7 +107,7 @@ public class AddEventIntegrationTest {
             Files.writeString(path, contents);
             ModelManager model = new ModelManager();
             Logic logic = newLogic(model, new JsonCoordiMateStorage(path));
-            assertEquals(AddEventCommand.MESSAGE_LOAD_ERROR,
+            assertEquals(Messages.withUsage(AddEventCommand.MESSAGE_LOAD_ERROR, AddEventCommand.MESSAGE_USAGE),
                     assertThrows(CommandException.class, () -> logic.execute(COMMAND)).getMessage());
             assertTrue(model.getCoordiMate().getEventList().isEmpty());
             assertEquals(contents, Files.readString(path));

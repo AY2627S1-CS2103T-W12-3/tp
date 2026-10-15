@@ -48,17 +48,18 @@ public class MarkAttendanceCommandParserTest {
     public void parse_emptyOrInvalidEventName_rejected() {
         assertError(" evn/ mem/Alice Tan att/present", Event.MESSAGE_EMPTY_NAME);
         assertError(" evn/" + "E".repeat(Event.MAX_NAME_LENGTH + 1) + " mem/Alice Tan att/present",
-                Event.MESSAGE_NAME_CONSTRAINTS);
+                Event.MESSAGE_NAME_LENGTH_CONSTRAINTS);
     }
 
     @Test
     public void parse_emptyMemberName_rejected() {
-        assertError(" evn/Final Concert mem/ att/present", INVALID_FORMAT);
+        assertError(" evn/Final Concert mem/ att/present", "Member name must not be empty. Example: mem/Aisha Tan");
     }
 
     @Test
     public void parse_invalidMemberName_rejected() {
-        assertError(" evn/Final Concert mem/Alice! att/present", Name.MESSAGE_CONSTRAINTS);
+        assertError(" evn/Final Concert mem/Alice! att/present",
+                Name.MESSAGE_CONSTRAINTS.replace("Example: n/", "Example: mem/"));
     }
 
     @Test
@@ -66,22 +67,22 @@ public class MarkAttendanceCommandParserTest {
         assertError(" evn/Final Concert mem/Alice Tan att/maybe",
                 MarkAttendanceCommandParser.MESSAGE_INVALID_STATUS);
         assertError(" evn/Final Concert mem/Alice Tan att/",
-                MarkAttendanceCommandParser.MESSAGE_INVALID_STATUS);
+                "Attendance status must not be empty. Example: att/present");
     }
 
     @Test
     public void parse_repeatedParameters_rejected() {
         assertError(" evn/Final Concert evn/Fair mem/Alice Tan att/present",
-                MarkAttendanceCommandParser.MESSAGE_REPEATED_PARAMETER);
+                String.format(MarkAttendanceCommandParser.MESSAGE_REPEATED_PARAMETER, "evn/"));
         assertError(" evn/Final Concert mem/Alice Tan mem/Bob Lim att/present",
-                MarkAttendanceCommandParser.MESSAGE_REPEATED_PARAMETER);
+                String.format(MarkAttendanceCommandParser.MESSAGE_REPEATED_PARAMETER, "mem/"));
     }
 
     @Test
     public void parse_unknownParameters_rejected() {
         String valid = " evn/Final Concert mem/Alice Tan att/present";
-        assertError(valid + " x/1", MarkAttendanceCommandParser.MESSAGE_UNKNOWN_PARAMETER);
-        assertError(" x/1" + valid, MarkAttendanceCommandParser.MESSAGE_UNKNOWN_PARAMETER);
+        assertError(valid + " x/1", String.format(MarkAttendanceCommandParser.MESSAGE_UNKNOWN_PARAMETER, "x/"));
+        assertError(" x/1" + valid, String.format(MarkAttendanceCommandParser.MESSAGE_UNKNOWN_PARAMETER, "x/"));
     }
 
     private void assertError(String input, String message) {

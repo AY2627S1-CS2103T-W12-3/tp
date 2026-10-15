@@ -14,8 +14,8 @@ import coordimate.logic.parser.exceptions.ParseException;
 public class PrefixParserTest {
     private static final Set<String> PREFIXES = Set.of("evn/", "st/");
     private static final String USAGE = "command evn/NAME st/TIME";
-    private static final String UNKNOWN = "Unknown parameter.";
-    private static final String REPEATED = "Repeated parameter.";
+    private static final String UNKNOWN = "Unknown parameter: %s.";
+    private static final String REPEATED = "Parameter %s may only be specified once.";
 
     @Test
     public void parseUniqueParameters_whitespaceAndEmbeddedSlash_preservesValues() throws Exception {
@@ -33,7 +33,8 @@ public class PrefixParserTest {
     @Test
     public void parseUniqueParameters_repeatedPrefix_rejectsAdjacentAndSeparatedDuplicates() {
         for (String input : new String[] {"evn/ evn/Fair", "evn/Fair st/09-10-2026 evn/Concert"}) {
-            assertEquals(REPEATED, assertThrows(ParseException.class, () -> parse(input)).getMessage());
+            assertEquals(String.format(REPEATED,
+                    "evn/"), assertThrows(ParseException.class, () -> parse(input)).getMessage());
         }
     }
 
@@ -41,14 +42,16 @@ public class PrefixParserTest {
     public void parseUniqueParameters_preambleAndUnknownPrefix_preservesErrorPrecedence() {
         assertEquals(String.format(MESSAGE_INVALID_COMMAND_FORMAT, USAGE),
                 assertThrows(ParseException.class, () -> parse("unexpected x/value")).getMessage());
-        assertEquals(UNKNOWN, assertThrows(ParseException.class, () -> parse("evn/Fair /st today")).getMessage());
+        assertEquals(String.format(UNKNOWN,
+                "/st"), assertThrows(ParseException.class, () -> parse("evn/Fair /st today")).getMessage());
     }
 
     @Test
     public void rejectUnknownParameters_contactAndEventSyntax_remainDistinct() throws Exception {
         String input = "evn/Fair /st today";
         PrefixParser.rejectUnknownParameters(input, PrefixParser.CONTACT_PARAMETER_PATTERN, PREFIXES, UNKNOWN);
-        assertEquals(UNKNOWN, assertThrows(ParseException.class, () -> PrefixParser.rejectUnknownParameters(
+        assertEquals(String.format(UNKNOWN,
+                "/st"), assertThrows(ParseException.class, () -> PrefixParser.rejectUnknownParameters(
                 input, PrefixParser.EVENT_PARAMETER_PATTERN, PREFIXES, UNKNOWN)).getMessage());
         assertEquals(Map.of("evn/", "Fair /st today"), PrefixParser.parseUniqueParameters(input,
                 PrefixParser.CONTACT_PARAMETER_PATTERN, PREFIXES, USAGE, UNKNOWN, REPEATED));

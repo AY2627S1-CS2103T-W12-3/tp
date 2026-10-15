@@ -19,7 +19,7 @@ import coordimate.model.event.AttendanceStatus;
 public class MarkAttendanceCommandParser implements Parser<MarkAttendanceCommand> {
 
     public static final String MESSAGE_UNKNOWN_PARAMETER =
-            "Unknown parameter.\n" + MarkAttendanceCommand.MESSAGE_USAGE;
+            Messages.MESSAGE_UNKNOWN_PARAMETER + "\n" + MarkAttendanceCommand.MESSAGE_USAGE;
     public static final String MESSAGE_REPEATED_PARAMETER =
             Messages.MESSAGE_REPEATED_PARAMETER + "\n" + MarkAttendanceCommand.MESSAGE_USAGE;
     public static final String MESSAGE_INVALID_STATUS = AttendanceStatus.MESSAGE_CONSTRAINTS;
@@ -43,9 +43,8 @@ public class MarkAttendanceCommandParser implements Parser<MarkAttendanceCommand
         String memberName = values.get(PREFIX_MEMBER.toString());
         String statusText = values.get(PREFIX_ATTENDANCE.toString());
 
-        if (memberName.isEmpty()) {
-            throw createInvalidFormatException();
-        }
+        ParserUtil.requireValue(memberName, "Member name", "mem/Aisha Tan");
+        ParserUtil.requireValue(statusText, "Attendance status", "att/present");
 
         AttendanceStatus status;
         try {
@@ -54,7 +53,7 @@ public class MarkAttendanceCommandParser implements Parser<MarkAttendanceCommand
             throw new ParseException(MESSAGE_INVALID_STATUS);
         }
 
-        return new MarkAttendanceCommand(eventName, ParserUtil.parseName(memberName), status);
+        return new MarkAttendanceCommand(eventName, ParserUtil.parseName(memberName, PREFIX_MEMBER), status);
     }
 
     private ParseException createInvalidFormatException() {

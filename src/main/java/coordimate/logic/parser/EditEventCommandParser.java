@@ -18,7 +18,8 @@ import coordimate.model.event.EventTime;
  * Parses event edits while rejecting unknown or repeated parameters.
  */
 public class EditEventCommandParser implements Parser<EditEventCommand> {
-    public static final String MESSAGE_UNKNOWN_PARAMETER = "Unknown parameter.\n" + EditEventCommand.MESSAGE_USAGE;
+    public static final String MESSAGE_UNKNOWN_PARAMETER =
+            Messages.MESSAGE_UNKNOWN_PARAMETER + "\n" + EditEventCommand.MESSAGE_USAGE;
     public static final String MESSAGE_REPEATED_PARAMETER =
             Messages.MESSAGE_REPEATED_PARAMETER + "\n" + EditEventCommand.MESSAGE_USAGE;
 
@@ -32,9 +33,10 @@ public class EditEventCommandParser implements Parser<EditEventCommand> {
                 PrefixParser.EVENT_PARAMETER_PATTERN, PREFIXES, EditEventCommand.MESSAGE_USAGE,
                 MESSAGE_UNKNOWN_PARAMETER, MESSAGE_REPEATED_PARAMETER);
         String eventName = values.get(PREFIX_EVENT_NAME.toString());
-        if (eventName == null || eventName.isEmpty()) {
+        if (eventName == null) {
             throw createInvalidFormatException();
         }
+        String parsedEventName = ParserUtil.parseEventName(eventName);
         if (values.size() == 1) {
             throw new ParseException(EditEventCommand.MESSAGE_NOT_EDITED);
         }
@@ -42,21 +44,17 @@ public class EditEventCommandParser implements Parser<EditEventCommand> {
         if (newName != null && newName.isEmpty()) {
             throw new ParseException(EditEventCommand.MESSAGE_EMPTY_NEW_NAME);
         }
-        return new EditEventCommand(ParserUtil.parseEventName(eventName),
-                newName == null ? null : ParserUtil.parseEventName(newName),
-                parseTime(values.get(PREFIX_START_TIME.toString())),
-                parseTime(values.get(PREFIX_END_TIME.toString())));
+        return new EditEventCommand(parsedEventName,
+                newName == null ? null : ParserUtil.parseEventName(newName, PREFIX_NEW_EVENT_NAME),
+                parseTime(values.get(PREFIX_START_TIME.toString()), PREFIX_START_TIME),
+                parseTime(values.get(PREFIX_END_TIME.toString()), PREFIX_END_TIME));
     }
 
-    private EventTime parseTime(String value) throws ParseException {
+    private EventTime parseTime(String value, Prefix prefix) throws ParseException {
         if (value == null) {
             return null;
         }
-        try {
-            return new EventTime(value);
-        } catch (IllegalArgumentException e) {
-            throw new ParseException(EditEventCommand.MESSAGE_TIME_FORMAT, e);
-        }
+        return ParserUtil.parseEventTime(value, prefix);
     }
 
     private ParseException createInvalidFormatException() {

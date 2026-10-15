@@ -39,14 +39,15 @@ public class CreateTagCommandParserTest {
 
     @Test
     public void parse_multipleTags_throwsParseException() {
-        assertParseFailure(parser, " t/Publicity t/Welfare", CreateTagCommandParser.MESSAGE_REPEATED_PARAMETER);
+        assertParseFailure(parser,
+                " t/Publicity t/Welfare", String.format(CreateTagCommandParser.MESSAGE_REPEATED_PARAMETER, "t/"));
     }
 
     @Test
     public void parse_invalidTag_throwsParseException() {
         assertParseFailure(parser, " t/Publicity Team", Tag.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, " t/Publicity!", Tag.MESSAGE_CONSTRAINTS);
-        assertParseFailure(parser, " t/", invalidFormat);
+        assertParseFailure(parser, " t/", "Tag name must not be empty. Example: t/Publicity");
         assertParseFailure(parser, " t/1234567890123456789012345678901", Tag.MESSAGE_LENGTH_CONSTRAINTS);
     }
 

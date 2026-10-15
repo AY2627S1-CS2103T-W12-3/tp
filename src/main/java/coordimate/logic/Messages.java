@@ -15,9 +15,12 @@ public class Messages {
 
     public static final String MESSAGE_UNKNOWN_COMMAND = "Unknown command. Use help to see the available commands. "
             + "Example: help";
-    public static final String MESSAGE_REPEATED_PARAMETER = "Each parameter may only be specified once.";
+    public static final String MESSAGE_UNKNOWN_PARAMETER = "Unknown parameter: %s.";
+    public static final String MESSAGE_REPEATED_PARAMETER = "Parameter %s may only be specified once.";
     public static final String MESSAGE_REPEATED_REQUIRED_PARAMETER =
-            "Each required parameter may only be specified once.";
+            MESSAGE_REPEATED_PARAMETER;
+    public static final String MESSAGE_LOAD_ERROR = "Saved data could not be loaded. Check the local data file.";
+    public static final String MESSAGE_EMPTY_FIELD = "%s must not be empty. Example: %s";
     public static final String MESSAGE_INVALID_COMMAND_FORMAT = "Invalid command format.\n%1$s";
     public static final String MESSAGE_INVALID_PERSON_DISPLAYED_INDEX =
             "No contact exists at index %1$d. Use an index from the current contact list.";
@@ -30,8 +33,6 @@ public class Messages {
     public static final String MESSAGE_CONTACT_AMBIGUOUS_MATCH = "Multiple contacts match that identifier:\n%s\n"
             + "Use a displayed index, phone number, or email address to identify the contact.";
     public static final String MESSAGE_PERSONS_LISTED_OVERVIEW = "%1$d contact(s) listed!";
-    public static final String MESSAGE_DUPLICATE_FIELDS =
-            "Repeated parameters: ";
 
     /**
      * Returns an error message indicating the duplicate prefixes.
@@ -42,7 +43,16 @@ public class Messages {
         Set<String> duplicateFields =
                 Stream.of(duplicatePrefixes).map(Prefix::toString).collect(Collectors.toSet());
 
-        return MESSAGE_DUPLICATE_FIELDS + String.join(" ", duplicateFields) + ". " + MESSAGE_REPEATED_PARAMETER;
+        return duplicateFields.stream().sorted()
+                .map(prefix -> String.format(MESSAGE_REPEATED_PARAMETER, prefix))
+                .collect(Collectors.joining(" "));
+    }
+
+    /**
+     * Appends command usage once, retaining the original explanation and example.
+     */
+    public static String withUsage(String message, String usage) {
+        return message.endsWith(usage) ? message : message + "\n" + usage;
     }
 
     /**

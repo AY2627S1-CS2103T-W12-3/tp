@@ -13,7 +13,8 @@ import coordimate.logic.parser.exceptions.ParseException;
  * Parses input arguments and creates a {@link DeleteTagCommand}.
  */
 public class DeleteTagCommandParser implements Parser<DeleteTagCommand> {
-    public static final String MESSAGE_UNKNOWN_PARAMETER = "Unknown parameter.\n" + DeleteTagCommand.MESSAGE_USAGE;
+    public static final String MESSAGE_UNKNOWN_PARAMETER =
+            Messages.MESSAGE_UNKNOWN_PARAMETER + "\n" + DeleteTagCommand.MESSAGE_USAGE;
     public static final String MESSAGE_REPEATED_PARAMETER =
             Messages.MESSAGE_REPEATED_PARAMETER + "\n" + DeleteTagCommand.MESSAGE_USAGE;
 
@@ -30,13 +31,11 @@ public class DeleteTagCommandParser implements Parser<DeleteTagCommand> {
             throw ParserUtil.createInvalidFormatException(DeleteTagCommand.MESSAGE_USAGE);
         }
         if (argMultimap.getAllValues(PREFIX_TAG).size() > 1) {
-            throw new ParseException(MESSAGE_REPEATED_PARAMETER);
+            throw new ParseException(String.format(MESSAGE_REPEATED_PARAMETER, PREFIX_TAG));
         }
 
         String tagName = argMultimap.getValue(PREFIX_TAG).orElseThrow();
-        if (tagName.isEmpty()) {
-            throw ParserUtil.createInvalidFormatException(DeleteTagCommand.MESSAGE_USAGE);
-        }
+        ParserUtil.requireValue(tagName, "Tag name", "t/Publicity");
         return new DeleteTagCommand(tagName);
     }
 }

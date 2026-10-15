@@ -35,20 +35,23 @@ public class MembersCommandParserTest {
     public void parse_emptyName_rejected() {
         assertError(" evn/", Event.MESSAGE_EMPTY_NAME);
         assertError(" evn/   ", Event.MESSAGE_EMPTY_NAME);
-        assertError(" evn/" + "E".repeat(Event.MAX_NAME_LENGTH + 1), Event.MESSAGE_NAME_CONSTRAINTS);
+        assertError(" evn/" + "E".repeat(Event.MAX_NAME_LENGTH + 1), Event.MESSAGE_NAME_LENGTH_CONSTRAINTS);
     }
 
     @Test
     public void parse_repeatedName_rejected() {
-        assertError(" evn/Final Concert evn/Fair", MembersCommandParser.MESSAGE_REPEATED_PARAMETER);
+        assertError(" evn/Final Concert evn/Fair",
+                String.format(MembersCommandParser.MESSAGE_REPEATED_PARAMETER, "evn/"));
     }
 
     @Test
     public void parse_unknownParameters_rejected() {
         for (String unknown : new String[] {" c/1", " x/1", " st/08-08-2026", " /et 1"}) {
-            assertError(" evn/Final Concert" + unknown, MembersCommandParser.MESSAGE_UNKNOWN_PARAMETER);
+            String prefix = unknown.strip().replaceFirst("^(\\w+/).*", "$1").split(" ", 2)[0];
+            assertError(" evn/Final Concert" + unknown,
+                    String.format(MembersCommandParser.MESSAGE_UNKNOWN_PARAMETER, prefix));
         }
-        assertEquals("Unknown parameter.\n" + MembersCommand.MESSAGE_USAGE,
+        assertEquals("Unknown parameter: c/.\n" + MembersCommand.MESSAGE_USAGE,
                 assertThrows(ParseException.class, () -> parser.parse(" c/1 evn/Final Concert")).getMessage());
     }
 

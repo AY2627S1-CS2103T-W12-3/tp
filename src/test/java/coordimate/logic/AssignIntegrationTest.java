@@ -54,7 +54,8 @@ public class AssignIntegrationTest {
         logic.execute("assign evn/Final Concert c/1");
         assertEquals(List.of(CARL.getName()), model.getCoordiMate().getEventList().getFirst().getMembers());
         assertEquals(List.of(CARL), model.getFilteredPersonList());
-        assertEquals(String.format(AssignCommand.MESSAGE_CONTACT_NOT_FOUND, 2),
+        assertEquals(Messages.withUsage(String.format(AssignCommand.MESSAGE_CONTACT_NOT_FOUND,
+                2), AssignCommand.MESSAGE_USAGE),
                 assertThrows(CommandException.class, () -> logic.execute("assign evn/Final Concert c/2"))
                         .getMessage());
     }
@@ -85,7 +86,8 @@ public class AssignIntegrationTest {
                 throw new IOException("Disk full");
             }
         };
-        assertEquals(AssignCommand.MESSAGE_SAVE_ERROR, assertThrows(CommandException.class, () ->
+        assertEquals(Messages.withUsage(AssignCommand.MESSAGE_SAVE_ERROR,
+                AssignCommand.MESSAGE_USAGE), assertThrows(CommandException.class, () ->
                 newLogic(model, failingStorage).execute("assign evn/Final Concert c/1")).getMessage());
         assertEquals(before, model.getCoordiMate());
         assertEquals(beforeFile, Files.readString(path));

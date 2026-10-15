@@ -47,8 +47,8 @@ public class TagTest {
     }
 
     @Test
-    public void messageConstraints_statesLimit() {
-        assertTrue(Tag.MESSAGE_CONSTRAINTS.contains(String.valueOf(Tag.MAX_LENGTH)));
+    public void messageLengthConstraints_statesLimit() {
+        assertTrue(Tag.MESSAGE_LENGTH_CONSTRAINTS.contains(String.valueOf(Tag.MAX_LENGTH)));
     }
 
     @Test
