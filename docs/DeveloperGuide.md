@@ -73,6 +73,12 @@ The **API** of this component is specified in [`Ui.java`](https://github.com/AY2
 
 The UI consists of a `MainWindow` and its parts, such as `CommandBox`, `ResultDisplay`, `PersonListPanel`, and `StatusBarFooter`. All of these, including `MainWindow`, inherit from the abstract `UiPart` class, which captures common behavior among classes that represent visible GUI parts.
 
+The `HelpWindow` provides an in-app command quick reference. Its read-only, scrollable command table is populated by
+`HelpWindow` using the command words defined by the corresponding command classes, while its FXML file controls the
+resizable layout. The User Guide URL remains available for more detailed instructions.
+The window's **Close** button is marked as the JavaFX cancel button, allowing users to dismiss it by selecting the
+button or pressing <kbd>Esc</kbd> without exiting the application.
+
 The `UI` component uses the JavaFX UI framework. The layouts of these UI parts are defined in matching `.fxml` files in `src/main/resources/view`. For example, [`MainWindow.fxml`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/resources/view/MainWindow.fxml) specifies the layout of [`MainWindow`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/ui/MainWindow.java).
 
 The `UI` component,
