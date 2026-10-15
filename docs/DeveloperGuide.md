@@ -628,14 +628,14 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 1. EXCO member requests to delete a contact, identifying the contact by its displayed index, exact name, phone number, or email address.
 2. CoordiMate displays the matching contact and requests confirmation.
 3. EXCO member confirms the deletion.
-4. CoordiMate saves a candidate model without the selected contact or their assignments in any event roster, then
-   updates the live model and confirms the deletion. Events and other contacts remain unchanged. Attendance records
-   are not yet represented in the MVP data model.
-
-    Use case ends.
+4. Coordimate  model without the selected contact, their assignments in any event roster, or their
+   associated attendance records, then updates the live model and confirms the deletion. Events and other contacts
+   remain unchanged.
+        
+   Use case ends.
 
 **Extensions**
-
+  
 * 1a. The EXCO member provides no identifier, more than one identifier, an unknown field, or an invalid index.
 
   * 1a1. CoordiMate informs the EXCO member of the error.
@@ -671,7 +671,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 1. The Exco member creates an event by entering its name, start date/time, and end date/time using the `addevent` command.
 2. CoordiMate validates the details and creates the event.
 3. CoordiMate displays a confirmation with the event name and its start and end times.
-4. The use case ends.
+
+   Use case ends.
 
 **Extensions**
 
@@ -685,7 +686,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * 2a. CoordiMate cannot save the event because the local data file cannot be written or is invalid.
   * 2a1. CoordiMate displays the relevant error and does not create the event.
-  * The use case ends.
+
+    Use case ends.
 
 **Use case: Assign members to an event**
 
@@ -696,7 +698,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 1. The Exco member assigns one or more contacts to an event using the `assign` command, specifying the event name and the displayed indexes of the contacts.
 2. CoordiMate verifies the event and contacts, then associates the contacts with the event.
 3. CoordiMate confirms how many members were assigned.
-4. The use case ends.
+
+   Use case ends.
 
 **Extensions**
 
@@ -713,11 +716,13 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * 2b. Every specified contact is already assigned.
   * 2b1. CoordiMate reports that no changes were made.
-  * The use case ends.
+
+    Use case ends.
 
 * 2c. CoordiMate cannot save the assignment to the local data file.
   * 2c1. CoordiMate displays the relevant error and assigns no contacts.
-  * The use case ends.
+
+    Use case ends.
 
 **Use case: Remove members from an event**
 
@@ -728,7 +733,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 1. The Exco member removes one or more members from an event using the `unassign` command, specifying the event name and the displayed indexes of the contacts.
 2. CoordiMate verifies the event and contacts, then removes the contacts from the event's members, together with their attendance records for that event.
 3. CoordiMate confirms how many members were removed.
-4. The use case ends.
+
+   Use case ends.
 
 **Extensions**
 
@@ -745,11 +751,13 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * 2b. None of the specified contacts are assigned to the event.
   * 2b1. CoordiMate reports that no changes were made.
-  * The use case ends.
+
+    Use case ends.
 
 * 2c. CoordiMate cannot save the change to the local data file.
   * 2c1. CoordiMate displays the relevant error and removes no members.
-  * The use case ends.
+
+    Use case ends.
 
 **Use case: View members of an event**
 
@@ -760,7 +768,8 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 1. The Exco member requests to view the members of an event using the `members` command, specifying the event name.
 2. CoordiMate switches to the contact list and shows only the event's members, with their contact details.
 3. CoordiMate confirms how many members are shown.
-4. The use case ends.
+
+   Use case ends.
 
 **Extensions**
 
@@ -770,15 +779,18 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * 2a. The event has no members.
   * 2a1. CoordiMate shows an empty contact list and reports that the event has no members.
-  * The use case ends.
+
+    Use case ends.
 
 * 3a. The Exco member removes a shown member from the event, or renames the event.
   * 3a1. CoordiMate updates the shown list to the event's current members.
-  * The use case resumes from step 3.
+
+    Use case resumes from step 3.
 
 * 3b. The Exco member wants to see all contacts again.
   * 3b1. The Exco member uses the `list` command, and CoordiMate shows all contacts.
-  * The use case ends.
+
+    Use case ends.
 
 **Use case: Record event attendance**
 
@@ -791,17 +803,20 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 3. The Exco member marks a member's attendance status as present or absent using the `markattendance` command.
 4. CoordiMate records the attendance status and confirms the update.
 5. Steps 3-4 are repeated for each member whose attendance is to be recorded.
-6. The use case ends.
+
+   Use case ends.
 
 **Extensions**
 
 * 1a. The event does not exist.
   * 1a1. CoordiMate displays the relevant error.
-  * The use case ends.
+
+    Use case ends.
 
 * 2a. No members are assigned to the event.
   * 2a1. CoordiMate informs the Exco member that the event has no members.
-  * The use case ends.
+
+    Use case ends.
 
 * 3a. The specified member is not assigned to the event.
   * 3a1. CoordiMate displays the relevant error.
@@ -813,11 +828,13 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * 3c. The member already has the specified attendance status recorded.
   * 3c1. CoordiMate informs the Exco member that no change was made.
-  * The use case resumes from step 5.
+
+    Use case resumes from step 5.
 
 * 4a. CoordiMate cannot save the updated attendance record to the local data file.
   * 4a1. CoordiMate displays the relevant error and does not update the displayed status.
-  * The use case resumes from step 5.
+
+    Use case resumes from step 5.
 
 ### Non-Functional Requirements
 
