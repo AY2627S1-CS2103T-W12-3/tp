@@ -48,7 +48,7 @@ public class MembersCommandParserTest {
         for (String unknown : new String[] {" c/1", " x/1", " st/08-08-2026", " /et 1"}) {
             assertError(" evn/Final Concert" + unknown, MembersCommandParser.MESSAGE_UNKNOWN_PARAMETER);
         }
-        assertEquals("Unknown parameter. Example: members evn/Final Concert",
+        assertEquals("Unknown parameter.\n" + MembersCommand.MESSAGE_USAGE,
                 assertThrows(ParseException.class, () -> parser.parse(" c/1 evn/Final Concert")).getMessage());
     }
 

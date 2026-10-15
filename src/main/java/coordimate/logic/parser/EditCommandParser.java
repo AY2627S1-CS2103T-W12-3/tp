@@ -17,10 +17,9 @@ import static java.util.Objects.requireNonNull;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import coordimate.commons.core.index.Index;
+import coordimate.logic.Messages;
 import coordimate.logic.commands.EditCommand;
 import coordimate.logic.commands.EditCommand.EditPersonDescriptor;
 import coordimate.logic.commands.EditCommand.TagOperation;
@@ -35,16 +34,17 @@ import coordimate.model.tag.Tag;
 public class EditCommandParser implements Parser<EditCommand> {
 
     public static final String MESSAGE_INVALID_INDEX = "Invalid contact index. Example: edit 2 r/President";
-    public static final String MESSAGE_REPEATED_PARAMETER = "A parameter may only be specified once.";
-    public static final String MESSAGE_UNKNOWN_PARAMETER = "Unknown parameter. Example: edit 2 r/Logistics";
+    public static final String MESSAGE_REPEATED_PARAMETER =
+            Messages.MESSAGE_REPEATED_PARAMETER + "\n" + EditCommand.MESSAGE_USAGE;
+    public static final String MESSAGE_UNKNOWN_PARAMETER =
+            "Unknown parameter.\n" + EditCommand.MESSAGE_USAGE;
     public static final String MESSAGE_MULTIPLE_IDENTIFIERS =
-            "Specify either a contact index or target/IDENTIFIER, not both.";
+            "Specify exactly one contact identifier.\n" + EditCommand.MESSAGE_USAGE;
     public static final String MESSAGE_EMPTY_TARGET =
             "Contact identifier must not be empty. Example: target/aisha@example.com";
     public static final String MESSAGE_CONFLICTING_TAG_OPERATIONS =
-            "Use either t/ to replace tags, or at/ and rt/ to add or remove them, not both.";
+            "Use either t/ to replace tags, or at/ and rt/ to add or remove them.\n" + EditCommand.MESSAGE_USAGE;
 
-    private static final Pattern PARAMETER_PATTERN = Pattern.compile("(?<!\\S)([A-Za-z]+/)");
     private static final Set<String> ALLOWED_PREFIXES = Set.of(PREFIX_NAME.toString(), PREFIX_PHONE.toString(),
             PREFIX_EMAIL.toString(), PREFIX_ROLE.toString(), PREFIX_BIRTHDAY.toString(), PREFIX_ADDRESS.toString(),
             PREFIX_ORGANISATION.toString(), PREFIX_NOTE.toString(), PREFIX_TAG.toString(), PREFIX_ADD_TAG.toString(),
@@ -58,7 +58,11 @@ public class EditCommandParser implements Parser<EditCommand> {
      */
     public EditCommand parse(String args) throws ParseException {
         requireNonNull(args);
-        rejectUnknownParameters(args);
+        if (args.isBlank()) {
+            throw ParserUtil.createInvalidFormatException(EditCommand.MESSAGE_USAGE);
+        }
+        PrefixParser.rejectUnknownParameters(args, PrefixParser.CONTACT_PARAMETER_PATTERN,
+                ALLOWED_PREFIXES, MESSAGE_UNKNOWN_PARAMETER);
         ArgumentMultimap argMultimap =
                 ArgumentTokenizer.tokenize(" " + args, PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL, PREFIX_ROLE,
                         PREFIX_BIRTHDAY, PREFIX_ADDRESS, PREFIX_ORGANISATION, PREFIX_NOTE,
@@ -123,15 +127,6 @@ public class EditCommandParser implements Parser<EditCommand> {
         return targetIdentifier == null
                 ? new EditCommand(index, editPersonDescriptor)
                 : new EditCommand(targetIdentifier, editPersonDescriptor);
-    }
-
-    private static void rejectUnknownParameters(String args) throws ParseException {
-        Matcher matcher = PARAMETER_PATTERN.matcher(args);
-        while (matcher.find()) {
-            if (!ALLOWED_PREFIXES.contains(matcher.group())) {
-                throw new ParseException(MESSAGE_UNKNOWN_PARAMETER);
-            }
-        }
     }
 
     private static void rejectRepeatedParameters(ArgumentMultimap arguments) throws ParseException {

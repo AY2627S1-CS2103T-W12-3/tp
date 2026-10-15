@@ -9,10 +9,12 @@ import static java.util.Objects.requireNonNull;
  */
 public class Tag {
 
-    public static final int MAX_LENGTH = 30;
-    public static final String MESSAGE_CONSTRAINTS = "Invalid tag. Use 1 to " + MAX_LENGTH
-            + " letters or digits with no spaces. Example: t/Logistics";
+    public static final String MESSAGE_CONSTRAINTS =
+            "Invalid tag name. Use letters and numbers without spaces. Example: t/Publicity";
+    public static final String MESSAGE_LENGTH_CONSTRAINTS =
+            "Tag name must not exceed 30 characters. Example: t/Publicity";
     public static final String VALIDATION_REGEX = "\\p{Alnum}+";
+    public static final int MAX_LENGTH = 30;
 
     private final String tagName;
 

@@ -7,9 +7,11 @@ import coordimate.logic.parser.exceptions.ParseException;
  * Parses an event name and space-separated contact indexes, rejecting unknown or repeated parameters.
  */
 public class AssignCommandParser implements Parser<AssignCommand> {
-    public static final String MESSAGE_UNKNOWN_PARAMETER = "Unknown parameter. Example: assign evn/Final Concert c/2 3";
-    public static final String MESSAGE_REPEATED_PARAMETER = EventContactsParser.MESSAGE_REPEATED_PARAMETER;
-    public static final String MESSAGE_NO_CONTACTS = "Please specify at least one contact to assign.";
+    public static final String MESSAGE_UNKNOWN_PARAMETER = "Unknown parameter.\n" + AssignCommand.MESSAGE_USAGE;
+    public static final String MESSAGE_REPEATED_PARAMETER =
+            EventContactsParser.MESSAGE_REPEATED_PARAMETER + "\n" + AssignCommand.MESSAGE_USAGE;
+    public static final String MESSAGE_NO_CONTACTS = "Specify at least one contact to assign.\n"
+            + AssignCommand.MESSAGE_USAGE;
     public static final String MESSAGE_INVALID_CONTACT_INDEXES = EventContactsParser.MESSAGE_INVALID_CONTACT_INDEXES;
 
     @Override

@@ -8,9 +8,11 @@ import coordimate.logic.parser.exceptions.ParseException;
  */
 public class UnassignCommandParser implements Parser<UnassignCommand> {
     public static final String MESSAGE_UNKNOWN_PARAMETER =
-            "Unknown parameter. Example: unassign evn/Final Concert c/2 3";
-    public static final String MESSAGE_REPEATED_PARAMETER = EventContactsParser.MESSAGE_REPEATED_PARAMETER;
-    public static final String MESSAGE_NO_CONTACTS = "Please specify at least one contact to remove.";
+            "Unknown parameter.\n" + UnassignCommand.MESSAGE_USAGE;
+    public static final String MESSAGE_REPEATED_PARAMETER =
+            EventContactsParser.MESSAGE_REPEATED_PARAMETER + "\n" + UnassignCommand.MESSAGE_USAGE;
+    public static final String MESSAGE_NO_CONTACTS = "Specify at least one contact to remove.\n"
+            + UnassignCommand.MESSAGE_USAGE;
     public static final String MESSAGE_INVALID_CONTACT_INDEXES = EventContactsParser.MESSAGE_INVALID_CONTACT_INDEXES;
 
     @Override

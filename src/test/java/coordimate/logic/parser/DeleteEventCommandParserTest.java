@@ -34,7 +34,7 @@ public class DeleteEventCommandParserTest {
     public void parse_unknownParameters_rejected() {
         for (String input : new String[] {"x/Fair", "evn/Fair st/09-10-2026", "r/Logistics evn/Fair",
             "evn/Fair /et 10-10-2026", "evn/Fair nevn/New Fair"}) {
-            assertError(input, "Unknown parameter. Example: deleteevent evn/Logistics Meeting");
+            assertError(input, "Unknown parameter.\n" + DeleteEventCommand.MESSAGE_USAGE);
         }
     }
 

@@ -8,6 +8,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import coordimate.commons.core.index.Index;
+import coordimate.logic.Messages;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.Model;
 import coordimate.model.event.Event;
@@ -19,8 +20,8 @@ import coordimate.model.person.Person;
  * indexes in the displayed contact list.
  */
 public abstract class EventMembersCommand extends Command {
-    public static final String MESSAGE_EVENT_NOT_FOUND = "Event %s does not exist.";
-    public static final String MESSAGE_CONTACT_NOT_FOUND = "Contact %d does not exist in the displayed list.";
+    public static final String MESSAGE_EVENT_NOT_FOUND = Messages.MESSAGE_EVENT_NOT_FOUND;
+    public static final String MESSAGE_CONTACT_NOT_FOUND = Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX;
 
     private final String eventName;
     private final List<Index> contactIndexes;

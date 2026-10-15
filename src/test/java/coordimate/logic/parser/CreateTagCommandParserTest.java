@@ -1,5 +1,6 @@
 package coordimate.logic.parser;
 
+import static coordimate.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static coordimate.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static coordimate.logic.parser.CommandParserTestUtil.assertParseSuccess;
 import static coordimate.testutil.Assert.assertThrows;
@@ -12,6 +13,7 @@ import coordimate.model.tag.Tag;
 public class CreateTagCommandParserTest {
 
     private final CreateTagCommandParser parser = new CreateTagCommandParser();
+    private final String invalidFormat = String.format(MESSAGE_INVALID_COMMAND_FORMAT, CreateTagCommand.MESSAGE_USAGE);
 
     @Test
     public void parse_validTag_returnsCreateTagCommand() {
@@ -21,31 +23,31 @@ public class CreateTagCommandParserTest {
 
     @Test
     public void parse_noParameters_throwsParseException() {
-        assertParseFailure(parser, "", "No parameters given.");
-        assertParseFailure(parser, "   ", "No parameters given.");
+        assertParseFailure(parser, "", invalidFormat);
+        assertParseFailure(parser, "   ", invalidFormat);
     }
 
     @Test
     public void parse_noPrefix_throwsParseException() {
-        assertParseFailure(parser, "Publicity", "No prefix given.");
+        assertParseFailure(parser, "Publicity", invalidFormat);
     }
 
     @Test
     public void parse_unknownParameters_throwsParseException() {
-        assertParseFailure(parser, "1 t/Publicity", "Unknown parameters given.");
+        assertParseFailure(parser, "1 t/Publicity", invalidFormat);
     }
 
     @Test
     public void parse_multipleTags_throwsParseException() {
-        assertParseFailure(parser, " t/Publicity t/Welfare", "Multiple tag names given.");
+        assertParseFailure(parser, " t/Publicity t/Welfare", CreateTagCommandParser.MESSAGE_REPEATED_PARAMETER);
     }
 
     @Test
     public void parse_invalidTag_throwsParseException() {
         assertParseFailure(parser, " t/Publicity Team", Tag.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, " t/Publicity!", Tag.MESSAGE_CONSTRAINTS);
-        assertParseFailure(parser, " t/", "Tag name cannot be empty.");
-        assertParseFailure(parser, " t/1234567890123456789012345678901", Tag.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, " t/", invalidFormat);
+        assertParseFailure(parser, " t/1234567890123456789012345678901", Tag.MESSAGE_LENGTH_CONSTRAINTS);
     }
 
     @Test

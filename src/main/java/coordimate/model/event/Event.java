@@ -20,7 +20,8 @@ public final class Event {
     public static final String MESSAGE_EMPTY_NAME = "Event name must not be empty.";
     public static final String MESSAGE_NAME_CONSTRAINTS = "Invalid event name. Use 1 to " + MAX_NAME_LENGTH
             + " printable characters. Example: evn/Final Concert";
-    public static final String MESSAGE_INVALID_TIME_ORDER = "Start time must not be after end time.";
+    public static final String MESSAGE_INVALID_TIME_ORDER = "Start time must not be after end time. "
+            + "Example: st/17-09-2026 16:30 et/17-09-2026 18:30";
     public static final String MESSAGE_DUPLICATE_MEMBER = "An event must not list the same member more than once.";
     public static final String MESSAGE_UNASSIGNED_ATTENDANCE =
             "Attendance can only be recorded for a member assigned to the event.";

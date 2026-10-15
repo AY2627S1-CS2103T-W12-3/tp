@@ -1,5 +1,6 @@
 package coordimate.logic.parser;
 
+import static coordimate.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Collection;
@@ -25,7 +26,14 @@ import coordimate.model.tag.Tag;
  */
 public class ParserUtil {
 
-    public static final String MESSAGE_INVALID_INDEX = "Index must be a positive integer.";
+    public static final String MESSAGE_INVALID_INDEX = "Index must be a positive integer. Example: 1";
+
+    /**
+     * Creates a format error containing the command's usage instructions.
+     */
+    public static ParseException createInvalidFormatException(String usage) {
+        return new ParseException(String.format(MESSAGE_INVALID_COMMAND_FORMAT, usage));
+    }
 
     /**
      * Parses {@code oneBasedIndex} into an {@code Index} and returns it. Leading and trailing whitespaces will be

@@ -1,5 +1,6 @@
 package coordimate.logic.parser;
 
+import static coordimate.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static coordimate.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static coordimate.logic.parser.CommandParserTestUtil.assertParseSuccess;
 import static coordimate.testutil.Assert.assertThrows;
@@ -12,6 +13,7 @@ import coordimate.model.tag.Tag;
 public class EditTagCommandParserTest {
 
     private final EditTagCommandParser parser = new EditTagCommandParser();
+    private final String invalidFormat = String.format(MESSAGE_INVALID_COMMAND_FORMAT, EditTagCommand.MESSAGE_USAGE);
 
     @Test
     public void parse_validArguments_returnsEditTagCommand() {
@@ -23,29 +25,30 @@ public class EditTagCommandParserTest {
 
     @Test
     public void parse_noArguments_throwsParseException() {
-        assertParseFailure(parser, "", "Current tag name is not defined.");
-        assertParseFailure(parser, "   ", "Current tag name is not defined.");
+        assertParseFailure(parser, "", invalidFormat);
+        assertParseFailure(parser, "   ", invalidFormat);
     }
 
     @Test
     public void parse_noPrefix_throwsParseException() {
-        assertParseFailure(parser, " Media", "No prefix given.");
+        assertParseFailure(parser, " Media", invalidFormat);
     }
 
     @Test
     public void parse_noCurrentTag_throwsParseException() {
-        assertParseFailure(parser, " t/Publicity", "Current tag name is not defined.");
+        assertParseFailure(parser, " t/Publicity", invalidFormat);
     }
 
     @Test
     public void parse_noNewTag_throwsParseException() {
-        assertParseFailure(parser, " Media t/", "New tag name is not defined.");
-        assertParseFailure(parser, " Media t/   ", "Tag name cannot be empty.");
+        assertParseFailure(parser, " Media t/", invalidFormat);
+        assertParseFailure(parser, " Media t/   ", invalidFormat);
     }
 
     @Test
     public void parse_multipleNewTags_throwsParseException() {
-        assertParseFailure(parser, " Media t/Publicity t/ProductionCrew", "Multiple tag names given.");
+        assertParseFailure(parser, " Media t/Publicity t/ProductionCrew",
+                EditTagCommandParser.MESSAGE_REPEATED_PARAMETER);
     }
 
     @Test

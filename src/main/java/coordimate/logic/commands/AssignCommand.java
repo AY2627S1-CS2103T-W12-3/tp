@@ -17,7 +17,9 @@ import coordimate.model.person.Name;
  */
 public class AssignCommand extends EventMembersCommand {
     public static final String COMMAND_WORD = "assign";
-    public static final String MESSAGE_USAGE = "assign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...";
+    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Assigns contacts to an event.\n"
+            + "Parameters: evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...\n"
+            + "Example: " + COMMAND_WORD + " evn/Final Concert c/1 3";
     public static final String MESSAGE_SUCCESS = "Assigned %d member(s) to %s.";
     public static final String MESSAGE_SOME_ALREADY_ASSIGNED = " %d contact(s) were already assigned.";
     public static final String MESSAGE_ALL_ALREADY_ASSIGNED =

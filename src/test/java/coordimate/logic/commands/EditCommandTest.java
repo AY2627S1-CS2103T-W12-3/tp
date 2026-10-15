@@ -339,7 +339,8 @@ public class EditCommandTest {
         assertEquals("Multiple contacts match that identifier:\n"
                 + "- Alice Pauline | Phone: 94351253 | Email: alice@example.com\n"
                 + "- Alice Pauline | Phone: 22222222 | Email: other@example.com | Current-list index: 1\n"
-                + "Retry with a unique phone or email, or a displayed index if shown.", exception.getMessage());
+                + "Use a displayed index, phone number, or email address to identify the contact.",
+                exception.getMessage());
     }
 
     @Test

@@ -17,10 +17,13 @@ import coordimate.model.person.Person;
 public class FilterCommand extends Command {
 
     public static final String COMMAND_WORD = "filter";
-    public static final String MESSAGE_USAGE = "filter FIELD/VALUE";
+    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Filters contacts by one or more criteria.\n"
+            + "Parameters: FIELD/VALUE [FIELD/VALUE]... (FIELD: tag, event, organisation)\n"
+            + "Example: " + COMMAND_WORD + " tag/friend event/Orientation";
     public static final String MESSAGE_SUCCESS = "%1$d contact(s) found.";
     public static final String MESSAGE_NO_MATCHES = "No contacts match the specified filters.";
-    public static final String MESSAGE_NO_MATCHING_VALUE = "No matching value found.";
+    public static final String MESSAGE_NO_MATCHING_VALUE =
+            "No saved tag, event, or organisation matches that value. Use a value from the saved data.";
 
     private final List<FilterCriterion> criteria;
 

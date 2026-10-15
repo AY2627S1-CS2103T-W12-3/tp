@@ -38,10 +38,11 @@ import javafx.collections.ObservableList;
  * The main LogicManager of the app.
  */
 public class LogicManager implements Logic {
-    public static final String FILE_OPS_ERROR_FORMAT = "Could not save data due to the following error: %s";
+    public static final String FILE_OPS_ERROR_FORMAT =
+            "Data could not be saved. Check the local data file. Details: %s";
 
     public static final String FILE_OPS_PERMISSION_ERROR_FORMAT =
-            "Could not save data to file %s due to insufficient permissions to write to the file or the folder.";
+            "Data could not be saved to %s. Check write permissions for the file and its folder.";
 
     public static final String MESSAGE_DELETE_CANCELLED = "Deletion cancelled. No changes were made.";
 

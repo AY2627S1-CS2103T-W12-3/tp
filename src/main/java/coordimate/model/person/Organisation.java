@@ -4,7 +4,7 @@ import static coordimate.commons.util.AppUtil.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Represents the organisation a contact belongs to.
+ * Represents the organization a contact belongs to.
  */
 public class Organisation {
 
@@ -29,7 +29,7 @@ public class Organisation {
     }
 
     /**
-     * Returns true if the value is a non-blank organisation of at most 80 characters.
+     * Returns true if the value is a non-blank organization of at most 80 characters.
      */
     public static boolean isValidOrganisation(String test) {
         requireNonNull(test);

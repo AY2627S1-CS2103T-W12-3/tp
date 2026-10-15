@@ -1,5 +1,6 @@
 package coordimate.logic.parser;
 
+import static coordimate.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static coordimate.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static coordimate.logic.parser.CommandParserTestUtil.assertParseSuccess;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -15,16 +16,17 @@ import coordimate.model.person.FilterField;
 public class FilterCommandParserTest {
 
     private final FilterCommandParser parser = new FilterCommandParser();
+    private final String invalidFormat = String.format(MESSAGE_INVALID_COMMAND_FORMAT, FilterCommand.MESSAGE_USAGE);
 
     @Test
     public void parse_emptyArg_throwsParseException() {
-        assertParseFailure(parser, "", FilterCommandParser.MESSAGE_EMPTY_COMMAND);
-        assertParseFailure(parser, "   ", FilterCommandParser.MESSAGE_EMPTY_COMMAND);
+        assertParseFailure(parser, "", invalidFormat);
+        assertParseFailure(parser, "   ", invalidFormat);
     }
 
     @Test
     public void parse_textBeforeFirstField_throwsParseException() {
-        assertParseFailure(parser, "oops tag/friend", FilterCommandParser.MESSAGE_EMPTY_COMMAND);
+        assertParseFailure(parser, "oops tag/friend", invalidFormat);
     }
 
     @Test
@@ -72,9 +74,9 @@ public class FilterCommandParserTest {
     @Test
     public void parse_unclosedQuoteBeforeAnotherField_throwsParseException() {
         assertParseFailure(parser, " event/\"Planning tag/review tag/friend",
-                FilterCommandParser.MESSAGE_UNCLOSED_QUOTE);
+                invalidFormat);
         assertParseFailure(parser, " event/\"Final Concert\" tag/\"friend event/Orientation",
-                FilterCommandParser.MESSAGE_UNCLOSED_QUOTE);
+                invalidFormat);
     }
 
     @Test
@@ -100,14 +102,14 @@ public class FilterCommandParserTest {
 
     @Test
     public void parse_emptyValue_throwsParseException() {
-        assertParseFailure(parser, " tag/", FilterCommandParser.MESSAGE_EMPTY_VALUE);
-        assertParseFailure(parser, " tag/   ", FilterCommandParser.MESSAGE_EMPTY_VALUE);
+        assertParseFailure(parser, " tag/", invalidFormat);
+        assertParseFailure(parser, " tag/   ", invalidFormat);
     }
 
     @Test
     public void parse_unsupportedField_throwsParseException() {
-        assertParseFailure(parser, " favourite/true", FilterCommandParser.MESSAGE_INVALID_FIELD);
-        assertParseFailure(parser, " unknown/value", FilterCommandParser.MESSAGE_INVALID_FIELD);
+        assertParseFailure(parser, " favourite/true", FilterCommandParser.MESSAGE_UNKNOWN_PARAMETER);
+        assertParseFailure(parser, " unknown/value", FilterCommandParser.MESSAGE_UNKNOWN_PARAMETER);
     }
 
     @Test
