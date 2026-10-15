@@ -70,6 +70,7 @@
     -fx-background-color: #132233;
     -fx-border-color: #0ea5e9;
     -fx-text-fill: #38bdf8;
+    -fx-font-weight: bold;
 }
 .view-button:focused { -fx-border-color: #38bdf8; }
 .command-cheatsheet {

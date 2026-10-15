@@ -70,11 +70,16 @@ public class MainWindowTest {
             ToggleButton contacts = (ToggleButton) stage.getScene().getRoot().lookup("#contactsView");
 
             events.fire();
+            stage.getScene().getRoot().applyCss();
             assertEquals("Events", views.getSelectionModel().getSelectedItem().getText().split(" ")[0]);
+            assertEquals("Bold", events.getFont().getStyle());
             assertTrue(prefixHelp.getText().contains("evn/Event"));
 
             tags.fire();
+            stage.getScene().getRoot().applyCss();
             assertEquals("Tags", views.getSelectionModel().getSelectedItem().getText());
+            assertEquals("Bold", tags.getFont().getStyle());
+            assertEquals("Regular", events.getFont().getStyle());
             assertTrue(prefixHelp.getText().contains("t/Tag"));
             @SuppressWarnings("unchecked")
             ListView<String> tagList = (ListView<String>) stage.getScene().getRoot().lookup("#tagListView");
@@ -86,7 +91,9 @@ public class MainWindowTest {
             assertEquals("Members (1)", ((Label) stage.getScene().getRoot().lookup("#tagMemberCount")).getText());
 
             contacts.fire();
+            stage.getScene().getRoot().applyCss();
             assertTrue(views.getSelectionModel().getSelectedItem().getText().startsWith("Contacts"));
+            assertEquals("Bold", contacts.getFont().getStyle());
             assertTrue(prefixHelp.getText().contains("n/Name"));
             stage.close();
             return null;
