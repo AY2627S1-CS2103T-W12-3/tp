@@ -111,7 +111,7 @@
                   <Label fx:id="tagMemberCount" text="Members (0)" styleClass="section-heading" />
                   <ListView fx:id="tagMemberListView" VBox.vgrow="ALWAYS" minWidth="0" minHeight="0"
                             accessibleText="Contacts assigned to the selected tag." styleClass="tag-member-list" />
-                  <Label text="Use newtag, edittag, and deletetag in the command box to manage saved tags."
+                  <Label text="Use addtag, edittag, and deletetag in the command box to manage saved tags."
                          wrapText="true" styleClass="detail-caption" />
                 </VBox>
               </SplitPane>
