@@ -33,9 +33,9 @@
 
    * `add n/John Doe p/98765432 e/johnd@example.com r/Member` : Adds a contact named `John Doe` to CoordiMate.
 
-   * `delete 3` : Deletes the 3rd contact shown in the current list.
+   * `delete 3` : Asks to delete the 3rd contact shown in the current list. Type `y` and press Enter to confirm.
 
-   * `clear` : Deletes all contacts.
+   * `clear` : Deletes all contacts, events, and custom tags.
 
    * `exit` : Exits the app.
 
@@ -70,6 +70,41 @@
   For example, `help 123` is interpreted as `help`.
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
+</box>
+
+### Parameter constraints
+
+The table below lists the values each parameter accepts. Leading and trailing spaces are ignored for every parameter.
+A command that breaks a constraint is rejected and makes no changes.
+
+| Parameter | Prefix | Constraints |
+|---|---|---|
+| `NAME`, `MEMBER_NAME` | `n/`, `mem/` | 1 to 80 characters. Letters, spaces, hyphens (`-`), apostrophes (`'`), and periods (`.`) only, with at least one letter. Digits are not allowed. Contact names are unique, ignoring case. |
+| `PHONE` | `p/` | 7 to 15 digits. May start with `+`, and may contain spaces, hyphens, and brackets. Unique among contacts once spaces, hyphens, and brackets are removed. |
+| `EMAIL` | `e/` | `local-part@domain`. The local part uses letters, digits, and `_`, `%`, `+`, `-`, `.`; it cannot start or end with a period or contain two periods in a row. The domain is made of labels separated by periods; each label uses letters, digits, and hyphens and cannot start or end with a hyphen. The last label has at least 2 letters. Unique among contacts, ignoring case. |
+| `ROLE` | `r/` | 1 to 50 characters. Letters, digits, spaces, hyphens, and `/` only, with at least one letter or digit. |
+| `BIRTHDAY` | `b/` | A real date in `dd-MM-yyyy` format that is not in the future, e.g. `18-06-2004`. |
+| `ADDRESS` | `a/` | 1 to 200 characters. Any printable characters. |
+| `ORGANISATION` | `o/` | 1 to 80 characters. Letters, digits, spaces, hyphens, and `&` only, with at least one letter or digit. |
+| `NOTE` | `m/` | 1 to 500 characters. Any printable characters. |
+| `TAG`, `NEW_TAG` | `t/`, `at/`, `rt/` | 1 to 30 characters. English letters and digits only, with no spaces. Tags are unique, ignoring case. |
+| `EVENT_NAME`, `NEW_EVENT_NAME` | `evn/`, `nevn/` | At least one non-space character. Any characters are allowed, subject to the note below. Event names are unique, ignoring case. |
+| `START_TIME`, `END_TIME` | `st/`, `et/` | A real date in `dd-MM-yyyy` format, optionally followed by a 24-hour time in `HH:mm` format, e.g. `17-09-2026` or `17-09-2026 16:30`. The start must not be after the end. |
+| `STATUS` | `att/` | `present` or `absent`, ignoring case. |
+| `INDEX`, `CONTACT_INDEX` | `c/` for `CONTACT_INDEX` | A positive integer (1, 2, 3, ...) that appears in the displayed contact list. |
+| `KEYWORD` | none | At least one non-space character. |
+
+<box type="info" seamless>
+
+**Note:** In commands that accept multiple prefixed parameters, such as `add` and `addevent`, text within 
+a value that looks like another parameter—a space followed by letters and `/`—is read as the start of 
+another parameter.
+For example, `addevent evn/Planning tag/review ...` is rejected with an unknown-parameter error, and in
+`m/Check a/v setup` the text after `a/` is read as the address. Write such text without the space before it,
+or without the `/`, e.g. `m/Check AV setup`.
+
+Commands parse their arguments differently. For example, `search` treats the entire remainder as its keyword,
+while tag commands tokenize only their recognised `t/` prefix.
 </box>
 
 ### Viewing help: `help`
@@ -144,8 +179,19 @@ Command feedback appears above the input at the bottom of the window. Rejected c
 show a red feedback band and input border. The command stays in the input so you can
 correct it, then press Enter or click **Retry**.
 
-If saving fails, no event is added. If the existing data file is invalid, the command
-reports a load error and leaves the file untouched.
+| Condition | Error message |
+|---|---|
+| An event with the same name already exists, ignoring case. | `An event with this name already exists.` |
+| The event name is empty. | `Event name must not be empty.` |
+| `st/` or `et/` is missing or empty. | `Start time and/or end time must not be empty!` |
+| A time is invalid or incorrectly formatted. | `Start time and/or end time are formatted as dd-MM-yyyy [HH:mm]. Time of day is optional. Example: 17-09-2026 16:30` |
+| The start is after the end. | `Start time must not be after end time.` |
+| `evn/` is missing, or there is text before the first parameter. | `Invalid command format!` followed by the command format |
+| A parameter is repeated. | `Each required parameter may only be specified once.` |
+| An unknown parameter is used. | `Unknown parameter. Example: r/Logistics` |
+
+If saving fails, no event is added and the command reports `Event could not be saved. No changes were made.`
+If the existing data file is invalid, the command reports a load error and leaves the file untouched.
 
 ### Editing an event: `editevent`
 
@@ -180,7 +226,7 @@ Success: `Edited Event NUS Student Life Fair. Start Time: 09-10-2026. End Time: 
 | The new name duplicates another event. | `This update conflicts with another saved event. No changes were made.` |
 | No field is provided to edit. | `Please provide at least one field to edit.` |
 | A parameter is repeated. | `Each parameter may only be specified once.` |
-| An unknown parameter is used. | `Unknown parameter. Example: edit 2 r/Logistics` |
+| An unknown parameter is used. | `Unknown parameter. Example: editevent evn/Final Concert st/08-08-2026 16:00` |
 | The updated start is after the updated end. | `Start time must not be after end time.` |
 
 If saving fails, the event and existing data file remain unchanged.
@@ -349,11 +395,18 @@ If the member already has the requested status, no changes are made:
 | A parameter is repeated. | `Each parameter may only be specified once.` |
 | An unknown parameter is used. | `Unknown parameter. Example: markattendance evn/Final Concert mem/Alice Tan att/present` |
 
+Attendance is shown beside each member when the event is selected in the **Events** tab.
+Removing a member with `unassign`, or deleting the contact, also removes that member's attendance for the event.
+If saving fails, the attendance is not changed and the command reports
+`Attendance could not be saved. No changes were made.`
+
 ### Listing all contacts: `list`
 
-Shows a list of all contacts in CoordiMate.
+Shows a list of all contacts in CoordiMate, removing any search, filter, or members view.
 
 Format: `list`
+
+Success: `Listed all contacts.`
 
 ### Deleting a tag: `deletetag`
 
@@ -374,7 +427,10 @@ Success: `{TAG_NAME} successfully deleted.`
 |---|---|
 | The `t/` prefix is missing. | `No prefix given.` |
 | No tag name is provided. | `No tag name given.` |
+| Text appears before `t/`. | `Unknown parameters given.` |
+| More than one `t/` prefix is supplied. | `Unknown parameters given.` |
 | The specified tag does not exist. | `No such tag exists: {TAG_NAME}.` |
+
 ### Editing a tag: `edittag`
 
 Renames an existing tag, including a default tag, and updates it wherever it is applied across contacts.
@@ -437,6 +493,10 @@ Success: `Created tag: Publicity.`
 Shows every default and custom tag in the Tags view.
 
 Format: `listtags`
+
+Success: `Here is the list of all existing tags.` followed by `Tags: ` and the tag names, separated by commas.
+
+Unlike `list`, `listtags` does not ignore extra text: `listtags 123` is rejected with `Unknown parameters given.`
 
 ### Editing a contact: `edit`
 
@@ -508,6 +568,62 @@ Examples:
 * `search jurong west` matches addresses containing `Jurong West`.
 * `search student affairs` matches organisations containing `Student Affairs`, such as `NUS Student Affairs`.
 
+Success: `1 contact(s) found matching "John".`
+
+If nothing matches: `No contacts found matching "John".`
+
+To narrow contacts by an exact tag, event, or organisation instead, use [`filter`](#filtering-contacts-filter).
+
+### Filtering contacts: `filter`
+
+Lists the contacts that have a given tag, are members of a given event, or belong to a given organisation.
+
+Format: `filter FIELD/VALUE [MORE_FIELD/VALUE]...`
+
+* `FIELD` is `tag`, `event`, or `organisation`, ignoring case. These are full words, not the prefixes used by
+  other commands; for example, use `tag/EXCO`, not `t/EXCO`.
+* `VALUE` must match a saved value in full, ignoring case. Unlike `search`, partial values do not match:
+  `filter organisation/NUS` does not match `NUS Student Affairs`.
+  * `tag/VALUE` lists contacts that have the tag. The tag must be in the tag list shown by `listtags`.
+  * `event/VALUE` lists the members of the event with that name.
+  * `organisation/VALUE` lists contacts whose organisation is that value. At least one contact must have it.
+* When several filters are given, a contact must match **all** of them.
+* Filter checks all saved contacts, including those hidden by the current search or filter.
+* Results replace the displayed contact list. Use their displayed indexes in subsequent commands, or `list` to show everyone.
+* If a value does not exist, the command is rejected and the displayed list stays as it was.
+
+**Quotation marks**
+
+* A value may be wrapped in quotation marks, which are removed: `filter event/"Final Concert"` and
+  `filter event/Final Concert` give the same results.
+* Inside quotation marks, text that looks like another field is kept as part of the value:
+  `filter event/"Planning tag/review"` is one filter for an event named `Planning tag/review`. Such a name can
+  exist only in a data file edited by hand, because `addevent` and `editevent` do not accept it.
+* A quotation mark with no closing quotation mark is kept as part of the value when no field follows it:
+  `filter event/"Cali` matches an event named `"Cali`. A filter like this must be the last one in the command,
+  e.g. `filter tag/EXCO event/"Cali`.
+* A quotation mark with no closing quotation mark, followed by another field, is rejected because it is unclear
+  where the value ends: `filter event/"Cali tag/EXCO`.
+
+Examples:
+* `filter tag/EXCO` lists contacts tagged `EXCO`.
+* `filter event/Final Concert` lists the members of `Final Concert`.
+* `filter organisation/nus student affairs` lists contacts whose organisation is `NUS Student Affairs`.
+* `filter event/"Final Concert" tag/EXCO` lists members of `Final Concert` who are also tagged `EXCO`.
+
+Success: `2 contact(s) found.`
+
+If every value exists but no contact matches all the filters, the displayed list is empty:
+`No contacts match the specified filters.`
+
+| Condition | Error message |
+|---|---|
+| No saved tag, event, or organisation has the supplied value. | `No matching value found.` |
+| `FIELD` is not `tag`, `event`, or `organisation`. | `Invalid filter field. Supported fields: tag, event, organisation.` |
+| No filter is given, or there is text before the first field. | `Filter field cannot be empty.` |
+| A field has no value. | `Filter value cannot be empty.` |
+| A quotation mark is not closed and another field follows it. | `Unclosed quotation mark.` |
+
 ### Deleting a contact: `delete`
 
 Finds a saved contact and asks for confirmation before deleting it.
@@ -536,9 +652,17 @@ non-matching identifiers are rejected without opening a confirmation prompt.
 
 ### Clearing all entries: `clear`
 
-Clears all entries from CoordiMate.
+Deletes all contacts, events, and custom tags from CoordiMate. The default tags (`EXCO`, `Sponsor`,
+`UniversityStaff`, and `Logistics`) are restored, including any that were renamed or deleted.
 
 Format: `clear`
+
+Success: `CoordiMate has been cleared!`
+
+<box type="warning" seamless>
+
+**Caution:** `clear` takes effect immediately, without asking for confirmation, and cannot be undone.
+</box>
 
 The cleared data is saved before the contact, event, and tag lists change. If the local data file cannot be read,
 CoordiMate reports `Contact data could not be loaded. Please check the local data file.` If saving fails, it reports
@@ -546,13 +670,17 @@ CoordiMate reports `Contact data could not be loaded. Please check the local dat
 
 ### Exiting the program: `exit`
 
-Exits the program.
+Closes CoordiMate. Your data is already saved, so nothing is lost.
 
 Format: `exit`
 
 ### Saving the data
 
 CoordiMate automatically saves data after every command. You do not need to save manually.
+
+A command that changes your data is saved to the data file **before** the change appears in the app. If the data
+cannot be saved, the command is rejected with an error such as `Event could not be saved. No changes were made.`
+and both the app and the data file stay as they were, so what you see always matches what is saved.
 
 ### Editing the data file
 
@@ -561,14 +689,10 @@ CoordiMate data is saved automatically as a JSON file `[JAR file location]/data/
 <box type="warning" seamless>
 
 **Caution:**
-If your changes make the data file invalid, CoordiMate starts with an empty dataset at the next run. The invalid file remains on disk until you run a command (CoordiMate saves after every command). Still, we recommend backing up the file before editing it.<br>
+If your changes make the data file invalid, CoordiMate starts with an empty dataset at the next run. While the file is invalid, commands that change data (such as `add`, `addevent`, and `clear`) are rejected with `Contact data could not be loaded. Please check the local data file.` and leave the file untouched, so that you can close the app and fix it. However, a command that only changes what is displayed (such as `list`, `search`, or `filter`) saves the data currently in the app, which **replaces the invalid file**. We therefore recommend backing up the file before editing it.<br>
 Each name in an event's `members` list must exactly match the name of a saved contact, or the data file is invalid.<br>
 Furthermore, certain edits can cause CoordiMate to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </box>
-
-### Archiving data files `[coming in v2.0]`
-
-_Details coming soon ..._
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -588,18 +712,25 @@ _Details coming soon ..._
 
 ## Command summary
 
-Action     | Format, Examples
------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------
-**Add**    | `add n/NAME p/PHONE e/EMAIL r/ROLE [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [t/TAG]... [m/NOTE]`<br> e.g., `add n/James Ho p/22224444 e/jamesho@example.com r/Member t/friend`
-**Add tag** | `addtag t/TAG`<br> e.g., `addtag t/Publicity`
-**Assign** | `assign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...`<br> e.g., `assign evn/Final Concert c/1 4 5`
-**Clear**  | `clear`
-**Delete tag** | `deletetag t/TAG`<br> e.g., `deletetag t/Publicity`
-**Delete contacts** | `delete INDEX` or `delete n/NAME`, `delete p/PHONE`, `delete e/EMAIL`; confirm with `y`<br> e.g., `delete 3`
-**Edit contacts**   | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [t/TAG]... [at/TAG]... [rt/TAG]...`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
+Action | Format, Examples
+-------|------------------
+**Add contact** | `add n/NAME p/PHONE e/EMAIL r/ROLE [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [t/TAG]... [m/NOTE]`<br> e.g., `add n/James Ho p/22224444 e/jamesho@example.com r/Member t/EXCO`
+**Edit contact** | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [t/TAG]... [at/TAG]... [rt/TAG]...`<br> or `edit target/IDENTIFIER ...`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
+**Delete contact** | `delete INDEX` or `delete n/NAME`, `delete p/PHONE`, `delete e/EMAIL`; confirm with `y`<br> e.g., `delete 3`
+**List contacts** | `list`
 **Search** | `search KEYWORD`<br> e.g., `search James`, `search "Jurong West"`
-**List**   | `list`
+**Filter** | `filter FIELD/VALUE [MORE_FIELD/VALUE]...`<br> e.g., `filter tag/EXCO`, `filter event/"Final Concert" tag/EXCO`
+**Add event** | `addevent evn/EVENT_NAME st/START_TIME et/END_TIME`<br> e.g., `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`
+**Edit event** | `editevent evn/EVENT_NAME [nevn/NEW_EVENT_NAME] [st/NEW_START_TIME] [et/NEW_END_TIME]`<br> e.g., `editevent evn/Final Concert st/08-08-2026 16:00 et/08-08-2026 19:00`
+**Delete event** | `deleteevent evn/EVENT_NAME`<br> e.g., `deleteevent evn/Final Concert`
+**Assign** | `assign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...`<br> e.g., `assign evn/Final Concert c/1 4 5`
+**Unassign** | `unassign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...`<br> e.g., `unassign evn/Final Concert c/2 3`
 **Members** | `members evn/EVENT_NAME`<br> e.g., `members evn/Final Concert`
 **Mark attendance** | `markattendance evn/EVENT_NAME mem/MEMBER_NAME att/STATUS`<br> e.g., `markattendance evn/Final Concert mem/Alex Yeoh att/present`
-**Unassign** | `unassign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...`<br> e.g., `unassign evn/Final Concert c/2 3`
-**Help**   | `help`
+**Add tag** | `addtag t/TAG`<br> e.g., `addtag t/Publicity`
+**Edit tag** | `edittag OLD_TAG t/NEW_TAG`<br> e.g., `edittag Media t/Publicity`
+**Delete tag** | `deletetag t/TAG`<br> e.g., `deletetag t/Publicity`
+**List tags** | `listtags`
+**Clear** | `clear`
+**Help** | `help`
+**Exit** | `exit`
