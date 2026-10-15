@@ -84,7 +84,7 @@ public class DeleteCommandIntegrationTest {
             assertEquals(beforeModel, model.getCoordiMate());
             assertEquals(beforeFile, Files.readString(path));
 
-            // A cancelled command has to be entered again to run.
+            // A canceled command has to be entered again to run.
             assertEquals(DeleteCommand.confirmationPrompt(BENSON), logic.execute("delete 2").getFeedbackToUser());
         }
     }

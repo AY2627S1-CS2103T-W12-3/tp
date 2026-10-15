@@ -65,9 +65,27 @@ public class ContactMatchesKeywordPredicateTest {
     }
 
     @Test
+    public void test_organisationContainsKeyword_returnsTrue() {
+        Person person = new PersonBuilder().withOrganisation("NUS Student Affairs").build();
+
+        assertTrue(new ContactMatchesKeywordPredicate("NUS Student Affairs").test(person));
+        assertTrue(new ContactMatchesKeywordPredicate("sTuDeNt").test(person));
+        assertTrue(new ContactMatchesKeywordPredicate("dent Aff").test(person));
+    }
+
+    @Test
+    public void test_noOrganisation_doesNotMatchOrganisationKeyword() {
+        Person person = new PersonBuilder().withoutOrganisation().build();
+
+        assertFalse(new ContactMatchesKeywordPredicate("Student Affairs").test(person));
+        assertTrue(new ContactMatchesKeywordPredicate("Amy").test(person));
+    }
+
+    @Test
     public void test_noFieldContainsKeyword_returnsFalse() {
         Person person = new PersonBuilder().withName("Alice Pauline").withPhone("94351253")
-                .withEmail("alice@example.com").withAddress("123, Jurong West Ave 6, #08-111").build();
+                .withEmail("alice@example.com").withAddress("123, Jurong West Ave 6, #08-111")
+                .withOrganisation("NUS Student Affairs").build();
 
         assertFalse(new ContactMatchesKeywordPredicate("Benson").test(person));
         assertFalse(new ContactMatchesKeywordPredicate("Pauline Alice").test(person));
@@ -80,10 +98,11 @@ public class ContactMatchesKeywordPredicateTest {
         try {
             Locale.setDefault(Locale.forLanguageTag("tr-TR"));
             Person person = new PersonBuilder().withName("ALICE PAULINE").withEmail("ALICE@EXAMPLE.COM")
-                    .withAddress("INDIA STREET").build();
+                    .withAddress("INDIA STREET").withOrganisation("INDIA SOCIETY").build();
             assertTrue(new ContactMatchesKeywordPredicate("alice pauline").test(person));
             assertTrue(new ContactMatchesKeywordPredicate("alice@example").test(person));
             assertTrue(new ContactMatchesKeywordPredicate("india street").test(person));
+            assertTrue(new ContactMatchesKeywordPredicate("india society").test(person));
         } finally {
             Locale.setDefault(originalLocale);
         }

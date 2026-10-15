@@ -45,7 +45,7 @@ public class Person {
     }
 
     /**
-     * Creates a person with optional birthday, organisation, and note details.
+     * Creates a person with optional birthday, organization, and note details.
      */
     public Person(Name name, Phone phone, Email email, Role role, Birthday birthday, Address address,
             Organisation organisation, Note note, Set<Tag> tags) {
@@ -102,7 +102,7 @@ public class Person {
     }
 
     /**
-     * Returns true if the names match ignoring case, or either the normalised phone or email matches.
+     * Returns true if the names match ignoring case, or either the normalized phone or email matches.
      * Names are already trimmed when constructed.
      */
     public boolean isSamePerson(Person otherPerson) {

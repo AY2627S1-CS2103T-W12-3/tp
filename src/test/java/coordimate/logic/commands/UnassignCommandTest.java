@@ -92,7 +92,7 @@ public class UnassignCommandTest {
 
     @Test
     public void execute_missingEvent_noChanges() {
-        assertEquals("Event Gala does not exist.",
+        assertEquals("Event Gala does not exist. Use a saved event name.",
                 assertThrows(CommandException.class, () -> unassign("Gala", 1).execute(model)).getMessage());
         assertEquals(List.of(concert, fair), model.getCoordiMate().getEventList());
     }
@@ -100,7 +100,7 @@ public class UnassignCommandTest {
     @Test
     public void execute_contactIndexOutOfRange_noChanges() {
         int outOfRange = model.getFilteredPersonList().size() + 1;
-        assertEquals("Contact " + outOfRange + " does not exist in the displayed list.",
+        assertEquals("No contact exists at index " + outOfRange + ". Use an index from the current contact list.",
                 assertThrows(CommandException.class, () ->
                         unassign("Final Concert", 1, outOfRange, 2).execute(model)).getMessage());
         assertEquals(List.of(concert, fair), model.getCoordiMate().getEventList());

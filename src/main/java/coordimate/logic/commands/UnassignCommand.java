@@ -20,7 +20,9 @@ import coordimate.model.person.Name;
  */
 public class UnassignCommand extends EventMembersCommand {
     public static final String COMMAND_WORD = "unassign";
-    public static final String MESSAGE_USAGE = "unassign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]";
+    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Removes contacts from an event.\n"
+            + "Parameters: evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]\n"
+            + "Example: " + COMMAND_WORD + " evn/Final Concert c/1 3";
     public static final String MESSAGE_SUCCESS = "Removed %d member(s) from %s.";
     public static final String MESSAGE_SOME_NOT_ASSIGNED = " %d contact(s) were not assigned.";
     public static final String MESSAGE_NONE_ASSIGNED =

@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.Optional;
 
+import coordimate.logic.Messages;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.Model;
 import coordimate.model.tag.Tag;
@@ -15,14 +16,14 @@ public class EditTagCommand extends MutatingTagCommand {
 
     public static final String COMMAND_WORD = "edittag";
 
-    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Renames a tag. "
+    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Renames a tag.\n"
             + "Parameters: OLD_TAG t/NEW_TAG\n"
             + "Example: " + COMMAND_WORD + " Media t/Publicity";
 
     public static final String MESSAGE_SUCCESS = "%s successfully renamed to %s.";
-    public static final String MESSAGE_TAG_NOT_FOUND = "No such tag exists: %s.";
-    public static final String MESSAGE_SAME_TAG = "%s is the same as %s.";
-    public static final String MESSAGE_DUPLICATE_TAG = "This tag already exists.";
+    public static final String MESSAGE_TAG_NOT_FOUND = Messages.MESSAGE_TAG_NOT_FOUND;
+    public static final String MESSAGE_SAME_TAG = "Tag %s already has that name. No changes were made.";
+    public static final String MESSAGE_DUPLICATE_TAG = CreateTagCommand.MESSAGE_DUPLICATE_TAG;
 
     private final String currentTagName;
     private final Tag editedTag;
@@ -47,8 +48,7 @@ public class EditTagCommand extends MutatingTagCommand {
 
         Tag tagToEdit = currentTag.get();
         if (tagToEdit.isSameTag(editedTag)) {
-            throw new CommandException(String.format(MESSAGE_SAME_TAG,
-                    editedTag.getTagName(), tagToEdit.getTagName()));
+            throw new CommandException(String.format(MESSAGE_SAME_TAG, tagToEdit.getTagName()));
         }
         if (model.hasTag(editedTag)) {
             throw new CommandException(MESSAGE_DUPLICATE_TAG);

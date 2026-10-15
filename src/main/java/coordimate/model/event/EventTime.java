@@ -12,9 +12,10 @@ import java.time.format.ResolverStyle;
  * Retains whether an event date has a specified time of day.
  */
 public final class EventTime {
-    public static final String MESSAGE_EMPTY = "Start time and/or end time must not be empty!";
-    public static final String MESSAGE_CONSTRAINTS = "Start time and/or end time are formatted as dd-MM-yyyy [HH:mm]. "
-            + "Time of day is optional. Example: 17-09-2026 16:30";
+    public static final String MESSAGE_EMPTY = "Event time must not be empty. Example: st/17-09-2026 16:30";
+    public static final String MESSAGE_CONSTRAINTS =
+            "Invalid event time. Use dd-MM-yyyy with an optional time in HH:mm format. "
+            + "Example: st/17-09-2026 16:30";
 
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd-MM-uuuu")
             .withResolverStyle(ResolverStyle.STRICT);
