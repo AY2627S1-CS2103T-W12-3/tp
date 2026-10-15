@@ -39,6 +39,7 @@ public class UnassignCommandParserTest {
     @Test
     public void parse_emptyValues_rejected() {
         assertError(" evn/ c/1", Event.MESSAGE_EMPTY_NAME);
+        assertError(" evn/" + "E".repeat(Event.MAX_NAME_LENGTH + 1) + " c/1", Event.MESSAGE_NAME_LENGTH_CONSTRAINTS);
         assertError(" evn/Final Concert c/", UnassignCommandParser.MESSAGE_NO_CONTACTS);
         assertError(" evn/Final Concert c/   ", UnassignCommandParser.MESSAGE_NO_CONTACTS);
     }
@@ -52,16 +53,20 @@ public class UnassignCommandParserTest {
 
     @Test
     public void parse_repeatedParameters_rejected() {
-        assertError(" evn/Final Concert evn/Fair c/1", UnassignCommandParser.MESSAGE_REPEATED_PARAMETER);
-        assertError(" evn/Final Concert c/1 c/2", UnassignCommandParser.MESSAGE_REPEATED_PARAMETER);
+        assertError(" evn/Final Concert evn/Fair c/1",
+                String.format(UnassignCommandParser.MESSAGE_REPEATED_PARAMETER, "evn/"));
+        assertError(" evn/Final Concert c/1 c/2",
+                String.format(UnassignCommandParser.MESSAGE_REPEATED_PARAMETER, "c/"));
     }
 
     @Test
     public void parse_unknownParameters_rejected() {
         for (String unknown : new String[] {" x/1", " r/Logistics", " mem/Alex Yeoh", " /et 1"}) {
-            assertError(" evn/Final Concert c/1" + unknown, UnassignCommandParser.MESSAGE_UNKNOWN_PARAMETER);
+            String prefix = unknown.strip().replaceFirst("^(\\w+/).*", "$1").split(" ", 2)[0];
+            assertError(" evn/Final Concert c/1" + unknown,
+                    String.format(UnassignCommandParser.MESSAGE_UNKNOWN_PARAMETER, prefix));
         }
-        assertEquals("Unknown parameter.\n" + UnassignCommand.MESSAGE_USAGE,
+        assertEquals("Unknown parameter: x/.\n" + UnassignCommand.MESSAGE_USAGE,
                 assertThrows(ParseException.class, () -> parser.parse(" x/1 evn/Final Concert c/1")).getMessage());
     }
 

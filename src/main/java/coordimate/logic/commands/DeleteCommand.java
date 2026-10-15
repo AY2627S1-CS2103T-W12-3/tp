@@ -26,7 +26,7 @@ public class DeleteCommand extends Command {
     public static final String MESSAGE_AMBIGUOUS_MATCH = Messages.MESSAGE_CONTACT_AMBIGUOUS_MATCH;
     public static final String MESSAGE_SAVE_ERROR = "Contact could not be saved. No changes were made.";
     public static final String MESSAGE_LOAD_ERROR =
-            "Contact data could not be loaded. Please check the local data file.";
+            Messages.MESSAGE_LOAD_ERROR;
 
     /** The detail used to identify a contact outside the displayed list. */
     public enum IdentifierType {

@@ -145,8 +145,14 @@ Command error messages follow these conventions:
 * Use sentence case and full stops for explanations, without an `Error!` prefix or exclamation marks.
 * For malformed command syntax, use `ParserUtil.createInvalidFormatException(Command.MESSAGE_USAGE)`.
   Usage text has a command description, `Parameters:`, and `Example:` on separate lines.
-* For unknown or repeated parameters, show the reason followed by the command's usage text.
-* For invalid field values, explain the constraint and provide an `Example:` of a valid value.
+* Every command error includes the relevant command's usage once. `CoordiMateParser` appends it to parse errors;
+  `LogicManager` appends it to execution and storage errors. `Messages.withUsage` avoids duplicating usage.
+* For unknown or repeated parameters, name the offending prefix: `Unknown parameter: x/.` or
+  `Parameter evn/ may only be specified once.`
+* For invalid field values, explain the constraint and provide an `Example:` using the failing parameter's prefix.
+* Distinguish missing parameters, which show command-format guidance, from supplied but empty values, which use
+  `<Field> must not be empty. Example: <prefix><value>`. Optional contact fields can still be cleared intentionally.
+* Storage-loading errors use `Saved data could not be loaded. Check the local data file.` for every data type.
 * For execution errors, explain what failed and how to correct it. Reuse the templates in `Messages` for missing
   contacts, events, and tags, and for unmatched or ambiguous contact identifiers.
 * Add `No changes were made.` when an attempted change is rejected without modifying the saved data.

@@ -8,6 +8,7 @@ import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import coordimate.logic.Messages;
 import coordimate.logic.commands.FilterCommand;
 import coordimate.logic.parser.exceptions.ParseException;
 import coordimate.model.person.FilterCriterion;
@@ -17,7 +18,8 @@ import coordimate.model.person.FilterField;
  * Parses one or more FIELD/VALUE pairs into filter criteria, combined with AND logic.
  */
 public class FilterCommandParser implements Parser<FilterCommand> {
-    public static final String MESSAGE_UNKNOWN_PARAMETER = "Unknown parameter.\n" + FilterCommand.MESSAGE_USAGE;
+    public static final String MESSAGE_UNKNOWN_PARAMETER =
+            Messages.MESSAGE_UNKNOWN_PARAMETER + "\n" + FilterCommand.MESSAGE_USAGE;
 
     private static final Pattern FIELD_PATTERN = Pattern.compile("(?<!\\S)([A-Za-z]+)/");
 
@@ -45,11 +47,14 @@ public class FilterCommandParser implements Parser<FilterCommand> {
             int valueEnd = (i + 1 < fieldTokens.size()) ? fieldTokens.get(i + 1).start() : trimmed.length();
             String value = stripQuotes(trimmed.substring(valueStart, valueEnd).strip());
 
-            if (value.isEmpty()) {
-                throw ParserUtil.createInvalidFormatException(FilterCommand.MESSAGE_USAGE);
-            }
             FilterField field = FilterField.fromFieldName(fieldName)
-                    .orElseThrow(() -> new ParseException(MESSAGE_UNKNOWN_PARAMETER));
+                    .orElseThrow(() -> new ParseException(String.format(MESSAGE_UNKNOWN_PARAMETER, fieldName + "/")));
+            String example = switch (field) {
+                case TAG -> "tag/Publicity";
+                case EVENT -> "event/Final Concert";
+                case ORGANISATION -> "organisation/NUS Student Affairs";
+            };
+            ParserUtil.requireValue(value, "Filter value", example);
             criteria.add(new FilterCriterion(field, value));
         }
 

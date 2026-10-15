@@ -8,8 +8,10 @@ import static java.util.Objects.requireNonNull;
  */
 public class Organisation {
 
-    public static final String MESSAGE_CONSTRAINTS = "Invalid organisation. Example: o/NUS Student Affairs";
-    private static final int MAX_LENGTH = 80;
+    public static final int MAX_LENGTH = 80;
+    public static final String MESSAGE_CONSTRAINTS = "Invalid organisation. Use 1 to " + MAX_LENGTH
+            + " characters: letters, digits, spaces, and - & . , ' ( ) /, with at least one letter or digit. "
+            + "Example: o/NUS Student Affairs";
 
     private final String value;
 
@@ -39,8 +41,7 @@ public class Organisation {
     }
 
     private static boolean isAllowedCharacter(int codePoint) {
-        return Character.isLetterOrDigit(codePoint) || codePoint == ' ' || codePoint == '-'
-                || codePoint == '&';
+        return Character.isLetterOrDigit(codePoint) || " -&.,'()/".indexOf(codePoint) >= 0;
     }
 
     @Override

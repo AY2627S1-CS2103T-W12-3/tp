@@ -58,7 +58,8 @@ public class DeleteEventIntegrationTest {
         CoordiMate before = new CoordiMate(model.getCoordiMate());
         Logic logic = newLogic(model, storage);
         for (String name : new String[] {"Missing", "Final", "Final  Concert"}) {
-            assertEquals("Event " + name + " does not exist. Use a saved event name.", assertThrows(
+            assertEquals(Messages.withUsage("Event " + name + " does not exist. Use a saved event name.",
+                    DeleteEventCommand.MESSAGE_USAGE), assertThrows(
                     CommandException.class, () -> logic.execute("deleteevent evn/" + name)).getMessage());
             assertEquals(before, model.getCoordiMate());
             assertEquals(beforeFile, Files.readString(storage.getCoordiMateFilePath()));
@@ -79,7 +80,8 @@ public class DeleteEventIntegrationTest {
             }
         };
         Logic failingLogic = newLogic(model, failingStorage);
-        assertEquals(DeleteEventCommand.MESSAGE_SAVE_ERROR, assertThrows(
+        assertEquals(Messages.withUsage(DeleteEventCommand.MESSAGE_SAVE_ERROR,
+                DeleteEventCommand.MESSAGE_USAGE), assertThrows(
                 CommandException.class, () -> failingLogic.execute("deleteevent evn/Final Concert")).getMessage());
         assertEquals(before, model.getCoordiMate());
         assertEquals(beforeFile, Files.readString(path));

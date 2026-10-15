@@ -12,7 +12,6 @@ import coordimate.logic.Messages;
 import coordimate.logic.commands.MarkAttendanceCommand;
 import coordimate.logic.parser.exceptions.ParseException;
 import coordimate.model.event.AttendanceStatus;
-import coordimate.model.event.Event;
 
 /**
  * Parses an event name, member name, and attendance status, rejecting unknown or repeated parameters.
@@ -20,7 +19,7 @@ import coordimate.model.event.Event;
 public class MarkAttendanceCommandParser implements Parser<MarkAttendanceCommand> {
 
     public static final String MESSAGE_UNKNOWN_PARAMETER =
-            "Unknown parameter.\n" + MarkAttendanceCommand.MESSAGE_USAGE;
+            Messages.MESSAGE_UNKNOWN_PARAMETER + "\n" + MarkAttendanceCommand.MESSAGE_USAGE;
     public static final String MESSAGE_REPEATED_PARAMETER =
             Messages.MESSAGE_REPEATED_PARAMETER + "\n" + MarkAttendanceCommand.MESSAGE_USAGE;
     public static final String MESSAGE_INVALID_STATUS = AttendanceStatus.MESSAGE_CONSTRAINTS;
@@ -40,16 +39,12 @@ public class MarkAttendanceCommandParser implements Parser<MarkAttendanceCommand
             throw createInvalidFormatException();
         }
 
-        String eventName = values.get(PREFIX_EVENT_NAME.toString());
+        String eventName = ParserUtil.parseEventName(values.get(PREFIX_EVENT_NAME.toString()));
         String memberName = values.get(PREFIX_MEMBER.toString());
         String statusText = values.get(PREFIX_ATTENDANCE.toString());
 
-        if (eventName.isEmpty()) {
-            throw new ParseException(Event.MESSAGE_EMPTY_NAME);
-        }
-        if (memberName.isEmpty()) {
-            throw createInvalidFormatException();
-        }
+        ParserUtil.requireValue(memberName, "Member name", "mem/Aisha Tan");
+        ParserUtil.requireValue(statusText, "Attendance status", "att/present");
 
         AttendanceStatus status;
         try {
@@ -58,7 +53,7 @@ public class MarkAttendanceCommandParser implements Parser<MarkAttendanceCommand
             throw new ParseException(MESSAGE_INVALID_STATUS);
         }
 
-        return new MarkAttendanceCommand(eventName, ParserUtil.parseName(memberName), status);
+        return new MarkAttendanceCommand(eventName, ParserUtil.parseName(memberName, PREFIX_MEMBER), status);
     }
 
     private ParseException createInvalidFormatException() {

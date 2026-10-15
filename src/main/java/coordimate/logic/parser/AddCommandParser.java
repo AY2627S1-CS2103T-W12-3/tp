@@ -33,10 +33,9 @@ import coordimate.model.tag.Tag;
  */
 public class AddCommandParser implements Parser<AddCommand> {
     public static final String MESSAGE_UNKNOWN_PARAMETER =
-            "Unknown parameter.\n" + AddCommand.MESSAGE_USAGE;
+            Messages.MESSAGE_UNKNOWN_PARAMETER + "\n" + AddCommand.MESSAGE_USAGE;
     public static final String MESSAGE_REPEATED_REQUIRED_PARAMETER =
             Messages.MESSAGE_REPEATED_REQUIRED_PARAMETER + "\n" + AddCommand.MESSAGE_USAGE;
-    public static final String MESSAGE_EMPTY_REQUIRED_VALUE = "This field cannot be empty. Example: n/Aisha Tan";
 
     private static final Set<String> ALLOWED_PREFIXES = Set.of(PREFIX_NAME.toString(), PREFIX_PHONE.toString(),
             PREFIX_EMAIL.toString(), PREFIX_ROLE.toString(), PREFIX_BIRTHDAY.toString(), PREFIX_ADDRESS.toString(),
@@ -58,12 +57,11 @@ public class AddCommandParser implements Parser<AddCommand> {
         } catch (ParseException e) {
             throw new ParseException(e.getMessage() + "\n" + AddCommand.MESSAGE_USAGE, e);
         }
-        rejectEmptyRequiredValues(arguments);
 
         Name name = ParserUtil.parseName(arguments.getValue(PREFIX_NAME).orElseThrow());
         Phone phone = ParserUtil.parsePhone(arguments.getValue(PREFIX_PHONE).orElseThrow());
         Email email = ParserUtil.parseEmail(arguments.getValue(PREFIX_EMAIL).orElseThrow());
-        Role role = parseRole(arguments.getValue(PREFIX_ROLE).orElseThrow());
+        Role role = ParserUtil.parseRole(arguments.getValue(PREFIX_ROLE).orElseThrow());
         Birthday birthday = parseBirthday(arguments.getValue(PREFIX_BIRTHDAY).orElse(""));
         Address address = parseAddress(arguments.getValue(PREFIX_ADDRESS).orElse(""));
         Organisation organisation = parseOrganisation(arguments.getValue(PREFIX_ORGANISATION).orElse(""));
@@ -78,36 +76,15 @@ public class AddCommandParser implements Parser<AddCommand> {
     }
 
     private static void rejectRepeatedRequiredParameters(ArgumentMultimap arguments) throws ParseException {
-        if (arguments.getAllValues(PREFIX_NAME).size() > 1 || arguments.getAllValues(PREFIX_PHONE).size() > 1
-                || arguments.getAllValues(PREFIX_EMAIL).size() > 1 || arguments.getAllValues(PREFIX_ROLE).size() > 1) {
-            throw new ParseException(MESSAGE_REPEATED_REQUIRED_PARAMETER);
+        for (Prefix prefix : new Prefix[] {PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL, PREFIX_ROLE}) {
+            if (arguments.getAllValues(prefix).size() > 1) {
+                throw new ParseException(String.format(MESSAGE_REPEATED_REQUIRED_PARAMETER, prefix));
+            }
         }
-    }
-
-    private static void rejectEmptyRequiredValues(ArgumentMultimap arguments) throws ParseException {
-        if (arguments.getValue(PREFIX_NAME).orElseThrow().isEmpty()
-                || arguments.getValue(PREFIX_PHONE).orElseThrow().isEmpty()
-                || arguments.getValue(PREFIX_EMAIL).orElseThrow().isEmpty()
-                || arguments.getValue(PREFIX_ROLE).orElseThrow().isEmpty()) {
-            throw new ParseException(MESSAGE_EMPTY_REQUIRED_VALUE);
-        }
-    }
-
-    private static Role parseRole(String value) throws ParseException {
-        if (!Role.isValidRole(value)) {
-            throw new ParseException(Role.MESSAGE_CONSTRAINTS);
-        }
-        return new Role(value);
     }
 
     private static Birthday parseBirthday(String value) throws ParseException {
-        if (value.isEmpty()) {
-            return null;
-        }
-        if (!Birthday.isValidBirthday(value)) {
-            throw new ParseException(Birthday.MESSAGE_CONSTRAINTS);
-        }
-        return new Birthday(value);
+        return value.isEmpty() ? null : ParserUtil.parseBirthday(value);
     }
 
     private static Address parseAddress(String value) throws ParseException {
@@ -115,23 +92,11 @@ public class AddCommandParser implements Parser<AddCommand> {
     }
 
     private static Organisation parseOrganisation(String value) throws ParseException {
-        if (value.isEmpty()) {
-            return null;
-        }
-        if (!Organisation.isValidOrganisation(value)) {
-            throw new ParseException(Organisation.MESSAGE_CONSTRAINTS);
-        }
-        return new Organisation(value);
+        return value.isEmpty() ? null : ParserUtil.parseOrganisation(value);
     }
 
     private static Note parseNote(String value) throws ParseException {
-        if (value.isEmpty()) {
-            return null;
-        }
-        if (!Note.isValidNote(value)) {
-            throw new ParseException(Note.MESSAGE_CONSTRAINTS);
-        }
-        return new Note(value);
+        return value.isEmpty() ? null : ParserUtil.parseNote(value);
     }
 
     private static Set<Tag> parseTags(ArgumentMultimap arguments) throws ParseException {

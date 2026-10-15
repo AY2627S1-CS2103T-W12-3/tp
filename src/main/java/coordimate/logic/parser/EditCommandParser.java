@@ -26,10 +26,6 @@ import coordimate.logic.commands.EditCommand.TagOperation;
 import coordimate.logic.commands.EditCommand.TagOperationType;
 import coordimate.logic.parser.ArgumentMultimap.PrefixedValue;
 import coordimate.logic.parser.exceptions.ParseException;
-import coordimate.model.person.Birthday;
-import coordimate.model.person.Note;
-import coordimate.model.person.Organisation;
-import coordimate.model.person.Role;
 import coordimate.model.tag.Tag;
 
 /**
@@ -41,7 +37,7 @@ public class EditCommandParser implements Parser<EditCommand> {
     public static final String MESSAGE_REPEATED_PARAMETER =
             Messages.MESSAGE_REPEATED_PARAMETER + "\n" + EditCommand.MESSAGE_USAGE;
     public static final String MESSAGE_UNKNOWN_PARAMETER =
-            "Unknown parameter.\n" + EditCommand.MESSAGE_USAGE;
+            Messages.MESSAGE_UNKNOWN_PARAMETER + "\n" + EditCommand.MESSAGE_USAGE;
     public static final String MESSAGE_MULTIPLE_IDENTIFIERS =
             "Specify exactly one contact identifier.\n" + EditCommand.MESSAGE_USAGE;
     public static final String MESSAGE_EMPTY_TARGET =
@@ -103,18 +99,11 @@ public class EditCommandParser implements Parser<EditCommand> {
             editPersonDescriptor.setEmail(ParserUtil.parseEmail(argMultimap.getValue(PREFIX_EMAIL).get()));
         }
         if (argMultimap.getValue(PREFIX_ROLE).isPresent()) {
-            String role = argMultimap.getValue(PREFIX_ROLE).orElseThrow();
-            if (!Role.isValidRole(role)) {
-                throw new ParseException(Role.MESSAGE_CONSTRAINTS);
-            }
-            editPersonDescriptor.setRole(new Role(role));
+            editPersonDescriptor.setRole(ParserUtil.parseRole(argMultimap.getValue(PREFIX_ROLE).get()));
         }
         if (argMultimap.getValue(PREFIX_BIRTHDAY).isPresent()) {
             String birthday = argMultimap.getValue(PREFIX_BIRTHDAY).orElseThrow();
-            if (!birthday.isEmpty() && !Birthday.isValidBirthday(birthday)) {
-                throw new ParseException(Birthday.MESSAGE_CONSTRAINTS);
-            }
-            editPersonDescriptor.setBirthday(birthday.isEmpty() ? null : new Birthday(birthday));
+            editPersonDescriptor.setBirthday(birthday.isEmpty() ? null : ParserUtil.parseBirthday(birthday));
         }
         if (argMultimap.getValue(PREFIX_ADDRESS).isPresent()) {
             String address = argMultimap.getValue(PREFIX_ADDRESS).orElseThrow();
@@ -122,17 +111,12 @@ public class EditCommandParser implements Parser<EditCommand> {
         }
         if (argMultimap.getValue(PREFIX_ORGANISATION).isPresent()) {
             String organisation = argMultimap.getValue(PREFIX_ORGANISATION).orElseThrow();
-            if (!organisation.isEmpty() && !Organisation.isValidOrganisation(organisation)) {
-                throw new ParseException(Organisation.MESSAGE_CONSTRAINTS);
-            }
-            editPersonDescriptor.setOrganisation(organisation.isEmpty() ? null : new Organisation(organisation));
+            editPersonDescriptor.setOrganisation(
+                    organisation.isEmpty() ? null : ParserUtil.parseOrganisation(organisation));
         }
         if (argMultimap.getValue(PREFIX_NOTE).isPresent()) {
             String note = argMultimap.getValue(PREFIX_NOTE).orElseThrow();
-            if (!note.isEmpty() && !Note.isValidNote(note)) {
-                throw new ParseException(Note.MESSAGE_CONSTRAINTS);
-            }
-            editPersonDescriptor.setNote(note.isEmpty() ? null : new Note(note));
+            editPersonDescriptor.setNote(note.isEmpty() ? null : ParserUtil.parseNote(note));
         }
         parseTagEdits(argMultimap, editPersonDescriptor);
 
@@ -146,14 +130,11 @@ public class EditCommandParser implements Parser<EditCommand> {
     }
 
     private static void rejectRepeatedParameters(ArgumentMultimap arguments) throws ParseException {
-        if (arguments.getAllValues(PREFIX_NAME).size() > 1 || arguments.getAllValues(PREFIX_PHONE).size() > 1
-                || arguments.getAllValues(PREFIX_EMAIL).size() > 1 || arguments.getAllValues(PREFIX_ROLE).size() > 1
-                || arguments.getAllValues(PREFIX_BIRTHDAY).size() > 1
-                || arguments.getAllValues(PREFIX_ADDRESS).size() > 1
-                || arguments.getAllValues(PREFIX_ORGANISATION).size() > 1
-                || arguments.getAllValues(PREFIX_NOTE).size() > 1
-                || arguments.getAllValues(PREFIX_TARGET).size() > 1) {
-            throw new ParseException(MESSAGE_REPEATED_PARAMETER);
+        for (Prefix prefix : new Prefix[] {PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL, PREFIX_ROLE,
+            PREFIX_BIRTHDAY, PREFIX_ADDRESS, PREFIX_ORGANISATION, PREFIX_NOTE, PREFIX_TARGET}) {
+            if (arguments.getAllValues(prefix).size() > 1) {
+                throw new ParseException(String.format(MESSAGE_REPEATED_PARAMETER, prefix));
+            }
         }
     }
 
@@ -182,10 +163,12 @@ public class EditCommandParser implements Parser<EditCommand> {
         for (PrefixedValue argument : arguments.getArgumentsInOrder()) {
             if (argument.prefix().equals(PREFIX_ADD_TAG)) {
                 descriptor.addTagOperation(
-                        new TagOperation(TagOperationType.ADD, ParserUtil.parseTag(argument.value())));
+                        new TagOperation(TagOperationType.ADD, ParserUtil.parseTag(argument.value(),
+                                argument.prefix())));
             } else if (argument.prefix().equals(PREFIX_REMOVE_TAG)) {
                 descriptor.addTagOperation(
-                        new TagOperation(TagOperationType.REMOVE, ParserUtil.parseTag(argument.value())));
+                        new TagOperation(TagOperationType.REMOVE, ParserUtil.parseTag(argument.value(),
+                                argument.prefix())));
             }
         }
     }

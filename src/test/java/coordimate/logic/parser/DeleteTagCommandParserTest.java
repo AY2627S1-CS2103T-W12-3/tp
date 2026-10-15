@@ -28,14 +28,15 @@ public class DeleteTagCommandParserTest {
 
     @Test
     public void parse_missingTagName_throwsParseException() {
-        assertParseFailure(parser, " t/", invalidFormat);
-        assertParseFailure(parser, " t/   ", invalidFormat);
+        assertParseFailure(parser, " t/", "Tag name must not be empty. Example: t/Publicity");
+        assertParseFailure(parser, " t/   ", "Tag name must not be empty. Example: t/Publicity");
     }
 
     @Test
     public void parse_extraParameters_throwsParseException() {
         assertParseFailure(parser, "Publicity t/Media", invalidFormat);
-        assertParseFailure(parser, " t/Publicity t/Media", DeleteTagCommandParser.MESSAGE_REPEATED_PARAMETER);
+        assertParseFailure(parser,
+                " t/Publicity t/Media", String.format(DeleteTagCommandParser.MESSAGE_REPEATED_PARAMETER, "t/"));
     }
 
     @Test

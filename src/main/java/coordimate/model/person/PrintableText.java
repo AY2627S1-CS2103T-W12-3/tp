@@ -3,13 +3,17 @@ package coordimate.model.person;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Validation shared by contact fields that allow printable Unicode text.
+ * Validation shared by fields that allow printable Unicode text, such as addresses, notes, and event names.
  */
-final class PrintableText {
+public final class PrintableText {
 
     private PrintableText() {}
 
-    static boolean isValid(String value, int maxLength) {
+    /**
+     * Returns true if {@code value} is non-blank, has at most {@code maxLength} code points,
+     * and contains no control, surrogate, or line-separator characters.
+     */
+    public static boolean isValid(String value, int maxLength) {
         requireNonNull(value);
         int length = value.codePointCount(0, value.length());
         return length > 0 && length <= maxLength && !value.isBlank()

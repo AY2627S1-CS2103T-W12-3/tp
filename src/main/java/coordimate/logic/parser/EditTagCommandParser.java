@@ -14,7 +14,8 @@ import coordimate.model.tag.Tag;
  * Parses input arguments and creates an {@link EditTagCommand}.
  */
 public class EditTagCommandParser implements Parser<EditTagCommand> {
-    public static final String MESSAGE_UNKNOWN_PARAMETER = "Unknown parameter.\n" + EditTagCommand.MESSAGE_USAGE;
+    public static final String MESSAGE_UNKNOWN_PARAMETER =
+            Messages.MESSAGE_UNKNOWN_PARAMETER + "\n" + EditTagCommand.MESSAGE_USAGE;
     public static final String MESSAGE_REPEATED_PARAMETER =
             Messages.MESSAGE_REPEATED_PARAMETER + "\n" + EditTagCommand.MESSAGE_USAGE;
 
@@ -31,13 +32,11 @@ public class EditTagCommandParser implements Parser<EditTagCommand> {
             throw ParserUtil.createInvalidFormatException(EditTagCommand.MESSAGE_USAGE);
         }
         if (argMultimap.getAllValues(PREFIX_TAG).size() > 1) {
-            throw new ParseException(MESSAGE_REPEATED_PARAMETER);
+            throw new ParseException(String.format(MESSAGE_REPEATED_PARAMETER, PREFIX_TAG));
         }
 
         String newTagName = argMultimap.getValue(PREFIX_TAG).orElseThrow();
-        if (newTagName.isEmpty()) {
-            throw ParserUtil.createInvalidFormatException(EditTagCommand.MESSAGE_USAGE);
-        }
+        ParserUtil.requireValue(newTagName, "Tag name", "t/Publicity");
         Tag editedTag = ParserUtil.parseTag(newTagName);
         return new EditTagCommand(argMultimap.getPreamble(), editedTag);
     }

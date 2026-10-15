@@ -11,7 +11,11 @@ import java.util.Locale;
  */
 public class Email {
 
-    public static final String MESSAGE_CONSTRAINTS = "Invalid email. Example: e/aish@example.com";
+    public static final int MAX_LENGTH = 254;
+    public static final int MAX_LOCAL_PART_LENGTH = 64;
+    public static final String MESSAGE_CONSTRAINTS = "Invalid email. Use local-part@domain, at most " + MAX_LENGTH
+            + " characters, with a local part of at most " + MAX_LOCAL_PART_LENGTH + " characters. "
+            + "Example: e/aish@example.com";
 
     private static final String LOCAL_PART_REGEX = "[A-Za-z0-9_%+-](?:[A-Za-z0-9._%+-]*[A-Za-z0-9_%+-])?";
     private static final String DOMAIN_LABEL_REGEX = "[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?";
@@ -43,11 +47,15 @@ public class Email {
     }
 
     /**
-     * Returns true if a given string is a valid email.
+     * Returns true if a given string is a valid email within the length limits.
      */
     public static boolean isValidEmail(String test) {
         requireNonNull(test);
-        return test.matches(VALIDATION_REGEX) && !test.substring(0, test.indexOf('@')).contains("..");
+        if (test.length() > MAX_LENGTH || !test.matches(VALIDATION_REGEX)) {
+            return false;
+        }
+        String localPart = test.substring(0, test.indexOf('@'));
+        return localPart.length() <= MAX_LOCAL_PART_LENGTH && !localPart.contains("..");
     }
 
     @Override

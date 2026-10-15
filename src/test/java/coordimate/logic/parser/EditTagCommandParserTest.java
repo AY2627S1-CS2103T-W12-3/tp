@@ -41,14 +41,14 @@ public class EditTagCommandParserTest {
 
     @Test
     public void parse_noNewTag_throwsParseException() {
-        assertParseFailure(parser, " Media t/", invalidFormat);
-        assertParseFailure(parser, " Media t/   ", invalidFormat);
+        assertParseFailure(parser, " Media t/", "Tag name must not be empty. Example: t/Publicity");
+        assertParseFailure(parser, " Media t/   ", "Tag name must not be empty. Example: t/Publicity");
     }
 
     @Test
     public void parse_multipleNewTags_throwsParseException() {
         assertParseFailure(parser, " Media t/Publicity t/ProductionCrew",
-                EditTagCommandParser.MESSAGE_REPEATED_PARAMETER);
+                String.format(EditTagCommandParser.MESSAGE_REPEATED_PARAMETER, "t/"));
     }
 
     @Test

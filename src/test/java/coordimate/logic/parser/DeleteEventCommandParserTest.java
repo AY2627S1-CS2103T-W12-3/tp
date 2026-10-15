@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import coordimate.logic.commands.DeleteEventCommand;
 import coordimate.logic.parser.exceptions.ParseException;
+import coordimate.model.event.Event;
 
 public class DeleteEventCommandParserTest {
     private final DeleteEventCommandParser parser = new DeleteEventCommandParser();
@@ -24,22 +25,26 @@ public class DeleteEventCommandParserTest {
 
     @Test
     public void parse_missingNameOrUnexpectedPreamble_rejected() {
-        for (String input : new String[] {"", "Final Concert", "evn/", "evn/  ", "unexpected evn/Fair"}) {
+        for (String input : new String[] {"", "Final Concert", "unexpected evn/Fair"}) {
             assertError(input, String.format(MESSAGE_INVALID_COMMAND_FORMAT, DeleteEventCommand.MESSAGE_USAGE));
         }
     }
 
     @Test
     public void parse_unknownParameters_rejected() {
-        for (String input : new String[] {"x/Fair", "evn/Fair st/09-10-2026", "r/Logistics evn/Fair",
-            "evn/Fair /et 10-10-2026", "evn/Fair nevn/New Fair"}) {
-            assertError(input, "Unknown parameter.\n" + DeleteEventCommand.MESSAGE_USAGE);
+        String[][] cases = {
+            {"x/Fair", "x/"}, {"evn/Fair st/09-10-2026", "st/"}, {"r/Logistics evn/Fair", "r/"},
+            {"evn/Fair /et 10-10-2026", "/et"}, {"evn/Fair nevn/New Fair", "nevn/"}
+        };
+        for (String[] entry : cases) {
+            assertError(entry[0], String.format(DeleteEventCommandParser.MESSAGE_UNKNOWN_PARAMETER, entry[1]));
         }
     }
 
     @Test
     public void parse_repeatedName_rejected() {
-        assertError("evn/Fair evn/Concert", DeleteEventCommandParser.MESSAGE_REPEATED_PARAMETER);
+        assertError("evn/Fair evn/Concert", String.format(DeleteEventCommandParser.MESSAGE_REPEATED_PARAMETER, "evn/"));
+        assertError("evn/" + "E".repeat(Event.MAX_NAME_LENGTH + 1), Event.MESSAGE_NAME_LENGTH_CONSTRAINTS);
     }
 
     private void assertError(String input, String message) {

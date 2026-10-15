@@ -107,7 +107,8 @@ public class EditCommandPersistenceTest {
             CommandException exception = assertThrows(CommandException.class, () ->
                     newLogic(model, failingStorage).execute(EDIT));
 
-            assertEquals(EditCommand.MESSAGE_SAVE_ERROR, exception.getMessage());
+            assertEquals(Messages.withUsage(EditCommand.MESSAGE_SAVE_ERROR,
+                    EditCommand.MESSAGE_USAGE), exception.getMessage());
             assertSame(failure, exception.getCause());
             assertEquals(beforeModel, model.getCoordiMate());
             assertEquals(beforeDisplayed, model.getFilteredPersonList());
@@ -129,7 +130,8 @@ public class EditCommandPersistenceTest {
             CommandException exception = assertThrows(CommandException.class, () ->
                     logic.execute("edit target/alice@example.com r/President"));
 
-            assertEquals(EditCommand.MESSAGE_LOAD_ERROR, exception.getMessage());
+            assertEquals(Messages.withUsage(EditCommand.MESSAGE_LOAD_ERROR,
+                    EditCommand.MESSAGE_USAGE), exception.getMessage());
             assertTrue(exception.getCause() instanceof DataLoadingException);
             assertEquals(beforeModel, model.getCoordiMate());
             assertTrue(model.getFilteredPersonList().isEmpty());

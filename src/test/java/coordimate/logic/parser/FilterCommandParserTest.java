@@ -102,14 +102,16 @@ public class FilterCommandParserTest {
 
     @Test
     public void parse_emptyValue_throwsParseException() {
-        assertParseFailure(parser, " tag/", invalidFormat);
-        assertParseFailure(parser, " tag/   ", invalidFormat);
+        assertParseFailure(parser, " tag/", "Filter value must not be empty. Example: tag/Publicity");
+        assertParseFailure(parser, " tag/   ", "Filter value must not be empty. Example: tag/Publicity");
     }
 
     @Test
     public void parse_unsupportedField_throwsParseException() {
-        assertParseFailure(parser, " favourite/true", FilterCommandParser.MESSAGE_UNKNOWN_PARAMETER);
-        assertParseFailure(parser, " unknown/value", FilterCommandParser.MESSAGE_UNKNOWN_PARAMETER);
+        assertParseFailure(parser,
+                " favourite/true", String.format(FilterCommandParser.MESSAGE_UNKNOWN_PARAMETER, "favourite/"));
+        assertParseFailure(parser,
+                " unknown/value", String.format(FilterCommandParser.MESSAGE_UNKNOWN_PARAMETER, "unknown/"));
     }
 
     @Test

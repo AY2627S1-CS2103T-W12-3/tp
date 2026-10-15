@@ -2,6 +2,7 @@ package coordimate.logic.parser;
 
 import static coordimate.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static coordimate.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
+import static coordimate.logic.Messages.withUsage;
 import static coordimate.testutil.Assert.assertThrows;
 import static coordimate.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -89,7 +90,7 @@ public class CoordiMateParserTest {
 
     @Test
     public void parseCommand_removedNewTagCommand_throwsParseException() {
-        assertThrows(ParseException.class, MESSAGE_UNKNOWN_COMMAND, () ->
+        assertThrows(ParseException.class, withUsage(MESSAGE_UNKNOWN_COMMAND, HelpCommand.MESSAGE_USAGE), () ->
                 parser.parseCommand("newtag t/Publicity"));
     }
 
@@ -145,8 +146,10 @@ public class CoordiMateParserTest {
 
     @Test
     public void parseCommand_removedCommand_throwsUnknownCommandException() {
-        assertThrows(ParseException.class, MESSAGE_UNKNOWN_COMMAND, () -> parser.parseCommand("find"));
-        assertThrows(ParseException.class, MESSAGE_UNKNOWN_COMMAND, () -> parser.parseCommand("find Alice"));
+        assertThrows(ParseException.class, withUsage(MESSAGE_UNKNOWN_COMMAND, HelpCommand.MESSAGE_USAGE), () ->
+                parser.parseCommand("find"));
+        assertThrows(ParseException.class, withUsage(MESSAGE_UNKNOWN_COMMAND, HelpCommand.MESSAGE_USAGE), () ->
+                parser.parseCommand("find Alice"));
     }
 
     @Test
@@ -195,6 +198,7 @@ public class CoordiMateParserTest {
 
     @Test
     public void parseCommand_unknownCommand_throwsParseException() {
-        assertThrows(ParseException.class, MESSAGE_UNKNOWN_COMMAND, () -> parser.parseCommand("unknownCommand"));
+        assertThrows(ParseException.class, withUsage(MESSAGE_UNKNOWN_COMMAND, HelpCommand.MESSAGE_USAGE), () ->
+                parser.parseCommand("unknownCommand"));
     }
 }

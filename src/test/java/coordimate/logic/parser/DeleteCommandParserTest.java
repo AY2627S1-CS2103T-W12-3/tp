@@ -26,9 +26,9 @@ public class DeleteCommandParserTest {
     @Test
     public void parse_missingOrEmptyIdentifier_failure() {
         assertParseFailure(parser, "", invalidFormat);
-        assertParseFailure(parser, "n/", invalidFormat);
-        assertParseFailure(parser, "p/   ", invalidFormat);
-        assertParseFailure(parser, "e/", invalidFormat);
+        assertParseFailure(parser, "n/", "Contact identifier must not be empty. Example: n/Aisha Tan");
+        assertParseFailure(parser, "p/   ", "Contact identifier must not be empty. Example: p/+6591234567");
+        assertParseFailure(parser, "e/", "Contact identifier must not be empty. Example: e/aish@example.com");
     }
 
     @Test
@@ -44,8 +44,9 @@ public class DeleteCommandParserTest {
         assertParseFailure(parser, "1 n/Alice", DeleteCommandParser.MESSAGE_MULTIPLE_IDENTIFIERS);
         assertParseFailure(parser, "n/Alice p/94351253", DeleteCommandParser.MESSAGE_MULTIPLE_IDENTIFIERS);
         assertParseFailure(parser, "e/alice@example.com e/bob@example.com",
-                DeleteCommandParser.MESSAGE_MULTIPLE_IDENTIFIERS);
-        assertParseFailure(parser, "x/Alice", DeleteCommandParser.MESSAGE_UNKNOWN_PARAMETER);
-        assertParseFailure(parser, "n/Alice r/President", DeleteCommandParser.MESSAGE_UNKNOWN_PARAMETER);
+                "Parameter e/ may only be specified once.\n" + DeleteCommand.MESSAGE_USAGE);
+        assertParseFailure(parser, "x/Alice", String.format(DeleteCommandParser.MESSAGE_UNKNOWN_PARAMETER, "x/"));
+        assertParseFailure(parser,
+                "n/Alice r/President", String.format(DeleteCommandParser.MESSAGE_UNKNOWN_PARAMETER, "r/"));
     }
 }

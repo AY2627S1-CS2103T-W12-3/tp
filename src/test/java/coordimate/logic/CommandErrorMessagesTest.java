@@ -49,10 +49,79 @@ public class CommandErrorMessagesTest {
             assertFalse(message.contains("Error!"), input);
             assertFalse(message.contains("e.g."), input);
             assertFalse(message.startsWith("Error:"), input);
+            assertEquals(1, message.split("\nParameters: ", -1).length - 1, input);
+            assertTrue(message.endsWith(CoordiMateParser.getUsage(input.split(" ", 2)[0])), input);
             if (message.contains("Parameters:")) {
                 assertTrue(message.contains("\nParameters: "), input);
                 assertTrue(message.contains("\nExample: "), input);
             }
+        }
+    }
+
+    @Test
+    public void parse_emptyValues_identifiesFieldAndIncludesUsage() {
+        String[][] cases = {
+            {"add n/Alice p/ e/alice@example.com r/Lead", "Phone number", "p/+6591234567"},
+            {"edit 1 n/", "Name", "n/Aisha Tan"},
+            {"edit 1 p/", "Phone number", "p/+6591234567"},
+            {"edit 1 e/", "Email", "e/aish@example.com"},
+            {"edit 1 r/", "Role", "r/Logistics Lead"},
+            {"delete n/", "Contact identifier", "n/Aisha Tan"},
+            {"addtag t/", "Tag name", "t/Publicity"},
+            {"deletetag t/", "Tag name", "t/Publicity"},
+            {"edittag Media t/", "Tag name", "t/Publicity"},
+            {"edit 1 at/", "Tag name", "at/Publicity"},
+            {"edit 1 rt/", "Tag name", "rt/Publicity"},
+            {"addevent evn/ st/17-09-2026 et/18-09-2026", "Event name", "evn/Final Concert"},
+            {"deleteevent evn/", "Event name", "evn/Final Concert"},
+            {"editevent evn/ nevn/New", "Event name", "evn/Final Concert"},
+            {"editevent evn/Fair nevn/", "New event name", "nevn/Final Concert"},
+            {"editevent evn/Fair st/", "Start time", "st/17-09-2026 16:30"},
+            {"editevent evn/Fair et/", "End time", "et/17-09-2026 18:30"},
+            {"addevent evn/Fair st/ et/17-09-2026", "Start time", "st/17-09-2026 16:30"},
+            {"addevent evn/Fair st/17-09-2026 et/", "End time", "et/17-09-2026 18:30"},
+            {"assign evn/Fair c/", "Contact indexes", "c/1 3 5"},
+            {"unassign evn/Fair c/", "Contact indexes", "c/1 3 5"},
+            {"markattendance evn/Fair mem/ att/present", "Member name", "mem/Aisha Tan"},
+            {"markattendance evn/Fair mem/Alice att/", "Attendance status", "att/present"},
+            {"filter tag/", "Filter value", "tag/Publicity"},
+            {"filter event/", "Filter value", "event/Final Concert"}
+        };
+        for (String[] entry : cases) {
+            String usage = CoordiMateParser.getUsage(entry[0].split(" ", 2)[0]);
+            String expected = entry[1] + " must not be empty. Example: " + entry[2] + "\n" + usage;
+            assertEquals(expected, assertThrows(ParseException.class, () ->
+                    parser.parseCommand(entry[0])).getMessage(), entry[0]);
+        }
+    }
+
+    @Test
+    public void parse_invalidValues_examplesUseOffendingParameter() {
+        String[][] cases = {
+            {"editevent evn/Fair nevn/Bad\u0007Name", "nevn/Final-Concert"},
+            {"editevent evn/Fair nevn/" + "E".repeat(Event.MAX_NAME_LENGTH + 1), "nevn/Final Concert"},
+            {"markattendance evn/Fair mem/Alice! att/present", "mem/Aisha Tan"},
+            {"addevent evn/Fair st/17-09-2026 et/invalid", "et/17-09-2026 16:30"},
+            {"editevent evn/Fair et/invalid", "et/17-09-2026 16:30"},
+            {"edit 1 at/Bad!", "at/Publicity"},
+            {"edit 1 rt/Bad!", "rt/Publicity"}
+        };
+        for (String[] entry : cases) {
+            String message = assertThrows(ParseException.class, () -> parser.parseCommand(entry[0])).getMessage();
+            String usage = CoordiMateParser.getUsage(entry[0].split(" ", 2)[0]);
+            assertTrue(message.substring(0, message.length() - usage.length()).contains("Example: " + entry[1]),
+                    entry[0]);
+            assertTrue(message.endsWith("\n" + usage), entry[0]);
+        }
+    }
+
+    @Test
+    public void parse_missingParameters_showsUsageInsteadOfEmptyValueError() {
+        for (String input : new String[] {"addtag", "deleteevent", "editevent nevn/New", "addevent evn/Fair",
+            "assign evn/Fair", "markattendance evn/Fair mem/Alice"}) {
+            String usage = CoordiMateParser.getUsage(input.split(" ", 2)[0]);
+            assertEquals("Invalid command format.\n" + usage,
+                    assertThrows(ParseException.class, () -> parser.parseCommand(input)).getMessage(), input);
         }
     }
 
@@ -68,7 +137,7 @@ public class CommandErrorMessagesTest {
         for (String input : inputs) {
             String commandWord = input.split(" ", 2)[0];
             String message = assertThrows(ParseException.class, () -> parser.parseCommand(input), input).getMessage();
-            assertTrue(message.startsWith("Unknown parameter.\n" + commandWord + ": "), input);
+            assertTrue(message.startsWith("Unknown parameter: x/.\n" + commandWord + ": "), input);
             assertTrue(message.contains("\nParameters: "), input);
             assertTrue(message.contains("\nExample: " + commandWord + " "), input);
         }

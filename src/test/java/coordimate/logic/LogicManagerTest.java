@@ -15,6 +15,7 @@ import java.nio.file.AccessDeniedException;
 import java.nio.file.Path;
 import java.util.Optional;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -22,11 +23,15 @@ import org.junit.jupiter.api.io.TempDir;
 import coordimate.commons.exceptions.DataLoadingException;
 import coordimate.logic.commands.AddCommand;
 import coordimate.logic.commands.CommandResult;
+import coordimate.logic.commands.CreateTagCommand;
 import coordimate.logic.commands.DeleteCommand;
+import coordimate.logic.commands.DeleteTagCommand;
+import coordimate.logic.commands.EditTagCommand;
 import coordimate.logic.commands.ListCommand;
 import coordimate.logic.commands.MarkAttendanceCommand;
 import coordimate.logic.commands.MutatingTagCommand;
 import coordimate.logic.commands.exceptions.CommandException;
+import coordimate.logic.parser.CoordiMateParser;
 import coordimate.logic.parser.exceptions.ParseException;
 import coordimate.model.Model;
 import coordimate.model.ModelManager;
@@ -89,8 +94,8 @@ public class LogicManagerTest {
         useStorageThatFailsNextSave();
         Tag publicity = new Tag("Publicity");
 
-        assertThrows(CommandException.class, MutatingTagCommand.MESSAGE_SAVE_ERROR, () ->
-                logic.execute("addtag t/Publicity"));
+        assertThrows(CommandException.class, Messages.withUsage(MutatingTagCommand.MESSAGE_SAVE_ERROR,
+                CreateTagCommand.MESSAGE_USAGE), () -> logic.execute("addtag t/Publicity"));
         assertFalse(model.hasTag(publicity));
 
         CommandResult retryResult = logic.execute("addtag t/Publicity");
@@ -105,8 +110,8 @@ public class LogicManagerTest {
         model.addTag(publicity);
         useStorageThatFailsNextSave();
 
-        assertThrows(CommandException.class, MutatingTagCommand.MESSAGE_SAVE_ERROR, () ->
-                logic.execute("edittag Publicity t/Media"));
+        assertThrows(CommandException.class, Messages.withUsage(MutatingTagCommand.MESSAGE_SAVE_ERROR,
+                EditTagCommand.MESSAGE_USAGE), () -> logic.execute("edittag Publicity t/Media"));
         assertTrue(model.hasTag(publicity));
         assertFalse(model.hasTag(media));
 
@@ -122,8 +127,8 @@ public class LogicManagerTest {
         model.addTag(publicity);
         useStorageThatFailsNextSave();
 
-        assertThrows(CommandException.class, MutatingTagCommand.MESSAGE_SAVE_ERROR, () ->
-                logic.execute("deletetag t/Publicity"));
+        assertThrows(CommandException.class, Messages.withUsage(MutatingTagCommand.MESSAGE_SAVE_ERROR,
+                DeleteTagCommand.MESSAGE_USAGE), () -> logic.execute("deletetag t/Publicity"));
         assertTrue(model.hasTag(publicity));
 
         CommandResult retryResult = logic.execute("deletetag t/Publicity");
@@ -144,8 +149,8 @@ public class LogicManagerTest {
                 new JsonUserPrefsStorage(temporaryFolder.resolve("userPrefs.json"));
         logic = new LogicManager(model, new StorageManager(coordiMateStorage, userPrefsStorage));
 
-        assertThrows(CommandException.class, MutatingTagCommand.MESSAGE_LOAD_ERROR, () ->
-                logic.execute("addtag t/Publicity"));
+        assertThrows(CommandException.class, Messages.withUsage(MutatingTagCommand.MESSAGE_LOAD_ERROR,
+                CreateTagCommand.MESSAGE_USAGE), () -> logic.execute("addtag t/Publicity"));
         assertFalse(model.hasTag(new Tag("Publicity")));
     }
 
@@ -155,6 +160,39 @@ public class LogicManagerTest {
         String expectedMessage = String.format(MarkAttendanceCommand.MESSAGE_EVENT_NOT_FOUND, "Gala");
 
         assertCommandException(command, expectedMessage);
+    }
+
+    @Test
+    public void execute_commandErrors_includeUsageExactlyOnce() {
+        String[][] cases = {
+            {"delete 9", "No contact exists at index 9. Use an index from the current contact list."},
+            {"edit 9 r/Lead", "No contact exists at index 9. Use an index from the current contact list."},
+            {"assign evn/Missing c/1", "Event Missing does not exist. Use a saved event name."},
+            {"unassign evn/Missing c/1", "Event Missing does not exist. Use a saved event name."},
+            {"members evn/Missing", "Event Missing does not exist. Use a saved event name."},
+            {"deleteevent evn/Missing", "Event Missing does not exist. Use a saved event name."},
+            {"editevent evn/Missing nevn/New", "Event Missing does not exist. Use a saved event name."},
+            {"markattendance evn/Missing mem/Alice att/present",
+                "Event Missing does not exist. Use a saved event name."},
+            {"deletetag t/Missing", "Tag Missing does not exist. Use a saved tag name."},
+            {"edittag Missing t/New", "Tag Missing does not exist. Use a saved tag name."},
+            {"addtag t/EXCO", "A tag with this name already exists. No changes were made."}
+        };
+        for (String[] entry : cases) {
+            String usage = CoordiMateParser.getUsage(entry[0].split(" ", 2)[0]);
+            String message = Assertions.assertThrows(CommandException.class, () ->
+                    logic.execute(entry[0])).getMessage();
+            assertEquals(entry[1] + "\n" + usage, message, entry[0]);
+            assertEquals(1, message.split("\nParameters: ", -1).length - 1, entry[0]);
+        }
+    }
+
+    @Test
+    public void execute_readOnlyCommandSaveFailure_includesUsage() {
+        useStorageThatFailsNextSave();
+        String expected = String.format(LogicManager.FILE_OPS_ERROR_FORMAT, DUMMY_IO_EXCEPTION.getMessage())
+                + "\n" + ListCommand.MESSAGE_USAGE;
+        assertThrows(CommandException.class, expected, () -> logic.execute("list"));
     }
 
     @Test
@@ -223,7 +261,8 @@ public class LogicManagerTest {
      */
     private void assertCommandFailure(String inputCommand, Class<? extends Throwable> expectedException,
             String expectedMessage, Model expectedModel) {
-        assertThrows(expectedException, expectedMessage, () -> logic.execute(inputCommand));
+        assertThrows(expectedException, Messages.withUsage(expectedMessage,
+                CoordiMateParser.getUsage(inputCommand.split(" ", 2)[0])), () -> logic.execute(inputCommand));
         assertEquals(expectedModel, model);
     }
 

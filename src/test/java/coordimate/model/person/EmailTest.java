@@ -1,6 +1,7 @@
 package coordimate.model.person;
 
 import static coordimate.testutil.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -69,6 +70,27 @@ public class EmailTest {
         assertTrue(Email.isValidEmail("peter_jack@very-very-very-long-example.com")); // long domain name
         assertTrue(Email.isValidEmail("if.you.dream.it_you.can.do.it@example.com")); // long local part
         assertTrue(Email.isValidEmail("e1234567@u.nus.edu")); // more than one period in domain
+    }
+
+    @Test
+    public void isValidEmail_lengthLimits() {
+        String domain = "@example.com";
+        String maxLocalPart = "a".repeat(Email.MAX_LOCAL_PART_LENGTH);
+        assertTrue(Email.isValidEmail(maxLocalPart + domain)); // local part at its limit
+        assertFalse(Email.isValidEmail(maxLocalPart + "a" + domain)); // local part one over its limit
+
+        // 64 + "@" + 185 + ".com" = 254 characters
+        int maxDomainLabelLength = Email.MAX_LENGTH - Email.MAX_LOCAL_PART_LENGTH - "@".length() - ".com".length();
+        String maxEmail = maxLocalPart + "@" + "b".repeat(maxDomainLabelLength) + ".com";
+        assertEquals(Email.MAX_LENGTH, maxEmail.length());
+        assertTrue(Email.isValidEmail(maxEmail)); // whole address at its limit
+        assertFalse(Email.isValidEmail(maxLocalPart + "@" + "b".repeat(maxDomainLabelLength + 1) + ".com"));
+    }
+
+    @Test
+    public void messageConstraints_statesLimits() {
+        assertTrue(Email.MESSAGE_CONSTRAINTS.contains(String.valueOf(Email.MAX_LENGTH)));
+        assertTrue(Email.MESSAGE_CONSTRAINTS.contains(String.valueOf(Email.MAX_LOCAL_PART_LENGTH)));
     }
 
     @Test

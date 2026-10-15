@@ -9,12 +9,13 @@ import static java.util.Objects.requireNonNull;
  */
 public class Phone {
 
-
-    public static final String MESSAGE_CONSTRAINTS = "Invalid phone number. Example: p/+6591234567";
+    public static final int MIN_DIGITS = 7;
+    public static final int MAX_DIGITS = 15;
+    public static final String MESSAGE_CONSTRAINTS = "Invalid phone number. Use " + MIN_DIGITS + " to " + MAX_DIGITS
+            + " digits, optionally starting with +, with optional spaces, hyphens, and brackets. "
+            + "Example: p/+6591234567";
     private static final String VALIDATION_REGEX = "\\+?[0-9() -]+";
     private static final String LEGACY_VALIDATION_REGEX = "[0-9]{3,}";
-    private static final int MIN_DIGITS = 7;
-    private static final int MAX_DIGITS = 15;
     private final String value;
 
     /**

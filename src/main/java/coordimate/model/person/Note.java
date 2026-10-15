@@ -8,8 +8,9 @@ import static java.util.Objects.requireNonNull;
  */
 public class Note {
 
-    public static final String MESSAGE_CONSTRAINTS = "Invalid note. Example: m/Handles venue bookings";
-    private static final int MAX_LENGTH = 500;
+    public static final int MAX_LENGTH = 500;
+    public static final String MESSAGE_CONSTRAINTS = "Invalid note. Use 1 to " + MAX_LENGTH
+            + " printable characters. Example: m/Handles venue bookings";
 
     private final String value;
 

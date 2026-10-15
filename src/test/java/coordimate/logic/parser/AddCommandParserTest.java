@@ -68,22 +68,25 @@ public class AddCommandParserTest {
     @Test
     public void parse_emptyRequiredField_rejected() {
         assertParseFailure(parser, " n/ p/85355255 e/amy@gmail.com r/Logistics",
-                AddCommandParser.MESSAGE_EMPTY_REQUIRED_VALUE);
+                "Name must not be empty. Example: n/Aisha Tan");
         assertParseFailure(parser, " n/Amy Bee p/ e/amy@gmail.com r/Logistics",
-                AddCommandParser.MESSAGE_EMPTY_REQUIRED_VALUE);
+                "Phone number must not be empty. Example: p/+6591234567");
         assertParseFailure(parser, " n/Amy Bee p/85355255 e/ r/Logistics",
-                AddCommandParser.MESSAGE_EMPTY_REQUIRED_VALUE);
+                "Email must not be empty. Example: e/aish@example.com");
         assertParseFailure(parser, " n/Amy Bee p/85355255 e/amy@gmail.com r/",
-                AddCommandParser.MESSAGE_EMPTY_REQUIRED_VALUE);
+                "Role must not be empty. Example: r/Logistics Lead");
     }
 
     @Test
     public void parse_repeatedRequiredField_rejected() {
-        assertParseFailure(parser, REQUIRED + " n/Bob", AddCommandParser.MESSAGE_REPEATED_REQUIRED_PARAMETER);
-        assertParseFailure(parser, REQUIRED + " p/1234567", AddCommandParser.MESSAGE_REPEATED_REQUIRED_PARAMETER);
+        assertParseFailure(parser,
+                REQUIRED + " n/Bob", String.format(AddCommandParser.MESSAGE_REPEATED_REQUIRED_PARAMETER, "n/"));
+        assertParseFailure(parser,
+                REQUIRED + " p/1234567", String.format(AddCommandParser.MESSAGE_REPEATED_REQUIRED_PARAMETER, "p/"));
         assertParseFailure(parser, REQUIRED + " e/bob@example.com",
-                AddCommandParser.MESSAGE_REPEATED_REQUIRED_PARAMETER);
-        assertParseFailure(parser, REQUIRED + " r/EXCO", AddCommandParser.MESSAGE_REPEATED_REQUIRED_PARAMETER);
+                String.format(AddCommandParser.MESSAGE_REPEATED_REQUIRED_PARAMETER, "e/"));
+        assertParseFailure(parser,
+                REQUIRED + " r/EXCO", String.format(AddCommandParser.MESSAGE_REPEATED_REQUIRED_PARAMETER, "r/"));
     }
 
     @Test
@@ -103,13 +106,15 @@ public class AddCommandParserTest {
 
     @Test
     public void parse_unknownParameterOrPreamble_rejected() {
-        assertParseFailure(parser, REQUIRED + " x/value", AddCommandParser.MESSAGE_UNKNOWN_PARAMETER);
+        assertParseFailure(parser,
+                REQUIRED + " x/value", String.format(AddCommandParser.MESSAGE_UNKNOWN_PARAMETER, "x/"));
         assertParseFailure(parser, " unexpected" + REQUIRED, INVALID_FORMAT);
     }
 
     @Test
     public void parse_invalidField_relevantError() {
-        assertParseFailure(parser, REQUIRED + " n/123", AddCommandParser.MESSAGE_REPEATED_REQUIRED_PARAMETER);
+        assertParseFailure(parser,
+                REQUIRED + " n/123", String.format(AddCommandParser.MESSAGE_REPEATED_REQUIRED_PARAMETER, "n/"));
         assertParseFailure(parser, REQUIRED.replace("Amy Bee", "123"), Name.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, REQUIRED.replace("85355255", "123"), Phone.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, REQUIRED.replace("amy@gmail.com", "bad"), Email.MESSAGE_CONSTRAINTS);
@@ -121,6 +126,31 @@ public class AddCommandParserTest {
         assertParseFailure(parser, REQUIRED + " t/Bad Tag", Tag.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, REQUIRED + " t/1234567890123456789012345678901",
                 Tag.MESSAGE_LENGTH_CONSTRAINTS);
+        assertParseFailure(parser, REQUIRED + " t/Bad Tag", Tag.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, REQUIRED + " t/1234567890123456789012345678901", Tag.MESSAGE_LENGTH_CONSTRAINTS);
+    }
+
+    @Test
+    public void parse_fieldsAtAndOverMaximumLength_acceptedThenRejected() throws Exception {
+        String[][] cases = {
+            {"Logistics", "r/", "R".repeat(Role.MAX_LENGTH), Role.MESSAGE_CONSTRAINTS},
+            {null, "a/", "A".repeat(Address.MAX_LENGTH), Address.MESSAGE_CONSTRAINTS},
+            {null, "o/", "O".repeat(Organisation.MAX_LENGTH), Organisation.MESSAGE_CONSTRAINTS},
+            {null, "m/", "M".repeat(Note.MAX_LENGTH), Note.MESSAGE_CONSTRAINTS},
+            {null, "t/", "T".repeat(Tag.MAX_LENGTH), Tag.MESSAGE_LENGTH_CONSTRAINTS},
+        };
+        for (String[] c : cases) {
+            String atLimit = c[0] == null ? REQUIRED + " " + c[1] + c[2] : REQUIRED.replace(c[0], c[2]);
+            String overLimit = c[0] == null ? REQUIRED + " " + c[1] + c[2] + "X" : REQUIRED.replace(c[0], c[2] + "X");
+            parser.parse(atLimit);
+            assertParseFailure(parser, overLimit, c[3]);
+        }
+        parser.parse(REQUIRED.replace("Amy Bee", "N".repeat(Name.MAX_LENGTH)));
+        assertParseFailure(parser, REQUIRED.replace("Amy Bee", "N".repeat(Name.MAX_LENGTH + 1)),
+                Name.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, REQUIRED.replace("amy@gmail.com", "a".repeat(65) + "@gmail.com"),
+                Email.MESSAGE_CONSTRAINTS);
+        parser.parse(REQUIRED + " o/St. John's Ambulance (NUS)");
     }
 
     @Test

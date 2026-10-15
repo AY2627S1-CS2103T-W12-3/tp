@@ -77,7 +77,7 @@ public class EditCommandParserTest {
         assertParseFailure(parser, "1 some random string", EditCommandParser.MESSAGE_INVALID_INDEX);
 
         // invalid prefix being parsed as preamble
-        assertParseFailure(parser, "1 i/ string", EditCommandParser.MESSAGE_UNKNOWN_PARAMETER);
+        assertParseFailure(parser, "1 i/ string", String.format(EditCommandParser.MESSAGE_UNKNOWN_PARAMETER, "i/"));
     }
 
     @Test
@@ -86,7 +86,7 @@ public class EditCommandParserTest {
         assertParseFailure(parser, "1" + INVALID_PHONE_DESC, Phone.MESSAGE_CONSTRAINTS); // invalid phone
         assertParseFailure(parser, "1" + INVALID_EMAIL_DESC, Email.MESSAGE_CONSTRAINTS); // invalid email
         assertParseFailure(parser, "1 a/Bad\tAddress", Address.MESSAGE_CONSTRAINTS);
-        assertParseFailure(parser, "1 r/", Role.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, "1 r/", "Role must not be empty. Example: r/Logistics Lead");
         assertParseFailure(parser, "1 b/31-02-2020", Birthday.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, "1 o/*", Organisation.MESSAGE_CONSTRAINTS);
         assertParseFailure(parser, "1 m/Bad\tNote", Note.MESSAGE_CONSTRAINTS);
@@ -105,6 +105,24 @@ public class EditCommandParserTest {
         for (String phone : new String[] {"123", "123456", "1234567890123456"}) {
             assertParseFailure(parser, "1 p/" + phone, Phone.MESSAGE_CONSTRAINTS);
         }
+    }
+
+    @Test
+    public void parse_fieldsAtAndOverMaximumLength_acceptedThenRejected() throws Exception {
+        String[][] cases = {
+            {"n/", "N".repeat(Name.MAX_LENGTH), Name.MESSAGE_CONSTRAINTS},
+            {"r/", "R".repeat(Role.MAX_LENGTH), Role.MESSAGE_CONSTRAINTS},
+            {"a/", "A".repeat(Address.MAX_LENGTH), Address.MESSAGE_CONSTRAINTS},
+            {"o/", "O".repeat(Organisation.MAX_LENGTH), Organisation.MESSAGE_CONSTRAINTS},
+            {"m/", "M".repeat(Note.MAX_LENGTH), Note.MESSAGE_CONSTRAINTS},
+            {"t/", "T".repeat(Tag.MAX_LENGTH), Tag.MESSAGE_LENGTH_CONSTRAINTS},
+        };
+        for (String[] c : cases) {
+            parser.parse("1 " + c[0] + c[1]);
+            assertParseFailure(parser, "1 " + c[0] + c[1] + "X", c[2]);
+        }
+        assertParseFailure(parser, "1 e/" + "a".repeat(65) + "@gmail.com", Email.MESSAGE_CONSTRAINTS);
+        parser.parse("1 o/St. John's Ambulance (NUS)");
     }
 
     @Test
@@ -162,24 +180,28 @@ public class EditCommandParserTest {
 
     @Test
     public void parse_emptyRequiredFields_failure() {
-        assertParseFailure(parser, "1 n/", Name.MESSAGE_CONSTRAINTS);
-        assertParseFailure(parser, "1 p/", Phone.MESSAGE_CONSTRAINTS);
-        assertParseFailure(parser, "1 e/", Email.MESSAGE_CONSTRAINTS);
-        assertParseFailure(parser, "1 r/", Role.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, "1 n/", "Name must not be empty. Example: n/Aisha Tan");
+        assertParseFailure(parser, "1 p/", "Phone number must not be empty. Example: p/+6591234567");
+        assertParseFailure(parser, "1 e/", "Email must not be empty. Example: e/aish@example.com");
+        assertParseFailure(parser, "1 r/", "Role must not be empty. Example: r/Logistics Lead");
     }
 
     @Test
     public void parse_repeatedExpandedFields_failure() {
-        assertParseFailure(parser, "1 r/Logistics r/President", EditCommandParser.MESSAGE_REPEATED_PARAMETER);
-        assertParseFailure(parser, "1 b/ b/18-06-2004", EditCommandParser.MESSAGE_REPEATED_PARAMETER);
-        assertParseFailure(parser, "1 o/One o/Two", EditCommandParser.MESSAGE_REPEATED_PARAMETER);
-        assertParseFailure(parser, "1 m/One m/Two", EditCommandParser.MESSAGE_REPEATED_PARAMETER);
+        assertParseFailure(parser,
+                "1 r/Logistics r/President", String.format(EditCommandParser.MESSAGE_REPEATED_PARAMETER, "r/"));
+        assertParseFailure(parser,
+                "1 b/ b/18-06-2004", String.format(EditCommandParser.MESSAGE_REPEATED_PARAMETER, "b/"));
+        assertParseFailure(parser, "1 o/One o/Two", String.format(EditCommandParser.MESSAGE_REPEATED_PARAMETER, "o/"));
+        assertParseFailure(parser, "1 m/One m/Two", String.format(EditCommandParser.MESSAGE_REPEATED_PARAMETER, "m/"));
     }
 
     @Test
     public void parse_unknownParameter_failure() {
-        assertParseFailure(parser, "1 r/Logistics x/value", EditCommandParser.MESSAGE_UNKNOWN_PARAMETER);
-        assertParseFailure(parser, "1 id/Alice r/Logistics", EditCommandParser.MESSAGE_UNKNOWN_PARAMETER);
+        assertParseFailure(parser,
+                "1 r/Logistics x/value", String.format(EditCommandParser.MESSAGE_UNKNOWN_PARAMETER, "x/"));
+        assertParseFailure(parser,
+                "1 id/Alice r/Logistics", String.format(EditCommandParser.MESSAGE_UNKNOWN_PARAMETER, "id/"));
     }
 
     @Test
@@ -199,7 +221,7 @@ public class EditCommandParserTest {
         assertParseFailure(parser, "target/ r/Logistics", EditCommandParser.MESSAGE_EMPTY_TARGET);
         assertParseFailure(parser, "1 target/Alice r/Logistics", EditCommandParser.MESSAGE_MULTIPLE_IDENTIFIERS);
         assertParseFailure(parser, "target/Alice target/Bob r/Logistics",
-                EditCommandParser.MESSAGE_REPEATED_PARAMETER);
+                String.format(EditCommandParser.MESSAGE_REPEATED_PARAMETER, "target/"));
         assertParseFailure(parser, "target/Alice", EditCommand.MESSAGE_NOT_EDITED);
     }
 
@@ -246,25 +268,25 @@ public class EditCommandParserTest {
         Index targetIndex = INDEX_FIRST_PERSON;
         String userInput = targetIndex.getOneBased() + INVALID_PHONE_DESC + PHONE_DESC_BOB;
 
-        assertParseFailure(parser, userInput, EditCommandParser.MESSAGE_REPEATED_PARAMETER);
+        assertParseFailure(parser, userInput, String.format(EditCommandParser.MESSAGE_REPEATED_PARAMETER, "p/"));
 
         // invalid followed by valid
         userInput = targetIndex.getOneBased() + PHONE_DESC_BOB + INVALID_PHONE_DESC;
 
-        assertParseFailure(parser, userInput, EditCommandParser.MESSAGE_REPEATED_PARAMETER);
+        assertParseFailure(parser, userInput, String.format(EditCommandParser.MESSAGE_REPEATED_PARAMETER, "p/"));
 
         // multiple valid fields repeated
         userInput = targetIndex.getOneBased() + PHONE_DESC_AMY + ADDRESS_DESC_AMY + EMAIL_DESC_AMY
                 + TAG_DESC_FRIEND + PHONE_DESC_AMY + ADDRESS_DESC_AMY + EMAIL_DESC_AMY + TAG_DESC_FRIEND
                 + PHONE_DESC_BOB + ADDRESS_DESC_BOB + EMAIL_DESC_BOB + TAG_DESC_HUSBAND;
 
-        assertParseFailure(parser, userInput, EditCommandParser.MESSAGE_REPEATED_PARAMETER);
+        assertParseFailure(parser, userInput, String.format(EditCommandParser.MESSAGE_REPEATED_PARAMETER, "p/"));
 
         // multiple invalid values
         userInput = targetIndex.getOneBased() + INVALID_PHONE_DESC + INVALID_ADDRESS_DESC + INVALID_EMAIL_DESC
                 + INVALID_PHONE_DESC + INVALID_ADDRESS_DESC + INVALID_EMAIL_DESC;
 
-        assertParseFailure(parser, userInput, EditCommandParser.MESSAGE_REPEATED_PARAMETER);
+        assertParseFailure(parser, userInput, String.format(EditCommandParser.MESSAGE_REPEATED_PARAMETER, "p/"));
     }
 
     @Test
@@ -306,10 +328,10 @@ public class EditCommandParserTest {
 
     @Test
     public void parse_invalidTagOperations_failure() {
-        assertParseFailure(parser, "1 at/", Tag.MESSAGE_CONSTRAINTS);
-        assertParseFailure(parser, "1 rt/", Tag.MESSAGE_CONSTRAINTS);
-        assertParseFailure(parser, "1 at/*", Tag.MESSAGE_CONSTRAINTS);
-        assertParseFailure(parser, "1 rt/*", Tag.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, "1 at/", "Tag name must not be empty. Example: at/Publicity");
+        assertParseFailure(parser, "1 rt/", "Tag name must not be empty. Example: rt/Publicity");
+        assertParseFailure(parser, "1 at/*", Tag.MESSAGE_CONSTRAINTS.replace("Example: t/", "Example: at/"));
+        assertParseFailure(parser, "1 rt/*", Tag.MESSAGE_CONSTRAINTS.replace("Example: t/", "Example: rt/"));
         assertParseFailure(parser, "1 t/Friend at/Sponsor", EditCommandParser.MESSAGE_CONFLICTING_TAG_OPERATIONS);
         assertParseFailure(parser, "1 rt/Friend t/", EditCommandParser.MESSAGE_CONFLICTING_TAG_OPERATIONS);
     }

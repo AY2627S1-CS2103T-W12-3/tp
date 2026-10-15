@@ -8,9 +8,11 @@ import static java.util.Objects.requireNonNull;
  */
 public class Role {
 
-    public static final String MESSAGE_CONSTRAINTS = "Invalid role. Example: r/Logistics Lead";
+    public static final int MAX_LENGTH = 50;
+    public static final String MESSAGE_CONSTRAINTS = "Invalid role. Use 1 to " + MAX_LENGTH
+            + " characters: letters, digits, spaces, hyphens, and slashes, with at least one letter or digit. "
+            + "Example: r/Logistics Lead";
     public static final Role NOT_APPLICABLE = new Role("NA");
-    private static final int MAX_LENGTH = 50;
 
     private final String value;
 

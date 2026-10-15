@@ -2,6 +2,7 @@ package coordimate.logic.commands;
 
 import static java.util.Objects.requireNonNull;
 
+import coordimate.logic.Messages;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.Model;
 import coordimate.model.event.Event;
@@ -19,7 +20,7 @@ public class AddEventCommand extends Command {
             "An event with this name already exists. No changes were made.";
     public static final String MESSAGE_SAVE_ERROR = "Event could not be saved. No changes were made.";
     public static final String MESSAGE_LOAD_ERROR =
-            "Contact data could not be loaded. Please check the local data file.";
+            Messages.MESSAGE_LOAD_ERROR;
 
     private final Event toAdd;
 

@@ -40,9 +40,15 @@ public class TagTest {
         assertFalse(Tag.isValidInputTagName(""));
         assertFalse(Tag.isValidInputTagName("Publicity Team"));
         assertFalse(Tag.isValidInputTagName("1234567890123456789012345678901"));
+        assertFalse(Tag.isValidInputTagName("Café")); // letters must be ASCII, so length() counts characters
 
         assertTrue(Tag.isValidInputTagName("Publicity"));
         assertTrue(Tag.isValidInputTagName("123456789012345678901234567890"));
+    }
+
+    @Test
+    public void messageLengthConstraints_statesLimit() {
+        assertTrue(Tag.MESSAGE_LENGTH_CONSTRAINTS.contains(String.valueOf(Tag.MAX_LENGTH)));
     }
 
     @Test
