@@ -69,6 +69,7 @@ public class MainWindow extends UiPart<Stage> {
                     + "Example: addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00"),
             Map.entry("editevent", "Format: editevent evn/EVENT_NAME [nevn/NEW_EVENT_NAME]"
                     + " [st/NEW_START_TIME] [et/NEW_END_TIME]\n"
+                    + "Provide at least one field to edit.\n"
                     + "Example: editevent evn/Final Concert nevn/Grand Concert"),
             Map.entry("deleteevent", "Format: deleteevent evn/EVENT_NAME\n"
                     + "Example: deleteevent evn/Final Concert"),

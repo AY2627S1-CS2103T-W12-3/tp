@@ -73,7 +73,8 @@ public class HelpWindowTest {
             assertEquals(HelpWindow.COMMAND_USAGES, commandTable.getItems());
             assertFalse(commandTable.isEditable());
             assertEquals("Note: [ ] marks optional parameters; (A | B) means choose one. "
-                    + "For edit, provide at least one field or tag operation.", syntaxNote.getText());
+                    + "For edit, provide at least one field or tag operation. "
+                    + "For editevent, provide at least one field.", syntaxNote.getText());
             assertEquals(List.of("Command", "Usage format"), commandTable.getColumns().stream()
                     .map(TableColumn::getText).toList());
             assertEquals("add", commandTable.getColumns().get(0).getCellObservableValue(0).getValue());

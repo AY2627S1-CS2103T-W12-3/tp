@@ -29,7 +29,7 @@
           <Label alignment="CENTER" maxWidth="Infinity" styleClass="help-heading"
                  text="Command quick reference" />
           <Label fx:id="syntaxNote" styleClass="syntax-note"
-                 text="Note: [ ] marks optional parameters; (A | B) means choose one. For edit, provide at least one field or tag operation."
+                 text="Note: [ ] marks optional parameters; (A | B) means choose one. For edit, provide at least one field or tag operation. For editevent, provide at least one field."
                  wrapText="true" />
           <TableView fx:id="commandTable" accessibleText="Available commands and their usage formats."
                      editable="false" VBox.vgrow="ALWAYS">

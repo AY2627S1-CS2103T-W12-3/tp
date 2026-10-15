@@ -192,14 +192,14 @@ correct it, then press Enter or click **Retry**.
 
 | Condition | Error message |
 |---|---|
-| An event with the same name already exists, ignoring case. | `An event with this name already exists.` |
-| The event name is empty. | `Event name must not be empty.` |
-| `st/` or `et/` is missing or empty. | `Start time and/or end time must not be empty!` |
-| A time is invalid or incorrectly formatted. | `Start time and/or end time are formatted as dd-MM-yyyy [HH:mm]. Time of day is optional. Example: 17-09-2026 16:30` |
-| The start is after the end. | `Start time must not be after end time.` |
-| `evn/` is missing, or there is text before the first parameter. | `Invalid command format!` followed by the command format |
-| A parameter is repeated. | `Each required parameter may only be specified once.` |
-| An unknown parameter is used. | `Unknown parameter. Example: r/Logistics` |
+| An event with the same name already exists, ignoring case. | `An event with this name already exists. No changes were made.` |
+| The event name is empty. | `Event name must not be empty. Example: evn/Final Concert` |
+| `st/` or `et/` is missing or empty. | `Event time must not be empty. Example: st/17-09-2026 16:30` |
+| A time is invalid or incorrectly formatted. | `Invalid event time. Use dd-MM-yyyy with an optional time in HH:mm format. Example: st/17-09-2026 16:30` |
+| The start is after the end. | `Start time must not be after end time. Example: st/17-09-2026 16:30 et/17-09-2026 18:30` |
+| `evn/` is missing, or there is text before the first parameter. | `Invalid command format.` followed by the command usage |
+| A parameter is repeated. | `Each required parameter may only be specified once.` followed by the command usage |
+| An unknown parameter is used. | `Unknown parameter.` followed by the command usage |
 
 If saving fails, no event is added and the command reports `Event could not be saved. No changes were made.`
 If the existing data file is invalid, the command reports a load error and leaves the file untouched.
@@ -231,14 +231,14 @@ Success: `Edited Event NUS Student Life Fair. Start Time: 09-10-2026. End Time: 
 
 | Condition | Error message |
 |---|---|
-| No saved event has the supplied name, ignoring case. | `Event {EVENT_NAME} does not exist.` |
-| The new event name is empty. | `New event name must not be empty.` |
-| A new time is empty, invalid, or incorrectly formatted. | `New start time and/or new end time are formatted as dd-MM-yyyy [HH:mm]. Time of day is optional. Example: 17-09-2026 16:30` |
+| No saved event has the supplied name, ignoring case. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
+| The new event name is empty. | `New event name must not be empty. Example: nevn/Final Concert` |
+| A new time is empty, invalid, or incorrectly formatted. | `Invalid event time. Use dd-MM-yyyy with an optional time in HH:mm format. Example: st/17-09-2026 16:30` |
 | The new name duplicates another event. | `This update conflicts with another saved event. No changes were made.` |
-| No field is provided to edit. | `Please provide at least one field to edit.` |
-| A parameter is repeated. | `Each parameter may only be specified once.` |
-| An unknown parameter is used. | `Unknown parameter. Example: editevent evn/Final Concert st/08-08-2026 16:00` |
-| The updated start is after the updated end. | `Start time must not be after end time.` |
+| No field is provided to edit. | `Provide at least one field to edit.` followed by the command usage |
+| A parameter is repeated. | `Each parameter may only be specified once.` followed by the command usage |
+| An unknown parameter is used. | `Unknown parameter.` followed by the command usage |
+| The updated start is after the updated end. | `Start time must not be after end time. Example: st/17-09-2026 16:30 et/17-09-2026 18:30` |
 
 If saving fails, the event and existing data file remain unchanged.
 
@@ -256,8 +256,8 @@ Examples:
 
 Success: `Deleted Event Final Concert.`
 
-If the event does not exist, the command reports `Event {EVENT_NAME} does not exist.`
-An unknown parameter reports `Unknown parameter. Example: deleteevent evn/Logistics Meeting`.
+If the event does not exist, the command reports `Event {EVENT_NAME} does not exist. Use a saved event name.`
+An unknown parameter reports `Unknown parameter.` followed by the command usage.
 If saving fails, the event and existing data file remain unchanged.
 
 ### Assigning members to an event: `assign`
@@ -287,15 +287,15 @@ If some contacts were already assigned: `Assigned 1 member(s) to Final Concert. 
 
 | Condition | Error message |
 |---|---|
-| No saved event has the supplied name, ignoring case. | `Event {EVENT_NAME} does not exist.` |
-| An index is larger than the displayed contact list. | `Contact {CONTACT_INDEX} does not exist in the displayed list.` |
+| No saved event has the supplied name, ignoring case. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
+| An index is larger than the displayed contact list. | `No contact exists at index {CONTACT_INDEX}. Use an index from the current contact list.` |
 | An index is not a positive integer. | `Contact indexes must be positive integers separated by spaces. Example: c/1 3 5` |
 | Every specified contact is already assigned. | `All specified contacts are already assigned to {EVENT_NAME}. No changes were made.` |
-| The event name is empty. | `Event name must not be empty.` |
-| `c/` has no indexes. | `Please specify at least one contact to assign.` |
-| `evn/` or `c/` is missing. | `Invalid command format!` followed by the command format |
-| A parameter is repeated. | `Each parameter may only be specified once.` |
-| An unknown parameter is used. | `Unknown parameter. Example: assign evn/Final Concert c/2 3` |
+| The event name is empty. | `Event name must not be empty. Example: evn/Final Concert` |
+| `c/` has no indexes. | `Specify at least one contact to assign.` followed by the command usage |
+| `evn/` or `c/` is missing. | `Invalid command format.` followed by the command usage |
+| A parameter is repeated. | `Each parameter may only be specified once.` followed by the command usage |
+| An unknown parameter is used. | `Unknown parameter.` followed by the command usage |
 
 If saving fails, no contacts are assigned and the existing data file remains unchanged.
 
@@ -325,15 +325,15 @@ If some contacts were not assigned: `Removed 1 member(s) from Final Concert. 1 c
 
 | Condition | Error message |
 |---|---|
-| No saved event has the supplied name, ignoring case. | `Event {EVENT_NAME} does not exist.` |
-| An index is larger than the displayed contact list. | `Contact {CONTACT_INDEX} does not exist in the displayed list.` |
+| No saved event has the supplied name, ignoring case. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
+| An index is larger than the displayed contact list. | `No contact exists at index {CONTACT_INDEX}. Use an index from the current contact list.` |
 | An index is not a positive integer. | `Contact indexes must be positive integers separated by spaces. Example: c/1 3 5` |
 | None of the specified contacts are assigned. | `None of the specified contacts are assigned to {EVENT_NAME}. No changes were made.` |
-| The event name is empty. | `Event name must not be empty.` |
-| `c/` has no indexes. | `Please specify at least one contact to remove.` |
-| `evn/` or `c/` is missing. | `Invalid command format!` followed by the command format |
-| A parameter is repeated. | `Each parameter may only be specified once.` |
-| An unknown parameter is used. | `Unknown parameter. Example: unassign evn/Final Concert c/2 3` |
+| The event name is empty. | `Event name must not be empty. Example: evn/Final Concert` |
+| `c/` has no indexes. | `Specify at least one contact to remove.` followed by the command usage |
+| `evn/` or `c/` is missing. | `Invalid command format.` followed by the command usage |
+| A parameter is repeated. | `Each parameter may only be specified once.` followed by the command usage |
+| An unknown parameter is used. | `Unknown parameter.` followed by the command usage |
 
 If saving fails, no members are removed and the existing data file remains unchanged.
 
@@ -364,11 +364,11 @@ If the event has no members, the contact list is empty: `Final Concert has no me
 
 | Condition | Error message |
 |---|---|
-| No saved event has the supplied name, ignoring case. | `Event {EVENT_NAME} does not exist.` |
-| The event name is empty. | `Event name must not be empty.` |
-| `evn/` is missing, or there is text before it. | `Invalid command format!` followed by the command format |
-| `evn/` is repeated. | `Each parameter may only be specified once.` |
-| An unknown parameter is used. | `Unknown parameter. Example: members evn/Final Concert` |
+| No saved event has the supplied name, ignoring case. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
+| The event name is empty. | `Event name must not be empty. Example: evn/Final Concert` |
+| `evn/` is missing, or there is text before it. | `Invalid command format.` followed by the command usage |
+| `evn/` is repeated. | `Each parameter may only be specified once.` followed by the command usage |
+| An unknown parameter is used. | `Unknown parameter.` followed by the command usage |
 
 If an error occurs, the contact list stays as it was.
 
@@ -393,18 +393,18 @@ Examples:
 Success: `Marked Alex Yeoh as present for Event Final Concert.`
 
 If the member already has the requested status, no changes are made:
-`Alex Yeoh is already marked as present for Event Final Concert. No changes were made.`
+`Alex Yeoh is already marked as present for event Final Concert. No changes were made.`
 
 | Condition | Error message |
 |---|---|
-| No saved event has the supplied name, ignoring case. | `Error! Event {EVENT_NAME} does not exist!` |
-| The supplied member is not assigned to the event, ignoring case. | `Error! {MEMBER_NAME} is not assigned to event {EVENT_NAME}!` |
+| No saved event has the supplied name, ignoring case. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
+| The supplied member is not assigned to the event, ignoring case. | `{MEMBER_NAME} is not assigned to event {EVENT_NAME}. Assign the contact to the event before marking attendance.` |
 | The member name violates the constraints above. | `Invalid name. Example: n/Aisha Tan` |
-| `STATUS` is not `present` or `absent`, ignoring case. | `STATUS must be either "present" or "absent"!` |
-| The event name is empty. | `Event name must not be empty.` |
-| A required parameter is missing, or the member name is empty. | `Invalid command format!` followed by the command format |
-| A parameter is repeated. | `Each parameter may only be specified once.` |
-| An unknown parameter is used. | `Unknown parameter. Example: markattendance evn/Final Concert mem/Alice Tan att/present` |
+| `STATUS` is not `present` or `absent`, ignoring case. | `Invalid attendance status. Use present or absent. Example: att/present` |
+| The event name is empty. | `Event name must not be empty. Example: evn/Final Concert` |
+| A required parameter is missing, or the member name is empty. | `Invalid command format.` followed by the command usage |
+| A parameter is repeated. | `Each parameter may only be specified once.` followed by the command usage |
+| An unknown parameter is used. | `Unknown parameter.` followed by the command usage |
 
 Attendance is shown beside each member when the event is selected in the **Events** tab.
 Removing a member with `unassign`, or deleting the contact, also removes that member's attendance for the event.
@@ -421,7 +421,7 @@ Success: `Listed all contacts.`
 
 ### Deleting a tag: `deletetag`
 
-Deletes an existing tag and removes it from every contact to which it is assigned.
+Deletes an existing tag, including a default tag, and removes it from every contact to which it is assigned.
 
 Format: `deletetag t/TAG`
 
@@ -436,11 +436,9 @@ Success: `{TAG_NAME} successfully deleted.`
 
 | Condition | Error message |
 |---|---|
-| The `t/` prefix is missing. | `No prefix given.` |
-| No tag name is provided. | `No tag name given.` |
-| Text appears before `t/`. | `Unknown parameters given.` |
-| More than one `t/` prefix is supplied. | `Unknown parameters given.` |
-| The specified tag does not exist. | `No such tag exists: {TAG_NAME}.` |
+| The `t/` prefix is missing or has no tag name, or text appears before it. | `Invalid command format.` followed by the command usage |
+| More than one `t/` prefix is supplied. | `Each parameter may only be specified once.` followed by the command usage |
+| The specified tag does not exist. | `Tag {TAG_NAME} does not exist. Use a saved tag name.` |
 
 ### Editing a tag: `edittag`
 
@@ -460,16 +458,13 @@ Success for `edittag Media t/Publicity`: `Media successfully renamed to Publicit
 
 | Condition | Error message |
 |---|---|
-| The current tag does not exist. | `No such tag exists: {OLD_TAG}.` |
-| The `t/` prefix is missing. | `No prefix given.` |
-| The current tag name is missing. | `Current tag name is not defined.` |
-| The new tag name is missing. | `New tag name is not defined.` |
-| The new tag name is blank. | `Tag name cannot be empty.` |
-| More than one `t/` prefix is supplied. | `Multiple tag names given.` |
-| The new tag contains spaces, symbols, or punctuation. | `Tag names should be alphanumeric with no spaces.` |
-| The new tag exceeds 30 characters. | `Tag names should not exceed 30 characters.` |
-| The new tag matches the current tag, ignoring capitalization. | `{NEW_TAG} is the same as {OLD_TAG}.` |
-| The new tag already exists. | `This tag already exists.` |
+| The current tag does not exist. | `Tag {OLD_TAG} does not exist. Use a saved tag name.` |
+| The `t/` prefix, current tag name, or new tag name is missing. | `Invalid command format.` followed by the command usage |
+| More than one `t/` prefix is supplied. | `Each parameter may only be specified once.` followed by the command usage |
+| The new tag contains spaces, symbols, or punctuation. | `Invalid tag name. Use letters and numbers without spaces. Example: t/Publicity` |
+| The new tag exceeds 30 characters. | `Tag name must not exceed 30 characters. Example: t/Publicity` |
+| The new tag matches the current tag, ignoring capitalization. | `Tag {OLD_TAG} already has that name. No changes were made.` |
+| The new tag already exists. | `A tag with this name already exists. No changes were made.` |
 
 ### Adding a tag: `addtag`
 
@@ -490,14 +485,11 @@ Success: `Created tag: Publicity.`
 
 | Condition | Error message |
 |---|---|
-| No parameters are supplied. | `No parameters given.` |
-| The `t/` prefix is missing. | `No prefix given.` |
-| More than one `t/` prefix is supplied. | `Multiple tag names given.` |
-| Text appears before `t/`. | `Unknown parameters given.` |
-| The tag name is empty. | `Tag name cannot be empty.` |
-| The tag name contains spaces, symbols, or punctuation. | `Tag names should be alphanumeric with no spaces.` |
-| The tag name exceeds 30 characters. | `Tag names should not exceed 30 characters.` |
-| The tag name already exists, ignoring capitalization. | `This tag already exists.` |
+| No parameters are supplied, `t/` is missing or empty, or text appears before it. | `Invalid command format.` followed by the command usage |
+| More than one `t/` prefix is supplied. | `Each parameter may only be specified once.` followed by the command usage |
+| The tag name contains spaces, symbols, or punctuation. | `Invalid tag name. Use letters and numbers without spaces. Example: t/Publicity` |
+| The tag name exceeds 30 characters. | `Tag name must not exceed 30 characters. Example: t/Publicity` |
+| The tag name already exists, ignoring capitalization. | `A tag with this name already exists. No changes were made.` |
 
 ### Listing all tags: `listtags`
 
@@ -510,7 +502,8 @@ all saved contacts, regardless of the current contact search or filter, and is o
 their tags, role, and organisation.
 Success: `Here is the list of all existing tags.` followed by `Tags: ` and the tag names, separated by commas.
 
-Unlike `list`, `listtags` does not ignore extra text: `listtags 123` is rejected with `Unknown parameters given.`
+Unlike `list`, `listtags` does not ignore extra text: `listtags 123` is rejected with
+`Invalid command format.` followed by the command usage.
 
 ### Editing a contact: `edit`
 
@@ -632,11 +625,11 @@ If every value exists but no contact matches all the filters, the displayed list
 
 | Condition | Error message |
 |---|---|
-| No saved tag, event, or organisation has the supplied value. | `No matching value found.` |
-| `FIELD` is not `tag`, `event`, or `organisation`. | `Invalid filter field. Supported fields: tag, event, organisation.` |
-| No filter is given, or there is text before the first field. | `Filter field cannot be empty.` |
-| A field has no value. | `Filter value cannot be empty.` |
-| A quotation mark is not closed and another field follows it. | `Unclosed quotation mark.` |
+| No saved tag, event, or organisation has the supplied value. | `No saved tag, event, or organisation matches that value. Use a value from the saved data.` |
+| `FIELD` is not `tag`, `event`, or `organisation`. | `Unknown parameter.` followed by the command usage |
+| No filter is given, or there is text before the first field. | `Invalid command format.` followed by the command usage |
+| A field has no value. | `Invalid command format.` followed by the command usage |
+| A quotation mark is not closed and another field follows it. | `Invalid command format.` followed by the command usage |
 
 ### Deleting a contact: `delete`
 
