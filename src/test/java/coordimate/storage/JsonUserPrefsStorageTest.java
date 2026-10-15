@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
@@ -119,4 +120,23 @@ public class JsonUserPrefsStorageTest {
         assertEquals(original, readBack);
     }
 
+    @Test
+    public void saveUserPrefs_parentPathIsFile_throwsIoExceptionAndKeepsFile() throws IOException {
+        Path notAFolder = testFolder.resolve("config");
+        Files.writeString(notAFolder, "not a folder");
+        JsonUserPrefsStorage storage = new JsonUserPrefsStorage(notAFolder.resolve("preferences.json"));
+
+        assertThrows(IOException.class, () -> storage.saveUserPrefs(new UserPrefs()));
+        assertEquals("not a folder", Files.readString(notAFolder));
+    }
+
+    @Test
+    public void saveUserPrefs_targetIsFolder_throwsIoExceptionAndKeepsFolder() throws IOException {
+        Path folder = Files.createDirectory(testFolder.resolve("preferences.json"));
+        Files.writeString(folder.resolve("keep.txt"), "keep");
+        JsonUserPrefsStorage storage = new JsonUserPrefsStorage(folder);
+
+        assertThrows(IOException.class, () -> storage.saveUserPrefs(new UserPrefs()));
+        assertEquals("keep", Files.readString(folder.resolve("keep.txt")));
+    }
 }

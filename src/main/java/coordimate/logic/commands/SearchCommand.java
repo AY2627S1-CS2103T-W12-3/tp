@@ -6,14 +6,15 @@ import coordimate.model.Model;
 import coordimate.model.person.ContactMatchesKeywordPredicate;
 
 /**
- * Filters the displayed contact list to those whose name, phone, email, or address
- * contains the given keyword, ignoring case.
+ * Filters the displayed contact list to those whose name, phone, email, address, or
+ * organisation contains the given keyword, ignoring case.
  */
 public class SearchCommand extends Command {
 
     public static final String COMMAND_WORD = "search";
     public static final String MESSAGE_USAGE = COMMAND_WORD
-            + ": Lists contacts whose name, phone, email, or address contains the given keyword (case-insensitive).\n"
+            + ": Lists contacts whose name, phone, email, address, or organisation contains the given keyword "
+            + "(case-insensitive).\n"
             + "Parameters: KEYWORD (use spaces for a phrase; surrounding quotes are optional)\n"
             + "Example: " + COMMAND_WORD + " jurong west";
     public static final String MESSAGE_SUCCESS = "%1$d contact(s) found matching \"%2$s\".";

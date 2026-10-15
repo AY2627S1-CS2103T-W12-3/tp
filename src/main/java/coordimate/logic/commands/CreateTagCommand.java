@@ -13,12 +13,12 @@ public class CreateTagCommand extends MutatingTagCommand {
 
     public static final String COMMAND_WORD = "addtag";
 
-    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Creates a custom tag. "
+    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Creates a custom tag.\n"
             + "Parameters: t/TAG\n"
             + "Example: " + COMMAND_WORD + " t/Publicity";
 
     public static final String MESSAGE_SUCCESS = "Created tag: %s.";
-    public static final String MESSAGE_DUPLICATE_TAG = "This tag already exists.";
+    public static final String MESSAGE_DUPLICATE_TAG = "A tag with this name already exists. No changes were made.";
     private final Tag toAdd;
 
     /**

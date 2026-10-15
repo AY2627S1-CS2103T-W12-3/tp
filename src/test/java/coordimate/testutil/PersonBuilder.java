@@ -134,7 +134,7 @@ public class PersonBuilder {
     }
 
     /**
-     * Sets the contact's organisation.
+     * Sets the contact's organization.
      */
     public PersonBuilder withOrganisation(String organisation) {
         this.organisation = new Organisation(organisation);

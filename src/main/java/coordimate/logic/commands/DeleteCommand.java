@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import coordimate.commons.core.index.Index;
 import coordimate.commons.util.ToStringBuilder;
+import coordimate.logic.Messages;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.Model;
 import coordimate.model.person.Person;
@@ -16,14 +17,13 @@ import coordimate.model.person.Person;
 public class DeleteCommand extends Command {
 
     public static final String COMMAND_WORD = "delete";
-    public static final String MESSAGE_USAGE = "delete INDEX | delete n/NAME | delete p/PHONE | delete e/EMAIL";
+    public static final String MESSAGE_USAGE = COMMAND_WORD + ": Deletes a contact.\n"
+            + "Parameters: INDEX | n/NAME | p/PHONE | e/EMAIL\n"
+            + "Example: " + COMMAND_WORD + " n/Aisha Tan";
     public static final String MESSAGE_DELETE_PERSON_SUCCESS = "Contact deleted successfully: %s.";
-    public static final String MESSAGE_INVALID_INDEX = "No contact exists at index %d. "
-            + "Please use an index from the current contact list. Example: delete 3";
-    public static final String MESSAGE_NO_MATCH =
-            "No contact matches the given details. Example: delete e/aisha@example.com";
-    public static final String MESSAGE_AMBIGUOUS_MATCH = "Multiple contacts match that identifier:\n%s\n"
-            + "Use a displayed index, phone number, or email address to identify the contact.";
+    public static final String MESSAGE_INVALID_INDEX = Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX;
+    public static final String MESSAGE_NO_MATCH = Messages.MESSAGE_CONTACT_NO_MATCH;
+    public static final String MESSAGE_AMBIGUOUS_MATCH = Messages.MESSAGE_CONTACT_AMBIGUOUS_MATCH;
     public static final String MESSAGE_SAVE_ERROR = "Contact could not be saved. No changes were made.";
     public static final String MESSAGE_LOAD_ERROR =
             "Contact data could not be loaded. Please check the local data file.";

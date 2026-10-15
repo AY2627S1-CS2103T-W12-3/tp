@@ -1,0 +1,30 @@
+@startuml
+skin rose
+skinparam ActivityFontSize 15
+skinparam ArrowFontSize 12
+start
+:User enters a command that changes data;
+
+'Since the beta syntax does not support placing the condition outside the
+'diamond we place it as the true branch instead.
+
+if () then ([data file can be loaded])
+    :Copy the live model into a candidate model;
+    :Execute the command on the candidate;
+    if () then ([command succeeds])
+        :Save the candidate's data to the data file;
+        if () then ([save succeeds])
+            :Replace the live model's data
+            with the candidate's data;
+            :Show the success message;
+        else ([else])
+            :Show the save error;
+        endif
+    else ([else])
+        :Show the command error;
+    endif
+else ([else])
+    :Show the load error;
+endif
+stop
+@enduml
