@@ -4,6 +4,7 @@ import static coordimate.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
+import java.time.Clock;
 import java.util.logging.Logger;
 
 import coordimate.commons.core.GuiSettings;
@@ -25,6 +26,8 @@ import coordimate.logic.commands.UnassignCommand;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.logic.parser.CoordiMateParser;
 import coordimate.logic.parser.exceptions.ParseException;
+import coordimate.logic.reminder.ReminderDismissalException;
+import coordimate.logic.reminder.ReminderService;
 import coordimate.model.Model;
 import coordimate.model.ModelManager;
 import coordimate.model.event.Event;
@@ -51,15 +54,24 @@ public class LogicManager implements Logic {
     private final Model model;
     private final Storage storage;
     private final CoordiMateParser coordiMateParser;
+    private final ReminderService reminderService;
     private Person pendingDelete;
 
     /**
      * Constructs a {@code LogicManager} with the given {@code Model} and {@code Storage}.
      */
     public LogicManager(Model model, Storage storage) {
+        this(model, storage, Clock.systemDefaultZone());
+    }
+
+    /**
+     * Constructs logic using the given clock for reminder eligibility.
+     */
+    public LogicManager(Model model, Storage storage, Clock clock) {
         this.model = model;
         this.storage = storage;
         coordiMateParser = new CoordiMateParser();
+        reminderService = new ReminderService(model, storage, clock);
     }
 
     @Override
@@ -71,6 +83,8 @@ public class LogicManager implements Logic {
         } catch (CommandException e) {
             throw new CommandException(Messages.withUsage(e.getMessage(), CoordiMateParser.getUsage(commandWord)),
                     e.getCause() == null ? e : e.getCause());
+        } finally {
+            reminderService.refreshReminders();
         }
     }
 
@@ -158,6 +172,7 @@ public class LogicManager implements Logic {
             };
             throw new CommandException(message, e);
         }
+        keepReminderDismissalAfterRename(command);
         model.setCoordiMate(candidate.getCoordiMate());
         if (command instanceof AddCommand || command instanceof EditCommand) {
             model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
@@ -179,6 +194,15 @@ public class LogicManager implements Logic {
         }
     }
 
+    private void keepReminderDismissalAfterRename(Command command) {
+        if (command instanceof EditEventCommand editEvent) {
+            model.getCoordiMate().getEventList().stream()
+                    .filter(event -> editEvent.renamesEvent(event.getName()))
+                    .findFirst()
+                    .ifPresent(event -> reminderService.renameEvent(event.getName(), editEvent.getNewName()));
+        }
+    }
+
     @Override
     public boolean isAwaitingDeleteConfirmation() {
         return pendingDelete != null;
@@ -197,6 +221,21 @@ public class LogicManager implements Logic {
     @Override
     public ObservableList<Event> getEventList() {
         return model.getCoordiMate().getEventList();
+    }
+
+    @Override
+    public ObservableList<Event> getReminders() {
+        return reminderService.getReminders();
+    }
+
+    @Override
+    public void refreshReminders() {
+        reminderService.refreshReminders();
+    }
+
+    @Override
+    public void dismissReminder(Event reminder) throws ReminderDismissalException {
+        reminderService.dismissReminder(reminder);
     }
 
     @Override
