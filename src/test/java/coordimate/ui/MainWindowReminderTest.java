@@ -30,6 +30,7 @@ import coordimate.logic.LogicManager;
 import coordimate.logic.reminder.ReminderDismissalException;
 import coordimate.model.ModelManager;
 import coordimate.model.ReadOnlyCoordiMate;
+import coordimate.model.UserPrefs;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
 import coordimate.storage.JsonCoordiMateStorage;
@@ -139,6 +140,73 @@ public class MainWindowReminderTest {
                 assertEquals("OK", ((Label) root.lookup("#feedbackStatus")).getText());
                 assertTrue(fixture.storage().readCoordiMate().orElseThrow().getEventList().getFirst()
                         .isReminderDismissed());
+            } finally {
+                fixture.stage().close();
+            }
+            return null;
+        });
+    }
+
+    @Test
+    public void dismissButton_restart_keepsReminderHiddenDuringScheduledChecks() throws Exception {
+        onJavaFxThread(() -> {
+            Fixture fixture = openWindow(true);
+            try {
+                Parent root = fixture.stage().getScene().getRoot();
+                Button dismiss = (Button) root.lookup(".reminder-dismiss");
+                dismiss.fire();
+                fixture.stage().close();
+                assertEquals(Animation.Status.STOPPED, fixture.timer().getStatus());
+
+                ControlledStorage reloadedStorage = new ControlledStorage(fixture.storage().getCoordiMateFilePath());
+                ModelManager reloadedModel = new ModelManager(reloadedStorage.readCoordiMate().orElseThrow(),
+                        new UserPrefs());
+                Fixture restarted = openWindow(reloadedModel, reloadedStorage, fixture.clock(), false, 1100, 800);
+                try {
+                    Parent restartedRoot = restarted.stage().getScene().getRoot();
+                    assertEquals(List.of(), names(restartedRoot));
+                    assertTrue(restartedRoot.lookup("#reminderEmptyState").isVisible());
+                    byte[] before = Files.readAllBytes(reloadedStorage.getCoordiMateFilePath());
+
+                    restarted.clock().advance(java.time.Duration.ofMinutes(1));
+                    restarted.timer().getKeyFrames().getFirst().getOnFinished().handle(new ActionEvent());
+
+                    assertEquals(List.of(), names(restartedRoot));
+                    assertArrayEquals(before, Files.readAllBytes(reloadedStorage.getCoordiMateFilePath()));
+                } finally {
+                    restarted.stage().close();
+                }
+            } finally {
+                fixture.stage().close();
+            }
+            return null;
+        });
+    }
+
+    @Test
+    public void periodicCheck_dateOnly_entersPreviousDayAndExpiresAfterEventDay() throws Exception {
+        onJavaFxThread(() -> {
+            Fixture fixture = openWindow(true);
+            try {
+                fixture.logic().execute("editevent evn/Final Concert st/21-10-2026 et/21-10-2026 18:00");
+                Parent root = fixture.stage().getScene().getRoot();
+                assertEquals(List.of(), names(root));
+                byte[] before = Files.readAllBytes(fixture.storage().getCoordiMateFilePath());
+
+                for (java.time.Duration elapsed : List.of(java.time.Duration.ofHours(9),
+                        java.time.Duration.ofHours(24), java.time.Duration.ofHours(24).minusNanos(1))) {
+                    fixture.clock().advance(elapsed);
+                    fixture.timer().getKeyFrames().getFirst().getOnFinished().handle(new ActionEvent());
+
+                    assertEquals(List.of("Upcoming event: Final Concert"), names(root));
+                    assertEquals("Starts: 21-10-2026", ((Label) root.lookup(".reminder-time")).getText());
+                }
+                fixture.clock().advance(java.time.Duration.ofNanos(1));
+                fixture.timer().getKeyFrames().getFirst().getOnFinished().handle(new ActionEvent());
+
+                assertEquals(List.of(), names(root));
+                assertTrue(root.lookup("#reminderEmptyState").isVisible());
+                assertArrayEquals(before, Files.readAllBytes(fixture.storage().getCoordiMateFilePath()));
             } finally {
                 fixture.stage().close();
             }
@@ -286,6 +354,11 @@ public class MainWindowReminderTest {
         ControlledStorage storage = new ControlledStorage(temporaryFolder.resolve("data.json"));
         storage.saveCoordiMate(model.getCoordiMate());
         AdjustableClock clock = new AdjustableClock();
+        return openWindow(model, storage, clock, showBeforeFilling, width, height);
+    }
+
+    private Fixture openWindow(ModelManager model, ControlledStorage storage, AdjustableClock clock,
+            boolean showBeforeFilling, int width, int height) {
         LogicManager logic = new LogicManager(model, new StorageManager(storage,
                 new JsonUserPrefsStorage(temporaryFolder.resolve("prefs.json"))), clock);
         Stage stage = new Stage();
