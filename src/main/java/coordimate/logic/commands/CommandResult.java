@@ -25,6 +25,9 @@ public class CommandResult {
     /** The contacts view should be shown. */
     private final boolean shouldShowContacts;
 
+    /** The events view should be shown. */
+    private final boolean shouldShowEvents;
+
     /**
      * Constructs a {@code CommandResult} with the specified fields.
      */
@@ -44,11 +47,20 @@ public class CommandResult {
      */
     public CommandResult(String feedbackToUser, boolean shouldShowHelp, boolean shouldExit, boolean shouldShowTags,
             boolean shouldShowContacts) {
+        this(feedbackToUser, shouldShowHelp, shouldExit, shouldShowTags, shouldShowContacts, false);
+    }
+
+    /**
+     * Constructs a {@code CommandResult} with the specified fields.
+     */
+    public CommandResult(String feedbackToUser, boolean shouldShowHelp, boolean shouldExit, boolean shouldShowTags,
+            boolean shouldShowContacts, boolean shouldShowEvents) {
         this.feedbackToUser = requireNonNull(feedbackToUser);
         this.shouldShowHelp = shouldShowHelp;
         this.shouldExit = shouldExit;
         this.shouldShowTags = shouldShowTags;
         this.shouldShowContacts = shouldShowContacts;
+        this.shouldShowEvents = shouldShowEvents;
     }
 
     /**
@@ -91,6 +103,13 @@ public class CommandResult {
         return shouldShowContacts;
     }
 
+    /**
+     * Returns true if the command requests that the events view be shown.
+     */
+    public boolean shouldShowEvents() {
+        return shouldShowEvents;
+    }
+
     @Override
     public boolean equals(Object other) {
         if (other == this) {
@@ -106,12 +125,14 @@ public class CommandResult {
                 && shouldShowHelp == otherCommandResult.shouldShowHelp
                 && shouldExit == otherCommandResult.shouldExit
                 && shouldShowTags == otherCommandResult.shouldShowTags
-                && shouldShowContacts == otherCommandResult.shouldShowContacts;
+                && shouldShowContacts == otherCommandResult.shouldShowContacts
+                && shouldShowEvents == otherCommandResult.shouldShowEvents;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(feedbackToUser, shouldShowHelp, shouldExit, shouldShowTags, shouldShowContacts);
+        return Objects.hash(feedbackToUser, shouldShowHelp, shouldExit, shouldShowTags, shouldShowContacts,
+                shouldShowEvents);
     }
 
     @Override
@@ -122,6 +143,7 @@ public class CommandResult {
                 .add("exit", shouldExit)
                 .add("showTags", shouldShowTags)
                 .add("showContacts", shouldShowContacts)
+                .add("showEvents", shouldShowEvents)
                 .toString();
     }
 

@@ -17,6 +17,7 @@ public class CommandResultTest {
         assertTrue(commandResult.equals(new CommandResult("feedback", false, false)));
         assertTrue(commandResult.equals(new CommandResult("feedback", false, false, false)));
         assertTrue(commandResult.equals(new CommandResult("feedback", false, false, false, false)));
+        assertTrue(commandResult.equals(new CommandResult("feedback", false, false, false, false, false)));
 
         // same object -> returns true
         assertTrue(commandResult.equals(commandResult));
@@ -41,6 +42,9 @@ public class CommandResultTest {
 
         // different showContacts value -> returns false
         assertFalse(commandResult.equals(new CommandResult("feedback", false, false, false, true)));
+
+        // different showEvents value -> returns false
+        assertFalse(commandResult.equals(new CommandResult("feedback", false, false, false, false, true)));
     }
 
     @Test
@@ -64,6 +68,10 @@ public class CommandResultTest {
 
         // different showContacts value -> returns different hashcode
         assertNotEquals(commandResult.hashCode(), new CommandResult("feedback", false, false, false, true).hashCode());
+
+        // different showEvents value -> returns different hashcode
+        assertNotEquals(commandResult.hashCode(),
+                new CommandResult("feedback", false, false, false, false, true).hashCode());
     }
 
     @Test
@@ -72,7 +80,8 @@ public class CommandResultTest {
         String expected = CommandResult.class.getCanonicalName() + "{feedbackToUser="
                 + commandResult.getFeedbackToUser() + ", showHelp=" + commandResult.shouldShowHelp()
                 + ", exit=" + commandResult.shouldExit() + ", showTags=" + commandResult.shouldShowTags()
-                + ", showContacts=" + commandResult.shouldShowContacts() + "}";
+                + ", showContacts=" + commandResult.shouldShowContacts()
+                + ", showEvents=" + commandResult.shouldShowEvents() + "}";
         assertEquals(expected, commandResult.toString());
     }
 
@@ -88,5 +97,11 @@ public class CommandResultTest {
         assertFalse(new CommandResult("feedback").shouldShowContacts());
         assertFalse(new CommandResult("feedback", false, false, true).shouldShowContacts());
         assertTrue(new CommandResult("feedback", false, false, false, true).shouldShowContacts());
+    }
+
+    @Test
+    public void shouldShowEvents_defaultFalseAndSetWhenRequested() {
+        assertFalse(new CommandResult("feedback").shouldShowEvents());
+        assertTrue(new CommandResult("feedback", false, false, false, false, true).shouldShowEvents());
     }
 }

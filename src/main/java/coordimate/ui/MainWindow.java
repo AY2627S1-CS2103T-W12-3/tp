@@ -501,6 +501,10 @@ public class MainWindow extends UiPart<Stage> {
                 showContacts();
             }
 
+            if (commandResult.shouldShowEvents()) {
+                showEvents();
+            }
+
             if (commandResult.shouldExit()) {
                 handleExit();
             }

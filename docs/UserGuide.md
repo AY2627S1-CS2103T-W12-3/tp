@@ -27,6 +27,7 @@
    ![Ui](images/Ui.png)
 
    The left sidebar switches between Contacts, Events, and Tags and shows commands for the selected view.
+   You can also use `switch contacts`, `switch events`, or `switch tags` in the command box.
    Click a command name to put only the command word in the input and show its format and an example below the input.
    Complete the command by typing its arguments after the command word.
    The main workspace shows a list beside its details, and the command box, feedback, and prefix hints stay at the bottom.
@@ -134,6 +135,20 @@ Selecting **Help** in the menu bar opens this window directly. <kbd>F1</kbd> rem
 In the command formats, parameters enclosed in square brackets `[ ]` are optional.
 
 Format: `help`
+
+
+### Switching views: `switch`
+
+Switches to the Contacts, Events, or Tags view without changing saved data. Switching to the current view also succeeds.
+The view name must be lowercase. A missing or unrecognised view name is rejected without changing the selected view.
+
+Formats: `switch contacts` | `switch events` | `switch tags`
+
+Example: `switch events`
+
+| Condition | Error message |
+|---|---|
+| The view name is missing, unknown, or followed by extra text. | `Invalid command format.` |
 
 
 ### Adding a contact: `add`
@@ -832,14 +847,15 @@ Format: `exit`
 
 ### Saving the data
 
-CoordiMate automatically saves data after every command. You do not need to save manually.
+CoordiMate automatically saves data after commands that change it. You do not need to save manually.
 
 A command that changes your data is saved to the data file **before** the change appears in the app. If the data
 cannot be saved, the command is rejected with an error such as `Event could not be saved. No changes were made.`
 and both the app and the data file stay as they were, so what you see always matches what is saved.
 
-Commands that do not change saved data also attempt to save after running. A save failure reports one of
-the following messages; a command may already have changed the displayed view when this happens.
+Most commands that do not change saved data also attempt to save after running. The `switch` command only
+changes the selected view and does not read or save the data file. For other commands, a save failure reports
+one of the following messages; a command may already have changed the displayed view when this happens.
 
 | Condition | Error message |
 |---|---|
@@ -855,7 +871,7 @@ CoordiMate data is saved automatically as a JSON file `[JAR file location]/data/
 <box type="warning" seamless>
 
 **Caution:**
-If your changes make the data file invalid, CoordiMate starts with an empty dataset at the next run. While the file is invalid, commands that change data (such as `add`, `addevent`, and `clear`) are rejected with `Saved data could not be loaded. Check the local data file.` and leave the file untouched, so that you can close the app and fix it. However, a command that only changes what is displayed (such as `list`, `search`, or `filter`) saves the data currently in the app, which **replaces the invalid file**. We therefore recommend backing up the file before editing it.<br>
+If your changes make the data file invalid, CoordiMate starts with an empty dataset at the next run. While the file is invalid, commands that change data (such as `add`, `addevent`, and `clear`) are rejected with `Saved data could not be loaded. Check the local data file.` and leave the file untouched, so that you can close the app and fix it. Commands such as `list`, `search`, and `filter` save the data currently in the app, which **replaces the invalid file**. The `switch` command does not access the data file. We therefore recommend backing up the file before editing it.<br>
 Each name in an event's `members` list must exactly match the name of a saved contact, or the data file is invalid.<br>
 Furthermore, certain edits can cause CoordiMate to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </box>
@@ -897,6 +913,7 @@ Action | Format, Examples
 **Edit tag** | `edittag OLD_TAG t/NEW_TAG`<br> e.g., `edittag Media t/Publicity`
 **Delete tag** | `deletetag t/TAG`<br> e.g., `deletetag t/Publicity`
 **List tags** | `listtags`
+**Switch views** | `switch contacts` \| `switch events` \| `switch tags`<br> e.g., `switch events`
 **Clear** | `clear`
 **Help** | `help`
 **Exit** | `exit`

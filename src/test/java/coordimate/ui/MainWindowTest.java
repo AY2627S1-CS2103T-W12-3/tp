@@ -22,6 +22,7 @@ import coordimate.testutil.PersonBuilder;
 import coordimate.testutil.TypicalPersons;
 import javafx.application.Platform;
 import javafx.geometry.Orientation;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.SplitPane;
@@ -97,6 +98,57 @@ public class MainWindowTest {
             assertTrue(views.getSelectionModel().getSelectedItem().getText().startsWith("Contacts"));
             assertEquals("Bold", contacts.getFont().getStyle());
             assertTrue(getPrefixHelpText(prefixHelp).contains("n/Name"));
+            stage.close();
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void switchCommand_selectsViewAndRejectsInvalidView() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            MainWindow window = new MainWindow(stage, new LogicManager(new ModelManager(), null),
+                    Path.of("data", "coordimate.json"));
+            window.fillInnerParts();
+            stage.getScene().getRoot().applyCss();
+
+            TabPane views = (TabPane) stage.getScene().getRoot().lookup("#views");
+            TextField input = (TextField) stage.getScene().getRoot().lookup("#commandTextField");
+            Button submit = (Button) stage.getScene().getRoot().lookup("#submitButton");
+            Label feedback = (Label) stage.getScene().getRoot().lookup("#resultDisplay");
+            ToggleButton contacts = (ToggleButton) stage.getScene().getRoot().lookup("#contactsView");
+            ToggleButton events = (ToggleButton) stage.getScene().getRoot().lookup("#eventsView");
+            ToggleButton tags = (ToggleButton) stage.getScene().getRoot().lookup("#tagsView");
+
+            input.setText("switch events");
+            submit.fire();
+            assertTrue(events.isSelected());
+            assertTrue(views.getSelectionModel().getSelectedItem().getText().startsWith("Events"));
+            assertEquals("Switched to Events view.", feedback.getText());
+
+            input.setText("switch tags");
+            submit.fire();
+            assertTrue(tags.isSelected());
+            assertEquals("Tags", views.getSelectionModel().getSelectedItem().getText());
+
+            input.setText("switch contacts");
+            submit.fire();
+            assertTrue(contacts.isSelected());
+            assertTrue(views.getSelectionModel().getSelectedItem().getText().startsWith("Contacts"));
+
+            input.setText("switch contacts");
+            submit.fire();
+            assertTrue(contacts.isSelected());
+            assertEquals("Switched to Contacts view.", feedback.getText());
+
+            input.setText("switch missing");
+            submit.fire();
+            assertTrue(contacts.isSelected());
+            assertEquals("switch missing", input.getText());
+            assertTrue(feedback.getText().startsWith("Invalid command format."));
+
             stage.close();
             return null;
         });
