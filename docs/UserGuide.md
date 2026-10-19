@@ -333,6 +333,57 @@ Success: `Deleted Event Final Concert.`
 If saving fails, the command reports `Event could not be deleted. No changes were made.`
 The event and existing data file remain unchanged.
 
+### Automatic event reminders
+
+CoordiMate shows reminders in the **Upcoming events** panel below the menu bar and above the workspace.
+The panel remains visible across the **Contacts**, **Events**, and **Tags** views. No command or parameters
+are needed. Reminders appear only while CoordiMate is running.
+
+CoordiMate checks saved events on startup and once per minute while the window is open. It also refreshes
+reminders after commands, including event edits and deletions. A reminder becoming eligible or expiring
+as time passes updates at the next periodic check.
+
+Reminder timing follows your computer's local time zone:
+
+* For a start with a time of day, the reminder becomes eligible exactly **24 hours before the start**.
+  It remains eligible at the exact start time. Once the start has passed, the next check removes it,
+  even if the event has not ended.
+* For a start with only a date, the reminder is eligible throughout **the preceding calendar day and
+  the event's start date**. For example, a start of `20-10-2026` qualifies from midnight at the beginning
+  of `19-10-2026` until midnight at the beginning of `21-10-2026`, excluding that final midnight.
+
+Each reminder displays the saved event name, start, and end. For example:
+
+```text
+Upcoming event: Final Concert
+Starts: 20-10-2026 15:00
+Ends: 20-10-2026 18:00
+```
+
+This timed event qualifies from `19-10-2026 15:00` through `20-10-2026 15:00`, including both boundaries.
+Several reminders appear in ascending order of start time, with ties ordered by name, ignoring case.
+For ordering, a date-only start counts as the beginning of its date; the reminder still displays the
+saved date without adding a time. Each event has at most one active reminder.
+
+Click **Dismiss** beside a reminder to hide it. CoordiMate saves the dismissal immediately, so it stays
+dismissed after restarting. Renaming the event, editing only its end, or supplying the same start value
+keeps the dismissal. Changing its start date or time resets the dismissal, including when switching
+between a timed and date-only start or reverting to a previously dismissed start. The revised reminder
+appears if its new start qualifies under the timing rules above. Rejected or unsaved edits leave reminders
+unchanged.
+
+Deleting an event removes its reminder. The `clear` command removes all events and their reminders.
+Deleting and then recreating an event creates a new reminder if its start qualifies, even when the name
+and schedule match the deleted event.
+
+If CoordiMate cannot save a dismissal, it hides the reminder for the current session and shows
+`Reminder dismissal could not be saved and may reappear after restarting.` with a **Not saved** status
+in the feedback area above the command input. The dismissal has not been saved, so the reminder may
+return after restarting.
+
+If the saved data file is invalid, CoordiMate starts with an empty dataset and shows no event reminders.
+See [Editing the data file](#editing-the-data-file) for details of data-loading errors.
+
 ### Assigning members to an event: `assign`
 
 Assigns one or more contacts to an existing event as members and saves the change.
