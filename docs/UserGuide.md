@@ -234,7 +234,7 @@ Success: `Created Event Student Life Fair. Start Time: 09-10-2026. End Time: 10-
 
 Use the **Events** tab on the left to browse saved events. Selecting an event shows its
 start time, end time, duration, and members. Each member row shows the contact's role,
-organisation, tags, and attendance status. A successful `addevent` opens this tab and selects
+organisation, tags, notes, and attendance status. A successful `addevent` opens this tab and selects
 the new event. Each event card shows its member count and attendance summary. At narrower window
 sizes, the list appears above the details. The list and details divider can be dragged, but the
 details pane keeps a minimum width while the panes are side by side.
