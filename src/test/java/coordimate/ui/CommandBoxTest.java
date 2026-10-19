@@ -1,6 +1,7 @@
 package coordimate.ui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.awt.GraphicsEnvironment;
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import coordimate.logic.commands.CommandResult;
+import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.logic.parser.exceptions.ParseException;
 import javafx.application.Platform;
 import javafx.scene.Scene;
@@ -93,6 +95,9 @@ public class CommandBoxTest {
 
             pressArrow(input, KeyCode.UP);
             assertEquals("  filter tag/EXCO  ", input.getText());
+            input.fireEvent(new KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.LEFT,
+                    false, false, false, false));
+            assertEquals("  filter tag/EXCO  ", input.getText());
             input.setText("edited filter");
             pressArrow(input, KeyCode.UP);
             assertEquals("list", input.getText());
@@ -153,6 +158,36 @@ public class CommandBoxTest {
             pressArrow(input, KeyCode.UP);
             assertEquals("bad", input.getText());
             assertEquals(List.of("bad", "list"), submitted);
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void repeatedCommandFailure_keepsSingleErrorStyleUntilInputChanges() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            List<String> submitted = new ArrayList<>();
+            Region root = new CommandBox(text -> {
+                submitted.add(text);
+                throw new CommandException("No matching contact");
+            }, () -> false).getRoot();
+            new Scene(root);
+            TextField input = (TextField) root.lookup("#commandTextField");
+            Button button = (Button) root.lookup("#submitButton");
+
+            input.setText("delete 99");
+            button.fire();
+            button.fire();
+            assertEquals(List.of("delete 99", "delete 99"), submitted);
+            assertEquals("delete 99", input.getText());
+            assertEquals(1, input.getStyleClass().stream()
+                    .filter(CommandBox.ERROR_STYLE_CLASS::equals).count());
+            assertEquals("Retry", button.getText());
+
+            input.setText("delete 1");
+            assertFalse(input.getStyleClass().contains(CommandBox.ERROR_STYLE_CLASS));
+            assertEquals("Enter", button.getText());
             return null;
         });
         Platform.runLater(task);
