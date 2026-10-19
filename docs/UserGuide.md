@@ -23,8 +23,12 @@
 1. Copy the file to the folder you want to use as the _home folder_ for CoordiMate.
 
 1. Open a terminal, `cd` to the folder containing the JAR file, and run `java -jar coordimate.jar`.<br>
-   A maximized GUI similar to the one below should appear in a few seconds. Note how the app contains some sample data.<br>
+   On the first launch, a maximized GUI similar to the one below should appear in a few seconds. Note how the app contains some sample data.<br>
    ![Ui](images/Ui.png)
+
+   On subsequent launches, CoordiMate restores whether the window was maximized, together with its most recent
+   non-maximized size and position. If those saved bounds do not fit the current display, such as after disconnecting
+   a secondary screen or changing the display resolution, CoordiMate adjusts the window to remain fully visible.<br>
 
    The left sidebar switches between Contacts, Events, and Tags and shows commands for the selected view.
    Click a command name to put only the command word in the input and show its format and an example below the input.
@@ -871,8 +875,7 @@ Furthermore, certain edits can cause CoordiMate to behave in unexpected ways (e.
 
 ## Known issues
 
-1. **When using multiple screens**, if you move the application to a secondary screen, and later switch to using only the primary screen, the GUI will open off-screen. The remedy is to delete the `preferences.json` file created by the application before running the application again.
-2. **If you minimize the Help Window** and then run the `help` command (or use the `Help` menu, or the keyboard shortcut `F1`) again, the original Help Window will remain minimized, and no new Help Window will appear. The remedy is to manually restore the minimized Help Window.
+1. **If you minimize the Help Window** and then run the `help` command (or use the `Help` menu, or the keyboard shortcut `F1`) again, the original Help Window will remain minimized, and no new Help Window will appear. The remedy is to manually restore the minimized Help Window.
 
 --------------------------------------------------------------------------------------------------------------------
 

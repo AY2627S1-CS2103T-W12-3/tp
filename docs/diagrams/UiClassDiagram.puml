@@ -9,6 +9,7 @@ Class "<<interface>>\nUi" as Ui
 Class "{abstract}\nUiPart" as UiPart
 Class UiManager
 Class MainWindow
+Class WindowBounds
 Class HelpWindow
 Class ResultDisplay
 Class PersonListPanel
@@ -35,6 +36,7 @@ MainWindow *-down-> "1" ResultDisplay
 MainWindow *-down-> "1" PersonListPanel
 MainWindow *-down-> "1" StatusBarFooter
 MainWindow --> "0..1" HelpWindow
+MainWindow ..> WindowBounds
 
 PersonListPanel -down-> "*" PersonCard
 
