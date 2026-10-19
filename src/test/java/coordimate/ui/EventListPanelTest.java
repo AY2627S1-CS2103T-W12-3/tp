@@ -25,15 +25,18 @@ import coordimate.testutil.PersonBuilder;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.geometry.Bounds;
 import javafx.geometry.Orientation;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SplitPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
 
 /**
  * Tests attendance in the selected event's details on the JavaFX application thread.
@@ -244,6 +247,16 @@ public class EventListPanelTest {
     }
 
     @Test
+    public void resize_longNotes_wrapWithoutCompressingAttendanceBadges() throws Exception {
+        runOnJavaFxThread(() -> assertLongNoteLayout("Requires step-free access. ".repeat(20).substring(0, 500)));
+    }
+
+    @Test
+    public void resize_unbrokenNotes_wrapWithoutCompressingAttendanceBadges() throws Exception {
+        runOnJavaFxThread(() -> assertLongNoteLayout("W".repeat(500)));
+    }
+
+    @Test
     public void resize_narrowWindowStacksEventPanes() throws Exception {
         runOnJavaFxThread(() -> {
             SplitPane pane = (SplitPane) new EventListPanel(FXCollections.observableArrayList()).getRoot();
@@ -255,6 +268,62 @@ public class EventListPanelTest {
             pane.resize(700, 500);
             assertEquals(Orientation.VERTICAL, pane.getOrientation());
         });
+    }
+
+    private static void assertLongNoteLayout(String note) {
+        ObservableList<Person> persons = FXCollections.observableArrayList();
+        for (Name name : List.of(ALICE, BOB, CHARLIE)) {
+            persons.add(new PersonBuilder().withName(name.getFullName()).withRole("Logistics")
+                    .withOrganisation("NUS").withTags("Logistics", "Publicity").withNote(note).build());
+        }
+        Event event = event(List.of(ALICE, BOB, CHARLIE),
+                Map.of(ALICE, AttendanceStatus.PRESENT, BOB, AttendanceStatus.ABSENT));
+        SplitPane root = (SplitPane) new EventListPanel(FXCollections.observableArrayList(event), persons).getRoot();
+        Scene scene = new Scene(root, 1400, 700);
+        scene.getStylesheets().add(EventListPanelTest.class.getResource("/view/DarkTheme.css").toExternalForm());
+
+        for (int width : new int[]{1400, 560, 1400}) {
+            root.resize(width, 700);
+            root.applyCss();
+            root.layout();
+            ScrollPane scroll = (ScrollPane) root.getItems().get(1);
+            assertTrue(scroll.getContent().getLayoutBounds().getWidth() <= scroll.getViewportBounds().getWidth() + 1,
+                    "Member details should fit the viewport at width " + width);
+            for (var memberRow : getMembers(root).getChildren()) {
+                HBox row = (HBox) memberRow;
+                Label badge = (Label) row.getChildren().get(3);
+                Label noteLabel = (Label) row.lookup(".event-member-note");
+                VBox details = (VBox) row.getChildren().get(2);
+
+                assertEquals(badge.prefWidth(-1), badge.getWidth(), 1,
+                        "Attendance badge should retain its full width at width " + width);
+                assertEquals(badge.prefHeight(-1), badge.getHeight(), 1);
+                assertEquals(badge.getText(), ((Text) badge.lookup(".text")).getText(),
+                        "Attendance badge text should not be truncated");
+                assertEquals(row.getWidth() - row.getInsets().getRight(),
+                        badge.getBoundsInParent().getMaxX(), 1, "Badge should stay at the right edge");
+                assertEquals(row.getHeight() / 2, badge.getBoundsInParent().getCenterY(), 1,
+                        "Badge should retain its vertical alignment");
+
+                assertTrue(noteLabel.getHeight() > noteLabel.prefHeight(-1), "Long note should wrap");
+                assertTrue(noteLabel.getHeight() + 1 >= noteLabel.prefHeight(noteLabel.getWidth()),
+                        "Row should grow to show the complete note");
+                assertEquals("Note: " + note, ((Text) noteLabel.lookup(".text")).getText(),
+                        "Rendered note should not be truncated");
+                Bounds noteBounds = noteLabel.localToScene(noteLabel.getLayoutBounds());
+                Bounds badgeBounds = badge.localToScene(badge.getLayoutBounds());
+                var identityLine = details.getChildren().getFirst();
+                Bounds identityBounds = identityLine.localToScene(identityLine.getLayoutBounds());
+                assertTrue(noteBounds.getMaxX() <= badgeBounds.getMinX(), "Note should not overlap badge");
+                assertTrue(identityBounds.getMaxY() <= noteBounds.getMinY(), "Note should remain below tags");
+                assertTrue(noteLabel.getBoundsInParent().getMaxY() <= details.getHeight(),
+                        "Complete note should fit inside the details column");
+                assertTrue(details.getBoundsInParent().getMaxY() <= row.getHeight() - row.getInsets().getBottom(),
+                        "Member row should grow to contain the details column");
+            }
+            assertCounts(root, "1 Present", "1 Absent", "1 Not marked");
+            assertMembers(root, "Alice Tan", "● present", "Bob Lim", "● absent", "Charlie Ng", "● unmarked");
+        }
     }
 
     private static Event event(List<Name> members, Map<Name, AttendanceStatus> attendance) {

@@ -245,6 +245,7 @@ public class EventListPanel extends UiPart<Region> {
             });
         }
         memberDetails.getStyleClass().add("event-member-details");
+        memberDetails.setMinWidth(0);
         HBox.setHgrow(memberDetails, Priority.ALWAYS);
 
         HBox row = new HBox(12, index, avatar, memberDetails, createStatusBadge(status));
@@ -314,6 +315,7 @@ public class EventListPanel extends UiPart<Region> {
         }
         Label badge = new Label(text);
         badge.getStyleClass().addAll("attendance-badge", styleClass);
+        badge.setMinWidth(Region.USE_PREF_SIZE);
         return badge;
     }
 
