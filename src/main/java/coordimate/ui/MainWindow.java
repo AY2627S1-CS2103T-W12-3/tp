@@ -1,6 +1,8 @@
 package coordimate.ui;
 
+import java.awt.Point;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -19,6 +21,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.AccessibleRole;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
@@ -41,6 +44,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 
 /**
@@ -405,12 +409,25 @@ public class MainWindow extends UiPart<Stage> {
      * Sets the default size based on {@code guiSettings}.
      */
     private void setWindowDefaultSize(GuiSettings guiSettings) {
-        primaryStage.setHeight(Math.max(guiSettings.getWindowHeight(), primaryStage.getMinHeight()));
-        primaryStage.setWidth(Math.max(guiSettings.getWindowWidth(), primaryStage.getMinWidth()));
-        if (guiSettings.getWindowCoordinates() != null) {
-            primaryStage.setX(guiSettings.getWindowCoordinates().getX());
-            primaryStage.setY(guiSettings.getWindowCoordinates().getY());
+        Screen screen = getTargetScreen(guiSettings.getWindowCoordinates());
+        Rectangle2D screenBounds = screen.getVisualBounds();
+        Rectangle2D windowBounds = WindowBounds.fitToScreen(guiSettings, screenBounds);
+
+        primaryStage.setMinWidth(Math.min(WindowBounds.PREFERRED_MIN_WIDTH, screenBounds.getWidth()));
+        primaryStage.setMinHeight(Math.min(WindowBounds.PREFERRED_MIN_HEIGHT, screenBounds.getHeight()));
+        primaryStage.setWidth(windowBounds.getWidth());
+        primaryStage.setHeight(windowBounds.getHeight());
+        primaryStage.setX(windowBounds.getMinX());
+        primaryStage.setY(windowBounds.getMinY());
+    }
+
+    private Screen getTargetScreen(Point savedCoordinates) {
+        if (savedCoordinates == null) {
+            return Screen.getPrimary();
         }
+        List<Screen> screens = Screen.getScreensForRectangle(
+                savedCoordinates.getX(), savedCoordinates.getY(), 1, 1);
+        return screens.isEmpty() ? Screen.getPrimary() : screens.getFirst();
     }
 
     /**
