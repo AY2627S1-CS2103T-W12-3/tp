@@ -76,10 +76,12 @@ public class ReminderHistoryIntegrationTest {
     }
 
     @Test
-    public void execute_startEditsAndReversion_preservesBothDismissedSchedules() throws Exception {
+    public void execute_startEditsAndReversion_resetsDismissal() throws Exception {
         EventTime revisedStart = new EventTime("21-10-2026 16:00");
         logic.execute("editevent evn/Concert st/21-10-2026 16:00");
         assertFalse(savedEvent().isReminderDismissed());
+        assertEquals(revisedStart, savedEvent().getStartTime());
+        assertEquals(Set.of(), savedEvent().getDismissedReminderStarts());
         Event revised = model.getCoordiMate().getEventList().getFirst();
         model.setEvent(revised, revised.withReminderDismissed());
         storage.saveCoordiMate(model.getCoordiMate());
@@ -87,8 +89,8 @@ public class ReminderHistoryIntegrationTest {
         logic.execute("editevent evn/Concert st/20-10-2026 15:00");
 
         Event reverted = savedEvent();
-        assertTrue(reverted.isReminderDismissed());
-        assertEquals(Set.of(START, revisedStart), reverted.getDismissedReminderStarts());
+        assertFalse(reverted.isReminderDismissed());
+        assertEquals(Set.of(), reverted.getDismissedReminderStarts());
     }
 
     @Test
@@ -102,8 +104,8 @@ public class ReminderHistoryIntegrationTest {
         logic.execute("editevent evn/Concert st/20-10-2026 00:00");
         assertFalse(savedEvent().isReminderDismissed());
         logic.execute("editevent evn/Concert st/20-10-2026");
-        assertTrue(savedEvent().isReminderDismissed());
-        assertEquals(Set.of(START, new EventTime("20-10-2026")), savedEvent().getDismissedReminderStarts());
+        assertFalse(savedEvent().isReminderDismissed());
+        assertEquals(Set.of(), savedEvent().getDismissedReminderStarts());
     }
 
     @Test

@@ -145,7 +145,7 @@ public final class Event {
     }
 
     /**
-     * Returns the dismissed start values, including schedules that are no longer current.
+     * Returns the saved start values whose reminders have been dismissed.
      */
     public Set<EventTime> getDismissedReminderStarts() {
         return dismissedReminderStarts;
@@ -168,10 +168,12 @@ public final class Event {
     }
 
     /**
-     * Returns a copy with the given name and times, preserving members, attendance and dismissal history.
+     * Returns a copy with the given name and times, preserving members and attendance.
+     * Resets dismissal history when the start value changes, including a return to an earlier start.
      */
     public Event withDetails(String name, EventTime startTime, EventTime endTime) {
-        return new Event(name, startTime, endTime, members, attendance, dismissedReminderStarts);
+        Set<EventTime> history = this.startTime.equals(startTime) ? dismissedReminderStarts : Set.of();
+        return new Event(name, startTime, endTime, members, attendance, history);
     }
 
     /**

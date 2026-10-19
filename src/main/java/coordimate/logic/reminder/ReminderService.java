@@ -4,10 +4,8 @@ import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
 import java.time.Clock;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
 
 import coordimate.commons.exceptions.DataLoadingException;
@@ -29,7 +27,7 @@ public class ReminderService {
     private final UpcomingEventFinder finder;
     private final ObservableList<Event> reminders = FXCollections.observableArrayList();
     private final ObservableList<Event> unmodifiableReminders = FXCollections.unmodifiableObservableList(reminders);
-    private final Map<String, Set<EventTime>> sessionDismissals = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    private final Map<String, EventTime> sessionDismissals = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
     /**
      * Uses the validated model as the source of events. Refreshes do not read or write storage.
@@ -51,16 +49,16 @@ public class ReminderService {
 
     /**
      * Replaces reminders with the eligible, undismissed events in chronological order.
-     * Forgets temporary dismissals when their event is deleted.
+     * Forgets temporary dismissals when their event is deleted or its start value changes.
      */
     public void refreshReminders() {
         List<Event> events = model.getCoordiMate().getEventList();
-        sessionDismissals.keySet().removeIf(name -> events.stream()
-                .noneMatch(event -> event.getName().equalsIgnoreCase(name)));
+        sessionDismissals.entrySet().removeIf(entry -> events.stream()
+                .noneMatch(event -> event.getName().equalsIgnoreCase(entry.getKey())
+                        && event.getStartTime().equals(entry.getValue())));
         List<Event> updated = finder.findUpcomingEvents(events).stream()
                 .filter(event -> !event.isReminderDismissed())
-                .filter(event -> !sessionDismissals.getOrDefault(event.getName(), Set.of())
-                        .contains(event.getStartTime()))
+                .filter(event -> !event.getStartTime().equals(sessionDismissals.get(event.getName())))
                 .toList();
         if (!reminders.equals(updated)) {
             reminders.setAll(updated);
@@ -86,8 +84,7 @@ public class ReminderService {
             storage.readCoordiMate();
             storage.saveCoordiMate(candidate);
         } catch (DataLoadingException | IOException e) {
-            sessionDismissals.computeIfAbsent(reminder.getName(), name -> new HashSet<>())
-                    .add(reminder.getStartTime());
+            sessionDismissals.put(reminder.getName(), reminder.getStartTime());
             refreshReminders();
             throw new ReminderDismissalException(e);
         }
@@ -99,9 +96,9 @@ public class ReminderService {
      * Moves temporary dismissals after a rename is saved and before the model is updated.
      */
     public void renameEvent(String oldName, String newName) {
-        Set<EventTime> history = sessionDismissals.remove(oldName);
-        if (history != null) {
-            sessionDismissals.put(newName, history);
+        EventTime dismissedStart = sessionDismissals.remove(oldName);
+        if (dismissedStart != null) {
+            sessionDismissals.put(newName, dismissedStart);
         }
     }
 }

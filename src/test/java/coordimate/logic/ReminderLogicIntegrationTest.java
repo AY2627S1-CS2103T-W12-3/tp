@@ -276,7 +276,7 @@ public class ReminderLogicIntegrationTest {
         logic.execute("editevent evn/FINAL CONCERT st/19-10-2026 16:00");
         assertEquals(1, logic.getReminders().size());
         logic.execute("editevent evn/FINAL CONCERT st/20-10-2026 15:00");
-        assertEquals(List.of(), logic.getReminders());
+        assertEquals(1, logic.getReminders().size());
     }
 
     @Test
@@ -318,7 +318,7 @@ public class ReminderLogicIntegrationTest {
     }
 
     @Test
-    public void dismissReminder_newScheduleSaved_keepsFailedOldDismissalSessionOnly() throws Exception {
+    public void dismissReminder_newScheduleSaved_clearsFailedOldDismissal() throws Exception {
         failDismissal();
         storage.failSave = false;
         logic.execute("editevent evn/Concert st/19-10-2026 16:00");
@@ -327,23 +327,93 @@ public class ReminderLogicIntegrationTest {
         logic.dismissReminder(revised);
         assertEquals(Set.of(revised.getStartTime()), savedEvent().getDismissedReminderStarts());
         logic.execute("editevent evn/Concert st/20-10-2026 15:00");
-        assertEquals(List.of(), logic.getReminders());
-        assertEquals(Set.of(revised.getStartTime()), savedEvent().getDismissedReminderStarts());
+        assertEquals(1, logic.getReminders().size());
+        assertEquals(Set.of(), savedEvent().getDismissedReminderStarts());
 
         ModelManager reloaded = new ModelManager(storage.readCoordiMate().orElseThrow(), model.getUserPrefs());
         assertEquals(1, newLogic(reloaded).getReminders().size());
     }
 
     @Test
-    public void dismissReminder_savedDismissal_scheduleChangeAllowsNewReminderAndReversionStaysDismissed()
+    public void dismissReminder_savedDismissal_scheduleChangeAndReversionRestoreReminder()
             throws Exception {
+        ObservableList<Event> view = logic.getReminders();
         logic.dismissReminder(concert);
         logic.execute("editevent evn/Concert st/19-10-2026 16:00");
 
-        assertEquals(1, logic.getReminders().size());
+        assertEquals(1, view.size());
+        logic.dismissReminder(view.getFirst());
+        assertEquals(List.of(), view);
         logic.execute("editevent evn/Concert st/20-10-2026 15:00");
+        assertEquals(1, view.size());
+        assertEquals(Set.of(), savedEvent().getDismissedReminderStarts());
+        ModelManager reloaded = new ModelManager(storage.readCoordiMate().orElseThrow(), model.getUserPrefs());
+        assertEquals(1, newLogic(reloaded).getReminders().size());
+    }
+
+    @Test
+    public void execute_sameStart_preservesSavedDismissal() throws Exception {
+        logic.dismissReminder(concert);
+
+        logic.execute("editevent evn/Concert st/20-10-2026 15:00");
+
         assertEquals(List.of(), logic.getReminders());
         assertEquals(Set.of(START), savedEvent().getDismissedReminderStarts());
+    }
+
+    @Test
+    public void execute_failedStartEdit_preservesSavedDismissalAndFile() throws Exception {
+        logic.dismissReminder(concert);
+        byte[] before = Files.readAllBytes(storage.getCoordiMateFilePath());
+        storage.failSave = true;
+
+        assertThrows(CommandException.class, () -> logic.execute("editevent evn/Concert st/19-10-2026 16:00"));
+
+        assertEquals(List.of(), logic.getReminders());
+        assertEquals(Set.of(START), savedEvent().getDismissedReminderStarts());
+        assertArrayEquals(before, Files.readAllBytes(storage.getCoordiMateFilePath()));
+    }
+
+    @Test
+    public void execute_failedStartEdit_preservesTemporarySuppression() throws Exception {
+        failDismissal();
+        byte[] before = Files.readAllBytes(storage.getCoordiMateFilePath());
+
+        assertThrows(CommandException.class, () -> logic.execute("editevent evn/Concert st/19-10-2026 16:00"));
+
+        assertEquals(List.of(), logic.getReminders());
+        assertEquals(START, savedEvent().getStartTime());
+        assertArrayEquals(before, Files.readAllBytes(storage.getCoordiMateFilePath()));
+        storage.failSave = false;
+        logic.execute("editevent evn/Concert st/20-10-2026 15:00");
+        assertEquals(List.of(), logic.getReminders());
+    }
+
+    @Test
+    public void execute_dateOnlyStartReversion_restoresReminder() throws Exception {
+        logic.execute("editevent evn/Concert st/20-10-2026");
+        logic.dismissReminder(logic.getReminders().getFirst());
+        logic.execute("editevent evn/Concert st/20-10-2026 00:00");
+        logic.dismissReminder(logic.getReminders().getFirst());
+
+        logic.execute("editevent evn/Concert st/20-10-2026");
+
+        assertEquals(1, logic.getReminders().size());
+        assertEquals(Set.of(), savedEvent().getDismissedReminderStarts());
+        assertTrue(savedEvent().getStartTime().getDateTime().isEmpty());
+    }
+
+    @Test
+    public void execute_revertingToPastStart_resetsDismissalWithoutShowingReminder() throws Exception {
+        logic.dismissReminder(concert);
+        clock.advance(Duration.ofHours(24).plusMinutes(1));
+        logic.execute("editevent evn/Concert st/20-10-2026 17:00");
+        assertEquals(1, logic.getReminders().size());
+
+        logic.execute("editevent evn/Concert st/20-10-2026 15:00");
+
+        assertEquals(List.of(), logic.getReminders());
+        assertFalse(savedEvent().isReminderDismissed());
     }
 
     @Test

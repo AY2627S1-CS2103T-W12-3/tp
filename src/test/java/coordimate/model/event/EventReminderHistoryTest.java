@@ -60,16 +60,18 @@ public class EventReminderHistoryTest {
     }
 
     @Test
-    public void withDetails_newStartAndReversion_preserveAllDismissedSchedules() {
+    public void withDetails_newStartAndReversion_resetDismissal() {
         EventTime revisedStart = new EventTime("20-10-2026 16:00");
         Event revised = event.withReminderDismissed().withDetails("Concert", revisedStart, end);
 
         assertFalse(revised.isReminderDismissed());
+        assertEquals(Set.of(), revised.getDismissedReminderStarts());
         Event revisedDismissed = revised.withReminderDismissed();
         Event reverted = revisedDismissed.withDetails("Concert", start, end);
-        assertTrue(reverted.isReminderDismissed());
+        assertFalse(reverted.isReminderDismissed());
         assertTrue(revisedDismissed.isReminderDismissed());
-        assertEquals(Set.of(start, revisedStart), reverted.getDismissedReminderStarts());
+        assertEquals(Set.of(revisedStart), revisedDismissed.getDismissedReminderStarts());
+        assertEquals(Set.of(), reverted.getDismissedReminderStarts());
     }
 
     @Test
@@ -90,9 +92,31 @@ public class EventReminderHistoryTest {
         Event midnight = dateOnly.withDetails("Concert", new EventTime("20-10-2026 00:00"), end);
 
         assertFalse(midnight.isReminderDismissed());
-        assertTrue(midnight.withReminderDismissed().withDetails("Concert", dateOnly.getStartTime(), end)
+        assertFalse(midnight.withReminderDismissed().withDetails("Concert", dateOnly.getStartTime(), end)
                 .isReminderDismissed());
-        assertEquals(2, midnight.withReminderDismissed().getDismissedReminderStarts().size());
+        assertEquals(1, midnight.withReminderDismissed().getDismissedReminderStarts().size());
+    }
+
+    @Test
+    public void withDetails_sameStart_preservesDismissal() {
+        Event dismissed = event.withReminderDismissed();
+
+        Event unchanged = dismissed.withDetails("Concert", new EventTime("20-10-2026 15:00"), end);
+
+        assertTrue(unchanged.isReminderDismissed());
+        assertEquals(dismissed, unchanged);
+    }
+
+    @Test
+    public void withDetails_legacyHistory_newStartClearsPreviouslyDismissedValues() {
+        EventTime previousStart = new EventTime("20-10-2026 16:00");
+        Event loaded = new Event("Concert", start, end, event.getMembers(), event.getAttendanceRecord(),
+                Set.of(start, previousStart));
+
+        Event revised = loaded.withDetails("Concert", previousStart, end);
+
+        assertFalse(revised.isReminderDismissed());
+        assertEquals(Set.of(), revised.getDismissedReminderStarts());
     }
 
     @Test
