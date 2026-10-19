@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import coordimate.commons.core.GuiSettings;
 import coordimate.logic.LogicManager;
 import coordimate.model.ModelManager;
 import coordimate.model.person.Person;
@@ -34,6 +35,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 
 /**
  * Checks that the complete desktop shell loads and its view controls stay connected.
@@ -116,6 +118,49 @@ public class MainWindowTest {
             assertTrue(stage.isMaximized());
 
             stage.close();
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void showWindow_savedAsNotMaximized_startsNotMaximized() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            ModelManager model = new ModelManager();
+            model.setGuiSettings(new GuiSettings(900, 700, 0, 0, false));
+            MainWindow window = new MainWindow(stage, new LogicManager(model, null),
+                    Path.of("data", "coordimate.json"));
+            window.fillInnerParts();
+
+            window.show();
+            assertFalse(stage.isMaximized());
+
+            stage.close();
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void closeWindow_whileMaximized_savesNormalBoundsAndMaximizedState() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            ModelManager model = new ModelManager();
+            MainWindow window = new MainWindow(stage, new LogicManager(model, null),
+                    Path.of("data", "coordimate.json"));
+            window.fillInnerParts();
+            double normalWidth = stage.getWidth();
+            double normalHeight = stage.getHeight();
+            int normalX = (int) stage.getX();
+            int normalY = (int) stage.getY();
+
+            window.show();
+            stage.fireEvent(new WindowEvent(stage, WindowEvent.WINDOW_CLOSE_REQUEST));
+
+            assertEquals(new GuiSettings(normalWidth, normalHeight, normalX, normalY, true), model.getGuiSettings());
             return null;
         });
         Platform.runLater(task);

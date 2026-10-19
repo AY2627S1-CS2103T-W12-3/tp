@@ -16,6 +16,7 @@ import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.logic.parser.exceptions.ParseException;
 import coordimate.model.person.Person;
 import coordimate.model.tag.Tag;
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -95,6 +96,8 @@ public class MainWindow extends UiPart<Stage> {
     private Stage primaryStage;
     private Logic logic;
     private Path dataFilePath;
+    private Rectangle2D normalWindowBounds;
+    private boolean isNormalBoundsUpdateScheduled;
 
     // Independent Ui parts residing in this Ui container
     private PersonListPanel personListPanel;
@@ -183,6 +186,10 @@ public class MainWindow extends UiPart<Stage> {
 
         // Configure the UI
         setWindowDefaultSize(logic.getGuiSettings());
+        primaryStage.xProperty().addListener(observable -> scheduleNormalWindowBoundsUpdate());
+        primaryStage.yProperty().addListener(observable -> scheduleNormalWindowBoundsUpdate());
+        primaryStage.widthProperty().addListener(observable -> scheduleNormalWindowBoundsUpdate());
+        primaryStage.heightProperty().addListener(observable -> scheduleNormalWindowBoundsUpdate());
 
         setAccelerators();
 
@@ -419,6 +426,7 @@ public class MainWindow extends UiPart<Stage> {
         primaryStage.setHeight(windowBounds.getHeight());
         primaryStage.setX(windowBounds.getMinX());
         primaryStage.setY(windowBounds.getMinY());
+        normalWindowBounds = windowBounds;
     }
 
     private Screen getTargetScreen(Point savedCoordinates) {
@@ -443,7 +451,7 @@ public class MainWindow extends UiPart<Stage> {
     }
 
     void show() {
-        primaryStage.setMaximized(true);
+        primaryStage.setMaximized(logic.getGuiSettings().isWindowMaximized());
         primaryStage.show();
     }
 
@@ -452,11 +460,33 @@ public class MainWindow extends UiPart<Stage> {
      */
     @FXML
     private void handleExit() {
-        GuiSettings guiSettings = new GuiSettings(primaryStage.getWidth(), primaryStage.getHeight(),
-                (int) primaryStage.getX(), (int) primaryStage.getY());
+        boolean isMaximized = primaryStage.isMaximized();
+        if (!isMaximized) {
+            rememberNormalWindowBounds();
+        }
+        GuiSettings guiSettings = new GuiSettings(normalWindowBounds.getWidth(), normalWindowBounds.getHeight(),
+                (int) normalWindowBounds.getMinX(), (int) normalWindowBounds.getMinY(), isMaximized);
         logic.setGuiSettings(guiSettings);
         helpWindow.hide();
         primaryStage.hide();
+    }
+
+    private void rememberNormalWindowBounds() {
+        normalWindowBounds = new Rectangle2D(primaryStage.getX(), primaryStage.getY(),
+                primaryStage.getWidth(), primaryStage.getHeight());
+    }
+
+    private void scheduleNormalWindowBoundsUpdate() {
+        if (isNormalBoundsUpdateScheduled || !primaryStage.isShowing()) {
+            return;
+        }
+        isNormalBoundsUpdateScheduled = true;
+        Platform.runLater(() -> {
+            isNormalBoundsUpdateScheduled = false;
+            if (!primaryStage.isMaximized()) {
+                rememberNormalWindowBounds();
+            }
+        });
     }
 
     public PersonListPanel getPersonListPanel() {
