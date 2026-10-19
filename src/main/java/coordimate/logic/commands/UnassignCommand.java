@@ -51,8 +51,7 @@ public class UnassignCommand extends EventMembersCommand {
                 .toList();
         Map<Name, AttendanceStatus> remainingAttendance = new HashMap<>(target.getAttendanceRecord());
         remainingAttendance.keySet().removeAll(selected);
-        model.setEvent(target, new Event(target.getName(), target.getStartTime(), target.getEndTime(),
-                remainingMembers, remainingAttendance));
+        model.setEvent(target, target.withMembersAndAttendance(remainingMembers, remainingAttendance));
 
         long notAssigned = selected.size() - removedCount;
         String message = String.format(MESSAGE_SUCCESS, removedCount, target.getName());

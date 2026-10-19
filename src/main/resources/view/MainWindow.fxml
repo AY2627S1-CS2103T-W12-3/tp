@@ -12,6 +12,7 @@
 <?import javafx.scene.control.ToggleButton?>
 <?import javafx.scene.control.ToggleGroup?>
 <?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.text.Text?>
 <?import javafx.scene.text.TextFlow?>
 <?import javafx.scene.image.Image?>
@@ -51,11 +52,15 @@
           </Menu>
         </MenuBar>
 
+        <StackPane fx:id="reminderPanelPlaceholder" VBox.vgrow="NEVER" />
         <HBox VBox.vgrow="ALWAYS" minHeight="0">
           <fx:define>
             <ToggleGroup fx:id="viewToggleGroup" />
           </fx:define>
-          <VBox spacing="8" styleClass="view-navigation" minWidth="200" prefWidth="210">
+          <ScrollPane fx:id="navigationScroll" fitToWidth="true" hbarPolicy="NEVER"
+                      minWidth="200" prefWidth="210" maxWidth="210" styleClass="navigation-scroll">
+          <content>
+          <VBox spacing="8" styleClass="view-navigation" minWidth="0">
             <Label text="VIEWS" styleClass="sidebar-caption" />
             <ToggleButton fx:id="contactsView" text="Contacts" selected="true" toggleGroup="$viewToggleGroup"
                           onAction="#showContacts" styleClass="view-button" maxWidth="Infinity" />
@@ -92,6 +97,8 @@
             <Region VBox.vgrow="ALWAYS" />
             <Label text="●  Local workspace" styleClass="sidebar-footer" />
           </VBox>
+          </content>
+          </ScrollPane>
           <TabPane fx:id="views" tabClosingPolicy="UNAVAILABLE" styleClass="workspace-tabs"
                    HBox.hgrow="ALWAYS" minWidth="0" minHeight="0">
             <Tab fx:id="contactsTab" text="Contacts">

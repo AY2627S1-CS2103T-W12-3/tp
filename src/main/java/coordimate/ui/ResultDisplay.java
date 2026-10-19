@@ -66,4 +66,12 @@ public class ResultDisplay extends UiPart<Region> {
         feedbackStatus.setText("Rejected");
     }
 
+    /**
+     * Reports that a session-only dismissal could not be saved.
+     */
+    public void setWarningFeedback(String message) {
+        setErrorFeedback(message);
+        feedbackStatus.setText("Not saved");
+    }
+
 }

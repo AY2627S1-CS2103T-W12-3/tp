@@ -289,8 +289,7 @@ public class CoordiMate implements ReadOnlyCoordiMate {
             if (newName != null && oldStatus != null) {
                 attendance.put(newName, oldStatus);
             }
-            updatedEvents.add(new Event(event.getName(), event.getStartTime(), event.getEndTime(), members,
-                    attendance));
+            updatedEvents.add(event.withMembersAndAttendance(members, attendance));
         }
         return updatedEvents;
     }

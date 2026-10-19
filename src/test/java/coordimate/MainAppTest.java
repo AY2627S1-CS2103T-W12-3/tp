@@ -60,6 +60,7 @@ public class MainAppTest {
         app.init();
 
         assertEquals(new CoordiMate(), app.model.getCoordiMate());
+        assertTrue(app.logic.getReminders().isEmpty());
     }
 
     @Test
@@ -73,12 +74,30 @@ public class MainAppTest {
         assertTrue(uiStub.isStarted);
     }
 
+    @Test
+    public void stop_stopsUiBeforeApplicationShutdown() throws Exception {
+        MainApp app = new MainApp(testFolder.resolve("prefs.json"), testFolder.resolve("data.json"));
+        app.init();
+        UiStub uiStub = new UiStub();
+        app.ui = uiStub;
+
+        app.stop();
+
+        assertTrue(uiStub.isStopped);
+    }
+
     private static class UiStub implements Ui {
         private boolean isStarted;
+        private boolean isStopped;
 
         @Override
         public void start(Stage primaryStage) {
             isStarted = true;
+        }
+
+        @Override
+        public void stop() {
+            isStopped = true;
         }
     }
 }

@@ -12,4 +12,9 @@ public interface Ui {
      */
     void start(Stage primaryStage);
 
+    /**
+     * Releases UI timers and subscriptions on application shutdown.
+     */
+    void stop();
+
 }
