@@ -3,6 +3,7 @@ package coordimate.ui;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.awt.GraphicsEnvironment;
@@ -183,6 +184,60 @@ public class EventListPanelTest {
             assertEquals("Contact details unavailable", memberMetadata(unavailableContactRow));
             assertCounts(root, "0 Present", "1 Absent", "1 Not marked");
             assertMembers(root, "Alice Tan", "● unmarked", "Bob Lim", "● absent");
+        });
+    }
+
+    @Test
+    public void editContactNote_refreshesSelectedEventImmediately() throws Exception {
+        runOnJavaFxThread(() -> {
+            Person alice = new PersonBuilder().withName(ALICE.getFullName()).withNote("Vegetarian").build();
+            Person bob = new PersonBuilder().withName(BOB.getFullName()).withNote("Arriving early").build();
+            ObservableList<Person> persons = FXCollections.observableArrayList(alice, bob);
+            Event selectedEvent = event(List.of(ALICE, BOB), Map.of(ALICE, AttendanceStatus.PRESENT));
+            Region root = new EventListPanel(
+                    FXCollections.observableArrayList(event(List.of(), Map.of()), selectedEvent), persons).getRoot();
+            new Scene(root);
+            root.applyCss();
+            getEventList(root).getSelectionModel().select(1);
+            HBox row = (HBox) getMembers(root).getChildren().getFirst();
+            assertEquals("Note: Vegetarian", ((Label) row.lookup(".event-member-note")).getText());
+
+            persons.set(0, new PersonBuilder(alice).withNote("Vegetarian; requires step-free access").build());
+
+            row = (HBox) getMembers(root).getChildren().getFirst();
+            Label updatedNote = (Label) row.lookup(".event-member-note");
+            assertEquals("Note: Vegetarian; requires step-free access", updatedNote.getText());
+            HBox otherRow = (HBox) getMembers(root).getChildren().get(1);
+            assertEquals("Note: Arriving early", ((Label) otherRow.lookup(".event-member-note")).getText());
+            assertSame(selectedEvent, getEventList(root).getSelectionModel().getSelectedItem());
+            assertCounts(root, "1 Present", "0 Absent", "1 Not marked");
+            assertMembers(root, "Alice Tan", "● present", "Bob Lim", "● unmarked");
+        });
+    }
+
+    @Test
+    public void clearContactNote_removesSelectedEventNoteLineImmediately() throws Exception {
+        runOnJavaFxThread(() -> {
+            Person alice = new PersonBuilder().withName(ALICE.getFullName()).withNote("Vegetarian").build();
+            Person bob = new PersonBuilder().withName(BOB.getFullName()).withNote("Arriving early").build();
+            ObservableList<Person> persons = FXCollections.observableArrayList(alice, bob);
+            Event selectedEvent = event(List.of(ALICE, BOB), Map.of(ALICE, AttendanceStatus.ABSENT));
+            Region root = new EventListPanel(FXCollections.observableArrayList(selectedEvent), persons).getRoot();
+            new Scene(root);
+            root.applyCss();
+            HBox row = (HBox) getMembers(root).getChildren().getFirst();
+            assertEquals("Note: Vegetarian", ((Label) row.lookup(".event-member-note")).getText());
+
+            persons.set(0, new PersonBuilder(alice).withoutNote().build());
+
+            row = (HBox) getMembers(root).getChildren().getFirst();
+            assertNull(row.lookup(".event-member-note"));
+            assertEquals(2, ((VBox) row.getChildren().get(2)).getChildren().size());
+            HBox otherRow = (HBox) getMembers(root).getChildren().get(1);
+            assertEquals("Note: Arriving early", ((Label) otherRow.lookup(".event-member-note")).getText());
+            assertSame(selectedEvent, getEventList(root).getSelectionModel().getSelectedItem());
+            assertCounts(root, "0 Present", "1 Absent", "1 Not marked");
+            assertMembers(root, "Alice Tan", "● absent", "Bob Lim", "● unmarked");
         });
     }
 
