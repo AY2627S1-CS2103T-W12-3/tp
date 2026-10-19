@@ -79,6 +79,13 @@ resizable layout. The User Guide URL remains available for more detailed instruc
 The window's **Close** button is marked as the JavaFX cancel button, allowing users to dismiss it by selecting the
 button or pressing <kbd>Esc</kbd> without exiting the application.
 
+`CommandBox` keeps submitted, nonblank commands in a session-only list. The list has no configured cap or eviction;
+its practical limit is the JVM heap, and it is discarded when the app closes. It records an attempt before execution
+so commands that fail validation can be recalled for correction. Up and Down move through the list, with the current
+input saved as a draft and restored after the newest entry. Browsing does not execute a command or modify stored
+entries. While `Logic` awaits delete confirmation, arrow-key navigation is paused and the response is not added
+to history. Inserting a command from the sidebar resets history navigation.
+
 The `UI` component uses the JavaFX UI framework. The layouts of these UI parts are defined in matching `.fxml` files in `src/main/resources/view`. For example, [`MainWindow.fxml`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/resources/view/MainWindow.fxml) specifies the layout of [`MainWindow`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/ui/MainWindow.java).
 
 The `UI` component,
