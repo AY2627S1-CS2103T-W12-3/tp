@@ -427,6 +427,18 @@ public class MainWindow extends UiPart<Stage> {
         primaryStage.setX(windowBounds.getMinX());
         primaryStage.setY(windowBounds.getMinY());
         normalWindowBounds = windowBounds;
+
+        Point savedCoordinates = guiSettings.getWindowCoordinates();
+        boolean sizeChanged = guiSettings.getWindowWidth() != windowBounds.getWidth()
+                || guiSettings.getWindowHeight() != windowBounds.getHeight();
+        boolean positionChanged = savedCoordinates != null
+                && (savedCoordinates.getX() != windowBounds.getMinX()
+                || savedCoordinates.getY() != windowBounds.getMinY());
+        if (sizeChanged || positionChanged) {
+            logger.info("Adjusted saved window bounds from [coordinates=" + savedCoordinates
+                    + ", width=" + guiSettings.getWindowWidth() + ", height=" + guiSettings.getWindowHeight()
+                    + "] to fit the available screen area: " + windowBounds);
+        }
     }
 
     private Screen getTargetScreen(Point savedCoordinates) {
@@ -435,6 +447,9 @@ public class MainWindow extends UiPart<Stage> {
         }
         List<Screen> screens = Screen.getScreensForRectangle(
                 savedCoordinates.getX(), savedCoordinates.getY(), 1, 1);
+        if (screens.isEmpty()) {
+            logger.warning("Saved window position is outside all connected screens; using the primary screen.");
+        }
         return screens.isEmpty() ? Screen.getPrimary() : screens.getFirst();
     }
 
@@ -451,7 +466,9 @@ public class MainWindow extends UiPart<Stage> {
     }
 
     void show() {
-        primaryStage.setMaximized(logic.getGuiSettings().isWindowMaximized());
+        boolean isMaximized = logic.getGuiSettings().isWindowMaximized();
+        logger.fine("Restoring window with maximized state: " + isMaximized);
+        primaryStage.setMaximized(isMaximized);
         primaryStage.show();
     }
 
@@ -466,6 +483,7 @@ public class MainWindow extends UiPart<Stage> {
         }
         GuiSettings guiSettings = new GuiSettings(normalWindowBounds.getWidth(), normalWindowBounds.getHeight(),
                 (int) normalWindowBounds.getMinX(), (int) normalWindowBounds.getMinY(), isMaximized);
+        logger.fine("Saving window with maximized state: " + isMaximized);
         logic.setGuiSettings(guiSettings);
         helpWindow.hide();
         primaryStage.hide();
