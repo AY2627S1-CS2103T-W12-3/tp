@@ -71,7 +71,7 @@ public class ReminderLogicIntegrationTest {
 
     @Test
     public void getReminders_initialEvents_returnsOnlyEligibleUndismissedEventsInOrder() {
-        Event allDay = event("All day", "19-10-2026");
+        Event allDay = event("All day", "20-10-2026");
         Event tonight = event("Tonight", "19-10-2026 18:00");
         model.addEvent(tonight);
         model.addEvent(allDay);
@@ -79,7 +79,7 @@ public class ReminderLogicIntegrationTest {
         model.addEvent(event("Past", "19-10-2026 14:00"));
         model.addEvent(event("Later", "20-10-2026 15:01"));
 
-        assertEquals(List.of(allDay, tonight, concert), logic.getReminders());
+        assertEquals(List.of(tonight, allDay, concert), logic.getReminders());
     }
 
     @Test
@@ -117,6 +117,28 @@ public class ReminderLogicIntegrationTest {
         assertEquals(List.of(), view);
         assertEquals(0, storage.reads);
         assertEquals(0, storage.writes);
+    }
+
+    @Test
+    public void refreshReminders_dateOnly_entersOnPreviousDayAndExpiresAfterStartDate() throws Exception {
+        logic.execute("editevent evn/Concert st/21-10-2026");
+        ObservableList<Event> view = logic.getReminders();
+        assertEquals(List.of(), view);
+        byte[] before = Files.readAllBytes(storage.getCoordiMateFilePath());
+
+        clock.advance(Duration.ofHours(9));
+        logic.refreshReminders();
+        assertEquals(model.getCoordiMate().getEventList(), view);
+        clock.advance(Duration.ofHours(24));
+        logic.refreshReminders();
+        assertEquals(model.getCoordiMate().getEventList(), view);
+        clock.advance(Duration.ofHours(24).minusNanos(1));
+        logic.refreshReminders();
+        assertEquals(model.getCoordiMate().getEventList(), view);
+        clock.advance(Duration.ofNanos(1));
+        logic.refreshReminders();
+        assertEquals(List.of(), view);
+        assertArrayEquals(before, Files.readAllBytes(storage.getCoordiMateFilePath()));
     }
 
     @Test
@@ -326,13 +348,13 @@ public class ReminderLogicIntegrationTest {
 
     @Test
     public void dismissReminder_dateOnly_persistsWithoutAssigningTime() throws Exception {
-        logic.execute("editevent evn/Concert st/19-10-2026");
+        logic.execute("editevent evn/Concert st/20-10-2026");
         Event dateOnly = logic.getReminders().getFirst();
 
         logic.dismissReminder(dateOnly);
 
         assertEquals(List.of(), logic.getReminders());
-        assertEquals(Set.of(new EventTime("19-10-2026")), savedEvent().getDismissedReminderStarts());
+        assertEquals(Set.of(new EventTime("20-10-2026")), savedEvent().getDismissedReminderStarts());
         assertTrue(savedEvent().getStartTime().getDateTime().isEmpty());
     }
 

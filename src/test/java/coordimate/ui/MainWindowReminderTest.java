@@ -72,13 +72,13 @@ public class MainWindowReminderTest {
         onJavaFxThread(() -> {
             Fixture fixture = openWindow(true);
             try {
-                fixture.model().addEvent(event("Student Life Fair", "19-10-2026", "20-10-2026"));
+                fixture.model().addEvent(event("Student Life Fair", "20-10-2026", "21-10-2026"));
                 fixture.logic().refreshReminders();
                 Parent root = fixture.stage().getScene().getRoot();
 
                 assertEquals(List.of("Upcoming event: Student Life Fair", "Upcoming event: Final Concert"),
                         names(root));
-                assertEquals("Starts: 19-10-2026", ((Label) root.lookup(".reminder-time")).getText());
+                assertEquals("Starts: 20-10-2026", ((Label) root.lookup(".reminder-time")).getText());
                 for (String view : List.of("eventsView", "tagsView", "contactsView")) {
                     ToggleButton tab = (ToggleButton) root.lookup("#" + view);
                     tab.fire();
@@ -262,7 +262,7 @@ public class MainWindowReminderTest {
                 Parent root = stage.getScene().getRoot();
 
                 ui.stop();
-                model.addEvent(event("Today", "19-10-2026", "20-10-2026"));
+                model.addEvent(event("Tomorrow", "20-10-2026", "21-10-2026"));
                 logic.refreshReminders();
 
                 assertEquals(1, logic.getReminders().size());

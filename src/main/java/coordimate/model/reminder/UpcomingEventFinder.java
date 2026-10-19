@@ -5,6 +5,7 @@ import static java.util.Objects.requireNonNull;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Comparator;
@@ -14,7 +15,7 @@ import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
 
 /**
- * Finds events starting within 24 hours, or today when their start has no time of day.
+ * Finds timed events starting within 24 hours, and date-only events starting today or tomorrow.
  */
 public final class UpcomingEventFinder {
     private static final Duration REMINDER_WINDOW = Duration.ofHours(24);
@@ -32,7 +33,8 @@ public final class UpcomingEventFinder {
     /**
      * Returns an unmodifiable list ordered by start time, then by name ignoring case.
      * Includes timed starts at both now and exactly 24 hours later. Date-only starts qualify
-     * throughout their start date and use midnight only for ordering.
+     * throughout the calendar day before their start date and the start date itself.
+     * Date-only values use midnight only for ordering.
      */
     public List<Event> findUpcomingEvents(List<Event> events) {
         requireNonNull(events);
@@ -47,7 +49,9 @@ public final class UpcomingEventFinder {
     private boolean isEligible(Event event, ZonedDateTime now) {
         EventTime start = event.getStartTime();
         if (start.getDateTime().isEmpty()) {
-            return start.getDate().equals(now.toLocalDate());
+            LocalDate startDate = start.getDate();
+            LocalDate today = now.toLocalDate();
+            return startDate.equals(today) || startDate.equals(today.plusDays(1));
         }
         Instant startTime = startInstant(event, now.getZone());
         Instant currentTime = now.toInstant();
