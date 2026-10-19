@@ -20,9 +20,11 @@ public class GuiSettingsTest {
         GuiSettings maximized = new GuiSettings(900, 700, 10, 20, true);
         GuiSettings sameSettings = new GuiSettings(900, 700, 10, 20, true);
         GuiSettings notMaximized = new GuiSettings(900, 700, 10, 20, false);
+        GuiSettings differentCoordinates = new GuiSettings(900, 700, 20, 10, true);
 
         assertEquals(maximized, sameSettings);
         assertEquals(maximized.hashCode(), sameSettings.hashCode());
         assertNotEquals(maximized, notMaximized);
+        assertNotEquals(maximized, differentCoordinates);
     }
 }

@@ -118,8 +118,10 @@ public class MainWindowTest {
 
             window.show();
             assertTrue(stage.isMaximized());
+            window.scheduleNormalWindowBoundsUpdate();
+            window.scheduleNormalWindowBoundsUpdate();
 
-            stage.close();
+            Platform.runLater(stage::close);
             return null;
         });
         Platform.runLater(task);
@@ -135,9 +137,12 @@ public class MainWindowTest {
             MainWindow window = new MainWindow(stage, new LogicManager(model, null),
                     Path.of("data", "coordimate.json"));
             window.fillInnerParts();
+            window.scheduleNormalWindowBoundsUpdate();
 
             window.show();
             assertFalse(stage.isMaximized());
+            window.scheduleNormalWindowBoundsUpdate();
+            window.scheduleNormalWindowBoundsUpdate();
 
             Rectangle2D screenBounds = Screen.getPrimary().getVisualBounds();
             stage.setWidth(Math.min(950, screenBounds.getWidth()));

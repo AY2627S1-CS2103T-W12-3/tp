@@ -1,6 +1,8 @@
 package coordimate.ui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
@@ -41,5 +43,54 @@ public class WindowBoundsTest {
 
         Rectangle2D expected = new Rectangle2D(2000, 50, 830, 650);
         assertEquals(expected, WindowBounds.fitToScreen(guiSettings, SECOND_SCREEN));
+    }
+
+    @Test
+    public void wereAdjusted_sameSavedBounds_returnsFalse() {
+        GuiSettings guiSettings = new GuiSettings(900, 650, 1920, 20);
+        Rectangle2D fittedBounds = new Rectangle2D(1920, 20, 900, 650);
+
+        assertFalse(WindowBounds.wereAdjusted(guiSettings, fittedBounds));
+    }
+
+    @Test
+    public void wereAdjusted_noSavedCoordinatesAndSameSize_returnsFalse() {
+        GuiSettings guiSettings = new GuiSettings();
+        Rectangle2D fittedBounds = new Rectangle2D(100, 50,
+                guiSettings.getWindowWidth(), guiSettings.getWindowHeight());
+
+        assertFalse(WindowBounds.wereAdjusted(guiSettings, fittedBounds));
+    }
+
+    @Test
+    public void wereAdjusted_differentWidth_returnsTrue() {
+        GuiSettings guiSettings = new GuiSettings(900, 650, 1920, 20);
+        Rectangle2D fittedBounds = new Rectangle2D(1920, 20, 830, 650);
+
+        assertTrue(WindowBounds.wereAdjusted(guiSettings, fittedBounds));
+    }
+
+    @Test
+    public void wereAdjusted_differentHeight_returnsTrue() {
+        GuiSettings guiSettings = new GuiSettings(900, 700, 1920, 20);
+        Rectangle2D fittedBounds = new Rectangle2D(1920, 20, 900, 650);
+
+        assertTrue(WindowBounds.wereAdjusted(guiSettings, fittedBounds));
+    }
+
+    @Test
+    public void wereAdjusted_differentXCoordinate_returnsTrue() {
+        GuiSettings guiSettings = new GuiSettings(900, 650, 2000, 20);
+        Rectangle2D fittedBounds = new Rectangle2D(1920, 20, 900, 650);
+
+        assertTrue(WindowBounds.wereAdjusted(guiSettings, fittedBounds));
+    }
+
+    @Test
+    public void wereAdjusted_differentYCoordinate_returnsTrue() {
+        GuiSettings guiSettings = new GuiSettings(900, 650, 1920, 50);
+        Rectangle2D fittedBounds = new Rectangle2D(1920, 20, 900, 650);
+
+        assertTrue(WindowBounds.wereAdjusted(guiSettings, fittedBounds));
     }
 }

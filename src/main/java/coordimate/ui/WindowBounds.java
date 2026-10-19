@@ -35,4 +35,22 @@ final class WindowBounds {
                 : Math.clamp(coordinates.getY(), screenBounds.getMinY(), screenBounds.getMaxY() - height);
         return new Rectangle2D(x, y, width, height);
     }
+
+    /**
+     * Returns whether the fitted bounds differ from any saved size or position.
+     */
+    static boolean wereAdjusted(GuiSettings guiSettings, Rectangle2D fittedBounds) {
+        if (guiSettings.getWindowWidth() != fittedBounds.getWidth()) {
+            return true;
+        }
+        if (guiSettings.getWindowHeight() != fittedBounds.getHeight()) {
+            return true;
+        }
+        Point coordinates = guiSettings.getWindowCoordinates();
+        if (coordinates == null) {
+            return false;
+        }
+        return coordinates.getX() != fittedBounds.getMinX()
+                || coordinates.getY() != fittedBounds.getMinY();
+    }
 }

@@ -429,12 +429,7 @@ public class MainWindow extends UiPart<Stage> {
         normalWindowBounds = windowBounds;
 
         Point savedCoordinates = guiSettings.getWindowCoordinates();
-        boolean sizeChanged = guiSettings.getWindowWidth() != windowBounds.getWidth()
-                || guiSettings.getWindowHeight() != windowBounds.getHeight();
-        boolean positionChanged = savedCoordinates != null
-                && (savedCoordinates.getX() != windowBounds.getMinX()
-                || savedCoordinates.getY() != windowBounds.getMinY());
-        if (sizeChanged || positionChanged) {
+        if (WindowBounds.wereAdjusted(guiSettings, windowBounds)) {
             logger.info("Adjusted saved window bounds from [coordinates=" + savedCoordinates
                     + ", width=" + guiSettings.getWindowWidth() + ", height=" + guiSettings.getWindowHeight()
                     + "] to fit the available screen area: " + windowBounds);
@@ -494,8 +489,8 @@ public class MainWindow extends UiPart<Stage> {
                 primaryStage.getWidth(), primaryStage.getHeight());
     }
 
-    private void scheduleNormalWindowBoundsUpdate() {
-        if (isNormalBoundsUpdateScheduled || !primaryStage.isShowing()) {
+    void scheduleNormalWindowBoundsUpdate() {
+        if (!primaryStage.isShowing() || isNormalBoundsUpdateScheduled) {
             return;
         }
         isNormalBoundsUpdateScheduled = true;
