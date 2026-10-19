@@ -32,6 +32,7 @@
    The main workspace shows a list beside its details, and the command box, feedback, and prefix hints stay at the bottom.
 
 1. Type a command in the command box and press Enter to execute it. For example, type **`help`** and press Enter to open the help window.<br>
+   Press <kbd>Up</kbd> to recall earlier commands and <kbd>Down</kbd> to move toward the command you were typing.<br>
    Some example commands you can try:
 
    * `list` : Lists all contacts.
@@ -123,6 +124,18 @@ or without the `/`, e.g. `m/Check AV setup`.
 Commands parse their arguments differently. For example, `search` treats the entire remainder as its keyword,
 while tag commands tokenize only their recognised `t/` prefix.
 </box>
+
+### Reusing commands with command history
+
+With the command box focused, press <kbd>Up</kbd> to recall the most recently entered command. Keep pressing
+<kbd>Up</kbd> to move through older commands, or press <kbd>Down</kbd> to move forward. Moving past the newest
+command restores any unfinished text that was in the box before you started browsing. You can edit a recalled
+command; it runs only when you press Enter or select **Enter**.
+
+History includes commands that produced errors, so you can correct and retry them. There is no fixed maximum number
+of entries; the practical limit is the memory available to the app. History clears when you close CoordiMate.
+Blank inputs and responses to a delete confirmation are not stored. History navigation is paused while CoordiMate
+is waiting for a delete confirmation.
 
 ### Viewing help: `help`
 
