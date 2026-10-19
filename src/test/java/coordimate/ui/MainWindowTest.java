@@ -23,6 +23,7 @@ import coordimate.testutil.PersonBuilder;
 import coordimate.testutil.TypicalPersons;
 import javafx.application.Platform;
 import javafx.geometry.Orientation;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.SplitPane;
@@ -34,6 +35,7 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 
@@ -137,6 +139,36 @@ public class MainWindowTest {
             window.show();
             assertFalse(stage.isMaximized());
 
+            Rectangle2D screenBounds = Screen.getPrimary().getVisualBounds();
+            stage.setWidth(Math.min(950, screenBounds.getWidth()));
+            stage.setHeight(Math.min(700, screenBounds.getHeight()));
+            stage.setX(screenBounds.getMinX());
+            stage.setY(screenBounds.getMinY());
+            double expectedWidth = stage.getWidth();
+            double expectedHeight = stage.getHeight();
+            int expectedX = (int) stage.getX();
+            int expectedY = (int) stage.getY();
+            stage.fireEvent(new WindowEvent(stage, WindowEvent.WINDOW_CLOSE_REQUEST));
+
+            assertEquals(new GuiSettings(expectedWidth, expectedHeight, expectedX, expectedY, false),
+                    model.getGuiSettings());
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void createWindow_savedPositionOutsideAllScreens_usesPrimaryScreen() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            ModelManager model = new ModelManager();
+            model.setGuiSettings(new GuiSettings(900, 700, Integer.MAX_VALUE, Integer.MAX_VALUE, false));
+
+            new MainWindow(stage, new LogicManager(model, null), Path.of("data", "coordimate.json"));
+
+            Rectangle2D screenBounds = Screen.getPrimary().getVisualBounds();
+            assertTrue(screenBounds.contains(stage.getX(), stage.getY()));
             stage.close();
             return null;
         });

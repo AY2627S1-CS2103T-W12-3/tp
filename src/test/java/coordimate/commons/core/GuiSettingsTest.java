@@ -1,6 +1,7 @@
 package coordimate.commons.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import org.junit.jupiter.api.Test;
 
@@ -12,5 +13,16 @@ public class GuiSettingsTest {
                 + ", windowHeight=" + guiSettings.getWindowHeight() + ", windowCoordinates="
                 + guiSettings.getWindowCoordinates() + ", windowMaximized=" + guiSettings.isWindowMaximized() + "}";
         assertEquals(expected, guiSettings.toString());
+    }
+
+    @Test
+    public void equalsAndHashCode_differentMaximizedState_notEqual() {
+        GuiSettings maximized = new GuiSettings(900, 700, 10, 20, true);
+        GuiSettings sameSettings = new GuiSettings(900, 700, 10, 20, true);
+        GuiSettings notMaximized = new GuiSettings(900, 700, 10, 20, false);
+
+        assertEquals(maximized, sameSettings);
+        assertEquals(maximized.hashCode(), sameSettings.hashCode());
+        assertNotEquals(maximized, notMaximized);
     }
 }
