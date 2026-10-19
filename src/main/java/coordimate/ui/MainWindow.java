@@ -3,6 +3,7 @@ package coordimate.ui;
 import java.nio.file.Path;
 import java.util.Locale;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import coordimate.commons.core.GuiSettings;
@@ -12,8 +13,13 @@ import coordimate.logic.commands.AddEventCommand;
 import coordimate.logic.commands.CommandResult;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.logic.parser.exceptions.ParseException;
+import coordimate.logic.reminder.ReminderDismissalException;
+import coordimate.model.event.Event;
 import coordimate.model.person.Person;
 import coordimate.model.tag.Tag;
+import javafx.animation.Animation;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.beans.binding.Bindings;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -42,6 +48,8 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
+import javafx.util.Duration;
 
 /**
  * The Main Window. Provides the basic application layout containing
@@ -98,6 +106,11 @@ public class MainWindow extends UiPart<Stage> {
     private ResultDisplay resultDisplay;
     private HelpWindow helpWindow;
     private CommandBox commandBox;
+    private ReminderPanel reminderPanel;
+    private final Timeline reminderTimer;
+
+    @FXML
+    private StackPane reminderPanelPlaceholder;
 
     @FXML
     private StackPane commandBoxPlaceholder;
@@ -170,12 +183,17 @@ public class MainWindow extends UiPart<Stage> {
      * and the data file path to show in the status bar.
      */
     public MainWindow(Stage primaryStage, Logic logic, Path dataFilePath) {
+        this(primaryStage, logic, dataFilePath, new Timeline());
+    }
+
+    MainWindow(Stage primaryStage, Logic logic, Path dataFilePath, Timeline reminderTimer) {
         super(FXML, primaryStage);
 
         // Set dependencies
         this.primaryStage = primaryStage;
         this.logic = logic;
         this.dataFilePath = dataFilePath;
+        this.reminderTimer = reminderTimer;
 
         // Configure the UI
         setWindowDefaultSize(logic.getGuiSettings());
@@ -183,6 +201,13 @@ public class MainWindow extends UiPart<Stage> {
         setAccelerators();
 
         helpWindow = new HelpWindow();
+        primaryStage.addEventHandler(WindowEvent.WINDOW_HIDDEN, event -> stop());
+        primaryStage.addEventHandler(WindowEvent.WINDOW_SHOWN, event -> {
+            if (reminderPanel != null) {
+                logic.refreshReminders();
+                reminderTimer.play();
+            }
+        });
     }
 
     public Stage getPrimaryStage() {
@@ -271,6 +296,14 @@ public class MainWindow extends UiPart<Stage> {
 
         resultDisplay = new ResultDisplay();
         resultDisplayPlaceholder.getChildren().add(resultDisplay.getRoot());
+
+        reminderPanel = new ReminderPanel(logic.getReminders(), this::dismissReminder);
+        reminderPanelPlaceholder.getChildren().add(reminderPanel.getRoot());
+        reminderTimer.getKeyFrames().setAll(new KeyFrame(Duration.minutes(1), event -> logic.refreshReminders()));
+        reminderTimer.setCycleCount(Animation.INDEFINITE);
+        if (primaryStage.isShowing()) {
+            reminderTimer.play();
+        }
 
         StatusBarFooter statusBarFooter = new StatusBarFooter(dataFilePath);
         statusbarPlaceholder.getChildren().add(statusBarFooter.getRoot());
@@ -438,8 +471,29 @@ public class MainWindow extends UiPart<Stage> {
         GuiSettings guiSettings = new GuiSettings(primaryStage.getWidth(), primaryStage.getHeight(),
                 (int) primaryStage.getX(), (int) primaryStage.getY());
         logic.setGuiSettings(guiSettings);
+        stop();
         helpWindow.hide();
         primaryStage.hide();
+    }
+
+    private void dismissReminder(Event reminder) {
+        try {
+            logic.dismissReminder(reminder);
+            resultDisplay.setFeedbackToUser("Reminder dismissed: " + reminder.getName() + ".");
+        } catch (ReminderDismissalException e) {
+            logger.log(Level.WARNING, e.getMessage(), e);
+            resultDisplay.setWarningFeedback(e.getMessage());
+        }
+    }
+
+    /**
+     * Stops periodic checks and releases the reminder panel's subscription.
+     */
+    void stop() {
+        reminderTimer.stop();
+        if (reminderPanel != null) {
+            reminderPanel.close();
+        }
     }
 
     public PersonListPanel getPersonListPanel() {

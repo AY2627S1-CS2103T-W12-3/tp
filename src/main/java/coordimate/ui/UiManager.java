@@ -54,6 +54,13 @@ public class UiManager implements Ui {
         }
     }
 
+    @Override
+    public void stop() {
+        if (mainWindow != null) {
+            mainWindow.stop();
+        }
+    }
+
     private Image getImage(String imagePath) {
         return new Image(MainApp.class.getResourceAsStream(imagePath));
     }

@@ -357,6 +357,44 @@
 }
 #submitButton:hover, .button:hover { -fx-background-color: #1f2633; -fx-border-color: #0ea5e9; }
 .prefix-help { -fx-padding: 2 20 10; -fx-background-color: #101319; }
+
+.reminder-panel {
+    -fx-padding: 10 16;
+    -fx-background-color: #101319;
+    -fx-border-color: transparent transparent #2b3446 transparent;
+}
+.navigation-scroll, .navigation-scroll > .viewport { -fx-background-color: #101319; }
+.navigation-scroll { -fx-padding: 0; -fx-background-insets: 0; }
+.reminder-scroll, .reminder-scroll > .viewport { -fx-background-color: #101319; }
+.reminder-scroll { -fx-padding: 0; -fx-background-insets: 0; }
+.reminder-scroll .scroll-bar .thumb, .navigation-scroll .scroll-bar .thumb {
+    -fx-background-color: #8b949e;
+}
+.reminder-scroll .scroll-bar .thumb:hover, .navigation-scroll .scroll-bar .thumb:hover {
+    -fx-background-color: #cbd5e1;
+}
+.reminder-scroll .scroll-bar .increment-arrow, .reminder-scroll .scroll-bar .decrement-arrow,
+.navigation-scroll .scroll-bar .increment-arrow, .navigation-scroll .scroll-bar .decrement-arrow {
+    -fx-background-color: #8b949e;
+}
+.reminder-row {
+    -fx-padding: 10 12;
+    -fx-background-color: #161a22;
+    -fx-background-radius: 5;
+}
+.reminder-name { -fx-text-fill: #f0f6fc; -fx-font-weight: bold; }
+.reminder-time, .reminder-empty-state { -fx-text-fill: #a8b3c2; }
+.reminder-dismiss {
+    -fx-min-height: 36;
+    -fx-text-fill: #cbd5e1;
+    -fx-border-color: #8b949e;
+}
+.reminder-dismiss:hover { -fx-border-color: #38bdf8; }
+.reminder-dismiss:focused, .reminder-empty-state:focused {
+    -fx-border-color: #38bdf8;
+    -fx-border-width: 2;
+    -fx-border-radius: 5;
+}
 .status-bar {
     -fx-padding: 5 16;
     -fx-background-color: #0b0e14;
