@@ -2,6 +2,7 @@ package coordimate.ui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.awt.GraphicsEnvironment;
@@ -127,6 +128,58 @@ public class EventListPanelTest {
             assertEquals("Finance", ((Label) identityLine.getChildren().get(1)).getText());
             assertEquals("Publicity", ((Label) identityLine.getChildren().get(2)).getText());
             assertEquals("Treasurer · Student Union", ((Label) memberDetails.getChildren().get(1)).getText());
+        });
+    }
+
+    @Test
+    public void selectEvent_showsSavedNoteBelowMemberMetadata() throws Exception {
+        runOnJavaFxThread(() -> {
+            String note = "Vegetarian; requires step-free access";
+            Person alice = new PersonBuilder().withName(ALICE.getFullName()).withRole("Logistics")
+                    .withOrganisation("NUS").withTags("Logistics", "Publicity").withNote(note).build();
+            Event event = event(List.of(ALICE, BOB), Map.of(ALICE, AttendanceStatus.PRESENT));
+            Region root = new EventListPanel(FXCollections.observableArrayList(event),
+                    FXCollections.observableArrayList(alice)).getRoot();
+            new Scene(root);
+            root.applyCss();
+
+            HBox row = (HBox) getMembers(root).getChildren().getFirst();
+            VBox details = (VBox) row.getChildren().get(2);
+            Label noteLabel = (Label) row.lookup(".event-member-note");
+            assertNotNull(noteLabel);
+            assertEquals("Note: " + note, noteLabel.getText());
+            assertEquals(2, details.getChildren().indexOf(noteLabel));
+            assertTrue(noteLabel.isWrapText());
+            assertTrue(noteLabel.isVisible());
+            assertTrue(noteLabel.isManaged());
+            FlowPane identityLine = (FlowPane) details.getChildren().getFirst();
+            assertEquals("Logistics", ((Label) identityLine.getChildren().get(1)).getText());
+            assertEquals("Publicity", ((Label) identityLine.getChildren().get(2)).getText());
+            assertCounts(root, "1 Present", "0 Absent", "1 Not marked");
+            assertMembers(root, "Alice Tan", "● present", "Bob Lim", "● unmarked");
+        });
+    }
+
+    @Test
+    public void selectEvent_withoutNoteOrSavedContact_omitsNoteLine() throws Exception {
+        runOnJavaFxThread(() -> {
+            Person alice = new PersonBuilder().withName(ALICE.getFullName()).withoutNote().build();
+            Event event = event(List.of(ALICE, BOB), Map.of(BOB, AttendanceStatus.ABSENT));
+            Region root = new EventListPanel(FXCollections.observableArrayList(event),
+                    FXCollections.observableArrayList(alice)).getRoot();
+            new Scene(root);
+            root.applyCss();
+
+            for (var memberRow : getMembers(root).getChildren()) {
+                HBox row = (HBox) memberRow;
+                VBox details = (VBox) row.getChildren().get(2);
+                assertNull(row.lookup(".event-member-note"));
+                assertEquals(2, details.getChildren().size());
+            }
+            HBox unavailableContactRow = (HBox) getMembers(root).getChildren().get(1);
+            assertEquals("Contact details unavailable", memberMetadata(unavailableContactRow));
+            assertCounts(root, "0 Present", "1 Absent", "1 Not marked");
+            assertMembers(root, "Alice Tan", "● unmarked", "Bob Lim", "● absent");
         });
     }
 

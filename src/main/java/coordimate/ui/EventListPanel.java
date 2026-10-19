@@ -235,6 +235,15 @@ public class EventListPanel extends UiPart<Region> {
         subtitle.getStyleClass().add("event-member-metadata");
 
         VBox memberDetails = new VBox(4, identityLine, subtitle);
+        if (person != null) {
+            person.getNote().ifPresent(note -> {
+                Label noteLabel = new Label("Note: " + note.getValue());
+                noteLabel.setWrapText(true);
+                noteLabel.setMinWidth(0);
+                noteLabel.getStyleClass().addAll("event-member-metadata", "event-member-note");
+                memberDetails.getChildren().add(noteLabel);
+            });
+        }
         memberDetails.getStyleClass().add("event-member-details");
         HBox.setHgrow(memberDetails, Priority.ALWAYS);
 
