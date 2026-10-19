@@ -123,6 +123,7 @@
         "quick-start": "Quick start",
         "features": "Features",
         "parameter-constraints": "Parameter constraints",
+        "reusing-commands-with-command-history": "Reusing commands with command history",
         "viewing-help-help": "Viewing help: help",
         "adding-a-contact-add": "Adding a contact: add",
         "adding-an-event-addevent": "Adding an event: addevent",
