@@ -184,6 +184,8 @@ Command error messages follow these conventions:
 The `Model` component,
 
 * stores CoordiMate data, including all `Person` objects (which are contained in a `UniquePersonList` object).
+* stores a case-insensitively unique global tag list. Every tag assigned to a contact is also registered in this list;
+  adding, editing, or replacing contacts registers any missing tags while preserving existing unused tags.
 * stores all `Event` objects. Each `Event` records its assigned members as an ordered list of contact `Name`s. `CoordiMate` keeps these lists in sync with the contacts: deleting a contact removes their name from every event, and renaming a contact updates it.
 * stores the `Person` objects selected by the current filter, such as search results, in a separate _filtered_ list. It exposes this list as an unmodifiable `ObservableList<Person>` that the UI can observe and bind to, so the UI updates when the list changes.
 * stores a `UserPrefs` object that represents the user’s preferences (currently, the window's normal size and position,
@@ -213,6 +215,11 @@ The `Storage` component,
 Previously saved digit-only phone numbers with at least three digits remain valid model data, so older JSON files can
 still load. The command parser applies the current 7–15-digit rule whenever a user supplies a phone number for `add`
 or `edit`; editing another field does not require replacing a legacy phone number.
+
+When loading JSON data, explicitly saved tags are validated and restored before contacts. If a contact uses a tag
+that is missing from the saved global tag list, CoordiMate registers it automatically. This also migrates older files
+without an explicit tag list: default tags are retained and tags used by contacts are added. Existing saved tag order,
+capitalization, and unused tags are preserved.
 
 ### Common classes
 
@@ -1297,7 +1304,7 @@ testers are expected to do more *exploratory* testing.
    1. Prerequisites: The sample contacts are loaded and no custom tags have been created.
 
    1. Test case: `listtags`<br>
-      Expected: The Tags view opens. The status message lists `EXCO, Sponsor, UniversityStaff, Logistics`.
+      Expected: The Tags view opens. The status message lists `EXCO, Sponsor, UniversityStaff, Logistics, friends, colleagues, neighbours, family, classmates`.
 
    1. Test case: `addtag t/Publicity`<br>
       Expected: `Publicity` appears in the Tags view. The status message shows `Created tag: Publicity.`
