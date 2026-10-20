@@ -23,6 +23,7 @@ import coordimate.logic.commands.ListTagsCommand;
 import coordimate.logic.commands.MarkAttendanceCommand;
 import coordimate.logic.commands.MembersCommand;
 import coordimate.logic.commands.SearchCommand;
+import coordimate.logic.commands.SwitchCommand;
 import coordimate.logic.commands.UnassignCommand;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.fxml.FXML;
@@ -69,6 +70,7 @@ public class HelpWindow extends UiPart<Stage> {
                     "evn/EVENT_NAME mem/MEMBER_NAME att/STATUS"),
             commandUsage(MembersCommand.COMMAND_WORD, "evn/EVENT_NAME"),
             commandUsage(SearchCommand.COMMAND_WORD, "KEYWORD"),
+            commandUsage(SwitchCommand.COMMAND_WORD, "contacts | switch events | switch tags"),
             commandUsage(UnassignCommand.COMMAND_WORD,
                     "evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]..."));
 

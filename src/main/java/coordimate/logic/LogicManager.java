@@ -22,6 +22,7 @@ import coordimate.logic.commands.EditCommand;
 import coordimate.logic.commands.EditEventCommand;
 import coordimate.logic.commands.MarkAttendanceCommand;
 import coordimate.logic.commands.MutatingTagCommand;
+import coordimate.logic.commands.SwitchCommand;
 import coordimate.logic.commands.UnassignCommand;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.logic.parser.CoordiMateParser;
@@ -100,6 +101,9 @@ public class LogicManager implements Logic {
         }
 
         Command command = coordiMateParser.parseCommand(commandText);
+        if (command instanceof SwitchCommand) {
+            return command.execute(model);
+        }
         if (command instanceof DeleteCommand deleteCommand) {
             try {
                 storage.readCoordiMate();

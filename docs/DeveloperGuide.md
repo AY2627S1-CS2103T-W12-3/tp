@@ -103,6 +103,8 @@ The `UI` component,
   assigned to it, independent of the current contact filter, and refreshes names, roles, organisations, and tags
   when contact data changes.
 * keeps a reference to the `Logic` component, because the `UI` relies on the `Logic` to execute commands.
+  The `switch` command returns a view selection request that `MainWindow` applies through the same view controls
+  used by the sidebar. `LogicManager` executes this navigation command without reading or saving contact data.
 * depends on some classes in the `Model` component because it displays `Person` objects from the model.
 
 ### Logic component
@@ -272,6 +274,11 @@ consequences that developers should be aware of:
 
 * If the data file is invalid, such a command replaces it with the data currently in the app.
 * If the data file cannot be written, such a command reports a save error even though it changed no data.
+
+`switch` is a UI navigation command and an exception to this save path. `SwitchCommandParser` accepts only
+`contacts`, `events`, or `tags` after the command word. `LogicManager` returns its `CommandResult` without
+reading or saving the data file; `MainWindow` selects the requested tab and updates the sidebar through its
+existing tab selection listener. Invalid view names are rejected before the UI changes.
 
 #### Design considerations
 
