@@ -312,7 +312,8 @@ public class CoordiMate implements ReadOnlyCoordiMate {
         Set<Tag> editedTags = person.getTags().stream()
                 .map(tag -> tag.isSameTag(target) ? editedTag : tag)
                 .collect(Collectors.toSet());
-        return new Person(person.getName(), person.getPhone(), person.getEmail(), person.getRole(),
+        return new Person(person.getMemberId().orElse(null), person.getName(), person.getPhone(), person.getEmail(),
+                person.getRole(),
                 person.getBirthday().orElse(null), person.getAddress().orElse(null),
                 person.getOrganisation().orElse(null), person.getNote().orElse(null), editedTags);
     }
@@ -327,7 +328,8 @@ public class CoordiMate implements ReadOnlyCoordiMate {
         Set<Tag> remainingTags = person.getTags().stream()
                 .filter(tag -> !tag.isSameTag(target))
                 .collect(Collectors.toSet());
-        return new Person(person.getName(), person.getPhone(), person.getEmail(), person.getRole(),
+        return new Person(person.getMemberId().orElse(null), person.getName(), person.getPhone(), person.getEmail(),
+                person.getRole(),
                 person.getBirthday().orElse(null), person.getAddress().orElse(null),
                 person.getOrganisation().orElse(null), person.getNote().orElse(null), remainingTags);
     }

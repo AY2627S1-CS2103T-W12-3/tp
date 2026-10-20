@@ -214,7 +214,7 @@ public class EditCommand extends Command {
                 ? editPersonDescriptor.getNote().orElse(null) : personToEdit.getNote().orElse(null);
         Set<Tag> updatedTags = createUpdatedTags(personToEdit, editPersonDescriptor, savedTags);
 
-        return new Person(updatedName, updatedPhone, updatedEmail, updatedRole,
+        return new Person(personToEdit.getMemberId().orElse(null), updatedName, updatedPhone, updatedEmail, updatedRole,
                 updatedBirthday, updatedAddress, updatedOrganisation, updatedNote, updatedTags);
     }
 
