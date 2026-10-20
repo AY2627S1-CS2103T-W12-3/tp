@@ -21,13 +21,8 @@
     -fx-background-color: #0b0e14;
     -fx-border-color: transparent transparent #212734 transparent;
 }
-.window-dots .label { -fx-font-size: 13px; }
-.window-close-dot { -fx-text-fill: #ff5f56; }
-.window-minimize-dot { -fx-text-fill: #ffbd2e; }
-.window-zoom-dot { -fx-text-fill: #27c93f; }
-.brand-mark { -fx-text-fill: #38bdf8; -fx-font-size: 17px; }
 .app-title { -fx-font-size: 15px; -fx-font-weight: bold; -fx-alignment: center; }
-.header-meta, .sidebar-caption, .sidebar-footer {
+.header-meta, .sidebar-caption {
     -fx-text-fill: #64748b;
     -fx-font-family: "JetBrains Mono", "Consolas", monospace;
     -fx-font-size: 11px;
@@ -101,7 +96,6 @@
 .cheat-yellow { -fx-text-fill: #fbbf24; }
 .cheat-purple { -fx-text-fill: #c084fc; }
 .cheat-teal { -fx-text-fill: #2dd4bf; }
-.sidebar-footer { -fx-padding: 12 8 2; -fx-border-color: #212734 transparent transparent transparent; }
 
 .workspace-tabs { -fx-padding: 0; }
 .workspace-tabs > .tab-header-area { -fx-min-height: 0; -fx-pref-height: 0; -fx-max-height: 0; }
