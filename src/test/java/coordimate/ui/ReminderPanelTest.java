@@ -61,13 +61,14 @@ public class ReminderPanelTest {
                     rowTexts(rows(root).getFirst()));
             assertEquals(List.of("Upcoming event: Final Concert", "Starts: 20-10-2026 15:00", "Ends: 20-10-2026 18:00"),
                     rowTexts(rows(root).getLast()));
-            assertFalse(label(root, "reminderEmptyState").isVisible());
+            assertTrue(root.isVisible());
+            assertTrue(root.isManaged());
             panel.close();
         });
     }
 
     @Test
-    public void reminderChanges_replaceDetailsAndShowEmptyState() throws Exception {
+    public void reminderChanges_replaceDetailsAndHideEmptyPanel() throws Exception {
         onJavaFxThread(() -> {
             Event original = event("Concert", "20-10-2026 15:00", "20-10-2026 18:00");
             ObservableList<Event> reminders = FXCollections.observableArrayList(original);
@@ -80,11 +81,12 @@ public class ReminderPanelTest {
             assertEquals(List.of("Upcoming event: Final Concert", "Starts: 20-10-2026 16:00", "Ends: 20-10-2026 19:00"),
                     rowTexts(rows(panel.getRoot()).getFirst()));
             reminders.clear();
-            assertTrue(label(panel.getRoot(), "reminderEmptyState").isVisible());
-            assertTrue(label(panel.getRoot(), "reminderEmptyState").isManaged());
-            assertFalse(panel.getRoot().lookup("#reminderScroll").isManaged());
-            assertEquals("No upcoming event reminders.", label(panel.getRoot(), "reminderEmptyState").getText());
+            assertFalse(panel.getRoot().isVisible());
+            assertFalse(panel.getRoot().isManaged());
             assertEquals(0, rows(panel.getRoot()).size());
+            reminders.add(original);
+            assertTrue(panel.getRoot().isVisible());
+            assertTrue(panel.getRoot().isManaged());
             panel.close();
         });
     }
@@ -129,7 +131,8 @@ public class ReminderPanelTest {
                 nextDismiss.fireEvent(new KeyEvent(KeyEvent.KEY_RELEASED, "", "", KeyCode.SPACE,
                         false, false, false, false));
                 assertTrue(reminders.isEmpty());
-                assertSame(label(panel.getRoot(), "reminderEmptyState"), stage.getScene().getFocusOwner());
+                assertFalse(panel.getRoot().isVisible());
+                assertFalse(panel.getRoot().isManaged());
             } finally {
                 panel.close();
                 stage.close();

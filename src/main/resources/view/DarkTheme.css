@@ -383,14 +383,14 @@
     -fx-background-radius: 5;
 }
 .reminder-name { -fx-text-fill: #f0f6fc; -fx-font-weight: bold; }
-.reminder-time, .reminder-empty-state { -fx-text-fill: #a8b3c2; }
+.reminder-time { -fx-text-fill: #a8b3c2; }
 .reminder-dismiss {
     -fx-min-height: 36;
     -fx-text-fill: #cbd5e1;
     -fx-border-color: #8b949e;
 }
 .reminder-dismiss:hover { -fx-border-color: #38bdf8; }
-.reminder-dismiss:focused, .reminder-empty-state:focused {
+.reminder-dismiss:focused {
     -fx-border-color: #38bdf8;
     -fx-border-width: 2;
     -fx-border-radius: 5;

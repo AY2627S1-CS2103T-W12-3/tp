@@ -79,6 +79,11 @@ public class CommandBox extends UiPart<Region> {
         commandTextField.requestFocus();
     }
 
+    /** Returns keyboard focus to the command input. */
+    void requestFocus() {
+        commandTextField.requestFocus();
+    }
+
     private void handleHistoryNavigation(KeyEvent event) {
         if (event.getCode() != KeyCode.UP && event.getCode() != KeyCode.DOWN) {
             return;
