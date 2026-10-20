@@ -22,6 +22,8 @@ import coordimate.model.person.Person;
 public abstract class EventMembersCommand extends Command {
     public static final String MESSAGE_EVENT_NOT_FOUND = Messages.MESSAGE_EVENT_NOT_FOUND;
     public static final String MESSAGE_CONTACT_NOT_FOUND = Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX;
+    public static final String MESSAGE_EVENT_ARCHIVED = "Event %1$s is archived, so its members cannot be "
+            + "changed. Unarchive it first with: unarchiveevent evn/%1$s";
 
     private final String eventName;
     private final List<Index> contactIndexes;
@@ -36,11 +38,16 @@ public abstract class EventMembersCommand extends Command {
 
     /**
      * Returns the saved event whose name matches this command's event name, ignoring case.
+     * Archived events are rejected, since their members are kept as a historical record.
      *
-     * @throws CommandException If no saved event has that name.
+     * @throws CommandException If no saved event has that name, or the event is archived.
      */
     protected Event findEvent(Model model) throws CommandException {
-        return findEvent(model, eventName);
+        Event event = findEvent(model, eventName);
+        if (event.isArchived()) {
+            throw new CommandException(String.format(MESSAGE_EVENT_ARCHIVED, event.getName()));
+        }
+        return event;
     }
 
     /**

@@ -275,7 +275,7 @@ public class MainWindow extends UiPart<Stage> {
         personListPanel = new PersonListPanel(logic.getFilteredPersonList(), logic.getEventList());
         personListPanelPlaceholder.getChildren().add(personListPanel.getRoot());
 
-        eventListPanel = new EventListPanel(logic.getEventList(), logic.getFilteredPersonList());
+        eventListPanel = new EventListPanel(logic.getFilteredEventList(), logic.getFilteredPersonList());
         eventListPanelPlaceholder.getChildren().add(eventListPanel.getRoot());
         TagListViewModel tagListViewModel = new TagListViewModel(logic.getTagList(), logic.getPersonList());
         tagListView.setItems(tagListViewModel.getTagNames());
@@ -299,7 +299,7 @@ public class MainWindow extends UiPart<Stage> {
         tagsCommands.visibleProperty().bind(tagsView.selectedProperty());
         tagsCommands.managedProperty().bind(tagsCommands.visibleProperty());
         contactsTab.textProperty().bind(Bindings.size(logic.getFilteredPersonList()).asString("Contacts (%d)"));
-        eventsTab.textProperty().bind(Bindings.size(logic.getEventList()).asString("Events (%d)"));
+        eventsTab.textProperty().bind(Bindings.size(logic.getFilteredEventList()).asString("Events (%d)"));
         contactsView.textProperty().bind(contactsTab.textProperty());
         eventsView.textProperty().bind(eventsTab.textProperty());
         tagsView.textProperty().bind(tagListViewModel.tagCountTextProperty());

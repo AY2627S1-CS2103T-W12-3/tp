@@ -18,6 +18,8 @@ public class AddEventCommand extends Command {
     public static final String MESSAGE_SUCCESS = "Created Event %s. Start Time: %s. End Time: %s.";
     public static final String MESSAGE_DUPLICATE_EVENT =
             "An event with this name already exists. No changes were made.";
+    public static final String MESSAGE_DUPLICATE_ARCHIVED_EVENT = "An archived event named %1$s already exists. "
+            + "No changes were made. To restore it, use: unarchiveevent evn/%1$s";
     public static final String MESSAGE_SAVE_ERROR = "Event could not be saved. No changes were made.";
     public static final String MESSAGE_LOAD_ERROR =
             Messages.MESSAGE_LOAD_ERROR;
@@ -35,7 +37,10 @@ public class AddEventCommand extends Command {
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
         if (model.hasEvent(toAdd)) {
-            throw new CommandException(MESSAGE_DUPLICATE_EVENT);
+            Event existing = EventMembersCommand.findEvent(model, toAdd.getName());
+            throw new CommandException(existing.isArchived()
+                    ? String.format(MESSAGE_DUPLICATE_ARCHIVED_EVENT, existing.getName())
+                    : MESSAGE_DUPLICATE_EVENT);
         }
         model.addEvent(toAdd);
         return new CommandResult(String.format(MESSAGE_SUCCESS,

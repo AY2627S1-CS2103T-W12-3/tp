@@ -194,6 +194,11 @@ public class AddCommandTest {
         public Predicate<? super Person> getFilteredPersonPredicate() {
             throw new AssertionError("This method should not be called.");
         }
+
+        @Override
+        public ObservableList<coordimate.model.event.Event> getFilteredEventList() {
+            throw new AssertionError("This method should not be called.");
+        }
     }
 
     /**

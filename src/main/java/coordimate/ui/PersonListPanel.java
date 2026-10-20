@@ -279,7 +279,8 @@ public class PersonListPanel extends UiPart<Region> {
         }
         for (int index = 0; index < matchingEvents.size(); index++) {
             Event event = matchingEvents.get(index);
-            Label title = new Label((index + 1) + ". " + event.getName());
+            Label title = new Label((index + 1) + ". " + event.getName()
+                    + (event.isArchived() ? " (archived)" : ""));
             title.setWrapText(true);
             title.getStyleClass().add("assigned-event-name");
             HBox.setHgrow(title, Priority.ALWAYS);

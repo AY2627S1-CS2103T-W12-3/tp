@@ -23,6 +23,7 @@ public class ModelManager implements Model {
     private final CoordiMate coordiMate;
     private final UserPrefs userPrefs;
     private final FilteredList<Person> filteredPersons;
+    private final FilteredList<Event> filteredEvents;
 
     /**
      * Initializes a ModelManager with the given coordiMate and userPrefs.
@@ -35,6 +36,7 @@ public class ModelManager implements Model {
         this.coordiMate = new CoordiMate(coordiMate);
         this.userPrefs = new UserPrefs(userPrefs);
         filteredPersons = new FilteredList<>(this.coordiMate.getPersonList());
+        filteredEvents = new FilteredList<>(this.coordiMate.getEventList(), event -> !event.isArchived());
     }
 
     /**
@@ -175,6 +177,13 @@ public class ModelManager implements Model {
     @Override
     public Predicate<? super Person> getFilteredPersonPredicate() {
         return filteredPersons.getPredicate();
+    }
+
+    //=========== Filtered Event List Accessors ==============================================================
+
+    @Override
+    public ObservableList<Event> getFilteredEventList() {
+        return filteredEvents;
     }
 
     @Override

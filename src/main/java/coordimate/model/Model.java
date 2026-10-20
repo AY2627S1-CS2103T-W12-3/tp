@@ -128,4 +128,9 @@ public interface Model {
      * Returns the predicate the filtered person list currently filters by, or null if it has never been filtered.
      */
     Predicate<? super Person> getFilteredPersonPredicate();
+
+    /**
+     * Returns an unmodifiable view of the events that are not archived, in insertion order.
+     */
+    ObservableList<Event> getFilteredEventList();
 }

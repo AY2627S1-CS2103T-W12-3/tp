@@ -48,7 +48,7 @@ public class ReminderService {
     }
 
     /**
-     * Replaces reminders with the eligible, undismissed events in chronological order.
+     * Replaces reminders with the eligible, unarchived, undismissed events in chronological order.
      * Forgets temporary dismissals when their event is deleted or its start value changes.
      */
     public void refreshReminders() {
@@ -57,6 +57,7 @@ public class ReminderService {
                 .noneMatch(event -> event.getName().equalsIgnoreCase(entry.getKey())
                         && event.getStartTime().equals(entry.getValue())));
         List<Event> updated = finder.findUpcomingEvents(events).stream()
+                .filter(event -> !event.isArchived())
                 .filter(event -> !event.isReminderDismissed())
                 .filter(event -> !event.getStartTime().equals(sessionDismissals.get(event.getName())))
                 .toList();

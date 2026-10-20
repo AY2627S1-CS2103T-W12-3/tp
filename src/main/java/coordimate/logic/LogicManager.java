@@ -12,6 +12,7 @@ import coordimate.commons.core.LogsCenter;
 import coordimate.commons.exceptions.DataLoadingException;
 import coordimate.logic.commands.AddCommand;
 import coordimate.logic.commands.AddEventCommand;
+import coordimate.logic.commands.ArchiveEventCommand;
 import coordimate.logic.commands.AssignCommand;
 import coordimate.logic.commands.ClearCommand;
 import coordimate.logic.commands.Command;
@@ -117,7 +118,7 @@ public class LogicManager implements Logic {
 
         if (command instanceof AddCommand || command instanceof EditCommand || command instanceof ClearCommand
                 || command instanceof MutatingTagCommand
-                || command instanceof AddEventCommand
+                || command instanceof AddEventCommand || command instanceof ArchiveEventCommand
                 || command instanceof EditEventCommand || command instanceof AssignCommand
                 || command instanceof DeleteEventCommand || command instanceof MarkAttendanceCommand
                 || command instanceof UnassignCommand) {
@@ -168,6 +169,7 @@ public class LogicManager implements Logic {
                 case EditEventCommand _ -> EditEventCommand.MESSAGE_SAVE_ERROR;
                 case AssignCommand _ -> AssignCommand.MESSAGE_SAVE_ERROR;
                 case DeleteEventCommand _ -> DeleteEventCommand.MESSAGE_SAVE_ERROR;
+                case ArchiveEventCommand _ -> ArchiveEventCommand.MESSAGE_SAVE_ERROR;
                 case ClearCommand _ -> ClearCommand.MESSAGE_SAVE_ERROR;
                 case MarkAttendanceCommand _ -> MarkAttendanceCommand.MESSAGE_SAVE_ERROR;
                 case UnassignCommand _ -> UnassignCommand.MESSAGE_SAVE_ERROR;
@@ -225,6 +227,11 @@ public class LogicManager implements Logic {
     @Override
     public ObservableList<Event> getEventList() {
         return model.getCoordiMate().getEventList();
+    }
+
+    @Override
+    public ObservableList<Event> getFilteredEventList() {
+        return model.getFilteredEventList();
     }
 
     @Override

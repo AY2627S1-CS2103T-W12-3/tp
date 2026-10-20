@@ -13,6 +13,8 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import coordimate.commons.core.GuiSettings;
+import coordimate.model.event.Event;
+import coordimate.model.event.EventTime;
 import coordimate.model.person.ContactMatchesKeywordPredicate;
 import coordimate.model.tag.Tag;
 import coordimate.testutil.CoordiMateBuilder;
@@ -146,5 +148,21 @@ public class ModelManagerTest {
         UserPrefs differentUserPrefs = new UserPrefs();
         differentUserPrefs.setGuiSettings(new GuiSettings(1, 2, 3, 4));
         assertFalse(modelManager.equals(new ModelManager(coordiMate, differentUserPrefs)));
+    }
+
+    @Test
+    public void getFilteredEventList_hidesArchivedEventsAndFollowsChanges() {
+        Event concert = new Event("Concert", new EventTime("08-08-2026"), new EventTime("09-08-2026"));
+        Event fair = new Event("Fair", new EventTime("09-10-2026"), new EventTime("10-10-2026"));
+        modelManager.addEvent(concert);
+        modelManager.addEvent(fair.withArchived(true));
+        List<Event> shown = modelManager.getFilteredEventList();
+
+        assertEquals(List.of(concert), shown);
+        modelManager.setEvent(concert, concert.withArchived(true));
+        assertEquals(List.of(), shown);
+        modelManager.setEvent(fair.withArchived(true), fair);
+        assertEquals(List.of(fair), shown);
+        assertThrows(UnsupportedOperationException.class, () -> modelManager.getFilteredEventList().remove(0));
     }
 }

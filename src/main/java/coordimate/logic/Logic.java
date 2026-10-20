@@ -41,6 +41,11 @@ public interface Logic {
     ObservableList<Event> getEventList();
 
     /**
+     * Returns the live, unmodifiable list of events that are not archived, in insertion order.
+     */
+    ObservableList<Event> getFilteredEventList();
+
+    /**
      * Returns the live, unmodifiable list of active reminders in chronological order.
      * Refreshes it against the current time and saved model data.
      */
