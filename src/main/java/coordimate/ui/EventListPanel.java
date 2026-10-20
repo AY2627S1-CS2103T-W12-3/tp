@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
+import java.util.Objects;
 
 import coordimate.model.event.AttendanceStatus;
 import coordimate.model.event.Event;
@@ -22,6 +23,7 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MultipleSelectionModel;
 import javafx.scene.control.SplitPane;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -164,6 +166,12 @@ public class EventListPanel extends UiPart<Region> {
     private void selectAndReveal(int targetIndex) {
         eventListView.getSelectionModel().select(targetIndex);
         eventListView.scrollTo(targetIndex);
+    }
+
+    /** Runs the given action whenever the displayed event list is clicked. */
+    void setCardListClickHandler(Runnable handler) {
+        Objects.requireNonNull(handler);
+        eventListView.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> handler.run());
     }
 
     /**

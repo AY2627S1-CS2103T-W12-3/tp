@@ -1,5 +1,7 @@
 package coordimate.ui;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BooleanSupplier;
@@ -8,11 +10,13 @@ import coordimate.logic.commands.CommandResult;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.logic.parser.exceptions.ParseException;
 import javafx.collections.ObservableList;
+import javafx.event.EventTarget;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Region;
 
 /**
@@ -77,6 +81,22 @@ public class CommandBox extends UiPart<Region> {
         commandTextField.setText(command);
         commandTextField.positionCaret(command.length());
         commandTextField.requestFocus();
+    }
+
+    /** Returns whether the given event target is this command box's text input. */
+    boolean isCommandInput(EventTarget eventTarget) {
+        return eventTarget == commandTextField;
+    }
+
+    /** Focuses the command input without changing its text. */
+    void focusInput() {
+        commandTextField.requestFocus();
+    }
+
+    /** Runs the given action whenever the command input is clicked. */
+    void setInputClickHandler(Runnable handler) {
+        requireNonNull(handler);
+        commandTextField.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> handler.run());
     }
 
     private void handleHistoryNavigation(KeyEvent event) {

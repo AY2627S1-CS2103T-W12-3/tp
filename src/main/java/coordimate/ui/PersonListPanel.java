@@ -3,6 +3,7 @@ package coordimate.ui;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 import coordimate.model.event.AttendanceStatus;
 import coordimate.model.event.Event;
@@ -24,6 +25,7 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SplitPane;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -213,6 +215,12 @@ public class PersonListPanel extends UiPart<Region> {
     private void selectAndReveal(int targetIndex) {
         personListView.getSelectionModel().select(targetIndex);
         personListView.scrollTo(targetIndex);
+    }
+
+    /** Runs the given action whenever the displayed contact list is clicked. */
+    void setCardListClickHandler(Runnable handler) {
+        Objects.requireNonNull(handler);
+        personListView.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> handler.run());
     }
 
     /**
