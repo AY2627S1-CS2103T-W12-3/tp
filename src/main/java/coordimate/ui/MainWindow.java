@@ -631,16 +631,11 @@ public class MainWindow extends UiPart<Stage> {
                 handleHelp();
             }
 
-            if (commandResult.shouldShowTags()) {
-                showTags();
-            }
-
-            if (commandResult.shouldShowContacts()) {
-                showContacts();
-            }
-
-            if (commandResult.shouldShowEvents()) {
-                showEvents();
+            switch (commandResult.getViewToShow()) {
+                case CONTACTS -> showContacts();
+                case EVENTS -> showEvents();
+                case TAGS -> showTags();
+                default -> { } // NONE keeps the selected view.
             }
 
             if (commandResult.shouldExit()) {

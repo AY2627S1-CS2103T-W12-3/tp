@@ -25,6 +25,6 @@ public class ListTagsCommand extends Command {
         String tagNames = model.getTagList().stream()
                 .map(Tag::getTagName)
                 .collect(Collectors.joining(", "));
-        return new CommandResult(String.format(MESSAGE_SUCCESS, tagNames), false, false, true);
+        return new CommandResult(String.format(MESSAGE_SUCCESS, tagNames), CommandResult.View.TAGS);
     }
 }

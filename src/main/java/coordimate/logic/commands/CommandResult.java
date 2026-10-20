@@ -11,6 +11,21 @@ import coordimate.commons.util.ToStringBuilder;
  */
 public class CommandResult {
 
+    /** The view to display after a command, if any. */
+    public enum View {
+        NONE(""), CONTACTS("Contacts"), EVENTS("Events"), TAGS("Tags");
+
+        private final String displayName;
+
+        View(String displayName) {
+            this.displayName = displayName;
+        }
+
+        public String getDisplayName() {
+            return displayName;
+        }
+    }
+
     private final String feedbackToUser;
 
     /** Help information should be shown to the user. */
@@ -19,48 +34,31 @@ public class CommandResult {
     /** The application should exit. */
     private final boolean shouldExit;
 
-    /** The tags view should be shown. */
-    private final boolean shouldShowTags;
-
-    /** The contacts view should be shown. */
-    private final boolean shouldShowContacts;
-
-    /** The events view should be shown. */
-    private final boolean shouldShowEvents;
+    /** The view requested by the command. */
+    private final View viewToShow;
 
     /**
      * Constructs a {@code CommandResult} with the specified fields.
      */
     public CommandResult(String feedbackToUser, boolean shouldShowHelp, boolean shouldExit) {
-        this(feedbackToUser, shouldShowHelp, shouldExit, false);
+        this(feedbackToUser, shouldShowHelp, shouldExit, View.NONE);
+    }
+
+    /**
+     * Constructs a {@code CommandResult} that requests the specified view.
+     */
+    public CommandResult(String feedbackToUser, View viewToShow) {
+        this(feedbackToUser, false, false, viewToShow);
     }
 
     /**
      * Constructs a {@code CommandResult} with the specified fields.
      */
-    public CommandResult(String feedbackToUser, boolean shouldShowHelp, boolean shouldExit, boolean shouldShowTags) {
-        this(feedbackToUser, shouldShowHelp, shouldExit, shouldShowTags, false);
-    }
-
-    /**
-     * Constructs a {@code CommandResult} with the specified fields.
-     */
-    public CommandResult(String feedbackToUser, boolean shouldShowHelp, boolean shouldExit, boolean shouldShowTags,
-            boolean shouldShowContacts) {
-        this(feedbackToUser, shouldShowHelp, shouldExit, shouldShowTags, shouldShowContacts, false);
-    }
-
-    /**
-     * Constructs a {@code CommandResult} with the specified fields.
-     */
-    public CommandResult(String feedbackToUser, boolean shouldShowHelp, boolean shouldExit, boolean shouldShowTags,
-            boolean shouldShowContacts, boolean shouldShowEvents) {
+    public CommandResult(String feedbackToUser, boolean shouldShowHelp, boolean shouldExit, View viewToShow) {
         this.feedbackToUser = requireNonNull(feedbackToUser);
         this.shouldShowHelp = shouldShowHelp;
         this.shouldExit = shouldExit;
-        this.shouldShowTags = shouldShowTags;
-        this.shouldShowContacts = shouldShowContacts;
-        this.shouldShowEvents = shouldShowEvents;
+        this.viewToShow = requireNonNull(viewToShow);
     }
 
     /**
@@ -90,24 +88,10 @@ public class CommandResult {
     }
 
     /**
-     * Returns true if the command requests that the tags view be shown.
+     * Returns the view requested by the command, or {@code View.NONE} if it does not change views.
      */
-    public boolean shouldShowTags() {
-        return shouldShowTags;
-    }
-
-    /**
-     * Returns true if the command requests that the contacts view be shown.
-     */
-    public boolean shouldShowContacts() {
-        return shouldShowContacts;
-    }
-
-    /**
-     * Returns true if the command requests that the events view be shown.
-     */
-    public boolean shouldShowEvents() {
-        return shouldShowEvents;
+    public View getViewToShow() {
+        return viewToShow;
     }
 
     @Override
@@ -124,15 +108,12 @@ public class CommandResult {
         return feedbackToUser.equals(otherCommandResult.feedbackToUser)
                 && shouldShowHelp == otherCommandResult.shouldShowHelp
                 && shouldExit == otherCommandResult.shouldExit
-                && shouldShowTags == otherCommandResult.shouldShowTags
-                && shouldShowContacts == otherCommandResult.shouldShowContacts
-                && shouldShowEvents == otherCommandResult.shouldShowEvents;
+                && viewToShow == otherCommandResult.viewToShow;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(feedbackToUser, shouldShowHelp, shouldExit, shouldShowTags, shouldShowContacts,
-                shouldShowEvents);
+        return Objects.hash(feedbackToUser, shouldShowHelp, shouldExit, viewToShow);
     }
 
     @Override
@@ -141,9 +122,7 @@ public class CommandResult {
                 .add("feedbackToUser", feedbackToUser)
                 .add("showHelp", shouldShowHelp)
                 .add("exit", shouldExit)
-                .add("showTags", shouldShowTags)
-                .add("showContacts", shouldShowContacts)
-                .add("showEvents", shouldShowEvents)
+                .add("viewToShow", viewToShow)
                 .toString();
     }
 

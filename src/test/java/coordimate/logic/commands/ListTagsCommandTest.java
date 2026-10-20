@@ -20,7 +20,7 @@ public class ListTagsCommandTest {
         String expectedMessage = String.format(ListTagsCommand.MESSAGE_SUCCESS,
                 "EXCO, Sponsor, UniversityStaff, Logistics");
 
-        CommandResult expectedResult = new CommandResult(expectedMessage, false, false, true);
+        CommandResult expectedResult = new CommandResult(expectedMessage, CommandResult.View.TAGS);
         assertCommandSuccess(new ListTagsCommand(), model, expectedResult, expectedModel);
     }
 
@@ -33,7 +33,7 @@ public class ListTagsCommandTest {
         String expectedMessage = String.format(ListTagsCommand.MESSAGE_SUCCESS,
                 "EXCO, Sponsor, UniversityStaff, Logistics, Publicity");
 
-        CommandResult expectedResult = new CommandResult(expectedMessage, false, false, true);
+        CommandResult expectedResult = new CommandResult(expectedMessage, CommandResult.View.TAGS);
         assertCommandSuccess(new ListTagsCommand(), model, expectedResult, expectedModel);
     }
 

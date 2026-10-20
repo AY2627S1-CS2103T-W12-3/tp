@@ -25,7 +25,7 @@ public class CreateTagCommandTest {
         Model expectedModel = new ModelManager(model.getCoordiMate(), new UserPrefs());
         expectedModel.addTag(PUBLICITY);
 
-        CommandResult expectedResult = new CommandResult("Created tag: Publicity.", false, false, true);
+        CommandResult expectedResult = new CommandResult("Created tag: Publicity.", CommandResult.View.TAGS);
         assertCommandSuccess(new CreateTagCommand(PUBLICITY), model, expectedResult, expectedModel);
         assertEquals(List.of("EXCO", "Sponsor", "UniversityStaff", "Logistics", "Publicity"),
                 model.getTagList().stream().map(Tag::getTagName).toList());

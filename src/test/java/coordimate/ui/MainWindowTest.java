@@ -14,11 +14,15 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import coordimate.commons.core.GuiSettings;
 import coordimate.logic.LogicManager;
 import coordimate.model.ModelManager;
 import coordimate.model.person.Person;
+import coordimate.storage.JsonCoordiMateStorage;
+import coordimate.storage.JsonUserPrefsStorage;
+import coordimate.storage.StorageManager;
 import coordimate.testutil.PersonBuilder;
 import coordimate.testutil.TypicalPersons;
 import javafx.application.Platform;
@@ -44,6 +48,9 @@ import javafx.stage.WindowEvent;
  * Checks that the complete desktop shell loads and its view controls stay connected.
  */
 public class MainWindowTest {
+
+    @TempDir
+    public Path temporaryFolder;
 
     @BeforeAll
     public static void startJavaFx() throws InterruptedException {
@@ -158,6 +165,47 @@ public class MainWindowTest {
         });
         Platform.runLater(task);
         task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void listCommand_keepsSelectedView() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            try {
+                StorageManager storage = new StorageManager(
+                        new JsonCoordiMateStorage(temporaryFolder.resolve("data.json")),
+                        new JsonUserPrefsStorage(temporaryFolder.resolve("prefs.json")));
+                MainWindow window = new MainWindow(stage, new LogicManager(new ModelManager(), storage),
+                        temporaryFolder.resolve("data.json"));
+                try {
+                    assertListCommandKeepsSelectedView(window, stage);
+                } finally {
+                    window.stop();
+                }
+            } finally {
+                stage.close();
+            }
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    private static void assertListCommandKeepsSelectedView(MainWindow window, Stage stage) {
+        window.fillInnerParts();
+        stage.getScene().getRoot().applyCss();
+
+        ToggleButton events = (ToggleButton) stage.getScene().getRoot().lookup("#eventsView");
+        TextField input = (TextField) stage.getScene().getRoot().lookup("#commandTextField");
+        Button submit = (Button) stage.getScene().getRoot().lookup("#submitButton");
+        Label feedback = (Label) stage.getScene().getRoot().lookup("#resultDisplay");
+
+        events.fire();
+        input.setText("list");
+        submit.fire();
+
+        assertTrue(events.isSelected());
+        assertEquals("Listed all contacts.", feedback.getText());
     }
 
     @Test

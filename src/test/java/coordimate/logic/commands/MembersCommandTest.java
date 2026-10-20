@@ -54,9 +54,9 @@ public class MembersCommandTest {
     @Test
     public void execute_success_showsContactsView() throws Exception {
         assertEquals(new CommandResult("Listed 2 member(s) of Final Concert. Use list to show all contacts.",
-                false, false, false, true), new MembersCommand("Final Concert").execute(model));
+                CommandResult.View.CONTACTS), new MembersCommand("Final Concert").execute(model));
         assertEquals(new CommandResult("Empty Event has no members assigned. Use list to show all contacts.",
-                false, false, false, true), new MembersCommand("Empty Event").execute(model));
+                CommandResult.View.CONTACTS), new MembersCommand("Empty Event").execute(model));
     }
 
     @Test

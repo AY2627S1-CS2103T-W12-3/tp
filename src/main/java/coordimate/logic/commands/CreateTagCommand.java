@@ -36,7 +36,7 @@ public class CreateTagCommand extends MutatingTagCommand {
         }
 
         model.addTag(toAdd);
-        return new CommandResult(String.format(MESSAGE_SUCCESS, toAdd.getTagName()), false, false, true);
+        return new CommandResult(String.format(MESSAGE_SUCCESS, toAdd.getTagName()), CommandResult.View.TAGS);
     }
 
     @Override

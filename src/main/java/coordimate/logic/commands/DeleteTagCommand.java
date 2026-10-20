@@ -42,7 +42,7 @@ public class DeleteTagCommand extends MutatingTagCommand {
 
         Tag target = tagToDelete.get();
         model.deleteTag(target);
-        return new CommandResult(String.format(MESSAGE_SUCCESS, target.getTagName()), false, false, true);
+        return new CommandResult(String.format(MESSAGE_SUCCESS, target.getTagName()), CommandResult.View.TAGS);
     }
 
     @Override

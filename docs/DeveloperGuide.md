@@ -288,7 +288,8 @@ consequences that developers should be aware of:
 `switch` is a UI navigation command and an exception to this save path. `SwitchCommandParser` accepts only
 `contacts`, `events`, or `tags` after the command word. `LogicManager` returns its `CommandResult` without
 reading or saving the data file; `MainWindow` selects the requested tab and updates the sidebar through its
-existing tab selection listener. Invalid view names are rejected before the UI changes.
+existing tab selection listener. `CommandResult.View` carries one requested view, or `NONE` when a command does
+not request a view change. Invalid view names are rejected before the UI changes.
 
 #### Design considerations
 

@@ -3,105 +3,66 @@ package coordimate.logic.commands;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
+
+import coordimate.logic.commands.CommandResult.View;
 
 public class CommandResultTest {
     @Test
     public void equals() {
         CommandResult commandResult = new CommandResult("feedback");
 
-        // same values -> returns true
-        assertTrue(commandResult.equals(new CommandResult("feedback")));
-        assertTrue(commandResult.equals(new CommandResult("feedback", false, false)));
-        assertTrue(commandResult.equals(new CommandResult("feedback", false, false, false)));
-        assertTrue(commandResult.equals(new CommandResult("feedback", false, false, false, false)));
-        assertTrue(commandResult.equals(new CommandResult("feedback", false, false, false, false, false)));
-
-        // same object -> returns true
+        assertEquals(commandResult, new CommandResult("feedback"));
+        assertEquals(commandResult, new CommandResult("feedback", false, false));
+        assertEquals(commandResult, new CommandResult("feedback", View.NONE));
+        assertEquals(commandResult, new CommandResult("feedback", false, false, View.NONE));
         assertTrue(commandResult.equals(commandResult));
-
-        // null -> returns false
         assertFalse(commandResult.equals(null));
-
-        // different types -> returns false
         assertFalse(commandResult.equals(0.5f));
 
-        // different feedbackToUser value -> returns false
-        assertFalse(commandResult.equals(new CommandResult("different")));
-
-        // different showHelp value -> returns false
-        assertFalse(commandResult.equals(new CommandResult("feedback", true, false)));
-
-        // different exit value -> returns false
-        assertFalse(commandResult.equals(new CommandResult("feedback", false, true)));
-
-        // different showTags value -> returns false
-        assertFalse(commandResult.equals(new CommandResult("feedback", false, false, true)));
-
-        // different showContacts value -> returns false
-        assertFalse(commandResult.equals(new CommandResult("feedback", false, false, false, true)));
-
-        // different showEvents value -> returns false
-        assertFalse(commandResult.equals(new CommandResult("feedback", false, false, false, false, true)));
+        assertNotEquals(commandResult, new CommandResult("different"));
+        assertNotEquals(commandResult, new CommandResult("feedback", true, false));
+        assertNotEquals(commandResult, new CommandResult("feedback", false, true));
+        assertNotEquals(commandResult, new CommandResult("feedback", View.TAGS));
+        assertNotEquals(commandResult, new CommandResult("feedback", View.CONTACTS));
+        assertNotEquals(commandResult, new CommandResult("feedback", View.EVENTS));
     }
 
     @Test
     public void hashcode() {
         CommandResult commandResult = new CommandResult("feedback");
 
-        // same values -> returns same hashcode
-        assertEquals(commandResult.hashCode(), new CommandResult("feedback").hashCode());
-
-        // different feedbackToUser value -> returns different hashcode
+        assertEquals(commandResult.hashCode(), new CommandResult("feedback", View.NONE).hashCode());
         assertNotEquals(commandResult.hashCode(), new CommandResult("different").hashCode());
-
-        // different showHelp value -> returns different hashcode
         assertNotEquals(commandResult.hashCode(), new CommandResult("feedback", true, false).hashCode());
-
-        // different exit value -> returns different hashcode
         assertNotEquals(commandResult.hashCode(), new CommandResult("feedback", false, true).hashCode());
-
-        // different showTags value -> returns different hashcode
-        assertNotEquals(commandResult.hashCode(), new CommandResult("feedback", false, false, true).hashCode());
-
-        // different showContacts value -> returns different hashcode
-        assertNotEquals(commandResult.hashCode(), new CommandResult("feedback", false, false, false, true).hashCode());
-
-        // different showEvents value -> returns different hashcode
-        assertNotEquals(commandResult.hashCode(),
-                new CommandResult("feedback", false, false, false, false, true).hashCode());
+        assertNotEquals(commandResult.hashCode(), new CommandResult("feedback", View.TAGS).hashCode());
+        assertNotEquals(commandResult.hashCode(), new CommandResult("feedback", View.CONTACTS).hashCode());
+        assertNotEquals(commandResult.hashCode(), new CommandResult("feedback", View.EVENTS).hashCode());
     }
 
     @Test
     public void toStringMethod() {
-        CommandResult commandResult = new CommandResult("feedback");
+        CommandResult commandResult = new CommandResult("feedback", View.EVENTS);
         String expected = CommandResult.class.getCanonicalName() + "{feedbackToUser="
                 + commandResult.getFeedbackToUser() + ", showHelp=" + commandResult.shouldShowHelp()
-                + ", exit=" + commandResult.shouldExit() + ", showTags=" + commandResult.shouldShowTags()
-                + ", showContacts=" + commandResult.shouldShowContacts()
-                + ", showEvents=" + commandResult.shouldShowEvents() + "}";
+                + ", exit=" + commandResult.shouldExit() + ", viewToShow=" + commandResult.getViewToShow() + "}";
         assertEquals(expected, commandResult.toString());
     }
 
     @Test
-    public void shouldShowTags_listTagsResult_returnsTrue() {
-        CommandResult commandResult = new CommandResult("feedback", false, false, true);
-
-        assertTrue(commandResult.shouldShowTags());
+    public void getViewToShow_returnsRequestedViewOrNone() {
+        assertEquals(View.NONE, new CommandResult("feedback").getViewToShow());
+        assertEquals(View.TAGS, new CommandResult("feedback", View.TAGS).getViewToShow());
+        assertEquals(View.CONTACTS, new CommandResult("feedback", View.CONTACTS).getViewToShow());
+        assertEquals(View.EVENTS, new CommandResult("feedback", View.EVENTS).getViewToShow());
     }
 
     @Test
-    public void shouldShowContacts_defaultFalseAndSetWhenRequested() {
-        assertFalse(new CommandResult("feedback").shouldShowContacts());
-        assertFalse(new CommandResult("feedback", false, false, true).shouldShowContacts());
-        assertTrue(new CommandResult("feedback", false, false, false, true).shouldShowContacts());
-    }
-
-    @Test
-    public void shouldShowEvents_defaultFalseAndSetWhenRequested() {
-        assertFalse(new CommandResult("feedback").shouldShowEvents());
-        assertTrue(new CommandResult("feedback", false, false, false, false, true).shouldShowEvents());
+    public void constructor_nullView_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> new CommandResult("feedback", (View) null));
     }
 }

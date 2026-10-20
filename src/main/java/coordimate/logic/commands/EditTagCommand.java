@@ -56,7 +56,7 @@ public class EditTagCommand extends MutatingTagCommand {
 
         model.setTag(tagToEdit, editedTag);
         return new CommandResult(String.format(MESSAGE_SUCCESS,
-                tagToEdit.getTagName(), editedTag.getTagName()), false, false, true);
+                tagToEdit.getTagName(), editedTag.getTagName()), CommandResult.View.TAGS);
     }
 
     @Override
