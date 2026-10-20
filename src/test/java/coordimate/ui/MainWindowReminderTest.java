@@ -185,6 +185,37 @@ public class MainWindowReminderTest {
     }
 
     @Test
+    public void dismissButton_multipleReminders_focusesCommandOnlyAfterLastDismissal() throws Exception {
+        onJavaFxThread(() -> {
+            Fixture fixture = openWindow(true);
+            try {
+                fixture.model().addEvent(event("Student Life Fair", "20-10-2026", "21-10-2026"));
+                fixture.logic().refreshReminders();
+                Parent root = fixture.stage().getScene().getRoot();
+                Button firstDismiss = (Button) rows(root).getChildren().getFirst().lookup(".reminder-dismiss");
+                firstDismiss.requestFocus();
+                assertSame(firstDismiss, fixture.stage().getScene().getFocusOwner());
+
+                firstDismiss.fire();
+
+                assertEquals(List.of("Upcoming event: Final Concert"), names(root));
+                assertTrue(root.lookup("#reminderPanel").isVisible());
+                Button lastDismiss = (Button) rows(root).getChildren().getFirst().lookup(".reminder-dismiss");
+                assertSame(lastDismiss, fixture.stage().getScene().getFocusOwner());
+
+                lastDismiss.fire();
+
+                assertEquals(List.of(), names(root));
+                assertPanelHidden(root);
+                assertSame(root.lookup("#commandTextField"), fixture.stage().getScene().getFocusOwner());
+            } finally {
+                fixture.stage().close();
+            }
+            return null;
+        });
+    }
+
+    @Test
     public void dismissButton_restart_keepsReminderHiddenDuringScheduledChecks() throws Exception {
         onJavaFxThread(() -> {
             Fixture fixture = openWindow(true);
