@@ -19,6 +19,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 public class HelpWindowTest {
@@ -69,6 +70,9 @@ public class HelpWindowTest {
             @SuppressWarnings("unchecked")
             TableView<HelpWindow.CommandUsage> commandTable =
                     (TableView<HelpWindow.CommandUsage>) root.getScene().lookup("#commandTable");
+            VBox keyboardHelp = (VBox) root.getScene().lookup("#keyboardHelp");
+            Label commandModeHelp = (Label) root.getScene().lookup("#commandModeHelp");
+            Label navigationModeHelp = (Label) root.getScene().lookup("#navigationModeHelp");
             Label syntaxNote = (Label) root.getScene().lookup("#syntaxNote");
             Button closeButton = (Button) root.getScene().lookup("#closeButton");
 
@@ -77,6 +81,18 @@ public class HelpWindowTest {
             assertEquals(450.0, root.getMinHeight());
             assertEquals(HelpWindow.COMMAND_USAGES, commandTable.getItems());
             assertFalse(commandTable.isEditable());
+            assertEquals("Command mode (default): type commands; press Esc to navigate cards.",
+                    commandModeHelp.getText());
+            assertEquals("Navigation mode: press j for next, k for previous, or i to focus the command box. "
+                    + "Click the command box or a card list to switch modes.", navigationModeHelp.getText());
+            assertTrue(commandModeHelp.isWrapText());
+            assertTrue(navigationModeHelp.isWrapText());
+            assertEquals(Double.POSITIVE_INFINITY, commandModeHelp.getMaxWidth());
+            assertEquals(Double.POSITIVE_INFINITY, navigationModeHelp.getMaxWidth());
+            assertEquals("Command mode is the default. Press Escape to enter Navigation mode. "
+                    + "In Navigation mode, press J for the next card, K for the previous card, or I to focus the "
+                    + "command box. Clicking the command box enters Command mode; clicking a card list enters "
+                    + "Navigation mode.", keyboardHelp.getAccessibleText());
             assertEquals("Note: [ ] marks optional parameters; (A | B) means choose one. "
                     + "For edit, provide at least one field or tag operation. "
                     + "For editevent, provide at least one field.", syntaxNote.getText());

@@ -2,6 +2,7 @@ package coordimate.ui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.awt.GraphicsEnvironment;
@@ -268,7 +269,7 @@ public class MainWindowTest {
                 assertEquals(-1, contacts.getSelectionModel().getSelectedIndex());
 
                 input.requestFocus();
-                assertTrue(input.isFocused());
+                assertSame(input, stage.getScene().getFocusOwner());
                 assertFalse(keyReachesTarget(input, typedKeyEvent("j")));
                 assertEquals(contact, contacts.getSelectionModel().getSelectedItem());
                 contacts.getSelectionModel().clearSelection();
@@ -278,7 +279,7 @@ public class MainWindowTest {
                         (StackPane) stage.getScene().getRoot().lookup("#commandBoxPlaceholder");
                 commandPlaceholder.getChildren().add(otherInput);
                 otherInput.requestFocus();
-                assertTrue(otherInput.isFocused());
+                assertSame(otherInput, stage.getScene().getFocusOwner());
                 assertTrue(keyReachesTarget(otherInput, typedKeyEvent("j")));
                 assertEquals(-1, contacts.getSelectionModel().getSelectedIndex());
 

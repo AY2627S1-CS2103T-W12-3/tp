@@ -130,6 +130,9 @@
         <StackPane fx:id="resultDisplayPlaceholder" VBox.vgrow="NEVER" />
         <StackPane fx:id="commandBoxPlaceholder" styleClass="command-container" VBox.vgrow="NEVER" />
         <HBox alignment="CENTER_LEFT" styleClass="prefix-help">
+          <Label fx:id="interactionModeLabel" text="COMMAND · Esc to navigate"
+                 accessibleText="Command mode. Press Escape to navigate cards."
+                 styleClass="interaction-mode" />
           <TextFlow fx:id="prefixHelp" maxWidth="Infinity" HBox.hgrow="ALWAYS"
                     accessibleText="Command format and example">
             <Text text="Prefixes: n/Name  p/Phone  e/Email  r/Role  t/Tag  m/Note" styleClass="command-hint" />
