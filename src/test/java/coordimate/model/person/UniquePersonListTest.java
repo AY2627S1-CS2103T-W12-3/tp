@@ -13,6 +13,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import coordimate.model.person.exceptions.DuplicateMemberIdException;
 import coordimate.model.person.exceptions.DuplicatePersonException;
 import coordimate.model.person.exceptions.PersonNotFoundException;
 import coordimate.testutil.PersonBuilder;
@@ -54,6 +55,41 @@ public class UniquePersonListTest {
     public void add_duplicatePerson_throwsDuplicatePersonException() {
         uniquePersonList.add(ALICE);
         assertThrows(DuplicatePersonException.class, () -> uniquePersonList.add(ALICE));
+    }
+
+    @Test
+    public void add_distinctContactsWithSameId_throwsDuplicateMemberIdException() {
+        uniquePersonList.add(ALICE);
+        Person other = new PersonBuilder(BOB).withMemberId(1).build();
+        assertThrows(DuplicateMemberIdException.class, () -> uniquePersonList.add(other));
+        assertEquals(List.of(ALICE), uniquePersonList.asUnmodifiableObservableList());
+    }
+
+    @Test
+    public void add_distinctContactsWithoutIds_doesNotTreatMissingIdsAsDuplicates() {
+        Person alice = new PersonBuilder(ALICE).withoutMemberId().build();
+        uniquePersonList.add(alice);
+        uniquePersonList.add(BOB);
+        assertEquals(List.of(alice, BOB), uniquePersonList.asUnmodifiableObservableList());
+    }
+
+    @Test
+    public void setPerson_changingIdOrTakingAnotherId_rejectedWithoutChanges() {
+        uniquePersonList.add(ALICE);
+        uniquePersonList.add(new PersonBuilder(BOB).withMemberId(2).build());
+        assertThrows(IllegalArgumentException.class, () ->
+                uniquePersonList.setPerson(ALICE, new PersonBuilder(ALICE).withMemberId(12).build()));
+        Person conflictingId = new PersonBuilder(ALICE).withMemberId(2).build();
+        assertThrows(DuplicateMemberIdException.class, () -> uniquePersonList.setPerson(ALICE, conflictingId));
+        assertEquals(ALICE, uniquePersonList.asUnmodifiableObservableList().getFirst());
+    }
+
+    @Test
+    public void setPersons_duplicateIds_rejectedWithoutChanges() {
+        uniquePersonList.add(BOB);
+        Person other = new PersonBuilder(BOB).withMemberId(1).build();
+        assertThrows(DuplicateMemberIdException.class, () -> uniquePersonList.setPersons(List.of(ALICE, other)));
+        assertEquals(List.of(BOB), uniquePersonList.asUnmodifiableObservableList());
     }
 
     @Test
@@ -116,7 +152,7 @@ public class UniquePersonListTest {
         uniquePersonList.add(ALICE);
         uniquePersonList.setPerson(ALICE, BOB);
         UniquePersonList expectedUniquePersonList = new UniquePersonList();
-        expectedUniquePersonList.add(BOB);
+        expectedUniquePersonList.add(BOB.withMemberId(ALICE.getMemberId().orElseThrow()));
         assertEquals(expectedUniquePersonList, uniquePersonList);
     }
 

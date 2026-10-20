@@ -22,7 +22,7 @@ public class PersonTest {
 
     @Test
     public void withMemberId_assignsIdWithoutChangingDraft() {
-        Person draft = new PersonBuilder(ALICE).build();
+        Person draft = new PersonBuilder(ALICE).withoutMemberId().build();
         Person member = draft.withMemberId(new MemberId(12));
         assertTrue(draft.getMemberId().isEmpty());
         assertEquals(new MemberId(12), member.getMemberId().orElseThrow());
@@ -161,7 +161,8 @@ public class PersonTest {
 
     @Test
     public void toStringMethod() {
-        String expected = Person.class.getCanonicalName() + "{memberId=null, name=" + ALICE.getName()
+        String expected = Person.class.getCanonicalName() + "{memberId=" + ALICE.getMemberId().orElseThrow()
+                + ", name=" + ALICE.getName()
                 + ", phone=" + ALICE.getPhone()
                 + ", email=" + ALICE.getEmail() + ", role=" + ALICE.getRole() + ", birthday=null, address="
                 + ALICE.getAddress().orElseThrow() + ", organisation=null, note=null, tags=" + ALICE.getTags() + "}";

@@ -1,5 +1,6 @@
 package coordimate.storage;
 
+import static coordimate.testutil.Assert.assertStoredDetailsEqual;
 import static coordimate.testutil.TypicalPersons.ALICE;
 import static coordimate.testutil.TypicalPersons.HOON;
 import static coordimate.testutil.TypicalPersons.IDA;
@@ -192,13 +193,13 @@ public class JsonCoordiMateStorageTest {
         original.removePerson(ALICE);
         jsonCoordiMateStorage.saveCoordiMate(original, filePath);
         readBack = jsonCoordiMateStorage.readCoordiMate(filePath).get();
-        assertEquals(original, new CoordiMate(readBack));
+        assertStoredDetailsEqual(original, readBack);
 
         // Save and read without specifying file path
         original.addPerson(IDA);
         jsonCoordiMateStorage.saveCoordiMate(original); // file path not specified
         readBack = jsonCoordiMateStorage.readCoordiMate().get(); // file path not specified
-        assertEquals(original, new CoordiMate(readBack));
+        assertStoredDetailsEqual(original, readBack);
 
     }
 
@@ -234,6 +235,12 @@ public class JsonCoordiMateStorageTest {
      * Fails while its data is being converted for saving, after the temporary file has been created.
      */
     private static class FailingCoordiMate implements ReadOnlyCoordiMate {
+
+        @Override
+        public long getNextMemberId() {
+            return 1;
+        }
+
         @Override
         public ObservableList<Person> getPersonList() {
             return FXCollections.observableArrayList(ALICE);

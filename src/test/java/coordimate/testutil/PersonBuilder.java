@@ -75,6 +75,14 @@ public class PersonBuilder {
     }
 
     /**
+     * Leaves the contact awaiting model ID allocation.
+     */
+    public PersonBuilder withoutMemberId() {
+        memberId = null;
+        return this;
+    }
+
+    /**
      * Sets the {@code Name} of the {@code Person} that we are building.
      */
     public PersonBuilder withName(String name) {

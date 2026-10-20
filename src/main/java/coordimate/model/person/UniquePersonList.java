@@ -6,6 +6,7 @@ import static java.util.Objects.requireNonNull;
 import java.util.Iterator;
 import java.util.List;
 
+import coordimate.model.person.exceptions.DuplicateMemberIdException;
 import coordimate.model.person.exceptions.DuplicatePersonException;
 import coordimate.model.person.exceptions.PersonNotFoundException;
 import javafx.collections.FXCollections;
@@ -14,6 +15,7 @@ import javafx.collections.ObservableList;
 /**
  * A list of persons that enforces uniqueness between its elements and does not allow nulls.
  * Contacts must have distinct names (ignoring case), normalized phone numbers, and email addresses.
+ * Assigned member IDs must also be unique; contacts awaiting allocation may have no ID.
  * Removal uses {@code Person#equals(Object)} so the exact contact is removed.
  *
  * Supports a minimal set of list operations.
@@ -43,6 +45,9 @@ public class UniquePersonList implements Iterable<Person> {
         if (contains(toAdd)) {
             throw new DuplicatePersonException();
         }
+        if (internalPersons.stream().anyMatch(person -> hasSameMemberId(person, toAdd))) {
+            throw new DuplicateMemberIdException();
+        }
         internalPersons.add(toAdd);
     }
 
@@ -63,8 +68,14 @@ public class UniquePersonList implements Iterable<Person> {
             if (i != index && internalPersons.get(i).isSamePerson(editedPerson)) {
                 throw new DuplicatePersonException();
             }
+            if (i != index && hasSameMemberId(internalPersons.get(i), editedPerson)) {
+                throw new DuplicateMemberIdException();
+            }
         }
 
+        if (target.getMemberId().isPresent()) {
+            editedPerson = editedPerson.withMemberId(target.getMemberId().orElseThrow());
+        }
         internalPersons.set(index, editedPerson);
     }
 
@@ -95,6 +106,13 @@ public class UniquePersonList implements Iterable<Person> {
         requireAllNonNull(persons);
         if (!arePersonsUnique(persons)) {
             throw new DuplicatePersonException();
+        }
+        for (int i = 0; i < persons.size(); i++) {
+            for (int j = i + 1; j < persons.size(); j++) {
+                if (hasSameMemberId(persons.get(i), persons.get(j))) {
+                    throw new DuplicateMemberIdException();
+                }
+            }
         }
 
         internalPersons.setAll(persons);
@@ -148,5 +166,9 @@ public class UniquePersonList implements Iterable<Person> {
             }
         }
         return true;
+    }
+
+    private static boolean hasSameMemberId(Person first, Person second) {
+        return first.getMemberId().isPresent() && first.getMemberId().equals(second.getMemberId());
     }
 }
