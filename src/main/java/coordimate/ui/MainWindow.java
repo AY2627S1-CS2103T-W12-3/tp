@@ -44,6 +44,7 @@ import javafx.scene.control.ToggleButton;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -63,6 +64,8 @@ import javafx.util.Duration;
 public class MainWindow extends UiPart<Stage> {
 
     private static final String FXML = "MainWindow.fxml";
+    private static final String COMMAND_MODE_TEXT = "COMMAND · Esc to navigate";
+    private static final String NAVIGATION_MODE_TEXT = "NAVIGATION · j/k move · i to type";
     private static final Map<String, String> COMMAND_HELP_TEXT = Map.ofEntries(
             Map.entry("add", "Format: add n/NAME p/PHONE e/EMAIL r/ROLE [b/BIRTHDAY] [a/ADDRESS]"
                     + " [o/ORGANISATION] [t/TAG]... [m/NOTE]\n"
@@ -106,6 +109,7 @@ public class MainWindow extends UiPart<Stage> {
     private Path dataFilePath;
     private Rectangle2D normalWindowBounds;
     private boolean isNormalBoundsUpdateScheduled;
+    private InteractionMode interactionMode = InteractionMode.COMMAND;
 
     // Independent Ui parts residing in this Ui container
     private PersonListPanel personListPanel;
@@ -121,6 +125,9 @@ public class MainWindow extends UiPart<Stage> {
 
     @FXML
     private StackPane commandBoxPlaceholder;
+
+    @FXML
+    private Label interactionModeLabel;
 
     @FXML
     private MenuItem helpMenuItem;
@@ -321,6 +328,12 @@ public class MainWindow extends UiPart<Stage> {
 
         commandBox = new CommandBox(this::executeCommand, logic::isAwaitingDeleteConfirmation);
         commandBoxPlaceholder.getChildren().add(commandBox.getRoot());
+        getRoot().addEventFilter(KeyEvent.KEY_PRESSED, this::handleModeShortcut);
+        getRoot().addEventFilter(KeyEvent.KEY_TYPED, this::handleNavigationInput);
+        personListPanel.setCardListClickHandler(this::enterNavigationMode);
+        eventListPanel.setCardListClickHandler(this::enterNavigationMode);
+        tagListView.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> enterNavigationMode());
+        enterCommandMode();
         makeCommandRowsInteractive(contactsCommands);
         makeCommandRowsInteractive(eventsCommands);
         makeCommandRowsInteractive(tagsCommands);
@@ -349,9 +362,101 @@ public class MainWindow extends UiPart<Stage> {
     private void selectCommand(String command) {
         String commandHelp = COMMAND_HELP_TEXT.get(command);
         if (commandHelp != null) {
+            enterCommandMode();
             commandBox.setCommand(command);
             setPrefixHelpText(commandHelp);
         }
+    }
+
+    private void handleModeShortcut(KeyEvent event) {
+        if (event.getCode() != KeyCode.ESCAPE || logic.isAwaitingDeleteConfirmation()) {
+            return;
+        }
+        enterNavigationMode();
+        event.consume();
+    }
+
+    private void handleNavigationInput(KeyEvent event) {
+        if (interactionMode != InteractionMode.NAVIGATION) {
+            return;
+        }
+        if (event.isShiftDown() || event.isControlDown() || event.isAltDown() || event.isMetaDown()) {
+            return;
+        }
+
+        Node focusOwner = primaryStage.getScene().getFocusOwner();
+        if (focusOwner instanceof TextInputControl && !commandBox.isCommandInput(focusOwner)) {
+            return;
+        }
+
+        String character = event.getCharacter();
+        if ("i".equalsIgnoreCase(character)) {
+            enterCommandMode();
+            event.consume();
+            return;
+        }
+        if ("j".equalsIgnoreCase(character) || "k".equalsIgnoreCase(character)) {
+            navigateCards("j".equalsIgnoreCase(character));
+        }
+        event.consume();
+    }
+
+    private void enterCommandMode() {
+        setInteractionMode(InteractionMode.COMMAND);
+        commandBox.focusInput();
+        Platform.runLater(commandBox::focusInput);
+    }
+
+    private void enterNavigationMode() {
+        if (logic.isAwaitingDeleteConfirmation()) {
+            return;
+        }
+        setInteractionMode(InteractionMode.NAVIGATION);
+    }
+
+    private void setInteractionMode(InteractionMode mode) {
+        interactionMode = mode;
+        boolean isCommandMode = mode == InteractionMode.COMMAND;
+        commandBox.setInputDisabled(!isCommandMode);
+        interactionModeLabel.setText(isCommandMode ? COMMAND_MODE_TEXT : NAVIGATION_MODE_TEXT);
+        interactionModeLabel.setAccessibleText(isCommandMode
+                ? "Command mode. Press Escape to navigate cards."
+                : "Navigation mode. Press J or K to move between cards, or I to type a command.");
+    }
+
+    private boolean navigateCards(boolean forwards) {
+        int selectedView = views.getSelectionModel().getSelectedIndex();
+        return switch (selectedView) {
+            case 0 -> forwards ? personListPanel.selectNextCard() : personListPanel.selectPreviousCard();
+            case 1 -> forwards ? eventListPanel.selectNextCard() : eventListPanel.selectPreviousCard();
+            case 2 -> navigateTags(forwards);
+            default -> false;
+        };
+    }
+
+    private boolean navigateTags(boolean forwards) {
+        int itemCount = tagListView.getItems().size();
+        if (itemCount == 0) {
+            return false;
+        }
+
+        int selectedIndex = tagListView.getSelectionModel().getSelectedIndex();
+        int targetIndex;
+        if (selectedIndex < 0) {
+            targetIndex = forwards ? 0 : itemCount - 1;
+        } else {
+            targetIndex = forwards
+                    ? Math.min(selectedIndex + 1, itemCount - 1)
+                    : Math.max(selectedIndex - 1, 0);
+        }
+        tagListView.getSelectionModel().select(targetIndex);
+        tagListView.scrollTo(targetIndex);
+        return true;
+    }
+
+    private enum InteractionMode {
+        COMMAND,
+        NAVIGATION
     }
 
     private void setPrefixHelpText(String text) {

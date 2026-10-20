@@ -38,6 +38,8 @@
 
 1. Type a command in the command box and press Enter to execute it. For example, type **`help`** and press Enter to open the help window.<br>
    Press <kbd>Up</kbd> to recall earlier commands and <kbd>Down</kbd> to move toward the command you were typing.<br>
+   To browse cards without reaching for the mouse, press <kbd>Esc</kbd> to enter Navigation mode, use
+   <kbd>J</kbd>/<kbd>K</kbd> to move through the active view, then press <kbd>I</kbd> to return to Command mode.<br>
    Some example commands you can try:
 
    * `list` : Lists all contacts.
@@ -130,6 +132,30 @@ Commands parse their arguments differently. For example, `search` treats the ent
 while tag commands tokenize only their recognised `t/` prefix.
 </box>
 
+### Navigating cards with the keyboard
+
+CoordiMate starts in **Command mode**, with the command box ready for input. The mode indicator below the command box
+shows the current mode and its available shortcuts.
+
+Use the following keys to browse Contacts, Events, or Tags without the mouse:
+
+| Key | Result |
+|---|---|
+| <kbd>Esc</kbd> | Enter **Navigation mode** from Command mode. |
+| <kbd>J</kbd> | Select the next card in the active view. If nothing is selected, select the first card. |
+| <kbd>K</kbd> | Select the previous card in the active view. If nothing is selected, select the last card. |
+| <kbd>I</kbd> | Return to **Command mode** and focus the command box. |
+
+Navigation stops at the first or last card rather than wrapping around. On an empty list, <kbd>J</kbd> and <kbd>K</kbd>
+do nothing. The shortcuts apply to whichever of the Contacts, Events, or Tags views is active.
+
+You can chain navigation and command entry without clicking. For example, press <kbd>Esc</kbd>, <kbd>J</kbd>,
+<kbd>J</kbd>, <kbd>I</kbd>, then type a command. Any unfinished command remains in the command box while you navigate.
+
+Clicking the command box or choosing a command from the left sidebar enters Command mode. Clicking the contact,
+event, or tag list enters Navigation mode. Mode switching is disabled while CoordiMate is waiting for confirmation
+of a delete command, so your confirmation input is not intercepted.
+
 ### Reusing commands with command history
 
 With the command box focused, press <kbd>Up</kbd> to recall the most recently entered command. Keep pressing
@@ -144,7 +170,8 @@ is waiting for a delete confirmation.
 
 ### Viewing help: `help`
 
-Opens a resizable Help window containing a scrollable two-column table of every available command and its usage format.
+Opens a resizable Help window containing a keyboard-navigation summary and a scrollable two-column table of every
+available command and its usage format.
 The [User Guide website](https://ay2627s1-cs2103t-w12-3.github.io/tp/) and **Copy URL** button remain at the bottom of
 the window for access to detailed instructions.
 Select **Close** or press <kbd>Esc</kbd> to dismiss the Help window without exiting CoordiMate.
