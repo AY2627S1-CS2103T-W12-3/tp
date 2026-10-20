@@ -516,6 +516,76 @@ already sees the new events.
   * Pros: Renaming a contact would not affect events.
   * Cons: Needs a new ID field and a change to the data file format, and makes the data file harder to edit by hand.
 
+### Marking contacts as on leave
+
+A contact can be marked as on leave until a given date. The status ends by itself once that date has passed.
+
+#### Implementation
+
+[`LeaveDate`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/person/LeaveDate.java)
+holds the **last day** of a contact's leave, in `dd-MM-yyyy` format. `Person` stores it as an optional field, like
+birthday and note, and exposes:
+
+* `Person#getLeaveDate()`, which returns the saved date, even if it has passed.
+* `Person#isOnLeave(LocalDate today)`, which returns true if a date is saved and `today` is not after it.
+
+`LeaveDate` has two validity rules, in the same way that `Phone` separates saved values from newly entered ones:
+
+* `LeaveDate#isValidLeaveDate` accepts any real date, including past dates, so that leave which has ended can still
+  be loaded from the data file.
+* `LeaveDate#isValidInputLeaveDate` also requires the date not to be before today. `ParserUtil#parseLeaveDate`
+  applies this rule to dates entered with `lv/`, so new leave cannot already have ended.
+
+The `lv/` prefix is handled like the other optional contact fields:
+
+1. `AddCommandParser` sets the leave date if `lv/` has a value, and leaves it unset if `lv/` is empty or omitted.
+1. `EditCommandParser` records the new date in `EditPersonDescriptor#setLeaveDate`. An empty `lv/` records
+   `null`, which clears the leave. `EditPersonDescriptor#isLeaveDateEdited` distinguishes clearing from omitting.
+1. `EditCommand#createEditedPerson` keeps the existing leave date unless it was edited.
+
+**How leave ends.** Nothing is changed when a leave date passes. Instead, the UI asks each contact whether it is
+on leave on the current date:
+
+* `PersonCard` shows an **On leave until** badge only if `Person#isOnLeave(LocalDate.now())` is true.
+* `PersonListPanel` shows the date in the details pane in the same case, and `— (not on leave)` otherwise.
+
+The ended date stays in the contact and in the data file until the user replaces or clears it. Code that copies a
+contact, such as `CoordiMate#setTag` and `CoordiMate#removeTag`, passes the leave date on, so it is never dropped.
+
+In the data file, [`JsonAdaptedPerson`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/storage/JsonAdaptedPerson.java)
+stores the date in a `leaveUntil` field. Files saved before this feature have no such field, and their contacts
+load as not on leave.
+
+**Assertions and logging.** `ParserUtil#parseLeaveDate` asserts that the parsed leave covers today, which checks
+that the input rule was applied. `AddCommand` and `EditCommand` log at `INFO` level when a contact's leave is set or
+cleared.
+
+#### Design considerations
+
+**Aspect: How leave ends once its date has passed**
+
+* **Alternative 1 (current choice):** Keep the date, and check it against the current date whenever a contact is
+  displayed.
+  * Pros: No data needs changing when leave ends, so no save is needed at launch or at midnight. The behaviour is
+    easy to test by passing a fixed date to `Person#isOnLeave`.
+  * Cons: Ended dates remain in the data file. A window left open past midnight updates only when the contact is
+    next displayed.
+
+* **Alternative 2:** Remove ended leave dates from the data, for example at launch.
+  * Pros: The data file only contains leave that is still active.
+  * Cons: Requires saving at launch, which no other feature does, and still needs a check for leave that ends while
+    the app is open.
+
+**Aspect: How leave is entered**
+
+* **Alternative 1 (current choice):** An optional `lv/` field in `add` and `edit`.
+  * Pros: Consistent with the other optional contact fields, including clearing with an empty prefix.
+  * Cons: Users must know that leave is set through `edit`.
+
+* **Alternative 2:** A separate command, such as `leave INDEX until/DATE`.
+  * Pros: Easier to discover.
+  * Cons: Duplicates the contact lookup and validation already in `edit`, and adds a second way to change a contact.
+
 --------------------------------------------------------------------------------------------------------------------
 
 ## **Documentation, logging, testing, dev-ops**
@@ -1297,6 +1367,46 @@ testers are expected to do more *exploratory* testing.
 
    1. Test case: Mark any member's attendance, then close and relaunch the app.<br>
       Expected: The attendance is retained.
+
+### Marking a contact as on leave
+
+<box type="info" seamless>
+
+**Note:** In these tests, `FUTURE_DATE` is any date after today in `dd-MM-yyyy` format, `TODAY` is today's date,
+and `PAST_DATE` is any date before today, such as `01-01-2020`.
+</box>
+
+1. Setting and clearing leave
+
+   1. Prerequisites: The sample contacts are loaded and listed using `list`.
+
+   1. Test case: `edit 1 lv/FUTURE_DATE`<br>
+      Expected: The 1st contact's card shows **On leave until FUTURE_DATE**. Selecting the contact shows `FUTURE_DATE` under **On leave until**.
+
+   1. Test case: `edit 1 lv/TODAY`<br>
+      Expected: The contact is still shown as on leave, now until today.
+
+   1. Test case: `edit 1 lv/`<br>
+      Expected: The badge disappears and the details pane shows `— (not on leave)`.
+
+   1. Test case: `add n/Ben Ong p/91112222 e/ben@example.com r/Publicity lv/FUTURE_DATE`<br>
+      Expected: The new contact is added and shown as on leave.
+
+   1. Test case: `edit 1 lv/PAST_DATE`<br>
+      Expected: No change. The status message shows `Invalid leave end date. Use a real date in dd-MM-yyyy format that is not in the past. Example: lv/30-11-2026`
+
+   1. Other incorrect commands to try: `edit 1 lv/31-11-2030`, `edit 1 lv/next week`, `edit 1 lv/FUTURE_DATE lv/FUTURE_DATE`<br>
+      Expected: No change. The status message shows error details.
+
+1. Leave ending by itself
+
+   1. Prerequisites: Run `edit 1 lv/FUTURE_DATE`, then close the app.
+
+   1. Test case: In `data/coordimate.json`, change that contact's `leaveUntil` value to `PAST_DATE`, save, then launch the app.<br>
+      Expected: The app loads the data. The contact is not shown as on leave, and the details pane shows `— (not on leave)`. The `leaveUntil` value is still in the data file.
+
+   1. Test case: Close the app, change `leaveUntil` to `31-02-2030`, save, then launch the app.<br>
+      Expected: The file is treated as invalid, so the app starts with no contacts and no events. Restore the file afterwards.
 
 ### Managing tags
 

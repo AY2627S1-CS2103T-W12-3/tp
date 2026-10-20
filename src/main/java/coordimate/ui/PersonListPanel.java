@@ -1,5 +1,6 @@
 package coordimate.ui;
 
+import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -37,6 +38,7 @@ public class PersonListPanel extends UiPart<Region> {
     private static final String FXML = "PersonListPanel.fxml";
     private static final double SPLIT_PANE_DIVIDER_WIDTH = 2;
     private static final String NOT_SPECIFIED = "— (not specified)";
+    private static final String NOT_ON_LEAVE = "— (not on leave)";
 
     @FXML
     private SplitPane contactSplitPane;
@@ -88,6 +90,9 @@ public class PersonListPanel extends UiPart<Region> {
 
     @FXML
     private Label organisation;
+
+    @FXML
+    private Label leave;
 
     @FXML
     private Label note;
@@ -201,6 +206,8 @@ public class PersonListPanel extends UiPart<Region> {
         address.setText(person.getAddress().map(Address::getValue).orElse(NOT_SPECIFIED));
         organisation.setText(person.getOrganisation().map(Organisation::getValue).orElse(NOT_SPECIFIED));
         note.setText(person.getNote().map(Note::getValue).orElse(NOT_SPECIFIED));
+        leave.setText(person.isOnLeave(LocalDate.now())
+                ? person.getLeaveDate().orElseThrow().getValue() : NOT_ON_LEAVE);
         detailTags.getChildren().clear();
         person.getTags().stream()
                 .sorted(Comparator.comparing(tag -> tag.getTagName()))

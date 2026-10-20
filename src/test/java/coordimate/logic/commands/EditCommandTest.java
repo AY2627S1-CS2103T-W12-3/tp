@@ -19,6 +19,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -61,6 +63,39 @@ public class EditCommandTest {
                 + "Phone: 94351253\n"
                 + "Email: alice@example.com\n"
                 + "Role: NA", EditCommand.successMessage(ALICE));
+    }
+
+    @Test
+    public void execute_setAndClearLeave_success() {
+        String future = LocalDate.now().plusDays(30).format(DateTimeFormatter.ofPattern("dd-MM-uuuu"));
+        Person firstPerson = model.getFilteredPersonList().get(0);
+        Person onLeave = new PersonBuilder(firstPerson).withLeaveDate(future).build();
+        EditCommand setLeave = new EditCommand(INDEX_FIRST_PERSON,
+                new EditPersonDescriptorBuilder().withLeaveDate(future).build());
+        Model expectedModel = new ModelManager(new CoordiMate(model.getCoordiMate()), new UserPrefs());
+        expectedModel.setPerson(firstPerson, onLeave);
+
+        assertCommandSuccess(setLeave, model, EditCommand.successMessage(onLeave), expectedModel);
+
+        EditCommand clearLeave = new EditCommand(INDEX_FIRST_PERSON,
+                new EditPersonDescriptorBuilder().withoutLeaveDate().build());
+        expectedModel.setPerson(onLeave, firstPerson);
+
+        assertCommandSuccess(clearLeave, model, EditCommand.successMessage(firstPerson), expectedModel);
+    }
+
+    @Test
+    public void execute_otherFieldEdited_keepsLeave() {
+        Person firstPerson = model.getFilteredPersonList().get(0);
+        Person endedLeave = new PersonBuilder(firstPerson).withLeaveDate("01-01-2020").build();
+        model.setPerson(firstPerson, endedLeave);
+        Person edited = new PersonBuilder(endedLeave).withRole("Logistics").build();
+        EditCommand editRole = new EditCommand(INDEX_FIRST_PERSON,
+                new EditPersonDescriptorBuilder().withRole("Logistics").build());
+        Model expectedModel = new ModelManager(new CoordiMate(model.getCoordiMate()), new UserPrefs());
+        expectedModel.setPerson(endedLeave, edited);
+
+        assertCommandSuccess(editRole, model, EditCommand.successMessage(edited), expectedModel);
     }
 
     @Test

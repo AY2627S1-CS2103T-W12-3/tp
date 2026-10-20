@@ -6,6 +6,8 @@ import static coordimate.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Set;
 
@@ -16,6 +18,7 @@ import coordimate.model.event.Event;
 import coordimate.model.person.Address;
 import coordimate.model.person.Birthday;
 import coordimate.model.person.Email;
+import coordimate.model.person.LeaveDate;
 import coordimate.model.person.Name;
 import coordimate.model.person.Note;
 import coordimate.model.person.Organisation;
@@ -214,6 +217,32 @@ public class ParserUtilTest {
         assertThrows(ParseException.class, Birthday.MESSAGE_CONSTRAINTS, () -> ParserUtil.parseBirthday("31-02-2004"));
         assertThrows(ParseException.class, Birthday.MESSAGE_CONSTRAINTS, () -> ParserUtil.parseBirthday("2004-06-18"));
         assertEquals(new Birthday("18-06-2004"), ParserUtil.parseBirthday(WHITESPACE + "18-06-2004" + WHITESPACE));
+    }
+
+    @Test
+    public void parseLeaveDate_variousValues() throws Exception {
+        LocalDate today = LocalDate.of(2026, 10, 20);
+
+        assertThrows(NullPointerException.class, () -> ParserUtil.parseLeaveDate(null, today));
+        assertThrows(NullPointerException.class, () -> ParserUtil.parseLeaveDate("30-11-2026", null));
+        assertThrows(ParseException.class, LeaveDate.MESSAGE_CONSTRAINTS, () ->
+                ParserUtil.parseLeaveDate("31-11-2026", today));
+        assertThrows(ParseException.class, LeaveDate.MESSAGE_CONSTRAINTS, () ->
+                ParserUtil.parseLeaveDate("2026-11-30", today));
+        assertThrows(ParseException.class, LeaveDate.MESSAGE_CONSTRAINTS, () ->
+                ParserUtil.parseLeaveDate("19-10-2026", today));
+        assertEquals(new LeaveDate("20-10-2026"), ParserUtil.parseLeaveDate("20-10-2026", today));
+        assertEquals(new LeaveDate("30-11-2026"),
+                ParserUtil.parseLeaveDate(WHITESPACE + "30-11-2026" + WHITESPACE, today));
+    }
+
+    @Test
+    public void parseLeaveDate_withoutToday_usesCurrentDate() throws Exception {
+        String future = LocalDate.now().plusDays(30).format(DateTimeFormatter.ofPattern("dd-MM-uuuu"));
+
+        assertEquals(new LeaveDate(future), ParserUtil.parseLeaveDate(future));
+        assertThrows(ParseException.class, LeaveDate.MESSAGE_CONSTRAINTS, () ->
+                ParserUtil.parseLeaveDate("01-01-2020"));
     }
 
     @Test

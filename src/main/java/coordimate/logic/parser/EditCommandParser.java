@@ -4,6 +4,7 @@ import static coordimate.logic.parser.CliSyntax.PREFIX_ADDRESS;
 import static coordimate.logic.parser.CliSyntax.PREFIX_ADD_TAG;
 import static coordimate.logic.parser.CliSyntax.PREFIX_BIRTHDAY;
 import static coordimate.logic.parser.CliSyntax.PREFIX_EMAIL;
+import static coordimate.logic.parser.CliSyntax.PREFIX_LEAVE;
 import static coordimate.logic.parser.CliSyntax.PREFIX_NAME;
 import static coordimate.logic.parser.CliSyntax.PREFIX_NOTE;
 import static coordimate.logic.parser.CliSyntax.PREFIX_ORGANISATION;
@@ -47,8 +48,8 @@ public class EditCommandParser implements Parser<EditCommand> {
 
     private static final Set<String> ALLOWED_PREFIXES = Set.of(PREFIX_NAME.toString(), PREFIX_PHONE.toString(),
             PREFIX_EMAIL.toString(), PREFIX_ROLE.toString(), PREFIX_BIRTHDAY.toString(), PREFIX_ADDRESS.toString(),
-            PREFIX_ORGANISATION.toString(), PREFIX_NOTE.toString(), PREFIX_TAG.toString(), PREFIX_ADD_TAG.toString(),
-            PREFIX_REMOVE_TAG.toString(), PREFIX_TARGET.toString());
+            PREFIX_ORGANISATION.toString(), PREFIX_NOTE.toString(), PREFIX_LEAVE.toString(), PREFIX_TAG.toString(),
+            PREFIX_ADD_TAG.toString(), PREFIX_REMOVE_TAG.toString(), PREFIX_TARGET.toString());
 
     /**
      * Parses the given {@code String} of arguments in the context of the EditCommand
@@ -65,7 +66,7 @@ public class EditCommandParser implements Parser<EditCommand> {
                 ALLOWED_PREFIXES, MESSAGE_UNKNOWN_PARAMETER);
         ArgumentMultimap argMultimap =
                 ArgumentTokenizer.tokenize(" " + args, PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL, PREFIX_ROLE,
-                        PREFIX_BIRTHDAY, PREFIX_ADDRESS, PREFIX_ORGANISATION, PREFIX_NOTE,
+                        PREFIX_BIRTHDAY, PREFIX_ADDRESS, PREFIX_ORGANISATION, PREFIX_NOTE, PREFIX_LEAVE,
                         PREFIX_TAG, PREFIX_ADD_TAG, PREFIX_REMOVE_TAG, PREFIX_TARGET);
 
         rejectRepeatedParameters(argMultimap);
@@ -118,6 +119,10 @@ public class EditCommandParser implements Parser<EditCommand> {
             String note = argMultimap.getValue(PREFIX_NOTE).orElseThrow();
             editPersonDescriptor.setNote(note.isEmpty() ? null : ParserUtil.parseNote(note));
         }
+        if (argMultimap.getValue(PREFIX_LEAVE).isPresent()) {
+            String leaveDate = argMultimap.getValue(PREFIX_LEAVE).orElseThrow();
+            editPersonDescriptor.setLeaveDate(leaveDate.isEmpty() ? null : ParserUtil.parseLeaveDate(leaveDate));
+        }
         parseTagEdits(argMultimap, editPersonDescriptor);
 
         if (!editPersonDescriptor.isAnyFieldEdited()) {
@@ -131,7 +136,7 @@ public class EditCommandParser implements Parser<EditCommand> {
 
     private static void rejectRepeatedParameters(ArgumentMultimap arguments) throws ParseException {
         for (Prefix prefix : new Prefix[] {PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL, PREFIX_ROLE,
-            PREFIX_BIRTHDAY, PREFIX_ADDRESS, PREFIX_ORGANISATION, PREFIX_NOTE, PREFIX_TARGET}) {
+            PREFIX_BIRTHDAY, PREFIX_ADDRESS, PREFIX_ORGANISATION, PREFIX_NOTE, PREFIX_LEAVE, PREFIX_TARGET}) {
             if (arguments.getAllValues(prefix).size() > 1) {
                 throw new ParseException(String.format(MESSAGE_REPEATED_PARAMETER, prefix));
             }

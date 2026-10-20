@@ -65,12 +65,12 @@ public class MainWindow extends UiPart<Stage> {
     private static final String FXML = "MainWindow.fxml";
     private static final Map<String, String> COMMAND_HELP_TEXT = Map.ofEntries(
             Map.entry("add", "Format: add n/NAME p/PHONE e/EMAIL r/ROLE [b/BIRTHDAY] [a/ADDRESS]"
-                    + " [o/ORGANISATION] [t/TAG]... [m/NOTE]\n"
+                    + " [o/ORGANISATION] [lv/LEAVE_END_DATE] [t/TAG]... [m/NOTE]\n"
                     + "Example: add n/Aisha Tan p/+6591234567 e/aisha@example.com r/Logistics t/EXCO"),
             Map.entry("edit", "Format: edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY]"
-                    + " [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [t/TAG]... [at/TAG]... [rt/TAG]...\n"
+                    + " [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [lv/LEAVE_END_DATE] [t/TAG]... [at/TAG]... [rt/TAG]...\n"
                     + "Or: edit target/IDENTIFIER [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY]"
-                    + " [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [t/TAG]... [at/TAG]... [rt/TAG]...\n"
+                    + " [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [lv/LEAVE_END_DATE] [t/TAG]... [at/TAG]... [rt/TAG]...\n"
                     + "Example: edit 1 p/91234567 e/johndoe@example.com"),
             Map.entry("delete", "Format: delete INDEX (or n/NAME, p/PHONE, or e/EMAIL)\n"
                     + "Example: delete e/aisha@example.com"),

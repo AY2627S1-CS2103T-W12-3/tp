@@ -15,6 +15,7 @@
                 prefWrapLength="130" maxWidth="150" />
     </HBox>
     <Label fx:id="role" wrapText="true" styleClass="card-role" />
+    <Label fx:id="leave" id="leave" styleClass="leave-badge" />
     <Label fx:id="phone" wrapText="true" styleClass="cell_small_label" />
     <Label fx:id="email" wrapText="true" styleClass="cell_small_label" />
     <Label fx:id="address" wrapText="true" styleClass="cell_small_label" />

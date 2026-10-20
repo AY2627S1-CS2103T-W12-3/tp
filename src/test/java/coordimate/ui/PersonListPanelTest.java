@@ -8,6 +8,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.awt.GraphicsEnvironment;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -82,6 +84,49 @@ public class PersonListPanelTest {
             assertEquals("311, Clementi Ave 2, #02-25", getLabel(root, "address").getText());
             FlowPane tags = (FlowPane) root.lookup("#detailTags");
             assertEquals(2, tags.getChildren().size());
+        });
+    }
+
+    @Test
+    public void contactOnLeave_showsLeaveOnCardAndInDetails() throws Exception {
+        String future = LocalDate.now().plusDays(30).format(DateTimeFormatter.ofPattern("dd-MM-uuuu"));
+        runOnJavaFxThread(() -> {
+            Person contact = new PersonBuilder(ALICE).withLeaveDate(future).build();
+            Region root = new PersonListPanel(FXCollections.observableArrayList(contact)).getRoot();
+            new Scene(root);
+            root.applyCss();
+            getList(root).getSelectionModel().select(contact);
+
+            assertEquals(future, getLabel(root, "leave").getText());
+
+            Region card = new PersonCard(contact, 1).getRoot();
+            new Scene(card);
+            card.applyCss();
+            Label cardLeave = (Label) card.lookup("#leave");
+            assertTrue(cardLeave.isVisible());
+            assertTrue(cardLeave.isManaged());
+            assertEquals("On leave until " + future, cardLeave.getText());
+        });
+    }
+
+    @Test
+    public void contactWithEndedOrNoLeave_showsNotOnLeave() throws Exception {
+        runOnJavaFxThread(() -> {
+            for (Person contact : List.of(new PersonBuilder(ALICE).withLeaveDate("01-01-2020").build(), BENSON)) {
+                Region root = new PersonListPanel(FXCollections.observableArrayList(contact)).getRoot();
+                new Scene(root);
+                root.applyCss();
+                getList(root).getSelectionModel().select(contact);
+
+                assertEquals("— (not on leave)", getLabel(root, "leave").getText());
+
+                Region card = new PersonCard(contact, 1).getRoot();
+                new Scene(card);
+                card.applyCss();
+                Label cardLeave = (Label) card.lookup("#leave");
+                assertFalse(cardLeave.isVisible());
+                assertFalse(cardLeave.isManaged());
+            }
         });
     }
 

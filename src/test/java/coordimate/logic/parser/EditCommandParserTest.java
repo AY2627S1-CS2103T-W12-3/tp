@@ -29,6 +29,9 @@ import static coordimate.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static coordimate.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
 import static coordimate.testutil.TypicalIndexes.INDEX_THIRD_PERSON;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
 import org.junit.jupiter.api.Test;
 
 import coordimate.commons.core.index.Index;
@@ -39,6 +42,7 @@ import coordimate.logic.commands.EditCommand.TagOperationType;
 import coordimate.model.person.Address;
 import coordimate.model.person.Birthday;
 import coordimate.model.person.Email;
+import coordimate.model.person.LeaveDate;
 import coordimate.model.person.Name;
 import coordimate.model.person.Note;
 import coordimate.model.person.Organisation;
@@ -184,6 +188,24 @@ public class EditCommandParserTest {
         assertParseFailure(parser, "1 p/", "Phone number must not be empty. Example: p/+6591234567");
         assertParseFailure(parser, "1 e/", "Email must not be empty. Example: e/aish@example.com");
         assertParseFailure(parser, "1 r/", "Role must not be empty. Example: r/Logistics Lead");
+    }
+
+    @Test
+    public void parse_leaveDate_success() {
+        String future = LocalDate.now().plusDays(30).format(DateTimeFormatter.ofPattern("dd-MM-uuuu"));
+        EditPersonDescriptor setLeave = new EditPersonDescriptorBuilder().withLeaveDate(future).build();
+        EditPersonDescriptor clearLeave = new EditPersonDescriptorBuilder().withoutLeaveDate().build();
+
+        assertParseSuccess(parser, "1 lv/" + future, new EditCommand(INDEX_FIRST_PERSON, setLeave));
+        assertParseSuccess(parser, "1 lv/", new EditCommand(INDEX_FIRST_PERSON, clearLeave));
+        assertParseSuccess(parser, "target/alice@example.com lv/", new EditCommand("alice@example.com", clearLeave));
+    }
+
+    @Test
+    public void parse_invalidOrRepeatedLeaveDate_failure() {
+        assertParseFailure(parser, "1 lv/01-01-2020", LeaveDate.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, "1 lv/31-11-2026", LeaveDate.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, "1 lv/ lv/", String.format(EditCommandParser.MESSAGE_REPEATED_PARAMETER, "lv/"));
     }
 
     @Test

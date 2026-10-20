@@ -3,6 +3,7 @@ package coordimate.logic.parser;
 import static coordimate.logic.parser.CliSyntax.PREFIX_ADDRESS;
 import static coordimate.logic.parser.CliSyntax.PREFIX_BIRTHDAY;
 import static coordimate.logic.parser.CliSyntax.PREFIX_EMAIL;
+import static coordimate.logic.parser.CliSyntax.PREFIX_LEAVE;
 import static coordimate.logic.parser.CliSyntax.PREFIX_NAME;
 import static coordimate.logic.parser.CliSyntax.PREFIX_NOTE;
 import static coordimate.logic.parser.CliSyntax.PREFIX_ORGANISATION;
@@ -20,6 +21,7 @@ import coordimate.logic.parser.exceptions.ParseException;
 import coordimate.model.person.Address;
 import coordimate.model.person.Birthday;
 import coordimate.model.person.Email;
+import coordimate.model.person.LeaveDate;
 import coordimate.model.person.Name;
 import coordimate.model.person.Note;
 import coordimate.model.person.Organisation;
@@ -39,7 +41,7 @@ public class AddCommandParser implements Parser<AddCommand> {
 
     private static final Set<String> ALLOWED_PREFIXES = Set.of(PREFIX_NAME.toString(), PREFIX_PHONE.toString(),
             PREFIX_EMAIL.toString(), PREFIX_ROLE.toString(), PREFIX_BIRTHDAY.toString(), PREFIX_ADDRESS.toString(),
-            PREFIX_ORGANISATION.toString(), PREFIX_TAG.toString(), PREFIX_NOTE.toString());
+            PREFIX_ORGANISATION.toString(), PREFIX_LEAVE.toString(), PREFIX_TAG.toString(), PREFIX_NOTE.toString());
 
     @Override
     public AddCommand parse(String args) throws ParseException {
@@ -47,13 +49,15 @@ public class AddCommandParser implements Parser<AddCommand> {
         PrefixParser.rejectUnknownParameters(args, PrefixParser.CONTACT_PARAMETER_PATTERN,
                 ALLOWED_PREFIXES, MESSAGE_UNKNOWN_PARAMETER);
         ArgumentMultimap arguments = ArgumentTokenizer.tokenize(args, PREFIX_NAME, PREFIX_PHONE, PREFIX_EMAIL,
-                PREFIX_ROLE, PREFIX_BIRTHDAY, PREFIX_ADDRESS, PREFIX_ORGANISATION, PREFIX_TAG, PREFIX_NOTE);
+                PREFIX_ROLE, PREFIX_BIRTHDAY, PREFIX_ADDRESS, PREFIX_ORGANISATION, PREFIX_LEAVE, PREFIX_TAG,
+                PREFIX_NOTE);
         if (!hasRequiredPrefixes(arguments) || !arguments.getPreamble().isEmpty()) {
             throw ParserUtil.createInvalidFormatException(AddCommand.MESSAGE_USAGE);
         }
         rejectRepeatedRequiredParameters(arguments);
         try {
-            arguments.verifyNoDuplicatePrefixesFor(PREFIX_BIRTHDAY, PREFIX_ADDRESS, PREFIX_ORGANISATION, PREFIX_NOTE);
+            arguments.verifyNoDuplicatePrefixesFor(PREFIX_BIRTHDAY, PREFIX_ADDRESS, PREFIX_ORGANISATION, PREFIX_LEAVE,
+                    PREFIX_NOTE);
         } catch (ParseException e) {
             throw new ParseException(e.getMessage() + "\n" + AddCommand.MESSAGE_USAGE, e);
         }
@@ -66,8 +70,10 @@ public class AddCommandParser implements Parser<AddCommand> {
         Address address = parseAddress(arguments.getValue(PREFIX_ADDRESS).orElse(""));
         Organisation organisation = parseOrganisation(arguments.getValue(PREFIX_ORGANISATION).orElse(""));
         Note note = parseNote(arguments.getValue(PREFIX_NOTE).orElse(""));
+        LeaveDate leaveDate = parseLeaveDate(arguments.getValue(PREFIX_LEAVE).orElse(""));
         Set<Tag> tags = parseTags(arguments);
-        return new AddCommand(new Person(name, phone, email, role, birthday, address, organisation, note, tags));
+        return new AddCommand(new Person(name, phone, email, role, birthday, address, organisation, note, leaveDate,
+                tags));
     }
 
     private static boolean hasRequiredPrefixes(ArgumentMultimap arguments) {
@@ -97,6 +103,10 @@ public class AddCommandParser implements Parser<AddCommand> {
 
     private static Note parseNote(String value) throws ParseException {
         return value.isEmpty() ? null : ParserUtil.parseNote(value);
+    }
+
+    private static LeaveDate parseLeaveDate(String value) throws ParseException {
+        return value.isEmpty() ? null : ParserUtil.parseLeaveDate(value);
     }
 
     private static Set<Tag> parseTags(ArgumentMultimap arguments) throws ParseException {

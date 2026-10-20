@@ -238,6 +238,16 @@
     -fx-text-fill: #f0f6fc;
 }
 .card-role { -fx-font-size: 12px; -fx-text-fill: #cbd5e1; }
+.leave-badge {
+    -fx-padding: 2 7;
+    -fx-background-color: #451a03;
+    -fx-background-radius: 4;
+    -fx-border-color: #f59e0b;
+    -fx-border-radius: 4;
+    -fx-text-fill: #fbbf24;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+}
 .event-card { -fx-spacing: 8; }
 .event-overview { -fx-alignment: center-left; }
 .event-member-total { -fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #cbd5e1; }

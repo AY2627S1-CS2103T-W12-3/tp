@@ -58,6 +58,10 @@ public class EditPersonDescriptorTest {
         editedAmy = new EditPersonDescriptorBuilder(DESC_AMY).withNote("Handles venue bookings").build();
         assertFalse(DESC_AMY.equals(editedAmy));
         assertFalse(new EditPersonDescriptor().equals(new EditPersonDescriptorBuilder().withoutNote().build()));
+        editedAmy = new EditPersonDescriptorBuilder(DESC_AMY).withLeaveDate("30-11-2026").build();
+        assertFalse(DESC_AMY.equals(editedAmy));
+        assertFalse(new EditPersonDescriptor().equals(new EditPersonDescriptorBuilder().withoutLeaveDate().build()));
+        assertTrue(new EditPersonDescriptorBuilder().withoutLeaveDate().build().isAnyFieldEdited());
 
         // different address -> returns false
         editedAmy = new EditPersonDescriptorBuilder(DESC_AMY).withAddress(VALID_ADDRESS_BOB).build();
@@ -83,7 +87,9 @@ public class EditPersonDescriptorTest {
                 + editPersonDescriptor.isOrganisationEdited() + ", organisation="
                 + editPersonDescriptor.getOrganisation().orElse(null) + ", noteEdited="
                 + editPersonDescriptor.isNoteEdited() + ", note="
-                + editPersonDescriptor.getNote().orElse(null) + ", tags="
+                + editPersonDescriptor.getNote().orElse(null) + ", leaveDateEdited="
+                + editPersonDescriptor.isLeaveDateEdited() + ", leaveDate="
+                + editPersonDescriptor.getLeaveDate().orElse(null) + ", tags="
                 + editPersonDescriptor.getTags().orElse(null) + ", tagOperations=[]}";
         assertEquals(expected, editPersonDescriptor.toString());
     }

@@ -107,6 +107,7 @@ A command that breaks a constraint is rejected and makes no changes.
 | `EMAIL` | `e/` | `local-part@domain`. The local part uses letters, digits, and `_`, `%`, `+`, `-`, `.`; it cannot start or end with a period or contain two periods in a row. The domain is made of labels separated by periods; each label uses letters, digits, and hyphens and cannot start or end with a hyphen. The last label has at least 2 letters. Unique among contacts, ignoring case. |
 | `ROLE` | `r/` | 1 to 50 characters. Letters, digits, spaces, hyphens, and `/` only, with at least one letter or digit. |
 | `BIRTHDAY` | `b/` | A real date in `dd-MM-yyyy` format that is not in the future, e.g. `18-06-2004`. |
+| `LEAVE_END_DATE` | `lv/` | A real date in `dd-MM-yyyy` format that is not in the past, e.g. `30-11-2026`. Today's date is allowed. |
 | `ADDRESS` | `a/` | 1 to 200 characters. Any printable characters. |
 | `ORGANISATION` | `o/` | 1 to 80 characters. Letters, digits, spaces, hyphens, and `&` only, with at least one letter or digit. |
 | `NOTE` | `m/` | 1 to 500 characters. Any printable characters. |
@@ -179,7 +180,7 @@ For any duplicate, CoordiMate reports `A contact with this name, phone number, o
 and makes no changes.
 If the local contact data cannot be loaded or saved, CoordiMate reports an error and leaves the contact list unchanged.
 
-Format: `add n/NAME p/PHONE e/EMAIL r/ROLE [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [t/TAG]... [m/NOTE]`
+Format: `add n/NAME p/PHONE e/EMAIL r/ROLE [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [lv/LEAVE_END_DATE] [t/TAG]... [m/NOTE]`
 
 Name, phone, email, and role are required. Each field accepts the following values; surrounding spaces are ignored:
 
@@ -190,6 +191,7 @@ Name, phone, email, and role are required. Each field accepts the following valu
 | `EMAIL` | `local-part@domain`, at most 254 characters, with a local part of at most 64 characters. |
 | `ROLE` | 1 to 50 characters: letters, digits, spaces, hyphens, and slashes (`/`), with at least one letter or digit. |
 | `BIRTHDAY` | A real date in `dd-MM-yyyy` format that is not in the future. |
+| `LEAVE_END_DATE` | A real date in `dd-MM-yyyy` format that is not in the past. |
 | `ADDRESS` | 1 to 200 printable characters. |
 | `ORGANISATION` | 1 to 80 characters: letters, digits, spaces, and `-` `&` `.` `,` `'` `(` `)` `/`, with at least one letter or digit, e.g. `St. John's Ambulance`. |
 | `NOTE` | 1 to 500 printable characters. |
@@ -198,7 +200,8 @@ Name, phone, email, and role are required. Each field accepts the following valu
 "Printable" excludes line breaks and other control characters. A value that breaks these rules is rejected with a
 message stating the field's constraints, such as
 `Invalid organisation. Use 1 to 80 characters: letters, digits, spaces, and - & . , ' ( ) /, with at least one letter or digit. Example: o/NUS Student Affairs`.
-Address, organisation, and note are optional. An empty `b/`, `a/`, `o/`, or `m/` leaves that field unset,
+Birthday, address, organisation, leave end date, and note are optional. An empty `b/`, `a/`, `o/`, `lv/`, or
+`m/` leaves that field unset,
 as does omitting it. Non-tag fields may appear only once; `t/TAG` may repeat. An empty `t/` clears the
 tags collected so far. A valid new tag is saved as a custom tag. Successful feedback is
 `Contact saved successfully: NAME`.
@@ -213,6 +216,8 @@ Select the saved contact in the list to view all its details. Unset optional val
 Examples:
 * `add n/Aisha Tan p/+6591234567 e/aisha@example.com r/Logistics t/EXCO m/Handles venue bookings`
 * `add n/Mr Lim p/90801110 e/lim@example.com o/NUS Student Affairs r/University Staff t/UniversityStaff`
+* `add n/Ben Ong p/91112222 e/ben@example.com r/Publicity lv/30-11-2026` adds a contact who is on leave until
+  30 November 2026. See [Marking a contact as on leave](#marking-a-contact-as-on-leave).
 
 | Condition | Error message |
 |---|---|
@@ -228,6 +233,7 @@ Examples:
 | The email violates its constraints. | `Invalid email. Use local-part@domain, at most 254 characters, with a local part of at most 64 characters. Example: e/aish@example.com` |
 | The role violates its constraints. | `Invalid role. Use 1 to 50 characters: letters, digits, spaces, hyphens, and slashes, with at least one letter or digit. Example: r/Logistics Lead` |
 | A non-empty birthday is invalid, incorrectly formatted, or in the future. | `Invalid birthday. Use a real date in dd-MM-yyyy format that is not in the future. Example: b/18-06-2004` |
+| A non-empty leave end date is invalid, incorrectly formatted, or in the past. | `Invalid leave end date. Use a real date in dd-MM-yyyy format that is not in the past. Example: lv/30-11-2026` |
 | A non-empty address exceeds 200 characters or contains a control character. | `Invalid address. Use 1 to 200 printable characters. Example: a/21 Kent Ridge Road, #03-12` |
 | A non-empty organisation violates its constraints. | `Invalid organisation. Use 1 to 80 characters: letters, digits, spaces, and - & . , ' ( ) /, with at least one letter or digit. Example: o/NUS Student Affairs` |
 | A non-empty note exceeds 500 characters or contains a control character. | `Invalid note. Use 1 to 500 printable characters. Example: m/Handles venue bookings` |
@@ -693,16 +699,16 @@ Unlike `list`, `listtags` does not ignore extra text: `listtags 123` is rejected
 
 Edits an existing contact in CoordiMate.
 
-Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [t/TAG]... [at/TAG]... [rt/TAG]...`
+Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [lv/LEAVE_END_DATE] [t/TAG]... [at/TAG]... [rt/TAG]...`
 
-Or: `edit target/IDENTIFIER [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [t/TAG]... [at/TAG]... [rt/TAG]...`
+Or: `edit target/IDENTIFIER [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [lv/LEAVE_END_DATE] [t/TAG]... [at/TAG]... [rt/TAG]...`
 
 * Edits the contact at the specified `INDEX`. The index refers to the index number shown in the displayed contact list. The index **must be a positive integer starting at 1**.
 * Alternatively, `target/IDENTIFIER` finds an exact saved name, phone number, or email address across all contacts, including those hidden by the current search or filter. Names and emails ignore letter case; phone numbers ignore spaces, hyphens, and brackets. Supply either an index or `target/`, not both.
 * If several contacts match an identifier, the command lists each match's name, phone, and email. An index appears only for a match in the current displayed list. Retry with a unique phone or email, or a displayed index.
 * If no contact matches `target/`, or the index is outside the displayed list, the command reports an error.
 * Provide at least one field or tag operation. Omitted fields retain their existing values.
-* Name, phone, email, and role cannot be cleared. Use `b/`, `a/`, `o/`, or `m/` with no value to clear that optional field.
+* Name, phone, email, and role cannot be cleared. Use `b/`, `a/`, `o/`, `lv/`, or `m/` with no value to clear that optional field.
 * Birthday uses `dd-MM-yyyy` and cannot be in the future. Edited values follow the same validation rules as `add`.
 * Older saved digit-only phone numbers with at least 3 digits remain usable. An edit without `p/` keeps the existing
   number; a supplied `p/` value must follow the current 7–15-digit rule.
@@ -735,9 +741,10 @@ Examples:
 *  `edit 3 b/ a/ o/ m/` Clears the optional birthday, address, organisation, and note.
 *  `edit target/alice@example.com r/Vice-President` Updates a contact even if the current list is filtered.
 *  `edit 3 at/Sponsor rt/Logistics` Adds Sponsor, then removes Logistics without changing other tags.
+*  `edit 2 lv/30-11-2026` Marks the 2nd contact as on leave until 30 November 2026, and `edit 2 lv/` ends their leave.
 
 Edited contact fields use the same validation error messages as [`add`](#adding-a-contact-add).
-Empty optional fields (`b/`, `a/`, `o/`, `m/`, and `t/`) clear those values and are accepted.
+Empty optional fields (`b/`, `a/`, `o/`, `lv/`, `m/`, and `t/`) clear those values and are accepted.
 Additional errors are listed below.
 
 | Condition | Error message |
@@ -761,6 +768,34 @@ Additional errors are listed below.
 | An `rt/` tag exceeds 30 characters. | `Tag name must not exceed 30 characters. Example: rt/Publicity` |
 | The updated name, phone number, or email conflicts with another saved contact. | `This update conflicts with another saved contact. No changes were made.` |
 | Renaming the contact would duplicate a member name in an event. | `Cannot rename this contact because an event already has a member with that name. No changes were made.` |
+
+### Marking a contact as on leave
+
+Records that a contact is temporarily unavailable until a given date, so you do not need to remember to clear it
+afterwards. Leave is an optional contact field, set with `lv/` in [`add`](#adding-a-contact-add) or
+[`edit`](#editing-a-contact-edit).
+
+Format: `edit INDEX lv/LEAVE_END_DATE` or `edit target/IDENTIFIER lv/LEAVE_END_DATE`
+
+* `LEAVE_END_DATE` is the **last day** of leave, in `dd-MM-yyyy` format. It must be today or a later date.
+* The contact is on leave up to and including that date. While on leave, their card in the contact list shows
+  **On leave until LEAVE_END_DATE**, and the details pane shows the date under **On leave until**.
+* From the day after, the contact is no longer shown as on leave. You do not need to run any command; the status
+  updates the next time the contact is displayed, for example after relaunching CoordiMate.
+* The ended leave date stays in the data file but has no effect. The details pane shows `— (not on leave)`.
+* Setting a new date replaces the previous one. `edit INDEX lv/` with no date ends the leave immediately.
+* Leave does not affect events: a contact on leave can still be assigned to events and have attendance marked.
+
+Examples:
+
+* `edit 2 lv/30-11-2026` marks the 2nd contact as on leave until 30 November 2026.
+* `edit target/aisha@example.com lv/15-12-2026` changes Aisha's leave to end on 15 December 2026.
+* `edit 2 lv/` ends the 2nd contact's leave.
+
+| Condition | Error message |
+|---|---|
+| The date is invalid, incorrectly formatted, or in the past. | `Invalid leave end date. Use a real date in dd-MM-yyyy format that is not in the past. Example: lv/30-11-2026` |
+| `lv/` is repeated. | `Parameter lv/ may only be specified once.` |
 
 ### Searching contacts: `search`
 
@@ -966,8 +1001,8 @@ Furthermore, certain edits can cause CoordiMate to behave in unexpected ways (e.
 
 Action | Format, Examples
 -------|------------------
-**Add contact** | `add n/NAME p/PHONE e/EMAIL r/ROLE [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [t/TAG]... [m/NOTE]`<br> e.g., `add n/James Ho p/22224444 e/jamesho@example.com r/Member t/EXCO`
-**Edit contact** | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [t/TAG]... [at/TAG]... [rt/TAG]...`<br> or `edit target/IDENTIFIER [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [t/TAG]... [at/TAG]... [rt/TAG]...`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
+**Add contact** | `add n/NAME p/PHONE e/EMAIL r/ROLE [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [lv/LEAVE_END_DATE] [t/TAG]... [m/NOTE]`<br> e.g., `add n/James Ho p/22224444 e/jamesho@example.com r/Member t/EXCO`
+**Edit contact** | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [lv/LEAVE_END_DATE] [t/TAG]... [at/TAG]... [rt/TAG]...`<br> or `edit target/IDENTIFIER [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [lv/LEAVE_END_DATE] [t/TAG]... [at/TAG]... [rt/TAG]...`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
 **Delete contact** | `delete INDEX` or `delete n/NAME`, `delete p/PHONE`, `delete e/EMAIL`; confirm with `y`<br> e.g., `delete 3`
 **List contacts** | `list`
 **Search** | `search KEYWORD`<br> e.g., `search James`, `search "Jurong West"`

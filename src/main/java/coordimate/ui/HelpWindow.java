@@ -45,7 +45,8 @@ public class HelpWindow extends UiPart<Stage> {
 
     static final List<CommandUsage> COMMAND_USAGES = List.of(
             commandUsage(AddCommand.COMMAND_WORD,
-                    "n/NAME p/PHONE e/EMAIL r/ROLE [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [t/TAG]... [m/NOTE]"),
+                    "n/NAME p/PHONE e/EMAIL r/ROLE [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [lv/LEAVE_END_DATE] "
+                            + "[t/TAG]... [m/NOTE]"),
             commandUsage(AddEventCommand.COMMAND_WORD, "evn/EVENT_NAME st/START_TIME et/END_TIME"),
             commandUsage(CreateTagCommand.COMMAND_WORD, "t/TAG"),
             commandUsage(AssignCommand.COMMAND_WORD,
@@ -57,7 +58,8 @@ public class HelpWindow extends UiPart<Stage> {
             commandUsage(DeleteTagCommand.COMMAND_WORD, "t/TAG"),
             commandUsage(EditCommand.COMMAND_WORD,
                     "(INDEX | target/IDENTIFIER) [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] "
-                            + "[a/ADDRESS] [o/ORGANISATION] [m/NOTE] [t/TAG]... [at/TAG]... [rt/TAG]..."),
+                            + "[a/ADDRESS] [o/ORGANISATION] [m/NOTE] [lv/LEAVE_END_DATE] [t/TAG]... [at/TAG]... "
+                            + "[rt/TAG]..."),
             commandUsage(EditEventCommand.COMMAND_WORD,
                     "evn/EVENT_NAME [nevn/NEW_EVENT_NAME] [st/NEW_START_TIME] [et/NEW_END_TIME]"),
             commandUsage(EditTagCommand.COMMAND_WORD, "OLD_TAG t/NEW_TAG"),
