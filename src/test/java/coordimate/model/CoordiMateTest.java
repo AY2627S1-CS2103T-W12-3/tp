@@ -90,12 +90,42 @@ public class CoordiMateTest {
     }
 
     @Test
+    public void personOperations_nullArguments_throwNullPointerException() {
+        assertThrows(NullPointerException.class, () -> coordiMate.addPerson(null));
+        assertThrows(NullPointerException.class, () -> coordiMate.setPersons(null));
+        assertThrows(NullPointerException.class, () -> coordiMate.setPerson(null, ALICE));
+        assertThrows(NullPointerException.class, () -> coordiMate.setPerson(ALICE, null));
+    }
+
+    @Test
     public void addPerson_sameNameWithDifferentPhoneAndEmail_throwsDuplicatePersonException() {
         coordiMate.addPerson(ALICE);
         Person differentAlice = new PersonBuilder(BENSON).withName(ALICE.getName().toString()).build();
         assertThrows(DuplicatePersonException.class, () -> coordiMate.addPerson(differentAlice));
 
         assertEquals(List.of(ALICE), coordiMate.getPersonList());
+    }
+
+    @Test
+    public void addPerson_withTags_registersMissingTagsInDeterministicOrder() {
+        Person taggedAlice = new PersonBuilder(ALICE).withTags("zeta", "exco", "Alpha").build();
+
+        coordiMate.addPerson(taggedAlice);
+
+        assertEquals(List.of(new Tag("EXCO"), new Tag("Sponsor"), new Tag("UniversityStaff"),
+                new Tag("Logistics"), new Tag("Alpha"), new Tag("zeta")), coordiMate.getTagList());
+    }
+
+    @Test
+    public void setPersons_withTags_registersMissingTagsAndPreservesUnusedTags() {
+        Tag unusedTag = new Tag("Unused");
+        coordiMate.addTag(unusedTag);
+        Person taggedAlice = new PersonBuilder(ALICE).withTags("Publicity").build();
+
+        coordiMate.setPersons(List.of(taggedAlice));
+
+        assertEquals(List.of(new Tag("EXCO"), new Tag("Sponsor"), new Tag("UniversityStaff"),
+                new Tag("Logistics"), unusedTag, new Tag("Publicity")), coordiMate.getTagList());
     }
 
     @Test
@@ -121,6 +151,17 @@ public class CoordiMateTest {
         List<Event> before = List.copyOf(coordiMate.getEventList());
         coordiMate.setPerson(ALICE, new PersonBuilder(ALICE).withAddress(VALID_ADDRESS_BOB).build());
         assertEquals(before, coordiMate.getEventList());
+    }
+
+    @Test
+    public void setPerson_withNewTag_registersNewTagAndPreservesOldTag() {
+        coordiMate.addPerson(ALICE);
+        Person editedAlice = new PersonBuilder(ALICE).withTags("Publicity").build();
+
+        coordiMate.setPerson(ALICE, editedAlice);
+
+        assertTrue(coordiMate.hasTag(new Tag("friends")));
+        assertTrue(coordiMate.hasTag(new Tag("Publicity")));
     }
 
     @Test
@@ -207,6 +248,29 @@ public class CoordiMateTest {
         coordiMate.setTags(List.of(customTag));
 
         assertEquals(List.of(customTag), coordiMate.getTagList());
+    }
+
+    @Test
+    public void setTags_omitsTagsUsedByContacts_registersMissingContactTags() {
+        Person taggedAlice = new PersonBuilder(ALICE).withTags("friends").build();
+        coordiMate.addPerson(taggedAlice);
+        Tag unusedTag = new Tag("Unused");
+
+        coordiMate.setTags(List.of(unusedTag));
+
+        assertEquals(List.of(unusedTag, new Tag("friends")), coordiMate.getTagList());
+    }
+
+    @Test
+    public void resetData_withExplicitAndContactTags_preservesExplicitTagsAndCapitalization() {
+        Person taggedAlice = new PersonBuilder(ALICE).withTags("media", "friends").build();
+        CoordiMateStub newData = new CoordiMateStub(List.of(taggedAlice),
+                List.of(new Tag("Media"), new Tag("Unused")));
+
+        coordiMate.resetData(newData);
+
+        assertEquals(List.of(new Tag("Media"), new Tag("Unused"), new Tag("friends")),
+                coordiMate.getTagList());
     }
 
     @Test
@@ -355,9 +419,15 @@ public class CoordiMateTest {
      */
     private static class CoordiMateStub implements ReadOnlyCoordiMate {
         private final ObservableList<Person> persons = FXCollections.observableArrayList();
+        private final ObservableList<Tag> tags = FXCollections.observableArrayList();
 
         CoordiMateStub(Collection<Person> persons) {
+            this(persons, List.of());
+        }
+
+        CoordiMateStub(Collection<Person> persons, Collection<Tag> tags) {
             this.persons.setAll(persons);
+            this.tags.setAll(tags);
         }
 
         @Override
@@ -367,7 +437,7 @@ public class CoordiMateTest {
 
         @Override
         public ObservableList<Tag> getTagList() {
-            return FXCollections.emptyObservableList();
+            return tags;
         }
 
         @Override

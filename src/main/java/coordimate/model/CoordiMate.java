@@ -3,6 +3,7 @@ package coordimate.model;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,7 +62,9 @@ public class CoordiMate implements ReadOnlyCoordiMate {
      * {@code persons} must not contain duplicate persons.
      */
     public void setPersons(List<Person> persons) {
+        requireNonNull(persons);
         this.persons.setPersons(persons);
+        registerTagsFromPersons(persons);
     }
 
     /**
@@ -70,6 +73,7 @@ public class CoordiMate implements ReadOnlyCoordiMate {
     public void setTags(List<Tag> tags) {
         requireNonNull(tags);
         this.tags.setTags(tags);
+        registerTagsFromPersons(persons.asUnmodifiableObservableList());
     }
 
     /**
@@ -232,7 +236,9 @@ public class CoordiMate implements ReadOnlyCoordiMate {
      * The person must not already exist in the CoordiMate.
      */
     public void addPerson(Person p) {
+        requireNonNull(p);
         persons.add(p);
+        registerTagsFromPersons(List.of(p));
     }
 
     /**
@@ -242,6 +248,7 @@ public class CoordiMate implements ReadOnlyCoordiMate {
      * Events that list {@code target} as a member are updated to the edited name.
      */
     public void setPerson(Person target, Person editedPerson) {
+        requireNonNull(target);
         requireNonNull(editedPerson);
 
         List<Event> updatedEvents = null;
@@ -249,6 +256,7 @@ public class CoordiMate implements ReadOnlyCoordiMate {
             updatedEvents = getEventsWithReplacedMember(target.getName(), editedPerson.getName());
         }
         persons.setPerson(target, editedPerson);
+        registerTagsFromPersons(List.of(editedPerson));
         if (updatedEvents != null) {
             events.setAll(updatedEvents);
         }
@@ -322,6 +330,22 @@ public class CoordiMate implements ReadOnlyCoordiMate {
         return new Person(person.getName(), person.getPhone(), person.getEmail(), person.getRole(),
                 person.getBirthday().orElse(null), person.getAddress().orElse(null),
                 person.getOrganisation().orElse(null), person.getNote().orElse(null), remainingTags);
+    }
+
+    /**
+     * Registers tags used by {@code personsToRegister} that are not already in the saved tag list.
+     * Existing tag order and capitalization are preserved; missing tags are appended alphabetically.
+     */
+    private void registerTagsFromPersons(List<Person> personsToRegister) {
+        personsToRegister.stream()
+                .flatMap(person -> person.getTags().stream())
+                .sorted(Comparator.comparing(Tag::getTagName, String.CASE_INSENSITIVE_ORDER)
+                        .thenComparing(Tag::getTagName))
+                .forEach(tag -> {
+                    if (!hasTag(tag)) {
+                        tags.add(tag);
+                    }
+                });
     }
 
     //// util methods
