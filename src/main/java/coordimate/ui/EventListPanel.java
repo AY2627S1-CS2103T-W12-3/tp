@@ -235,7 +235,17 @@ public class EventListPanel extends UiPart<Region> {
         subtitle.getStyleClass().add("event-member-metadata");
 
         VBox memberDetails = new VBox(4, identityLine, subtitle);
+        if (person != null) {
+            person.getNote().ifPresent(note -> {
+                Label noteLabel = new Label("Note: " + note.getValue());
+                noteLabel.setWrapText(true);
+                noteLabel.setMinWidth(0);
+                noteLabel.getStyleClass().addAll("event-member-metadata", "event-member-note");
+                memberDetails.getChildren().add(noteLabel);
+            });
+        }
         memberDetails.getStyleClass().add("event-member-details");
+        memberDetails.setMinWidth(0);
         HBox.setHgrow(memberDetails, Priority.ALWAYS);
 
         HBox row = new HBox(12, index, avatar, memberDetails, createStatusBadge(status));
@@ -305,6 +315,7 @@ public class EventListPanel extends UiPart<Region> {
         }
         Label badge = new Label(text);
         badge.getStyleClass().addAll("attendance-badge", styleClass);
+        badge.setMinWidth(Region.USE_PREF_SIZE);
         return badge;
     }
 
