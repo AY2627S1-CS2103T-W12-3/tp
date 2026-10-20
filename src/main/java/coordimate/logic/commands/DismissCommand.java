@@ -23,6 +23,8 @@ public class DismissCommand extends Command {
     public static final String MESSAGE_SUCCESS = "Reminder dismissed: %s.";
     public static final String MESSAGE_INVALID_INDEX =
             "No reminder exists at index %d. Use an index from the Upcoming events panel.";
+    public static final String MESSAGE_REMINDER_ENDED = "Reminder %d is no longer upcoming, so it was not "
+            + "dismissed. Check the updated Upcoming events panel.";
 
     private final Logger logger = LogsCenter.getLogger(DismissCommand.class);
     private final Index targetIndex;
@@ -37,11 +39,15 @@ public class DismissCommand extends Command {
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
-        List<Event> reminders = reminderService.getReminders();
-        if (targetIndex.getZeroBased() >= reminders.size()) {
+        // Resolve against the panel as shown; refreshing first could shift indexes to another reminder.
+        List<Event> shownReminders = reminderService.getShownReminders();
+        if (targetIndex.getZeroBased() >= shownReminders.size()) {
             throw new CommandException(String.format(MESSAGE_INVALID_INDEX, targetIndex.getOneBased()));
         }
-        Event reminder = reminders.get(targetIndex.getZeroBased());
+        Event reminder = shownReminders.get(targetIndex.getZeroBased());
+        if (!reminderService.getReminders().contains(reminder)) {
+            throw new CommandException(String.format(MESSAGE_REMINDER_ENDED, targetIndex.getOneBased()));
+        }
         try {
             reminderService.dismissReminder(reminder);
         } catch (ReminderDismissalException e) {

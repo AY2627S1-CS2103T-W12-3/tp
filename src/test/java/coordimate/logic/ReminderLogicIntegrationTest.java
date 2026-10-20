@@ -100,11 +100,46 @@ public class ReminderLogicIntegrationTest {
         assertEquals(0, storage.writes);
 
         model.deleteEvent(concert);
+        logic.refreshReminders();
         message = Messages.withUsage(String.format(DismissCommand.MESSAGE_INVALID_INDEX, 1),
                 DismissCommand.MESSAGE_USAGE);
         assertEquals(message, assertThrows(CommandException.class, () -> logic.execute("dismiss 1")).getMessage());
         assertEquals(0, storage.reads);
         assertEquals(0, storage.writes);
+    }
+
+    @Test
+    public void executeDismiss_shownReminderStartedBeforeRefresh_rejectedWithoutDismissingAnother()
+            throws Exception {
+        Event earlier = event("Earlier", "19-10-2026 18:00");
+        model.addEvent(earlier);
+        ObservableList<Event> view = logic.getReminders();
+        assertEquals(List.of(earlier, concert), view);
+
+        clock.advance(Duration.ofHours(3).plusSeconds(20));
+        String message = Messages.withUsage(String.format(DismissCommand.MESSAGE_REMINDER_ENDED, 1),
+                DismissCommand.MESSAGE_USAGE);
+        assertEquals(message, assertThrows(CommandException.class, () -> logic.execute("dismiss 1")).getMessage());
+
+        assertEquals(List.of(concert), view);
+        assertEquals(0, storage.reads);
+        assertEquals(0, storage.writes);
+        assertFalse(savedEvent().isReminderDismissed());
+    }
+
+    @Test
+    public void executeDismiss_reminderAddedBeforeRefresh_dismissesShownReminder() throws Exception {
+        Event dateOnly = event("Tomorrow", "21-10-2026");
+        model.addEvent(dateOnly);
+        clock.advance(Duration.ofHours(8).plusMinutes(59));
+        ObservableList<Event> view = logic.getReminders();
+        assertEquals(List.of(concert), view);
+
+        clock.advance(Duration.ofMinutes(1));
+        assertEquals("Reminder dismissed: Concert.", logic.execute("dismiss 1").getFeedbackToUser());
+
+        assertEquals(List.of(dateOnly), view);
+        assertTrue(savedEvent().isReminderDismissed());
     }
 
     @Test

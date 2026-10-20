@@ -476,6 +476,7 @@ restarting. Changing the event's start resets its dismissal as described in
 | The index is missing. | `Invalid command format.` |
 | The index is zero, negative, non-integer, greater than 2147483647, or followed by extra arguments. | `Index must be a positive integer. Example: 1` |
 | No reminder has that index, including when the panel is empty. | `No reminder exists at index {INDEX}. Use an index from the Upcoming events panel.` |
+| The reminder at that index is no longer upcoming (for example, its event has started) because the panel had not yet updated. | `Reminder {INDEX} is no longer upcoming, so it was not dismissed. Check the updated Upcoming events panel.` |
 
 Invalid input dismisses no reminder. If loading or saving the data file fails, the reminder is hidden for
 the current session and feedback shows `Reminder dismissal could not be saved and may reappear after restarting.`
