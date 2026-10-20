@@ -316,6 +316,8 @@ public class MainWindow extends UiPart<Stage> {
         resultDisplayPlaceholder.getChildren().add(resultDisplay.getRoot());
 
         reminderPanel = new ReminderPanel(logic.getReminders(), this::dismissReminder);
+        reminderPanelPlaceholder.visibleProperty().bind(reminderPanel.getRoot().visibleProperty());
+        reminderPanelPlaceholder.managedProperty().bind(reminderPanel.getRoot().managedProperty());
         reminderPanelPlaceholder.getChildren().add(reminderPanel.getRoot());
         reminderTimer.getKeyFrames().setAll(new KeyFrame(Duration.minutes(1), event -> logic.refreshReminders()));
         reminderTimer.setCycleCount(Animation.INDEFINITE);
@@ -672,6 +674,10 @@ public class MainWindow extends UiPart<Stage> {
         } catch (ReminderDismissalException e) {
             logger.log(Level.WARNING, e.getMessage(), e);
             resultDisplay.setWarningFeedback(e.getMessage());
+        } finally {
+            if (logic.getReminders().isEmpty()) {
+                commandBox.requestFocus();
+            }
         }
     }
 
