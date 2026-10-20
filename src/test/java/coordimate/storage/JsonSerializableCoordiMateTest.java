@@ -182,6 +182,42 @@ public class JsonSerializableCoordiMateTest {
     }
 
     @Test
+    public void toModelType_missingTagList_registersContactTagsAfterDefaultTags() throws Exception {
+        Person contact = new PersonBuilder().withTags("Publicity", "friends").build();
+        JsonSerializableCoordiMate data = new JsonSerializableCoordiMate(
+                List.of(new JsonAdaptedPerson(contact)), List.of());
+
+        CoordiMate restored = data.toModelType();
+
+        assertEquals(List.of(new Tag("EXCO"), new Tag("Sponsor"), new Tag("UniversityStaff"),
+                new Tag("Logistics"), new Tag("friends"), new Tag("Publicity")), restored.getTagList());
+    }
+
+    @Test
+    public void toModelType_incompleteTagList_preservesSavedTagsAndRegistersContactTags() throws Exception {
+        Person contact = new PersonBuilder().withTags("friends", "Publicity").build();
+        JsonSerializableCoordiMate data = new JsonSerializableCoordiMate(
+                List.of(new JsonAdaptedPerson(contact)), List.of(),
+                List.of(new JsonAdaptedTag("FRIENDS"), new JsonAdaptedTag("Unused")));
+
+        CoordiMate restored = data.toModelType();
+
+        assertEquals(List.of(new Tag("FRIENDS"), new Tag("Unused"), new Tag("Publicity")), restored.getTagList());
+        assertEquals(List.of(contact), restored.getPersonList());
+    }
+
+    @Test
+    public void toModelType_emptyTagList_registersOnlyContactTags() throws Exception {
+        Person contact = new PersonBuilder().withTags("friends").build();
+        JsonSerializableCoordiMate data = new JsonSerializableCoordiMate(
+                List.of(new JsonAdaptedPerson(contact)), List.of(), List.of());
+
+        CoordiMate restored = data.toModelType();
+
+        assertEquals(List.of(new Tag("friends")), restored.getTagList());
+    }
+
+    @Test
     public void toModelType_deletedTags_preservedDuringRoundTrip() throws Exception {
         CoordiMate source = new CoordiMate();
         source.getTagList().stream().toList().forEach(source::removeTag);

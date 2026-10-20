@@ -80,16 +80,6 @@ class JsonSerializableCoordiMate {
      */
     public CoordiMate toModelType() throws IllegalValueException {
         CoordiMate coordiMate = new CoordiMate();
-        for (JsonAdaptedPerson jsonAdaptedPerson : persons) {
-            if (jsonAdaptedPerson == null) {
-                throw new IllegalValueException("Persons list must not contain null entries.");
-            }
-            Person person = jsonAdaptedPerson.toModelType();
-            if (coordiMate.hasPerson(person)) {
-                throw new IllegalValueException(MESSAGE_DUPLICATE_PERSON);
-            }
-            coordiMate.addPerson(person);
-        }
         List<Tag> modelTags = new ArrayList<>();
         for (JsonAdaptedTag jsonAdaptedTag : tags) {
             if (jsonAdaptedTag == null) {
@@ -103,6 +93,16 @@ class JsonSerializableCoordiMate {
             } catch (DuplicateTagException duplicateTagException) {
                 throw new IllegalValueException(MESSAGE_DUPLICATE_TAG);
             }
+        }
+        for (JsonAdaptedPerson jsonAdaptedPerson : persons) {
+            if (jsonAdaptedPerson == null) {
+                throw new IllegalValueException("Persons list must not contain null entries.");
+            }
+            Person person = jsonAdaptedPerson.toModelType();
+            if (coordiMate.hasPerson(person)) {
+                throw new IllegalValueException(MESSAGE_DUPLICATE_PERSON);
+            }
+            coordiMate.addPerson(person);
         }
         Set<Name> contactNames = coordiMate.getPersonList().stream().map(Person::getName).collect(Collectors.toSet());
         for (JsonAdaptedEvent jsonAdaptedEvent : events) {

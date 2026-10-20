@@ -7,8 +7,10 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import coordimate.model.ReadOnlyCoordiMate;
 import coordimate.model.person.Person;
 import coordimate.model.tag.Tag;
+import coordimate.model.util.SampleDataUtil;
 import coordimate.testutil.PersonBuilder;
 import coordimate.testutil.TypicalPersons;
 import javafx.collections.FXCollections;
@@ -71,5 +73,16 @@ public class TagListViewModelTest {
         viewModel.selectTag(null);
         assertEquals(List.of(), viewModel.getMembers());
         assertEquals("Members (0)", viewModel.memberCountTextProperty().get());
+    }
+
+    @Test
+    public void selectTag_sampleDataTag_showsMatchingSampleContacts() {
+        ReadOnlyCoordiMate sampleData = SampleDataUtil.getSampleCoordiMate();
+        TagListViewModel viewModel = new TagListViewModel(sampleData.getTagList(), sampleData.getPersonList());
+
+        viewModel.selectTag("friends");
+
+        assertEquals(List.of("Alex Yeoh", "Bernice Yu"), viewModel.getMembers().stream()
+                .map(person -> person.getName().getFullName()).toList());
     }
 }
