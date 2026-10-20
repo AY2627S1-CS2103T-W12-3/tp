@@ -2,6 +2,7 @@ package coordimate.ui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.awt.GraphicsEnvironment;
@@ -26,22 +27,27 @@ import coordimate.storage.StorageManager;
 import coordimate.testutil.PersonBuilder;
 import coordimate.testutil.TypicalPersons;
 import javafx.application.Platform;
+import javafx.event.Event;
 import javafx.geometry.Orientation;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.MenuBar;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
+import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 
 /**
@@ -109,6 +115,48 @@ public class MainWindowTest {
             assertTrue(views.getSelectionModel().getSelectedItem().getText().startsWith("Contacts"));
             assertEquals("Bold", contacts.getFont().getStyle());
             assertTrue(getPrefixHelpText(prefixHelp).contains("n/Name"));
+            stage.close();
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void topMenuHelpItem_opensOwnedHelpWindowAndShowsShortcutTooltip() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            MainWindow window = new MainWindow(stage, new LogicManager(new ModelManager(), null),
+                    Path.of("data", "coordimate.json"));
+            window.fillInnerParts();
+
+            Label helpLabel = (Label) stage.getScene().getRoot().lookup("#helpLabel");
+            HBox topMenuRow = (HBox) stage.getScene().getRoot().lookup("#topMenuRow");
+            MenuBar menuBar = (MenuBar) stage.getScene().getRoot().lookup("#menuBar");
+            assertEquals("Help", helpLabel.getText());
+            assertEquals("Open Help (Fn + F1)", helpLabel.getTooltip().getText());
+            assertEquals(200, helpLabel.getTooltip().getShowDelay().toMillis());
+            assertEquals(List.of("File"), menuBar.getMenus().stream().map(menu -> menu.getText()).toList());
+            assertSame(topMenuRow, menuBar.getParent());
+            assertSame(topMenuRow, helpLabel.getParent());
+            assertEquals(List.of(menuBar, helpLabel), topMenuRow.getChildren());
+
+            window.show();
+            Event.fireEvent(helpLabel, mouseClickEvent());
+            Stage helpStage = Window.getWindows().stream()
+                    .filter(Stage.class::isInstance)
+                    .map(Stage.class::cast)
+                    .filter(candidate -> "Help".equals(candidate.getTitle()))
+                    .filter(candidate -> candidate.getOwner() == stage)
+                    .findFirst()
+                    .orElseThrow();
+            assertTrue(helpStage.isShowing());
+            assertSame(stage, helpStage.getOwner());
+
+            helpStage.hide();
+            Event.fireEvent(stage.getScene().getRoot(), keyEvent(KeyCode.F1));
+            assertTrue(helpStage.isShowing());
+            helpStage.hide();
             stage.close();
             return null;
         });
@@ -425,6 +473,12 @@ public class MainWindowTest {
     private static KeyEvent keyEvent(KeyCode keyCode) {
         return new KeyEvent(KeyEvent.KEY_PRESSED, "", "", keyCode,
                 false, false, false, false);
+    }
+
+    private static MouseEvent mouseClickEvent() {
+        return new MouseEvent(MouseEvent.MOUSE_CLICKED,
+                0, 0, 0, 0, MouseButton.PRIMARY, 1,
+                false, false, false, false, false, false, false, false, false, false, null);
     }
 
     private static String getPrefixHelpText(TextFlow prefixHelp) {

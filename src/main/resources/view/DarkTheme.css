@@ -34,6 +34,25 @@
 }
 .menu-bar .label { -fx-text-fill: #8b949e; }
 .menu:hover, .menu:showing { -fx-background-color: #1f2633; }
+.top-menu-row {
+    -fx-background-color: #101319;
+    -fx-border-color: transparent transparent #2b3446 transparent;
+    -fx-padding: 1 8;
+}
+.top-menu-row > .menu-bar {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 0;
+}
+.top-menu-item {
+    -fx-padding: 3 10;
+    -fx-background-color: transparent;
+    -fx-background-radius: 4;
+    -fx-border-color: transparent;
+    -fx-text-fill: #8b949e;
+    -fx-cursor: hand;
+}
+.top-menu-item:hover { -fx-background-color: #1f2633; -fx-text-fill: #f0f6fc; }
 .context-menu { -fx-background-color: #1b202a; -fx-border-color: #2b3446; }
 .context-menu .label { -fx-text-fill: #f0f6fc; }
 .dialog-pane, .dialog-pane:header .header-panel,

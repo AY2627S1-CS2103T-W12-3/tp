@@ -70,12 +70,14 @@ public class HelpWindowTest {
             TableView<HelpWindow.CommandUsage> commandTable =
                     (TableView<HelpWindow.CommandUsage>) root.getScene().lookup("#commandTable");
             Label syntaxNote = (Label) root.getScene().lookup("#syntaxNote");
+            Label helpMessage = (Label) root.getScene().lookup("#helpMessage");
             Button closeButton = (Button) root.getScene().lookup("#closeButton");
 
             assertTrue(root.isResizable());
             assertEquals(680.0, root.getMinWidth());
             assertEquals(450.0, root.getMinHeight());
             assertEquals(HelpWindow.COMMAND_USAGES, commandTable.getItems());
+            assertTrue(helpMessage.getText().contains("Fn + F1"));
             assertFalse(commandTable.isEditable());
             assertEquals("Note: [ ] marks optional parameters; (A | B) means choose one. "
                     + "For edit, provide at least one field or tag operation. "

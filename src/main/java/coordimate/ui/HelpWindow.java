@@ -41,7 +41,9 @@ import javafx.stage.Stage;
 public class HelpWindow extends UiPart<Stage> {
 
     public static final String USERGUIDE_URL = "https://ay2627s1-cs2103t-w12-3.github.io/tp/";
-    public static final String HELP_MESSAGE = "Refer to the user guide: " + USERGUIDE_URL;
+    public static final String HELP_SHORTCUT = "Fn + F1";
+    public static final String HELP_MESSAGE = "Keyboard shortcut: " + HELP_SHORTCUT
+            + ". Refer to the user guide: " + USERGUIDE_URL;
 
     static final List<CommandUsage> COMMAND_USAGES = List.of(
             commandUsage(AddCommand.COMMAND_WORD,
