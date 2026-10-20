@@ -191,6 +191,42 @@ public class MainWindowReminderTest {
     }
 
     @Test
+    public void dismissCommand_repeatedIndex_renumbersPanelAndPreservesSelectedTabAndFocus() throws Exception {
+        onJavaFxThread(() -> {
+            Fixture fixture = openWindow(true);
+            try {
+                fixture.model().addEvent(event("alpha", "20-10-2026 15:00", "20-10-2026 18:00"));
+                fixture.model().addEvent(event("Zulu", "20-10-2026 15:00", "20-10-2026 18:00"));
+                fixture.logic().refreshReminders();
+                Parent root = fixture.stage().getScene().getRoot();
+                assertEquals(List.of("1. Upcoming event: alpha", "2. Upcoming event: Final Concert",
+                        "3. Upcoming event: Zulu"), names(root));
+                ToggleButton tags = (ToggleButton) root.lookup("#tagsView");
+                tags.fire();
+                TextField input = (TextField) root.lookup("#commandTextField");
+                input.requestFocus();
+
+                input.setText("dismiss 2");
+                input.fireEvent(new ActionEvent());
+                assertEquals(List.of("1. Upcoming event: alpha", "2. Upcoming event: Zulu"), names(root));
+                assertEquals("Reminder dismissed: Final Concert.", ((Label) root.lookup("#resultDisplay")).getText());
+                assertTrue(tags.isSelected());
+                assertSame(input, fixture.stage().getScene().getFocusOwner());
+
+                input.setText("dismiss 2");
+                input.fireEvent(new ActionEvent());
+                assertEquals(List.of("1. Upcoming event: alpha"), names(root));
+                assertEquals("Reminder dismissed: Zulu.", ((Label) root.lookup("#resultDisplay")).getText());
+                assertTrue(tags.isSelected());
+                assertSame(input, fixture.stage().getScene().getFocusOwner());
+            } finally {
+                fixture.stage().close();
+            }
+            return null;
+        });
+    }
+
+    @Test
     public void dismissCommand_saveFailure_showsNotSavedWarningAndHidesReminder() throws Exception {
         onJavaFxThread(() -> {
             Fixture fixture = openWindow(true);
