@@ -685,11 +685,11 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 4. Coordimate  model without the selected contact, their assignments in any event roster, or their
    associated attendance records, then updates the live model and confirms the deletion. Events and other contacts
    remain unchanged.
-        
+
    Use case ends.
 
 **Extensions**
-  
+
 * 1a. The EXCO member provides no identifier, more than one identifier, an unknown field, or an invalid index.
 
   * 1a1. CoordiMate informs the EXCO member of the error.

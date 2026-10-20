@@ -558,6 +558,8 @@ public class MainWindow extends UiPart<Stage> {
                 rememberNormalWindowBounds();
             }
         });
+    }
+
     private void dismissReminder(Event reminder) {
         try {
             logic.dismissReminder(reminder);
