@@ -87,7 +87,7 @@ public class CoordiMateParser {
                 case ClearCommand.COMMAND_WORD -> new ClearCommand();
                 case CreateTagCommand.COMMAND_WORD -> new CreateTagCommandParser().parse(arguments);
                 case FilterCommand.COMMAND_WORD -> new FilterCommandParser().parse(arguments);
-                case ListCommand.COMMAND_WORD -> new ListCommand();
+                case ListCommand.COMMAND_WORD -> new ListCommandParser().parse(arguments);
                 case SearchCommand.COMMAND_WORD -> new SearchCommandParser().parse(arguments);
                 case SwitchCommand.COMMAND_WORD -> new SwitchCommandParser().parse(arguments);
                 case ListTagsCommand.COMMAND_WORD -> new ListTagsCommandParser().parse(arguments);

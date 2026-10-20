@@ -24,6 +24,8 @@ import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
+import javafx.beans.binding.StringBinding;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Orientation;
@@ -298,8 +300,8 @@ public class MainWindow extends UiPart<Stage> {
         eventsCommands.managedProperty().bind(eventsCommands.visibleProperty());
         tagsCommands.visibleProperty().bind(tagsView.selectedProperty());
         tagsCommands.managedProperty().bind(tagsCommands.visibleProperty());
-        contactsTab.textProperty().bind(Bindings.size(logic.getFilteredPersonList()).asString("Contacts (%d)"));
-        eventsTab.textProperty().bind(Bindings.size(logic.getFilteredEventList()).asString("Events (%d)"));
+        contactsTab.textProperty().bind(tabTitle("Contacts", logic.getFilteredPersonList()));
+        eventsTab.textProperty().bind(tabTitle("Events", logic.getFilteredEventList()));
         contactsView.textProperty().bind(contactsTab.textProperty());
         eventsView.textProperty().bind(eventsTab.textProperty());
         tagsView.textProperty().bind(tagListViewModel.tagCountTextProperty());
@@ -665,6 +667,15 @@ public class MainWindow extends UiPart<Stage> {
                 rememberNormalWindowBounds();
             }
         });
+    }
+
+    /**
+     * Returns a tab title with the number of shown items, marked while archived items are shown.
+     */
+    private StringBinding tabTitle(String items, ObservableList<?> shown) {
+        return Bindings.createStringBinding(() -> (logic.showingArchivedProperty().get()
+                ? "Archived " + items.toLowerCase(Locale.ROOT) : items) + " (" + shown.size() + ")",
+                shown, logic.showingArchivedProperty());
     }
 
     private void dismissReminder(Event reminder) {

@@ -13,6 +13,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import coordimate.commons.core.index.Index;
+import coordimate.logic.Messages;
 import coordimate.logic.commands.AddCommand;
 import coordimate.logic.commands.AssignCommand;
 import coordimate.logic.commands.ClearCommand;
@@ -170,7 +171,14 @@ public class CoordiMateParserTest {
     @Test
     public void parseCommand_list() throws Exception {
         assertTrue(parser.parseCommand(ListCommand.COMMAND_WORD) instanceof ListCommand);
-        assertTrue(parser.parseCommand(ListCommand.COMMAND_WORD + " 3") instanceof ListCommand);
+        assertEquals(new ListCommand(false), parser.parseCommand("list  "));
+        assertEquals(new ListCommand(true), parser.parseCommand("list archived"));
+        assertEquals(new ListCommand(true), parser.parseCommand("list  ARCHIVED "));
+        for (String option : List.of("3", "archive")) {
+            assertThrows(ParseException.class, Messages.withUsage(
+                    String.format(ListCommandParser.MESSAGE_UNKNOWN_OPTION, option), ListCommand.MESSAGE_USAGE), () ->
+                    parser.parseCommand("list " + option));
+        }
     }
 
     @Test

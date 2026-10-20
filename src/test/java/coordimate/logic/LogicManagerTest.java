@@ -337,6 +337,45 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_listArchivedThenUnarchive_restoresContactAndEvent() throws Exception {
+        model.addPerson(ALICE);
+        model.addPerson(BENSON);
+        logic.execute("archive 1");
+        logic.execute("addevent evn/Concert st/08-08-2026 et/08-08-2026");
+        logic.execute("archiveevent evn/Concert");
+
+        assertEquals(ListCommand.MESSAGE_ARCHIVED_SUCCESS, logic.execute("list archived").getFeedbackToUser());
+        assertTrue(logic.showingArchivedProperty().get());
+        assertEquals(List.of(ALICE.withArchived(true)), logic.getFilteredPersonList());
+        assertEquals(List.of("Concert"), logic.getFilteredEventList().stream().map(event -> event.getName()).toList());
+
+        logic.execute("unarchive 1");
+        logic.execute("unarchiveevent evn/Concert");
+        assertEquals(List.of(), logic.getFilteredPersonList());
+        assertEquals(List.of(), logic.getFilteredEventList());
+
+        logic.execute("list");
+        assertFalse(logic.showingArchivedProperty().get());
+        assertEquals(List.of(ALICE, BENSON), logic.getFilteredPersonList());
+        assertEquals(1, logic.getFilteredEventList().size());
+    }
+
+    @Test
+    public void execute_addInArchivedView_returnsToActiveView() throws Exception {
+        logic.execute("list archived");
+
+        logic.execute("addevent evn/Concert st/08-08-2026 et/08-08-2026");
+        assertFalse(logic.showingArchivedProperty().get());
+        assertEquals(1, logic.getFilteredEventList().size());
+
+        logic.execute("list archived");
+        logic.execute(AddCommand.COMMAND_WORD + NAME_DESC_AMY + PHONE_DESC_AMY + EMAIL_DESC_AMY + " r/NA"
+                + ADDRESS_DESC_AMY);
+        assertFalse(logic.showingArchivedProperty().get());
+        assertEquals(1, logic.getFilteredPersonList().size());
+    }
+
+    @Test
     public void execute_archiveContactSaveFails_keepsContactActive() {
         model.addPerson(ALICE);
         useStorageThatFailsNextSave();

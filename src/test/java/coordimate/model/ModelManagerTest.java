@@ -192,4 +192,20 @@ public class ModelManagerTest {
         other.setShowingArchived(true);
         assertFalse(modelManager.equals(other));
     }
+
+    @Test
+    public void setShowingArchived_switchesEventsAndNotifiesListeners() {
+        Event concert = new Event("Concert", new EventTime("08-08-2026"), new EventTime("09-08-2026"));
+        Event fair = new Event("Fair", new EventTime("09-10-2026"), new EventTime("10-10-2026")).withArchived(true);
+        modelManager.addEvent(concert);
+        modelManager.addEvent(fair);
+        List<Boolean> changes = new java.util.ArrayList<>();
+        modelManager.showingArchivedProperty().addListener((observable, oldValue, newValue) -> changes.add(newValue));
+
+        modelManager.setShowingArchived(true);
+        assertEquals(List.of(fair), modelManager.getFilteredEventList());
+        modelManager.setShowingArchived(false);
+        assertEquals(List.of(concert), modelManager.getFilteredEventList());
+        assertEquals(List.of(true, false), changes);
+    }
 }

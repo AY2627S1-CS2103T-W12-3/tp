@@ -8,6 +8,7 @@ import coordimate.logic.reminder.ReminderDismissalException;
 import coordimate.model.event.Event;
 import coordimate.model.person.Person;
 import coordimate.model.tag.Tag;
+import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.collections.ObservableList;
 
 /**
@@ -41,9 +42,14 @@ public interface Logic {
     ObservableList<Event> getEventList();
 
     /**
-     * Returns the live, unmodifiable list of events that are not archived, in insertion order.
+     * Returns the live, unmodifiable list of events in the current archive view, in insertion order.
      */
     ObservableList<Event> getFilteredEventList();
+
+    /**
+     * Returns an observable value that is true while archived contacts and events are shown.
+     */
+    ReadOnlyBooleanProperty showingArchivedProperty();
 
     /**
      * Returns the live, unmodifiable list of active reminders in chronological order.

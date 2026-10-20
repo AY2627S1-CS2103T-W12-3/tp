@@ -206,6 +206,11 @@ public class AddCommandTest {
         }
 
         @Override
+        public javafx.beans.property.ReadOnlyBooleanProperty showingArchivedProperty() {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
         public ObservableList<coordimate.model.event.Event> getFilteredEventList() {
             throw new AssertionError("This method should not be called.");
         }

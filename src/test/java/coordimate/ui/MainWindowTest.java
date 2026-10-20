@@ -483,6 +483,19 @@ public class MainWindowTest {
 
         assertTrue(events.isSelected());
         assertEquals("Listed all contacts.", feedback.getText());
+        assertEquals("Events (0)", events.getText());
+
+        ToggleButton contacts = (ToggleButton) stage.getScene().getRoot().lookup("#contactsView");
+        input.setText("list archived");
+        submit.fire();
+        assertTrue(events.isSelected());
+        assertEquals("Archived events (0)", events.getText());
+        assertEquals("Archived contacts (0)", contacts.getText());
+
+        input.setText("list");
+        submit.fire();
+        assertEquals("Events (0)", events.getText());
+        assertEquals("Contacts (0)", contacts.getText());
     }
 
     @Test

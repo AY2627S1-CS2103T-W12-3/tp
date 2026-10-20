@@ -38,6 +38,7 @@ import coordimate.model.event.EventMembersPredicate;
 import coordimate.model.person.Person;
 import coordimate.model.tag.Tag;
 import coordimate.storage.Storage;
+import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.collections.ObservableList;
 
 /**
@@ -184,6 +185,10 @@ public class LogicManager implements Logic {
         }
         keepReminderDismissalAfterRename(command);
         model.setCoordiMate(candidate.getCoordiMate());
+        if (command instanceof AddCommand || command instanceof AddEventCommand) {
+            // Return to active items so that the new contact or event is visible.
+            model.setShowingArchived(false);
+        }
         if (command instanceof AddCommand || command instanceof EditCommand) {
             model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
         }
@@ -236,6 +241,11 @@ public class LogicManager implements Logic {
     @Override
     public ObservableList<Event> getFilteredEventList() {
         return model.getFilteredEventList();
+    }
+
+    @Override
+    public ReadOnlyBooleanProperty showingArchivedProperty() {
+        return model.showingArchivedProperty();
     }
 
     @Override
