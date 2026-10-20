@@ -185,16 +185,6 @@
     -fx-border-radius: 6;
 }
 .assigned-event-name { -fx-font-weight: bold; -fx-text-fill: #f0f6fc; }
-.contact-detail-tags .label, #tags .label {
-    -fx-padding: 3 8;
-    -fx-background-color: #082f49;
-    -fx-background-radius: 4;
-    -fx-border-color: #0ea5e9;
-    -fx-border-radius: 4;
-    -fx-text-fill: #38bdf8;
-    -fx-font-size: 11px;
-}
-
 .list-view, .list-view:focused, .list-view .virtual-flow,
 .list-view .virtual-flow .clipped-container .sheet { -fx-background-color: transparent; }
 .list-cell, .list-cell:empty, .list-cell:filled {
@@ -275,17 +265,18 @@
 .event-member-details { -fx-spacing: 4; }
 .event-member-name { -fx-font-weight: bold; -fx-text-fill: #f0f6fc; }
 .event-member-metadata { -fx-font-size: 12px; -fx-text-fill: #94a3b8; }
-.event-member-tag {
+.tag-chip {
     -fx-padding: 2 7;
     -fx-background-radius: 4;
     -fx-border-radius: 4;
     -fx-border-width: 1;
     -fx-font-size: 11px;
 }
-.event-member-tag-blue { -fx-background-color: #172554; -fx-border-color: #3730a3; -fx-text-fill: #a5b4fc; }
-.event-member-tag-purple { -fx-background-color: #3b0764; -fx-border-color: #7e22ce; -fx-text-fill: #d8b4fe; }
-.event-member-tag-teal { -fx-background-color: #083344; -fx-border-color: #0891b2; -fx-text-fill: #67e8f9; }
-.event-member-tag-amber { -fx-background-color: #451a03; -fx-border-color: #b45309; -fx-text-fill: #fcd34d; }
+.tag-chip-blue { -fx-background-color: #172554; -fx-border-color: #3730a3; -fx-text-fill: #a5b4fc; }
+.tag-chip-red { -fx-background-color: #450a0a; -fx-border-color: #b91c1c; -fx-text-fill: #fca5a5; }
+.tag-chip-purple { -fx-background-color: #3b0764; -fx-border-color: #7e22ce; -fx-text-fill: #d8b4fe; }
+.tag-chip-teal { -fx-background-color: #083344; -fx-border-color: #0891b2; -fx-text-fill: #67e8f9; }
+.tag-chip-amber { -fx-background-color: #451a03; -fx-border-color: #b45309; -fx-text-fill: #fcd34d; }
 .attendance-badge { -fx-padding: 5 9; -fx-background-radius: 4; -fx-border-radius: 4; -fx-border-width: 1; -fx-font-weight: bold; }
 .attendance-present { -fx-background-color: #064e3b; -fx-border-color: #10b981; -fx-text-fill: #34d399; }
 .attendance-absent { -fx-background-color: #450a0a; -fx-border-color: #ef4444; -fx-text-fill: #f87171; }

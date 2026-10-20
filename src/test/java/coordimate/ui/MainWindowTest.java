@@ -361,10 +361,11 @@ public class MainWindowTest {
             stage.getScene().getRoot().layout();
 
             assertEquals(3, stage.getScene().getRoot().lookupAll(".event-member-name").size());
-            assertEquals(1, stage.getScene().getRoot().lookupAll(".event-member-tag-teal").size());
-            assertEquals(1, stage.getScene().getRoot().lookupAll(".event-member-tag-amber").size());
-            assertEquals(2, stage.getScene().getRoot().lookupAll(".event-member-tag-purple").size());
-            assertEquals(3, stage.getScene().getRoot().lookupAll(".event-member-tag-blue").size());
+            assertEquals(1, stage.getScene().getRoot().lookupAll(".tag-chip-teal").size());
+            assertEquals(1, stage.getScene().getRoot().lookupAll(".tag-chip-amber").size());
+            assertEquals(1, stage.getScene().getRoot().lookupAll(".tag-chip-purple").size());
+            assertEquals(3, stage.getScene().getRoot().lookupAll(".tag-chip-red").size());
+            assertEquals(1, stage.getScene().getRoot().lookupAll(".tag-chip-blue").size());
             assertEquals(1, stage.getScene().getRoot().lookupAll(".event-member-avatar-teal").size());
             assertEquals(1, stage.getScene().getRoot().lookupAll(".event-member-avatar-amber").size());
             assertEquals(1, stage.getScene().getRoot().lookupAll(".event-member-avatar-purple").size());

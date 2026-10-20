@@ -361,21 +361,6 @@ public class MainWindow extends UiPart<Stage> {
         prefixHelp.setAccessibleText(text);
     }
 
-    private Label createMemberTag(String tagName) {
-        Label tag = new Label(tagName);
-        tag.getStyleClass().addAll("event-member-tag", getTagColorClass(tagName));
-        return tag;
-    }
-
-    private String getTagColorClass(String tagName) {
-        return switch (tagName.toLowerCase(Locale.ROOT)) {
-            case "logistics" -> "event-member-tag-teal";
-            case "sponsor" -> "event-member-tag-amber";
-            case "publicity", "universitystaff" -> "event-member-tag-purple";
-            default -> "event-member-tag-blue";
-        };
-    }
-
     private String getAvatarColorClass(Person person) {
         if (person.getTags().stream().anyMatch(tag -> tag.getTagName().equalsIgnoreCase("logistics"))) {
             return "event-member-avatar-teal";
@@ -427,7 +412,7 @@ public class MainWindow extends UiPart<Stage> {
                     .sorted((left, right) -> String.CASE_INSENSITIVE_ORDER.compare(
                             left.getTagName(), right.getTagName()))
                     .map(Tag::getTagName)
-                    .map(MainWindow.this::createMemberTag)
+                    .map(TagStyle::createTagLabel)
                     .forEach(identityLine.getChildren()::add);
 
             Label subtitle = new Label(formatMemberDetails(person));

@@ -91,7 +91,7 @@ public class PersonListPanelTest {
             Person contact = new PersonBuilder(ALICE).withRole("Logistics Lead")
                     .withBirthday("18-06-2004").withAddress("21 Kent Ridge Road, #03-12")
                     .withOrganisation("NUS Student Affairs").withNote("Handles venue bookings")
-                    .withTags("EXCO", "Logistics").build();
+                    .withTags("EXCO", "Logistics", "Publicity", "Sponsor", "UniversityStaff").build();
             Region root = new PersonListPanel(FXCollections.observableArrayList(contact)).getRoot();
             new Scene(root);
             root.applyCss();
@@ -104,7 +104,17 @@ public class PersonListPanelTest {
             assertEquals("Handles venue bookings", getLabel(root, "note").getText());
             assertTrue(getLabel(root, "note").isWrapText());
             FlowPane tags = (FlowPane) root.lookup("#detailTags");
-            assertEquals(2, tags.getChildren().size());
+            assertEquals(5, tags.getChildren().size());
+            assertTagColor(tags, "EXCO", "tag-chip-red");
+            assertTagColor(tags, "Logistics", "tag-chip-teal");
+            assertTagColor(tags, "Publicity", "tag-chip-blue");
+            assertTagColor(tags, "Sponsor", "tag-chip-amber");
+            assertTagColor(tags, "UniversityStaff", "tag-chip-purple");
+
+            Region card = new PersonCard(contact, 1).getRoot();
+            new Scene(card);
+            card.applyCss();
+            assertTagColor((FlowPane) card.lookup("#tags"), "Publicity", "tag-chip-blue");
         });
     }
 
@@ -286,6 +296,15 @@ public class PersonListPanelTest {
 
     private static Label getLabel(Region root, String id) {
         return (Label) root.lookup("#" + id);
+    }
+
+    private static void assertTagColor(FlowPane tagPane, String tagName, String colorClass) {
+        assertTrue(tagPane.getChildren().stream()
+                .filter(Label.class::isInstance)
+                .map(Label.class::cast)
+                .filter(label -> label.getText().equals(tagName))
+                .anyMatch(label -> label.getStyleClass().contains(colorClass)),
+                tagName + " should use " + colorClass);
     }
 
     private static Label getHint(Region root) {
