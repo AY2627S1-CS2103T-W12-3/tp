@@ -88,6 +88,15 @@ to history. Inserting a command from the sidebar resets history navigation.
 
 The `UI` component uses the JavaFX UI framework. The layouts of these UI parts are defined in matching `.fxml` files in `src/main/resources/view`. For example, [`MainWindow.fxml`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/resources/view/MainWindow.fxml) specifies the layout of [`MainWindow`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/ui/MainWindow.java).
 
+At launch, `MainWindow` obtains the saved size, position, and maximized state from `GuiSettings`. It selects the screen
+containing the saved position, or the primary screen if that display is no longer connected. `WindowBounds` then clamps
+the saved dimensions and coordinates to the screen's visual bounds, which exclude operating-system areas such as the
+taskbar or dock. The preferred minimum size is also capped to the available area, so it cannot force the window beyond
+a smaller display. `MainWindow` tracks the latest non-maximized bounds separately, allowing a maximized window to be
+restored without replacing its normal dimensions. If a maximized window is moved to another monitor before closing,
+the normal bounds retain their size and relative position on that monitor so the next launch maximizes there. Screen
+fallback is logged at `WARNING`, bounds adjustments at `INFO`, and maximized-state restoration and saving at `FINE`.
+
 The `UI` component,
 
 * executes user commands using the `Logic` component.
@@ -177,7 +186,8 @@ The `Model` component,
 * stores CoordiMate data, including all `Person` objects (which are contained in a `UniquePersonList` object).
 * stores all `Event` objects. Each `Event` records its assigned members as an ordered list of contact `Name`s. `CoordiMate` keeps these lists in sync with the contacts: deleting a contact removes their name from every event, and renaming a contact updates it.
 * stores the `Person` objects selected by the current filter, such as search results, in a separate _filtered_ list. It exposes this list as an unmodifiable `ObservableList<Person>` that the UI can observe and bind to, so the UI updates when the list changes.
-* stores a `UserPrefs` object that represents the user’s preferences (currently, just the GUI settings). This is exposed to the outside as a `ReadOnlyUserPrefs` object.
+* stores a `UserPrefs` object that represents the user’s preferences (currently, the window's normal size and position,
+  and whether it is maximized). This is exposed to the outside as a `ReadOnlyUserPrefs` object.
 * does not depend on any of the other three components (as the `Model` represents data entities of the domain, they should make sense on their own without depending on other components)
 
 
@@ -675,11 +685,11 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 4. Coordimate  model without the selected contact, their assignments in any event roster, or their
    associated attendance records, then updates the live model and confirms the deletion. Events and other contacts
    remain unchanged.
-        
+
    Use case ends.
 
 **Extensions**
-  
+
 * 1a. The EXCO member provides no identifier, more than one identifier, an unknown field, or an invalid index.
 
   * 1a1. CoordiMate informs the EXCO member of the error.
@@ -945,14 +955,52 @@ testers are expected to do more *exploratory* testing.
    1. Download the JAR file and copy it into an empty folder.
 
    1. Double-click the JAR file.<br>
-      Expected: The GUI opens with a set of sample contacts. The window size may not be optimal.
+      Expected: The GUI opens maximized with a set of sample contacts.
 
 1. Saving window preferences
 
-   1. Resize the window to an optimal size. Move the window to a different location. Close the window.
+   1. Unmaximize the window. Resize it to a distinctive size, move it to a different location, and close it.
 
    1. Relaunch the app by double-clicking the JAR file.<br>
-       Expected: The most recent window size and location are retained.
+       Expected: The app opens unmaximized with the most recent window size and location.
+
+1. Saving maximized state without losing normal bounds
+
+   1. Unmaximize the window. Resize and move it, then maximize and close it.
+
+   1. Relaunch the app by double-clicking the JAR file.<br>
+      Expected: The app opens maximized. Unmaximizing it restores the size and position set in the previous step.
+
+1. Saving the monitor used by a maximized window
+
+   1. With two monitors connected, unmaximize the app on the first monitor and give it a distinctive size and position.
+      Maximize it, move the maximized window to the second monitor, and close it.
+
+   1. Relaunch the app by double-clicking the JAR file.<br>
+      Expected: The app opens maximized on the second monitor. Unmaximizing it retains the previous normal size and
+      relative position on the second monitor.
+
+1. Recovering from unavailable window bounds
+
+   1. Close the app. Open `preferences.json` in the folder containing the JAR file and replace its contents with:
+
+      ```json
+      {
+        "guiSettings": {
+          "windowWidth": 5000.0,
+          "windowHeight": 4000.0,
+          "windowCoordinates": {
+            "x": 99999,
+            "y": 99999
+          },
+          "windowMaximized": false
+        }
+      }
+      ```
+
+   1. Relaunch the app by double-clicking the JAR file.<br>
+      Expected: The app opens unmaximized on the primary screen, entirely within its usable area. The title bar and
+      window controls remain visible.
 
 1. Shutting down
 

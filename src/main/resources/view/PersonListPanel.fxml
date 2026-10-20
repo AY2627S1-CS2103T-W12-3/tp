@@ -11,17 +11,17 @@
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 
-<SplitPane fx:id="contactSplitPane" dividerPositions="0.43" styleClass="contact-workspace"
+<SplitPane fx:id="contactSplitPane" dividerPositions="0.43" minWidth="0" styleClass="contact-workspace"
            xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
   <items>
-    <VBox minWidth="300" styleClass="contact-list-section">
+    <VBox fx:id="contactListSection" minWidth="300" styleClass="contact-list-section">
       <HBox alignment="CENTER_LEFT" spacing="10">
         <Label text="CONTACT LIST" styleClass="section-heading" />
         <Label fx:id="contactCount" id="contactCount" styleClass="detail-caption" />
       </HBox>
       <ListView fx:id="personListView" id="personListView" styleClass="contact-list" VBox.vgrow="ALWAYS" />
     </VBox>
-    <VBox minWidth="460" styleClass="contact-details-section">
+    <VBox fx:id="contactDetailsSection" minWidth="460" styleClass="contact-details-section">
       <Label text="CONTACT DETAILS" styleClass="section-heading" />
       <Label fx:id="selectionHint" id="selectionHint" text="Select a contact to view details."
              wrapText="true" styleClass="contact-selection-hint" />

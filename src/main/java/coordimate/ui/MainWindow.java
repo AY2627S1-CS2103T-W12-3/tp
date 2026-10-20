@@ -1,6 +1,8 @@
 package coordimate.ui;
 
+import java.awt.Point;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
@@ -20,11 +22,13 @@ import coordimate.model.tag.Tag;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.AccessibleRole;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
@@ -47,6 +51,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import javafx.util.Duration;
@@ -99,6 +104,8 @@ public class MainWindow extends UiPart<Stage> {
     private Stage primaryStage;
     private Logic logic;
     private Path dataFilePath;
+    private Rectangle2D normalWindowBounds;
+    private boolean isNormalBoundsUpdateScheduled;
 
     // Independent Ui parts residing in this Ui container
     private PersonListPanel personListPanel;
@@ -197,6 +204,10 @@ public class MainWindow extends UiPart<Stage> {
 
         // Configure the UI
         setWindowDefaultSize(logic.getGuiSettings());
+        primaryStage.xProperty().addListener(observable -> scheduleNormalWindowBoundsUpdate());
+        primaryStage.yProperty().addListener(observable -> scheduleNormalWindowBoundsUpdate());
+        primaryStage.widthProperty().addListener(observable -> scheduleNormalWindowBoundsUpdate());
+        primaryStage.heightProperty().addListener(observable -> scheduleNormalWindowBoundsUpdate());
 
         setAccelerators();
 
@@ -438,12 +449,34 @@ public class MainWindow extends UiPart<Stage> {
      * Sets the default size based on {@code guiSettings}.
      */
     private void setWindowDefaultSize(GuiSettings guiSettings) {
-        primaryStage.setHeight(Math.max(guiSettings.getWindowHeight(), primaryStage.getMinHeight()));
-        primaryStage.setWidth(Math.max(guiSettings.getWindowWidth(), primaryStage.getMinWidth()));
-        if (guiSettings.getWindowCoordinates() != null) {
-            primaryStage.setX(guiSettings.getWindowCoordinates().getX());
-            primaryStage.setY(guiSettings.getWindowCoordinates().getY());
+        Screen screen = getTargetScreen(guiSettings.getWindowCoordinates());
+        Rectangle2D screenBounds = screen.getVisualBounds();
+        Rectangle2D windowBounds = WindowBounds.fitToScreen(guiSettings, screenBounds);
+
+        primaryStage.setMinWidth(Math.min(WindowBounds.PREFERRED_MIN_WIDTH, screenBounds.getWidth()));
+        primaryStage.setMinHeight(Math.min(WindowBounds.PREFERRED_MIN_HEIGHT, screenBounds.getHeight()));
+        primaryStage.setWidth(windowBounds.getWidth());
+        primaryStage.setHeight(windowBounds.getHeight());
+        primaryStage.setX(windowBounds.getMinX());
+        primaryStage.setY(windowBounds.getMinY());
+        normalWindowBounds = windowBounds;
+
+        Point savedCoordinates = guiSettings.getWindowCoordinates();
+        if (WindowBounds.wereAdjusted(guiSettings, windowBounds)) {
+            logger.info("Adjusted saved window bounds from [coordinates=" + savedCoordinates
+                    + ", width=" + guiSettings.getWindowWidth() + ", height=" + guiSettings.getWindowHeight()
+                    + "] to fit the available screen area: " + windowBounds);
         }
+    }
+
+    private Screen getTargetScreen(Point savedCoordinates) {
+        if (savedCoordinates == null) {
+            return Screen.getPrimary();
+        }
+        List<Screen> screens = Screen.getScreensForRectangle(
+                savedCoordinates.getX(), savedCoordinates.getY(), 1, 1);
+        return getScreenOrPrimary(screens,
+                "Saved window position is outside all connected screens; using the primary screen.");
     }
 
     /**
@@ -459,7 +492,9 @@ public class MainWindow extends UiPart<Stage> {
     }
 
     void show() {
-        primaryStage.setMaximized(true);
+        boolean isMaximized = logic.getGuiSettings().isWindowMaximized();
+        logger.fine("Restoring window with maximized state: " + isMaximized);
+        primaryStage.setMaximized(isMaximized);
         primaryStage.show();
     }
 
@@ -468,12 +503,61 @@ public class MainWindow extends UiPart<Stage> {
      */
     @FXML
     private void handleExit() {
-        GuiSettings guiSettings = new GuiSettings(primaryStage.getWidth(), primaryStage.getHeight(),
-                (int) primaryStage.getX(), (int) primaryStage.getY());
+        boolean isMaximized = primaryStage.isMaximized();
+        if (isMaximized) {
+            moveNormalWindowBoundsToCurrentScreen();
+        } else {
+            rememberNormalWindowBounds();
+        }
+        GuiSettings guiSettings = new GuiSettings(normalWindowBounds.getWidth(), normalWindowBounds.getHeight(),
+                (int) normalWindowBounds.getMinX(), (int) normalWindowBounds.getMinY(), isMaximized);
+        logger.fine("Saving window with maximized state: " + isMaximized);
         logic.setGuiSettings(guiSettings);
         stop();
         helpWindow.hide();
         primaryStage.hide();
+    }
+
+    private void moveNormalWindowBoundsToCurrentScreen() {
+        Point normalCoordinates = new Point((int) normalWindowBounds.getMinX(), (int) normalWindowBounds.getMinY());
+        Screen normalScreen = getTargetScreen(normalCoordinates);
+        Screen currentScreen = getCurrentScreen();
+        normalWindowBounds = WindowBounds.moveToScreen(normalWindowBounds,
+                normalScreen.getVisualBounds(), currentScreen.getVisualBounds());
+        logger.fine("Aligned saved normal window bounds with the screen where the maximized window was closed: "
+                + normalWindowBounds);
+    }
+
+    private Screen getCurrentScreen() {
+        List<Screen> screens = Screen.getScreensForRectangle(primaryStage.getX(), primaryStage.getY(),
+                primaryStage.getWidth(), primaryStage.getHeight());
+        return getScreenOrPrimary(screens,
+                "Current window position is outside all connected screens; using the primary screen.");
+    }
+
+    private Screen getScreenOrPrimary(List<Screen> screens, String fallbackWarning) {
+        if (screens.isEmpty()) {
+            logger.warning(fallbackWarning);
+        }
+        return screens.isEmpty() ? Screen.getPrimary() : screens.getFirst();
+    }
+
+    private void rememberNormalWindowBounds() {
+        normalWindowBounds = new Rectangle2D(primaryStage.getX(), primaryStage.getY(),
+                primaryStage.getWidth(), primaryStage.getHeight());
+    }
+
+    void scheduleNormalWindowBoundsUpdate() {
+        if (!primaryStage.isShowing() || isNormalBoundsUpdateScheduled) {
+            return;
+        }
+        isNormalBoundsUpdateScheduled = true;
+        Platform.runLater(() -> {
+            isNormalBoundsUpdateScheduled = false;
+            if (!primaryStage.isMaximized()) {
+                rememberNormalWindowBounds();
+            }
+        });
     }
 
     private void dismissReminder(Event reminder) {

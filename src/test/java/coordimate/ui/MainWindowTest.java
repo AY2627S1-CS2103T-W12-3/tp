@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import coordimate.commons.core.GuiSettings;
 import coordimate.logic.LogicManager;
 import coordimate.model.ModelManager;
 import coordimate.model.person.Person;
@@ -22,6 +23,7 @@ import coordimate.testutil.PersonBuilder;
 import coordimate.testutil.TypicalPersons;
 import javafx.application.Platform;
 import javafx.geometry.Orientation;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
@@ -34,7 +36,9 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 
 /**
  * Checks that the complete desktop shell loads and its view controls stay connected.
@@ -166,8 +170,86 @@ public class MainWindowTest {
 
             window.show();
             assertTrue(stage.isMaximized());
+            window.scheduleNormalWindowBoundsUpdate();
+            window.scheduleNormalWindowBoundsUpdate();
 
+            Platform.runLater(stage::close);
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void showWindow_savedAsNotMaximized_startsNotMaximized() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            ModelManager model = new ModelManager();
+            model.setGuiSettings(new GuiSettings(900, 700, 0, 0, false));
+            MainWindow window = new MainWindow(stage, new LogicManager(model, null),
+                    Path.of("data", "coordimate.json"));
+            window.fillInnerParts();
+            window.scheduleNormalWindowBoundsUpdate();
+
+            window.show();
+            assertFalse(stage.isMaximized());
+            window.scheduleNormalWindowBoundsUpdate();
+            window.scheduleNormalWindowBoundsUpdate();
+
+            Rectangle2D screenBounds = Screen.getPrimary().getVisualBounds();
+            stage.setWidth(Math.min(950, screenBounds.getWidth()));
+            stage.setHeight(Math.min(700, screenBounds.getHeight()));
+            stage.setX(screenBounds.getMinX());
+            stage.setY(screenBounds.getMinY());
+            double expectedWidth = stage.getWidth();
+            double expectedHeight = stage.getHeight();
+            int expectedX = (int) stage.getX();
+            int expectedY = (int) stage.getY();
+            stage.fireEvent(new WindowEvent(stage, WindowEvent.WINDOW_CLOSE_REQUEST));
+
+            assertEquals(new GuiSettings(expectedWidth, expectedHeight, expectedX, expectedY, false),
+                    model.getGuiSettings());
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void createWindow_savedPositionOutsideAllScreens_usesPrimaryScreen() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            ModelManager model = new ModelManager();
+            model.setGuiSettings(new GuiSettings(900, 700, Integer.MAX_VALUE, Integer.MAX_VALUE, false));
+
+            new MainWindow(stage, new LogicManager(model, null), Path.of("data", "coordimate.json"));
+
+            Rectangle2D screenBounds = Screen.getPrimary().getVisualBounds();
+            assertTrue(screenBounds.contains(stage.getX(), stage.getY()));
             stage.close();
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void closeWindow_whileMaximized_savesNormalBoundsAndMaximizedState() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            ModelManager model = new ModelManager();
+            MainWindow window = new MainWindow(stage, new LogicManager(model, null),
+                    Path.of("data", "coordimate.json"));
+            window.fillInnerParts();
+            double normalWidth = stage.getWidth();
+            double normalHeight = stage.getHeight();
+            int normalX = (int) stage.getX();
+            int normalY = (int) stage.getY();
+
+            window.show();
+            stage.fireEvent(new WindowEvent(stage, WindowEvent.WINDOW_CLOSE_REQUEST));
+
+            assertEquals(new GuiSettings(normalWidth, normalHeight, normalX, normalY, true), model.getGuiSettings());
             return null;
         });
         Platform.runLater(task);
