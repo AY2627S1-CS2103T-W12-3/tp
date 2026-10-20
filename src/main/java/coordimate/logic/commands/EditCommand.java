@@ -121,7 +121,8 @@ public class EditCommand extends Command {
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
         Person personToEdit = resolvePersonToEdit(model);
-        Person editedPerson = createEditedPerson(personToEdit, editPersonDescriptor, model.getTagList());
+        Person editedPerson = createEditedPerson(personToEdit, editPersonDescriptor, model.getTagList())
+                .withArchived(personToEdit.isArchived());
 
         boolean duplicatesAnotherPerson = model.getCoordiMate().getPersonList().stream()
                 .anyMatch(person -> !person.equals(personToEdit) && person.isSamePerson(editedPerson));

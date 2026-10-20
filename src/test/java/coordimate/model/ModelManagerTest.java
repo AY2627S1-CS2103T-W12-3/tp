@@ -165,4 +165,31 @@ public class ModelManagerTest {
         assertEquals(List.of(fair), shown);
         assertThrows(UnsupportedOperationException.class, () -> modelManager.getFilteredEventList().remove(0));
     }
+
+    @Test
+    public void setShowingArchived_switchesContactsAndKeepsLatestFilter() {
+        modelManager.addPerson(ALICE);
+        modelManager.addPerson(BENSON);
+        modelManager.setPerson(BENSON, BENSON.withArchived(true));
+        List<coordimate.model.person.Person> shown = modelManager.getFilteredPersonList();
+        assertEquals(List.of(ALICE), shown);
+
+        modelManager.setShowingArchived(true);
+        assertTrue(modelManager.isShowingArchived());
+        assertEquals(List.of(BENSON.withArchived(true)), shown);
+
+        ContactMatchesKeywordPredicate predicate = new ContactMatchesKeywordPredicate("Alice");
+        modelManager.updateFilteredPersonList(predicate);
+        assertEquals(predicate, modelManager.getFilteredPersonPredicate());
+        assertEquals(List.of(), shown);
+        modelManager.setShowingArchived(false);
+        assertFalse(modelManager.isShowingArchived());
+        assertEquals(List.of(ALICE), shown);
+
+        ModelManager other = new ModelManager(modelManager.getCoordiMate(), modelManager.getUserPrefs());
+        other.updateFilteredPersonList(predicate);
+        assertEquals(modelManager, other);
+        other.setShowingArchived(true);
+        assertFalse(modelManager.equals(other));
+    }
 }

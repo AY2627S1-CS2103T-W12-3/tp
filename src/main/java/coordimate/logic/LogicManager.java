@@ -12,6 +12,7 @@ import coordimate.commons.core.LogsCenter;
 import coordimate.commons.exceptions.DataLoadingException;
 import coordimate.logic.commands.AddCommand;
 import coordimate.logic.commands.AddEventCommand;
+import coordimate.logic.commands.ArchiveCommand;
 import coordimate.logic.commands.ArchiveEventCommand;
 import coordimate.logic.commands.AssignCommand;
 import coordimate.logic.commands.ClearCommand;
@@ -119,6 +120,7 @@ public class LogicManager implements Logic {
         if (command instanceof AddCommand || command instanceof EditCommand || command instanceof ClearCommand
                 || command instanceof MutatingTagCommand
                 || command instanceof AddEventCommand || command instanceof ArchiveEventCommand
+                || command instanceof ArchiveCommand
                 || command instanceof EditEventCommand || command instanceof AssignCommand
                 || command instanceof DeleteEventCommand || command instanceof MarkAttendanceCommand
                 || command instanceof UnassignCommand) {
@@ -157,6 +159,7 @@ public class LogicManager implements Logic {
             throw new CommandException(message, e);
         }
         Model candidate = new ModelManager(model.getCoordiMate(), model.getUserPrefs());
+        candidate.setShowingArchived(model.isShowingArchived());
         candidate.updateFilteredPersonList(model.getFilteredPersonList()::contains);
         CommandResult result = command.execute(candidate);
         try {
@@ -170,6 +173,7 @@ public class LogicManager implements Logic {
                 case AssignCommand _ -> AssignCommand.MESSAGE_SAVE_ERROR;
                 case DeleteEventCommand _ -> DeleteEventCommand.MESSAGE_SAVE_ERROR;
                 case ArchiveEventCommand _ -> ArchiveEventCommand.MESSAGE_SAVE_ERROR;
+                case ArchiveCommand _ -> ArchiveCommand.MESSAGE_SAVE_ERROR;
                 case ClearCommand _ -> ClearCommand.MESSAGE_SAVE_ERROR;
                 case MarkAttendanceCommand _ -> MarkAttendanceCommand.MESSAGE_SAVE_ERROR;
                 case UnassignCommand _ -> UnassignCommand.MESSAGE_SAVE_ERROR;

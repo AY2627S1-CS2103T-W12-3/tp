@@ -6,6 +6,8 @@ import static coordimate.logic.commands.CommandTestUtil.EMAIL_DESC_AMY;
 import static coordimate.logic.commands.CommandTestUtil.NAME_DESC_AMY;
 import static coordimate.logic.commands.CommandTestUtil.PHONE_DESC_AMY;
 import static coordimate.testutil.Assert.assertThrows;
+import static coordimate.testutil.TypicalPersons.ALICE;
+import static coordimate.testutil.TypicalPersons.BENSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -13,6 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Assertions;
@@ -22,6 +25,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import coordimate.commons.exceptions.DataLoadingException;
 import coordimate.logic.commands.AddCommand;
+import coordimate.logic.commands.ArchiveCommand;
 import coordimate.logic.commands.CommandResult;
 import coordimate.logic.commands.CreateTagCommand;
 import coordimate.logic.commands.DeleteCommand;
@@ -304,6 +308,43 @@ public class LogicManagerTest {
         String addCommand = AddCommand.COMMAND_WORD + NAME_DESC_AMY + PHONE_DESC_AMY
                 + EMAIL_DESC_AMY + " r/NA" + ADDRESS_DESC_AMY;
         assertCommandFailure(addCommand, CommandException.class, expectedMessage);
+    }
+
+    @Test
+    public void execute_archiveContact_savesAndHidesContact() throws Exception {
+        model.addPerson(ALICE);
+        model.addPerson(BENSON);
+
+        assertEquals("Archived contact: " + ALICE.getName() + ".", logic.execute("archive 1").getFeedbackToUser());
+        assertEquals(List.of(BENSON), logic.getFilteredPersonList());
+        ReadOnlyCoordiMate saved = new JsonCoordiMateStorage(temporaryFolder.resolve("coordiMate.json"))
+                .readCoordiMate().orElseThrow();
+        assertEquals(List.of(ALICE.withArchived(true), BENSON), saved.getPersonList());
+    }
+
+    @Test
+    public void execute_unarchiveInArchivedView_usesArchivedIndexes() throws Exception {
+        model.addPerson(ALICE);
+        model.addPerson(BENSON);
+        logic.execute("archive 2");
+        model.setShowingArchived(true);
+
+        assertEquals("Unarchived contact: " + BENSON.getName() + ".",
+                logic.execute("unarchive 1").getFeedbackToUser());
+        assertEquals(List.of(), logic.getFilteredPersonList());
+        model.setShowingArchived(false);
+        assertEquals(List.of(ALICE, BENSON), logic.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_archiveContactSaveFails_keepsContactActive() {
+        model.addPerson(ALICE);
+        useStorageThatFailsNextSave();
+
+        CommandException e = Assertions.assertThrows(CommandException.class, () -> logic.execute("archive 1"));
+        assertTrue(e.getMessage().startsWith(ArchiveCommand.MESSAGE_SAVE_ERROR));
+        assertEquals(List.of(ALICE), logic.getFilteredPersonList());
+        assertFalse(model.getCoordiMate().getPersonList().getFirst().isArchived());
     }
 
     private void useStorageThatFailsNextSave() {

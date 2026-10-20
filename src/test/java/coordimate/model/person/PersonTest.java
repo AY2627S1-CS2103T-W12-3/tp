@@ -10,6 +10,8 @@ import static coordimate.testutil.TypicalPersons.ALICE;
 import static coordimate.testutil.TypicalPersons.BOB;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
@@ -133,7 +135,25 @@ public class PersonTest {
     public void toStringMethod() {
         String expected = Person.class.getCanonicalName() + "{name=" + ALICE.getName() + ", phone=" + ALICE.getPhone()
                 + ", email=" + ALICE.getEmail() + ", role=" + ALICE.getRole() + ", birthday=null, address="
-                + ALICE.getAddress().orElseThrow() + ", organisation=null, note=null, tags=" + ALICE.getTags() + "}";
+                + ALICE.getAddress().orElseThrow() + ", organisation=null, note=null, tags=" + ALICE.getTags()
+                + ", archived=false}";
         assertEquals(expected, ALICE.toString());
+    }
+
+    @Test
+    public void withArchived_keepsDetailsAndChangesEquality() {
+        Person archived = ALICE.withArchived(true);
+
+        assertFalse(ALICE.isArchived());
+        assertTrue(archived.isArchived());
+        assertFalse(ALICE.equals(archived));
+        assertNotEquals(ALICE.hashCode(), archived.hashCode());
+        assertTrue(ALICE.isSamePerson(archived));
+        assertEquals(ALICE, archived.withArchived(false));
+        assertSame(ALICE, ALICE.withArchived(false));
+        assertEquals(ALICE.getName(), archived.getName());
+        assertEquals(ALICE.getTags(), archived.getTags());
+        assertEquals(ALICE.getAddress(), archived.getAddress());
+        assertTrue(archived.toString().endsWith("archived=true}"));
     }
 }

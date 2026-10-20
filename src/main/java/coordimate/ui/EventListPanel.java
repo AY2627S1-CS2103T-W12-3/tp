@@ -259,7 +259,8 @@ public class EventListPanel extends UiPart<Region> {
         avatar.getStyleClass().add("event-member-avatar");
         avatar.getStyleClass().add(getAvatarColorClass(person));
 
-        Label name = new Label(member.getFullName());
+        Label name = new Label(member.getFullName()
+                + (person != null && person.isArchived() ? " (archived)" : ""));
         name.setWrapText(true);
         name.setMinWidth(0);
         name.getStyleClass().add("event-member-name");

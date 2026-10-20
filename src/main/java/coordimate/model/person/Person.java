@@ -29,6 +29,7 @@ public class Person {
     private final Organisation organisation;
     private final Note note;
     private final Set<Tag> tags = new HashSet<>();
+    private final boolean archived;
 
     /**
      * Creates a person with the given non-null details and a defensive copy of the tags.
@@ -59,6 +60,23 @@ public class Person {
         this.organisation = organisation;
         this.note = note;
         this.tags.addAll(tags);
+        this.archived = false;
+    }
+
+    /**
+     * Creates a copy of {@code source} with the given archive status.
+     */
+    private Person(Person source, boolean archived) {
+        this.name = source.name;
+        this.phone = source.phone;
+        this.email = source.email;
+        this.role = source.role;
+        this.birthday = source.birthday;
+        this.address = source.address;
+        this.organisation = source.organisation;
+        this.note = source.note;
+        this.tags.addAll(source.tags);
+        this.archived = archived;
     }
 
     public Name getName() {
@@ -91,6 +109,21 @@ public class Person {
 
     public Optional<Note> getNote() {
         return Optional.ofNullable(note);
+    }
+
+    /**
+     * Returns whether the contact is archived, which hides it from the contact list but keeps its details
+     * and event history.
+     */
+    public boolean isArchived() {
+        return archived;
+    }
+
+    /**
+     * Returns a copy of this contact with the given archive status, preserving all other details.
+     */
+    public Person withArchived(boolean archived) {
+        return archived == this.archived ? this : new Person(this, archived);
     }
 
     /**
@@ -139,13 +172,14 @@ public class Person {
                 && Objects.equals(address, otherPerson.address)
                 && Objects.equals(organisation, otherPerson.organisation)
                 && Objects.equals(note, otherPerson.note)
-                && tags.equals(otherPerson.tags);
+                && tags.equals(otherPerson.tags)
+                && archived == otherPerson.archived;
     }
 
     @Override
     public int hashCode() {
         // use this method for custom fields hashing instead of implementing your own
-        return Objects.hash(name, phone, email, role, birthday, address, organisation, note, tags);
+        return Objects.hash(name, phone, email, role, birthday, address, organisation, note, tags, archived);
     }
 
     @Override
@@ -160,6 +194,7 @@ public class Person {
                 .add("organisation", organisation)
                 .add("note", note)
                 .add("tags", tags)
+                .add("archived", archived)
                 .toString();
     }
 

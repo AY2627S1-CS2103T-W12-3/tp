@@ -10,6 +10,7 @@ import coordimate.commons.core.LogsCenter;
 import coordimate.logic.Messages;
 import coordimate.logic.commands.AddCommand;
 import coordimate.logic.commands.AddEventCommand;
+import coordimate.logic.commands.ArchiveCommand;
 import coordimate.logic.commands.ArchiveEventCommand;
 import coordimate.logic.commands.AssignCommand;
 import coordimate.logic.commands.ClearCommand;
@@ -69,6 +70,8 @@ public class CoordiMateParser {
             return switch (commandWord) {
                 case AddCommand.COMMAND_WORD -> new AddCommandParser().parse(arguments);
                 case AddEventCommand.COMMAND_WORD -> new AddEventCommandParser().parse(arguments);
+                case ArchiveCommand.COMMAND_WORD -> new ArchiveCommandParser(true).parse(arguments);
+                case ArchiveCommand.UNARCHIVE_COMMAND_WORD -> new ArchiveCommandParser(false).parse(arguments);
                 case ArchiveEventCommand.COMMAND_WORD -> new ArchiveEventCommandParser(true).parse(arguments);
                 case ArchiveEventCommand.UNARCHIVE_COMMAND_WORD ->
                     new ArchiveEventCommandParser(false).parse(arguments);
@@ -108,6 +111,8 @@ public class CoordiMateParser {
         return switch (commandWord) {
             case AddCommand.COMMAND_WORD -> AddCommand.MESSAGE_USAGE;
             case AddEventCommand.COMMAND_WORD -> AddEventCommand.MESSAGE_USAGE;
+            case ArchiveCommand.COMMAND_WORD -> ArchiveCommand.MESSAGE_USAGE;
+            case ArchiveCommand.UNARCHIVE_COMMAND_WORD -> ArchiveCommand.MESSAGE_UNARCHIVE_USAGE;
             case ArchiveEventCommand.COMMAND_WORD -> ArchiveEventCommand.MESSAGE_USAGE;
             case ArchiveEventCommand.UNARCHIVE_COMMAND_WORD -> ArchiveEventCommand.MESSAGE_UNARCHIVE_USAGE;
             case EditCommand.COMMAND_WORD -> EditCommand.MESSAGE_USAGE;

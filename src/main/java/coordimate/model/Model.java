@@ -130,6 +130,17 @@ public interface Model {
     Predicate<? super Person> getFilteredPersonPredicate();
 
     /**
+     * Shows only archived contacts if {@code isShowingArchived} is true, or only active contacts otherwise.
+     * The latest filter still applies within the chosen view.
+     */
+    void setShowingArchived(boolean isShowingArchived);
+
+    /**
+     * Returns true if the filtered contact list shows archived contacts instead of active ones.
+     */
+    boolean isShowingArchived();
+
+    /**
      * Returns an unmodifiable view of the events that are not archived, in insertion order.
      */
     ObservableList<Event> getFilteredEventList();

@@ -37,6 +37,9 @@ class JsonAdaptedPerson {
     private final String organisation;
     private final String note;
     private final List<JsonAdaptedTag> tags = new ArrayList<>();
+    // Set by Jackson after construction; missing from older files, which load with the contact not archived.
+    @JsonProperty("archived")
+    private boolean archived;
 
     /**
      * Constructs a {@code JsonAdaptedPerson} with the given person details.
@@ -91,6 +94,7 @@ class JsonAdaptedPerson {
         tags.addAll(source.getTags().stream()
                 .map(JsonAdaptedTag::new)
                 .collect(Collectors.toList()));
+        archived = source.isArchived();
     }
 
     /**
@@ -156,7 +160,7 @@ class JsonAdaptedPerson {
 
         final Set<Tag> modelTags = new HashSet<>(personTags);
         return new Person(modelName, modelPhone, modelEmail, modelRole, modelBirthday, modelAddress,
-                modelOrganisation, modelNote, modelTags);
+                modelOrganisation, modelNote, modelTags).withArchived(archived);
     }
 
 }

@@ -24,6 +24,8 @@ public class ModelManager implements Model {
     private final UserPrefs userPrefs;
     private final FilteredList<Person> filteredPersons;
     private final FilteredList<Event> filteredEvents;
+    private Predicate<Person> personPredicate;
+    private boolean isShowingArchived;
 
     /**
      * Initializes a ModelManager with the given coordiMate and userPrefs.
@@ -35,7 +37,7 @@ public class ModelManager implements Model {
 
         this.coordiMate = new CoordiMate(coordiMate);
         this.userPrefs = new UserPrefs(userPrefs);
-        filteredPersons = new FilteredList<>(this.coordiMate.getPersonList());
+        filteredPersons = new FilteredList<>(this.coordiMate.getPersonList(), this::isShownPerson);
         filteredEvents = new FilteredList<>(this.coordiMate.getEventList(), event -> !event.isArchived());
     }
 
@@ -171,12 +173,31 @@ public class ModelManager implements Model {
     @Override
     public void updateFilteredPersonList(Predicate<Person> predicate) {
         requireNonNull(predicate);
-        filteredPersons.setPredicate(predicate);
+        personPredicate = predicate;
+        filteredPersons.setPredicate(this::isShownPerson);
     }
 
     @Override
     public Predicate<? super Person> getFilteredPersonPredicate() {
-        return filteredPersons.getPredicate();
+        return personPredicate;
+    }
+
+    @Override
+    public void setShowingArchived(boolean isShowingArchived) {
+        this.isShowingArchived = isShowingArchived;
+        filteredPersons.setPredicate(this::isShownPerson);
+    }
+
+    @Override
+    public boolean isShowingArchived() {
+        return isShowingArchived;
+    }
+
+    /**
+     * Shows only contacts in the current archive view that also match the latest filter, if any.
+     */
+    private boolean isShownPerson(Person person) {
+        return person.isArchived() == isShowingArchived && (personPredicate == null || personPredicate.test(person));
     }
 
     //=========== Filtered Event List Accessors ==============================================================
@@ -199,6 +220,7 @@ public class ModelManager implements Model {
 
         return coordiMate.equals(otherModelManager.coordiMate)
                 && userPrefs.equals(otherModelManager.userPrefs)
+                && isShowingArchived == otherModelManager.isShowingArchived
                 && filteredPersons.equals(otherModelManager.filteredPersons);
     }
 

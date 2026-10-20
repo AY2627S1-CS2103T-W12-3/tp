@@ -13,7 +13,11 @@ import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import coordimate.commons.exceptions.IllegalValueException;
+import coordimate.commons.util.JsonUtil;
 import coordimate.model.person.Address;
 import coordimate.model.person.Birthday;
 import coordimate.model.person.Email;
@@ -266,5 +270,30 @@ public class JsonAdaptedPersonTest {
 
         assertTrue(person.toModelType().getTags().contains(new Tag(legacyTag)));
         assertFalse(Tag.isValidInputTagName(legacyTag));
+    }
+
+    @Test
+    public void toModelType_archivedPerson_roundTripsArchiveStatus() throws Exception {
+        Person archived = BENSON.withArchived(true);
+        String json = JsonUtil.toJsonString(new JsonAdaptedPerson(archived));
+
+        assertEquals(archived, JsonUtil.fromJsonString(json, JsonAdaptedPerson.class).toModelType());
+    }
+
+    @Test
+    public void toModelType_missingOrNullArchiveStatus_loadsAsNotArchived() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode saved = (ObjectNode) mapper.readTree(JsonUtil.toJsonString(new JsonAdaptedPerson(BENSON)));
+        assertFalse(saved.get("archived").asBoolean());
+
+        ObjectNode legacy = saved.deepCopy();
+        legacy.remove("archived");
+        ObjectNode nullStatus = saved.deepCopy();
+        nullStatus.putNull("archived");
+        for (ObjectNode node : List.of(legacy, nullStatus)) {
+            Person loaded = JsonUtil.fromJsonString(node.toString(), JsonAdaptedPerson.class).toModelType();
+            assertFalse(loaded.isArchived());
+            assertEquals(BENSON, loaded);
+        }
     }
 }

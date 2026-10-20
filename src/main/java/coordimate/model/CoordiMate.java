@@ -176,7 +176,7 @@ public class CoordiMate implements ReadOnlyCoordiMate {
                 .filter(tag -> !tag.isSameTag(target))
                 .toList();
         List<Person> updatedPersons = persons.asUnmodifiableObservableList().stream()
-                .map(person -> removeTagFromPerson(person, target))
+                .map(person -> removeTagFromPerson(person, target).withArchived(person.isArchived()))
                 .toList();
         tags.setTags(remainingTags);
         persons.setPersons(updatedPersons);
@@ -200,7 +200,7 @@ public class CoordiMate implements ReadOnlyCoordiMate {
                 .map(tag -> tag.isSameTag(target) ? editedTag : tag)
                 .toList();
         List<Person> editedPersons = persons.asUnmodifiableObservableList().stream()
-                .map(person -> replaceTag(person, target, editedTag))
+                .map(person -> replaceTag(person, target, editedTag).withArchived(person.isArchived()))
                 .toList();
         tags.setTags(editedTags);
         persons.setPersons(editedPersons);
