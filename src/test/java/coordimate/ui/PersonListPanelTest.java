@@ -86,6 +86,37 @@ public class PersonListPanelTest {
     }
 
     @Test
+    public void navigateCards_handlesUnselectedEmptyAndBoundaryStates() throws Exception {
+        runOnJavaFxThread(() -> {
+            PersonListPanel panel = new PersonListPanel(FXCollections.observableArrayList(ALICE, BENSON));
+            Region root = panel.getRoot();
+            new Scene(root);
+            root.applyCss();
+            ListView<Person> list = getList(root);
+
+            assertNull(list.getSelectionModel().getSelectedItem());
+            assertTrue(panel.selectPreviousCard());
+            assertEquals(BENSON, list.getSelectionModel().getSelectedItem());
+            assertTrue(panel.selectPreviousCard());
+            assertEquals(ALICE, list.getSelectionModel().getSelectedItem());
+            assertTrue(panel.selectPreviousCard());
+            assertEquals(ALICE, list.getSelectionModel().getSelectedItem());
+
+            list.getSelectionModel().clearSelection();
+            assertTrue(panel.selectNextCard());
+            assertEquals(ALICE, list.getSelectionModel().getSelectedItem());
+            assertTrue(panel.selectNextCard());
+            assertEquals(BENSON, list.getSelectionModel().getSelectedItem());
+            assertTrue(panel.selectNextCard());
+            assertEquals(BENSON, list.getSelectionModel().getSelectedItem());
+
+            PersonListPanel emptyPanel = new PersonListPanel(FXCollections.observableArrayList());
+            assertFalse(emptyPanel.selectNextCard());
+            assertFalse(emptyPanel.selectPreviousCard());
+        });
+    }
+
+    @Test
     public void contactWithAllDetails_showsSavedValues() throws Exception {
         runOnJavaFxThread(() -> {
             Person contact = new PersonBuilder(ALICE).withRole("Logistics Lead")

@@ -7,8 +7,6 @@
 <VBox fx:id="reminderPanel" spacing="8" minWidth="0" styleClass="reminder-panel"
       xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
   <Label fx:id="reminderHeading" text="Upcoming events" styleClass="section-heading" />
-  <Label fx:id="reminderEmptyState" text="No upcoming event reminders." wrapText="true"
-         focusTraversable="true" styleClass="reminder-empty-state" />
   <ScrollPane fx:id="reminderScroll" fitToWidth="true" hbarPolicy="NEVER" minHeight="0"
               focusTraversable="false" styleClass="reminder-scroll"
               accessibleText="Upcoming event reminders, ordered by start time.">
