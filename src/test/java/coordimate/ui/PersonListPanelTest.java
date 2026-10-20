@@ -37,6 +37,7 @@ import javafx.scene.control.SplitPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
 /**
@@ -135,17 +136,25 @@ public class PersonListPanelTest {
     @Test
     public void resize_narrowWindowStacksContactPanes() throws Exception {
         runOnJavaFxThread(() -> {
-            ObservableList<Person> persons = FXCollections.observableArrayList(ALICE);
-            SplitPane pane = (SplitPane) new PersonListPanel(persons).getRoot();
-            new Scene(pane);
-
-            pane.resize(900, 500);
-            assertEquals(Orientation.HORIZONTAL, pane.getOrientation());
-            assertEquals(460, ((Region) pane.getItems().get(1)).getMinWidth());
-
-            pane.resize(700, 500);
-            assertEquals(Orientation.VERTICAL, pane.getOrientation());
+            assertContactLayoutAtWidth(900, Orientation.HORIZONTAL);
+            assertContactLayoutAtWidth(700, Orientation.VERTICAL);
+            assertContactLayoutAtWidth(760, Orientation.VERTICAL);
+            assertContactLayoutAtWidth(762, Orientation.HORIZONTAL);
         });
+    }
+
+    private static void assertContactLayoutAtWidth(double width, Orientation expectedOrientation) {
+        SplitPane pane = (SplitPane) new PersonListPanel(FXCollections.observableArrayList(ALICE)).getRoot();
+        StackPane container = new StackPane(pane);
+        new Scene(container, width, 500);
+        container.applyCss();
+        container.layout();
+
+        assertEquals(width, pane.getWidth());
+        assertEquals(expectedOrientation, pane.getOrientation());
+        assertEquals(0, pane.getMinWidth());
+        assertEquals(300, ((Region) pane.getItems().get(0)).getMinWidth());
+        assertEquals(460, ((Region) pane.getItems().get(1)).getMinWidth());
     }
 
     @Test

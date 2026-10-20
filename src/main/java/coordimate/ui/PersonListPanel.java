@@ -35,11 +35,17 @@ import javafx.scene.layout.VBox;
  */
 public class PersonListPanel extends UiPart<Region> {
     private static final String FXML = "PersonListPanel.fxml";
-    private static final double VERTICAL_LAYOUT_WIDTH = 760;
+    private static final double SPLIT_PANE_DIVIDER_WIDTH = 2;
     private static final String NOT_SPECIFIED = "— (not specified)";
 
     @FXML
     private SplitPane contactSplitPane;
+
+    @FXML
+    private Region contactListSection;
+
+    @FXML
+    private Region contactDetailsSection;
 
     @FXML
     private ListView<Person> personListView;
@@ -125,10 +131,15 @@ public class PersonListPanel extends UiPart<Region> {
         contactCount.textProperty().bind(Bindings.size(persons).asString("Records: %d"));
         personListView.getSelectionModel().selectedItemProperty().addListener((observable, oldPerson, person) ->
                 showDetails(person));
-        contactSplitPane.widthProperty().addListener((observable, oldWidth, width) ->
-                contactSplitPane.setOrientation(width.doubleValue() < VERTICAL_LAYOUT_WIDTH
-                        ? Orientation.VERTICAL : Orientation.HORIZONTAL));
+        contactSplitPane.widthProperty().addListener((observable, oldWidth, width) -> updateOrientation(width));
         showDetails(null);
+    }
+
+    private void updateOrientation(Number width) {
+        double horizontalMinimum = contactListSection.getMinWidth() + contactDetailsSection.getMinWidth()
+                + contactSplitPane.getDividers().size() * SPLIT_PANE_DIVIDER_WIDTH;
+        contactSplitPane.setOrientation(width.doubleValue() < horizontalMinimum
+                ? Orientation.VERTICAL : Orientation.HORIZONTAL);
     }
 
     /**
