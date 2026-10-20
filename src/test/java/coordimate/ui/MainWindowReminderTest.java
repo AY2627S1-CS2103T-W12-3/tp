@@ -125,6 +125,59 @@ public class MainWindowReminderTest {
     }
 
     @Test
+    public void dismissCommand_validIndex_updatesPanelAndShowsSuccessAfterRejectedIndex() throws Exception {
+        onJavaFxThread(() -> {
+            Fixture fixture = openWindow(true);
+            try {
+                Parent root = fixture.stage().getScene().getRoot();
+                TextField input = (TextField) root.lookup("#commandTextField");
+                input.setText("dismiss 2");
+                input.fireEvent(new ActionEvent());
+                assertEquals("Rejected", ((Label) root.lookup("#feedbackStatus")).getText());
+                assertEquals(1, rows(root).getChildren().size());
+                assertEquals("dismiss 2", input.getText());
+
+                input.setText("dismiss 1");
+                input.fireEvent(new ActionEvent());
+
+                assertEquals(0, rows(root).getChildren().size());
+                assertTrue(root.lookup("#reminderEmptyState").isVisible());
+                assertEquals("Reminder dismissed: Final Concert.", ((Label) root.lookup("#resultDisplay")).getText());
+                assertEquals("OK", ((Label) root.lookup("#feedbackStatus")).getText());
+                assertEquals("", input.getText());
+                assertTrue(fixture.storage().readCoordiMate().orElseThrow().getEventList().getFirst()
+                        .isReminderDismissed());
+            } finally {
+                fixture.stage().close();
+            }
+            return null;
+        });
+    }
+
+    @Test
+    public void dismissCommand_saveFailure_showsNotSavedWarningAndHidesReminder() throws Exception {
+        onJavaFxThread(() -> {
+            Fixture fixture = openWindow(true);
+            try {
+                fixture.storage().failSave = true;
+                Parent root = fixture.stage().getScene().getRoot();
+                TextField input = (TextField) root.lookup("#commandTextField");
+                input.setText("dismiss 1");
+                input.fireEvent(new ActionEvent());
+
+                assertEquals(0, rows(root).getChildren().size());
+                assertEquals(ReminderDismissalException.MESSAGE, ((Label) root.lookup("#resultDisplay")).getText());
+                assertEquals("Not saved", ((Label) root.lookup("#feedbackStatus")).getText());
+                assertEquals("", input.getText());
+                assertFalse(fixture.model().getCoordiMate().getEventList().getFirst().isReminderDismissed());
+            } finally {
+                fixture.stage().close();
+            }
+            return null;
+        });
+    }
+
+    @Test
     public void dismissButton_savesDismissalAndShowsEmptyState() throws Exception {
         onJavaFxThread(() -> {
             Fixture fixture = openWindow(true);

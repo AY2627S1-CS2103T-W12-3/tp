@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 
 import coordimate.logic.commands.exceptions.CommandException;
+import coordimate.logic.parser.CommandParserTestUtil;
 import coordimate.logic.parser.CoordiMateParser;
 import coordimate.logic.parser.exceptions.ParseException;
 import coordimate.model.ModelManager;
@@ -15,7 +16,7 @@ import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
 
 public class CommandErrorMessagesTest {
-    private final CoordiMateParser parser = new CoordiMateParser();
+    private final CoordiMateParser parser = CommandParserTestUtil.createParser();
 
     @Test
     public void parse_invalidInput_hasExplanationAndExample() {
@@ -24,6 +25,7 @@ public class CommandErrorMessagesTest {
             "", "unknown", "add", "edit", "delete", "search", "search \"\"", "filter", "filter unknown/value",
             "filter tag/", "filter event/\"Concert tag/friend", "addtag", "deletetag", "edittag", "listtags extra",
             "addevent", "editevent", "deleteevent", "assign", "unassign", "members", "markattendance",
+            "dismiss", "dismiss 0", "dismiss 1 2",
             contact + " x/value", "edit 1 x/value", "delete x/value", "addtag x/value", "deletetag x/value",
             "edittag Publicity x/value", "addevent x/value", "editevent x/value", "deleteevent x/value",
             "assign x/value", "unassign x/value", "members x/value", "markattendance x/value",

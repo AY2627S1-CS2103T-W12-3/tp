@@ -29,6 +29,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import coordimate.commons.exceptions.DataLoadingException;
+import coordimate.logic.commands.CommandResult;
+import coordimate.logic.commands.DismissCommand;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.logic.parser.exceptions.ParseException;
 import coordimate.logic.reminder.ReminderDismissalException;
@@ -69,6 +71,56 @@ public class ReminderLogicIntegrationTest {
         storage.writes = 0;
         clock = new MutableClock(ZonedDateTime.parse("2026-10-19T15:00:00+08:00").toInstant());
         logic = newLogic(model);
+    }
+
+    @Test
+    public void executeDismiss_validIndex_savesOnceAndUpdatesExistingReminderList() throws Exception {
+        Event earlier = event("Earlier", "19-10-2026 18:00");
+        model.addEvent(earlier);
+        ObservableList<Event> view = logic.getReminders();
+        assertEquals(List.of(earlier, concert), view);
+
+        CommandResult result = logic.execute("dismiss 2");
+
+        assertEquals("Reminder dismissed: Concert.", result.getFeedbackToUser());
+        assertFalse(result.isWarning());
+        assertEquals(List.of(earlier), view);
+        assertEquals(1, storage.reads);
+        assertEquals(1, storage.writes);
+        assertTrue(savedEvent().isReminderDismissed());
+    }
+
+    @Test
+    public void executeDismiss_outOfRangeOrEmptyPanel_rejectedWithoutStorageAccess() throws Exception {
+        String message = Messages.withUsage(String.format(DismissCommand.MESSAGE_INVALID_INDEX, 2),
+                DismissCommand.MESSAGE_USAGE);
+        assertEquals(message, assertThrows(CommandException.class, () -> logic.execute("dismiss 2")).getMessage());
+        assertEquals(List.of(concert), logic.getReminders());
+        assertEquals(0, storage.reads);
+        assertEquals(0, storage.writes);
+
+        model.deleteEvent(concert);
+        message = Messages.withUsage(String.format(DismissCommand.MESSAGE_INVALID_INDEX, 1),
+                DismissCommand.MESSAGE_USAGE);
+        assertEquals(message, assertThrows(CommandException.class, () -> logic.execute("dismiss 1")).getMessage());
+        assertEquals(0, storage.reads);
+        assertEquals(0, storage.writes);
+    }
+
+    @Test
+    public void executeDismiss_saveFailure_returnsWarningAndHidesReminderForSession() throws Exception {
+        storage.failSave = true;
+        byte[] before = Files.readAllBytes(storage.getCoordiMateFilePath());
+
+        CommandResult result = logic.execute("dismiss 1");
+
+        assertTrue(result.isWarning());
+        assertEquals(ReminderDismissalException.MESSAGE, result.getFeedbackToUser());
+        assertEquals(List.of(), logic.getReminders());
+        assertEquals(1, storage.reads);
+        assertEquals(1, storage.writes);
+        assertFalse(model.getCoordiMate().getEventList().getFirst().isReminderDismissed());
+        assertArrayEquals(before, Files.readAllBytes(storage.getCoordiMateFilePath()));
     }
 
     @Test

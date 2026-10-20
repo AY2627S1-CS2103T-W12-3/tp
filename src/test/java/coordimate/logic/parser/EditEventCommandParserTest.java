@@ -17,7 +17,7 @@ public class EditEventCommandParserTest {
     public void parse_examplesAndOptionalFields_success() throws Exception {
         assertEquals(new EditEventCommand("Final Concert", null,
                 new EventTime("08-08-2026 16:00"), new EventTime("08-08-2026 19:00")),
-                new CoordiMateParser().parseCommand(
+                CommandParserTestUtil.createParser().parseCommand(
                         "editevent evn/Final Concert st/08-08-2026 16:00 et/08-08-2026 19:00"));
         assertEquals(new EditEventCommand("Student Life Fair", "NUS Student Life Fair", null,
                 new EventTime("10-10-2026")), parser.parse(

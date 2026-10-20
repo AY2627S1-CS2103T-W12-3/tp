@@ -18,6 +18,7 @@ import coordimate.logic.commands.Command;
 import coordimate.logic.commands.CommandResult;
 import coordimate.logic.commands.DeleteCommand;
 import coordimate.logic.commands.DeleteEventCommand;
+import coordimate.logic.commands.DismissCommand;
 import coordimate.logic.commands.EditCommand;
 import coordimate.logic.commands.EditEventCommand;
 import coordimate.logic.commands.MarkAttendanceCommand;
@@ -71,8 +72,8 @@ public class LogicManager implements Logic {
     public LogicManager(Model model, Storage storage, Clock clock) {
         this.model = model;
         this.storage = storage;
-        coordiMateParser = new CoordiMateParser();
         reminderService = new ReminderService(model, storage, clock);
+        coordiMateParser = new CoordiMateParser(reminderService);
     }
 
     @Override
@@ -101,7 +102,7 @@ public class LogicManager implements Logic {
         }
 
         Command command = coordiMateParser.parseCommand(commandText);
-        if (command instanceof SwitchCommand) {
+        if (command instanceof SwitchCommand || command instanceof DismissCommand) {
             return command.execute(model);
         }
         if (command instanceof DeleteCommand deleteCommand) {
