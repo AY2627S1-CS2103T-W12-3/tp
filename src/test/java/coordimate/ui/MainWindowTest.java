@@ -159,6 +159,21 @@ public class MainWindowTest {
             assertTrue(helpStage.isShowing());
             assertSame(stage, helpStage.getOwner());
 
+            KeyEvent enterEvent = keyEvent(KeyCode.ENTER);
+            helpLabel.getOnKeyPressed().handle(enterEvent);
+            assertTrue(enterEvent.isConsumed());
+            assertTrue(helpStage.isShowing());
+
+            KeyEvent otherKeyEvent = keyEvent(KeyCode.A);
+            helpLabel.getOnKeyPressed().handle(otherKeyEvent);
+            assertFalse(otherKeyEvent.isConsumed());
+
+            helpStage.hide();
+            KeyEvent spaceEvent = keyEvent(KeyCode.SPACE);
+            helpLabel.getOnKeyPressed().handle(spaceEvent);
+            assertTrue(spaceEvent.isConsumed());
+            assertTrue(helpStage.isShowing());
+
             helpStage.hide();
             javafx.event.Event.fireEvent(stage.getScene().getRoot(), keyEvent(KeyCode.F1));
             assertTrue(helpStage.isShowing());
