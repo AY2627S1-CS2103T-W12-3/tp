@@ -31,9 +31,6 @@ public class ReminderPanel extends UiPart<Region> {
     private Label reminderHeading;
 
     @FXML
-    private Label reminderEmptyState;
-
-    @FXML
     private ScrollPane reminderScroll;
 
     @FXML
@@ -61,20 +58,14 @@ public class ReminderPanel extends UiPart<Region> {
         }
         reminderHeading.setText("Upcoming events (" + reminders.size() + ")");
         boolean empty = reminders.isEmpty();
-        reminderEmptyState.setVisible(empty);
-        reminderEmptyState.setManaged(empty);
-        reminderScroll.setVisible(!empty);
-        reminderScroll.setManaged(!empty);
+        getRoot().setVisible(!empty);
+        getRoot().setManaged(!empty);
         reminderScroll.setPrefViewportHeight(Math.min(168, reminders.size() * 112));
         reminderRows.getChildren().setAll(IntStream.range(0, reminders.size())
                 .mapToObj(index -> createReminderRow(reminders.get(index), index + 1)).toList());
-        if (focusedRow >= 0) {
-            if (empty) {
-                reminderEmptyState.requestFocus();
-            } else {
-                HBox nextRow = (HBox) reminderRows.getChildren().get(Math.min(focusedRow, reminders.size() - 1));
-                nextRow.getChildren().getLast().requestFocus();
-            }
+        if (focusedRow >= 0 && !empty) {
+            HBox nextRow = (HBox) reminderRows.getChildren().get(Math.min(focusedRow, reminders.size() - 1));
+            nextRow.getChildren().getLast().requestFocus();
         }
     }
 

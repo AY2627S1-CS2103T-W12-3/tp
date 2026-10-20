@@ -8,6 +8,7 @@ import coordimate.logic.commands.CommandResult;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.logic.parser.exceptions.ParseException;
 import javafx.collections.ObservableList;
+import javafx.event.EventTarget;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
@@ -44,6 +45,7 @@ public class CommandBox extends UiPart<Region> {
         this.isAwaitingDeleteConfirmation = isAwaitingDeleteConfirmation;
         // calls #setStyleToDefault() whenever there is a change to the text of the command box.
         commandTextField.textProperty().addListener((unused1, unused2, unused3) -> setStyleToDefault());
+        commandTextField.addEventFilter(KeyEvent.ANY, this::blockInputWhenDisabled);
         commandTextField.addEventFilter(KeyEvent.KEY_PRESSED, this::handleHistoryNavigation);
     }
 
@@ -52,6 +54,10 @@ public class CommandBox extends UiPart<Region> {
      */
     @FXML
     private void handleCommandEntered() {
+        if (commandTextField.isDisabled()) {
+            return;
+        }
+
         String commandText = commandTextField.getText();
         boolean isDeleteConfirmation = isAwaitingDeleteConfirmation.getAsBoolean();
         if (commandText.isBlank() && !isDeleteConfirmation) {
@@ -77,6 +83,33 @@ public class CommandBox extends UiPart<Region> {
         commandTextField.setText(command);
         commandTextField.positionCaret(command.length());
         commandTextField.requestFocus();
+    }
+
+    /** Returns keyboard focus to the command input. */
+    void requestFocus() {
+        commandTextField.requestFocus();
+    }
+
+    /** Returns whether the given event target is this command box's text input. */
+    boolean isCommandInput(EventTarget eventTarget) {
+        return eventTarget == commandTextField;
+    }
+
+    /** Focuses the command input without changing its text. */
+    void focusInput() {
+        commandTextField.requestFocus();
+    }
+
+    /** Enables or disables all command input controls. */
+    void setInputDisabled(boolean isDisabled) {
+        commandTextField.setDisable(isDisabled);
+        submitButton.setDisable(isDisabled);
+    }
+
+    private void blockInputWhenDisabled(KeyEvent event) {
+        if (commandTextField.isDisabled()) {
+            event.consume();
+        }
     }
 
     private void handleHistoryNavigation(KeyEvent event) {
