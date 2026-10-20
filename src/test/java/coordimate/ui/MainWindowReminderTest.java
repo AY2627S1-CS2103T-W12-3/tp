@@ -77,7 +77,7 @@ public class MainWindowReminderTest {
                 fixture.logic().refreshReminders();
                 Parent root = fixture.stage().getScene().getRoot();
 
-                assertEquals(List.of("Upcoming event: Student Life Fair", "Upcoming event: Final Concert"),
+                assertEquals(List.of("1. Upcoming event: Student Life Fair", "2. Upcoming event: Final Concert"),
                         names(root));
                 assertEquals("Starts: 20-10-2026", ((Label) root.lookup(".reminder-time")).getText());
                 for (String view : List.of("eventsView", "tagsView", "contactsView")) {
@@ -110,7 +110,7 @@ public class MainWindowReminderTest {
                 fixture.clock().advance(java.time.Duration.ofMinutes(1));
                 fixture.timer().getKeyFrames().getFirst().getOnFinished().handle(new ActionEvent());
 
-                assertEquals(List.of("Upcoming event: Final Concert", "Upcoming event: Later"), names(root));
+                assertEquals(List.of("1. Upcoming event: Final Concert", "2. Upcoming event: Later"), names(root));
                 assertArrayEquals(before, Files.readAllBytes(fixture.storage().getCoordiMateFilePath()));
                 fixture.stage().close();
                 assertEquals(Animation.Status.STOPPED, fixture.timer().getStatus());
@@ -198,7 +198,7 @@ public class MainWindowReminderTest {
                     fixture.clock().advance(elapsed);
                     fixture.timer().getKeyFrames().getFirst().getOnFinished().handle(new ActionEvent());
 
-                    assertEquals(List.of("Upcoming event: Final Concert"), names(root));
+                    assertEquals(List.of("1. Upcoming event: Final Concert"), names(root));
                     assertEquals("Starts: 21-10-2026", ((Label) root.lookup(".reminder-time")).getText());
                 }
                 fixture.clock().advance(java.time.Duration.ofNanos(1));
@@ -248,7 +248,7 @@ public class MainWindowReminderTest {
                 Parent root = fixture.stage().getScene().getRoot();
                 fixture.logic().execute("editevent evn/Final Concert nevn/Grand Concert st/19-10-2026 17:00");
 
-                assertEquals(List.of("Upcoming event: Grand Concert"), names(root));
+                assertEquals(List.of("1. Upcoming event: Grand Concert"), names(root));
                 assertEquals("Starts: 19-10-2026 17:00", ((Label) root.lookup(".reminder-time")).getText());
                 fixture.logic().execute("deleteevent evn/Grand Concert");
                 assertTrue(root.lookup("#reminderEmptyState").isVisible());
