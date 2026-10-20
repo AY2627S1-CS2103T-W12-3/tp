@@ -86,8 +86,9 @@ containing the saved position, or the primary screen if that display is no longe
 the saved dimensions and coordinates to the screen's visual bounds, which exclude operating-system areas such as the
 taskbar or dock. The preferred minimum size is also capped to the available area, so it cannot force the window beyond
 a smaller display. `MainWindow` tracks the latest non-maximized bounds separately, allowing a maximized window to be
-restored without replacing its normal dimensions. Screen fallback is logged at `WARNING`, bounds adjustments at `INFO`,
-and maximized-state restoration and saving at `FINE`.
+restored without replacing its normal dimensions. If a maximized window is moved to another monitor before closing,
+the normal bounds retain their size and relative position on that monitor so the next launch maximizes there. Screen
+fallback is logged at `WARNING`, bounds adjustments at `INFO`, and maximized-state restoration and saving at `FINE`.
 
 The `UI` component,
 
@@ -955,6 +956,15 @@ testers are expected to do more *exploratory* testing.
 
    1. Relaunch the app by double-clicking the JAR file.<br>
       Expected: The app opens maximized. Unmaximizing it restores the size and position set in the previous step.
+
+1. Saving the monitor used by a maximized window
+
+   1. With two monitors connected, unmaximize the app on the first monitor and give it a distinctive size and position.
+      Maximize it, move the maximized window to the second monitor, and close it.
+
+   1. Relaunch the app by double-clicking the JAR file.<br>
+      Expected: The app opens maximized on the second monitor. Unmaximizing it retains the previous normal size and
+      relative position on the second monitor.
 
 1. Recovering from unavailable window bounds
 

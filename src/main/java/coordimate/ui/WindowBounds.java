@@ -37,6 +37,19 @@ final class WindowBounds {
     }
 
     /**
+     * Moves normal window bounds from one screen to the same relative position on another screen.
+     * The size is retained when possible and reduced only when the target screen is smaller.
+     */
+    static Rectangle2D moveToScreen(Rectangle2D windowBounds, Rectangle2D sourceScreen,
+                                    Rectangle2D targetScreen) {
+        double translatedX = targetScreen.getMinX() + windowBounds.getMinX() - sourceScreen.getMinX();
+        double translatedY = targetScreen.getMinY() + windowBounds.getMinY() - sourceScreen.getMinY();
+        GuiSettings translated = new GuiSettings(windowBounds.getWidth(), windowBounds.getHeight(),
+                (int) translatedX, (int) translatedY);
+        return fitToScreen(translated, targetScreen);
+    }
+
+    /**
      * Returns whether the fitted bounds differ from any saved size or position.
      */
     static boolean wereAdjusted(GuiSettings guiSettings, Rectangle2D fittedBounds) {

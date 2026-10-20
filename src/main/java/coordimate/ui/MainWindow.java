@@ -442,10 +442,8 @@ public class MainWindow extends UiPart<Stage> {
         }
         List<Screen> screens = Screen.getScreensForRectangle(
                 savedCoordinates.getX(), savedCoordinates.getY(), 1, 1);
-        if (screens.isEmpty()) {
-            logger.warning("Saved window position is outside all connected screens; using the primary screen.");
-        }
-        return screens.isEmpty() ? Screen.getPrimary() : screens.getFirst();
+        return getScreenOrPrimary(screens,
+                "Saved window position is outside all connected screens; using the primary screen.");
     }
 
     /**
@@ -473,7 +471,9 @@ public class MainWindow extends UiPart<Stage> {
     @FXML
     private void handleExit() {
         boolean isMaximized = primaryStage.isMaximized();
-        if (!isMaximized) {
+        if (isMaximized) {
+            moveNormalWindowBoundsToCurrentScreen();
+        } else {
             rememberNormalWindowBounds();
         }
         GuiSettings guiSettings = new GuiSettings(normalWindowBounds.getWidth(), normalWindowBounds.getHeight(),
@@ -482,6 +482,30 @@ public class MainWindow extends UiPart<Stage> {
         logic.setGuiSettings(guiSettings);
         helpWindow.hide();
         primaryStage.hide();
+    }
+
+    private void moveNormalWindowBoundsToCurrentScreen() {
+        Point normalCoordinates = new Point((int) normalWindowBounds.getMinX(), (int) normalWindowBounds.getMinY());
+        Screen normalScreen = getTargetScreen(normalCoordinates);
+        Screen currentScreen = getCurrentScreen();
+        normalWindowBounds = WindowBounds.moveToScreen(normalWindowBounds,
+                normalScreen.getVisualBounds(), currentScreen.getVisualBounds());
+        logger.fine("Aligned saved normal window bounds with the screen where the maximized window was closed: "
+                + normalWindowBounds);
+    }
+
+    private Screen getCurrentScreen() {
+        List<Screen> screens = Screen.getScreensForRectangle(primaryStage.getX(), primaryStage.getY(),
+                primaryStage.getWidth(), primaryStage.getHeight());
+        return getScreenOrPrimary(screens,
+                "Current window position is outside all connected screens; using the primary screen.");
+    }
+
+    private Screen getScreenOrPrimary(List<Screen> screens, String fallbackWarning) {
+        if (screens.isEmpty()) {
+            logger.warning(fallbackWarning);
+        }
+        return screens.isEmpty() ? Screen.getPrimary() : screens.getFirst();
     }
 
     private void rememberNormalWindowBounds() {
