@@ -145,9 +145,6 @@ public class ModelManager implements Model {
     @Override
     public void addPerson(Person person) {
         coordiMate.addPerson(person);
-        for (Tag tag : person.getTags()) {
-            registerTag(tag);
-        }
         updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
     }
 
@@ -156,9 +153,6 @@ public class ModelManager implements Model {
         requireAllNonNull(target, editedPerson);
 
         coordiMate.setPerson(target, editedPerson);
-        for (Tag tag : editedPerson.getTags()) {
-            registerTag(tag);
-        }
     }
 
     //=========== Filtered Person List Accessors =============================================================

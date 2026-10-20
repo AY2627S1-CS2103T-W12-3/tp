@@ -206,7 +206,6 @@ public class EditCommandTest {
     @Test
     public void execute_removeTag_keepsTagInRegistry() {
         CoordiMate savedData = new CoordiMate(model.getCoordiMate());
-        savedData.addTag(new Tag("friends"));
         model = new ModelManager(savedData, new UserPrefs());
         Person original = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
         EditPersonDescriptor descriptor = new EditPersonDescriptor();
@@ -226,7 +225,7 @@ public class EditCommandTest {
         EditPersonDescriptor descriptor = new EditPersonDescriptor();
         descriptor.addTagOperation(new TagOperation(TagOperationType.REMOVE, new Tag("friends")));
         descriptor.addTagOperation(new TagOperation(TagOperationType.ADD, new Tag("FRIENDS")));
-        Person edited = new PersonBuilder(original).withTags("FRIENDS").build();
+        Person edited = new PersonBuilder(original).withTags("friends").build();
         Model expectedModel = new ModelManager(new CoordiMate(model.getCoordiMate()), new UserPrefs());
         expectedModel.setPerson(original, edited);
 
