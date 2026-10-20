@@ -158,12 +158,17 @@ public class MainWindowTest {
                 ToggleButton eventsView = (ToggleButton) stage.getScene().getRoot().lookup("#eventsView");
                 ToggleButton tagsView = (ToggleButton) stage.getScene().getRoot().lookup("#tagsView");
                 Label mode = (Label) stage.getScene().getRoot().lookup("#interactionModeLabel");
+                Button submit = (Button) stage.getScene().getRoot().lookup("#submitButton");
 
                 assertEquals("COMMAND · Esc to navigate", mode.getText());
+                assertFalse(input.isDisabled());
+                assertFalse(submit.isDisabled());
                 assertTrue(keyReachesTarget(input, typedKeyEvent("j")));
                 input.clear();
                 assertFalse(keyReachesTarget(input, keyEvent(KeyCode.ESCAPE)));
                 assertEquals("NAVIGATION · j/k move · i to type", mode.getText());
+                assertTrue(input.isDisabled());
+                assertTrue(submit.isDisabled());
                 assertFalse(keyReachesTarget(input, typedKeyEvent("j")));
                 assertEquals(firstContact, contacts.getSelectionModel().getSelectedItem());
                 assertTrue(input.getText().isEmpty());
@@ -200,10 +205,15 @@ public class MainWindowTest {
                 assertEquals(secondContact, contacts.getSelectionModel().getSelectedItem());
 
                 fireMousePress(input);
+                assertEquals("NAVIGATION · j/k move · i to type", mode.getText());
+                assertFalse(keyReachesTarget(contactsView, typedKeyEvent("i")));
                 assertEquals("COMMAND · Esc to navigate", mode.getText());
+                assertFalse(input.isDisabled());
+                assertFalse(submit.isDisabled());
                 fireMousePress(contacts);
                 assertEquals("NAVIGATION · j/k move · i to type", mode.getText());
                 fireMousePress(input);
+                assertEquals("NAVIGATION · j/k move · i to type", mode.getText());
                 fireMousePress(events);
                 assertEquals("NAVIGATION · j/k move · i to type", mode.getText());
                 fireMousePress(input);
@@ -258,13 +268,13 @@ public class MainWindowTest {
 
                 assertFalse(keyReachesTarget(input, typedKeyEvent("a")));
                 assertTrue(input.getText().isEmpty());
-                assertTrue(keyReachesTarget(input, typedKeyEvent("j", true, false, false, false)));
+                assertFalse(keyReachesTarget(input, typedKeyEvent("j", true, false, false, false)));
                 input.clear();
-                assertTrue(keyReachesTarget(input, typedKeyEvent("j", false, true, false, false)));
+                assertFalse(keyReachesTarget(input, typedKeyEvent("j", false, true, false, false)));
                 input.clear();
-                assertTrue(keyReachesTarget(input, typedKeyEvent("j", false, false, true, false)));
+                assertFalse(keyReachesTarget(input, typedKeyEvent("j", false, false, true, false)));
                 input.clear();
-                assertTrue(keyReachesTarget(input, typedKeyEvent("j", false, false, false, true)));
+                assertFalse(keyReachesTarget(input, typedKeyEvent("j", false, false, false, true)));
                 input.clear();
                 assertEquals(-1, contacts.getSelectionModel().getSelectedIndex());
 
@@ -283,8 +293,8 @@ public class MainWindowTest {
                 assertTrue(keyReachesTarget(otherInput, typedKeyEvent("j")));
                 assertEquals(-1, contacts.getSelectionModel().getSelectedIndex());
 
-                input.requestFocus();
-                assertFalse(keyReachesTarget(input, typedKeyEvent("i")));
+                contacts.requestFocus();
+                assertFalse(keyReachesTarget(contacts, typedKeyEvent("i")));
                 assertEquals("COMMAND · Esc to navigate", mode.getText());
 
                 TabPane views = (TabPane) stage.getScene().getRoot().lookup("#views");

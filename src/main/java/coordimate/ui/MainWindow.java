@@ -330,7 +330,6 @@ public class MainWindow extends UiPart<Stage> {
         commandBoxPlaceholder.getChildren().add(commandBox.getRoot());
         getRoot().addEventFilter(KeyEvent.KEY_PRESSED, this::handleModeShortcut);
         getRoot().addEventFilter(KeyEvent.KEY_TYPED, this::handleNavigationInput);
-        commandBox.setInputClickHandler(this::enterCommandMode);
         personListPanel.setCardListClickHandler(this::enterNavigationMode);
         eventListPanel.setCardListClickHandler(this::enterNavigationMode);
         tagListView.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> enterNavigationMode());
@@ -418,6 +417,7 @@ public class MainWindow extends UiPart<Stage> {
     private void setInteractionMode(InteractionMode mode) {
         interactionMode = mode;
         boolean isCommandMode = mode == InteractionMode.COMMAND;
+        commandBox.setInputDisabled(!isCommandMode);
         interactionModeLabel.setText(isCommandMode ? COMMAND_MODE_TEXT : NAVIGATION_MODE_TEXT);
         interactionModeLabel.setAccessibleText(isCommandMode
                 ? "Command mode. Press Escape to navigate cards."
