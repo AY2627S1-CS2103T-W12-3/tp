@@ -175,6 +175,47 @@ public class PersonListPanel extends UiPart<Region> {
     }
 
     /**
+     * Selects and reveals the next displayed contact. If no contact is selected, selects the first contact.
+     * At the end of the list, keeps the last contact selected.
+     *
+     * @return {@code true} if the list contains a contact and handled the navigation request
+     */
+    boolean selectNextCard() {
+        int itemCount = personListView.getItems().size();
+        if (itemCount == 0) {
+            return false;
+        }
+
+        int selectedIndex = personListView.getSelectionModel().getSelectedIndex();
+        int targetIndex = selectedIndex < 0 ? 0 : Math.min(selectedIndex + 1, itemCount - 1);
+        selectAndReveal(targetIndex);
+        return true;
+    }
+
+    /**
+     * Selects and reveals the previous displayed contact. If no contact is selected, selects the last contact.
+     * At the start of the list, keeps the first contact selected.
+     *
+     * @return {@code true} if the list contains a contact and handled the navigation request
+     */
+    boolean selectPreviousCard() {
+        int itemCount = personListView.getItems().size();
+        if (itemCount == 0) {
+            return false;
+        }
+
+        int selectedIndex = personListView.getSelectionModel().getSelectedIndex();
+        int targetIndex = selectedIndex < 0 ? itemCount - 1 : Math.max(selectedIndex - 1, 0);
+        selectAndReveal(targetIndex);
+        return true;
+    }
+
+    private void selectAndReveal(int targetIndex) {
+        personListView.getSelectionModel().select(targetIndex);
+        personListView.scrollTo(targetIndex);
+    }
+
+    /**
      * Shows the selected contact's current details or a hint when no contact is selected.
      */
     private void showDetails(Person person) {

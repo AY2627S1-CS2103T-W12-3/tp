@@ -1,6 +1,7 @@
 package coordimate.ui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -68,10 +69,71 @@ public class EventListPanelTest {
             Region root = new EventListPanel(FXCollections.observableArrayList(event)).getRoot();
             new Scene(root);
             root.applyCss();
+            getEventList(root).getSelectionModel().selectFirst();
 
             assertEquals("Members (3)", getLabel(root, "memberCount").getText());
             assertCounts(root, "1 Present", "1 Absent", "1 Not marked");
             assertMembers(root, "Alice Tan", "● present", "Bob Lim", "● absent", "Charlie Ng", "● unmarked");
+        });
+    }
+
+    @Test
+    public void navigateCards_handlesUnselectedEmptyAndBoundaryStates() throws Exception {
+        runOnJavaFxThread(() -> {
+            Event first = event(List.of(ALICE), Map.of());
+            Event second = new Event("Planning Session", DATE, DATE, List.of(), Map.of());
+            EventListPanel panel = new EventListPanel(FXCollections.observableArrayList(first, second));
+            Region root = panel.getRoot();
+            new Scene(root);
+            root.applyCss();
+            ListView<Event> list = getEventList(root);
+
+            assertNull(list.getSelectionModel().getSelectedItem());
+            assertFalse(((VBox) root.lookup("#eventDetails")).isVisible());
+            assertTrue(panel.selectPreviousCard());
+            assertEquals(second, list.getSelectionModel().getSelectedItem());
+            assertTrue(panel.selectPreviousCard());
+            assertEquals(first, list.getSelectionModel().getSelectedItem());
+            assertTrue(panel.selectPreviousCard());
+            assertEquals(first, list.getSelectionModel().getSelectedItem());
+
+            list.getSelectionModel().clearSelection();
+            assertTrue(panel.selectNextCard());
+            assertEquals(first, list.getSelectionModel().getSelectedItem());
+            assertTrue(panel.selectNextCard());
+            assertEquals(second, list.getSelectionModel().getSelectedItem());
+            assertTrue(panel.selectNextCard());
+            assertEquals(second, list.getSelectionModel().getSelectedItem());
+
+            EventListPanel emptyPanel = new EventListPanel(FXCollections.observableArrayList());
+            assertFalse(emptyPanel.selectNextCard());
+            assertFalse(emptyPanel.selectPreviousCard());
+        });
+    }
+
+    @Test
+    public void eventListChanges_preserveIntentionalSelectionState() throws Exception {
+        runOnJavaFxThread(() -> {
+            ObservableList<Event> events = FXCollections.observableArrayList();
+            EventListPanel panel = new EventListPanel(events);
+            Region root = panel.getRoot();
+            new Scene(root);
+            root.applyCss();
+
+            events.add(event(List.of(), Map.of()));
+
+            assertNull(getEventList(root).getSelectionModel().getSelectedItem());
+            assertFalse(((VBox) root.lookup("#eventDetails")).isVisible());
+            assertTrue(((Label) root.lookup("#selectionHint")).isVisible());
+
+            assertTrue(panel.selectNextCard());
+            Event selectedEvent = events.getFirst();
+            events.add(new Event("Planning Session", DATE, DATE, List.of(), Map.of()));
+            assertEquals(selectedEvent, getEventList(root).getSelectionModel().getSelectedItem());
+
+            events.clear();
+            assertNull(getEventList(root).getSelectionModel().getSelectedItem());
+            assertFalse(((VBox) root.lookup("#eventDetails")).isVisible());
         });
     }
 
@@ -83,6 +145,7 @@ public class EventListPanelTest {
             Region root = new EventListPanel(events).getRoot();
             new Scene(root);
             root.applyCss();
+            getEventList(root).getSelectionModel().selectFirst();
 
             events.setAll(event.withAttendance(ALICE, AttendanceStatus.ABSENT));
             assertCounts(root, "0 Present", "1 Absent", "1 Not marked");
@@ -106,6 +169,7 @@ public class EventListPanelTest {
                     .getRoot();
             new Scene(root);
             root.applyCss();
+            getEventList(root).getSelectionModel().selectFirst();
 
             assertCounts(root, "0 Present", "0 Absent", "0 Not marked");
             assertEquals("Members (0)", getLabel(root, "memberCount").getText());
@@ -123,6 +187,7 @@ public class EventListPanelTest {
                     FXCollections.observableArrayList(alice)).getRoot();
             new Scene(root);
             root.applyCss();
+            getEventList(root).getSelectionModel().selectFirst();
 
             HBox row = (HBox) getMembers(root).getChildren().getFirst();
             assertEquals("1.", ((Label) row.getChildren().get(0)).getText());
@@ -146,6 +211,7 @@ public class EventListPanelTest {
                     FXCollections.observableArrayList(alice)).getRoot();
             new Scene(root);
             root.applyCss();
+            getEventList(root).getSelectionModel().selectFirst();
 
             HBox row = (HBox) getMembers(root).getChildren().getFirst();
             VBox details = (VBox) row.getChildren().get(2);
@@ -173,6 +239,7 @@ public class EventListPanelTest {
                     FXCollections.observableArrayList(alice)).getRoot();
             new Scene(root);
             root.applyCss();
+            getEventList(root).getSelectionModel().selectFirst();
 
             for (var memberRow : getMembers(root).getChildren()) {
                 HBox row = (HBox) memberRow;
@@ -225,6 +292,7 @@ public class EventListPanelTest {
             Region root = new EventListPanel(FXCollections.observableArrayList(selectedEvent), persons).getRoot();
             new Scene(root);
             root.applyCss();
+            getEventList(root).getSelectionModel().selectFirst();
             HBox row = (HBox) getMembers(root).getChildren().getFirst();
             assertEquals("Note: Vegetarian", ((Label) row.lookup(".event-member-note")).getText());
 
@@ -251,6 +319,7 @@ public class EventListPanelTest {
             Region root = new EventListPanel(FXCollections.observableArrayList(event), persons).getRoot();
             new Scene(root);
             root.applyCss();
+            getEventList(root).getSelectionModel().selectFirst();
 
             HBox row = (HBox) getMembers(root).getChildren().getFirst();
             assertTrue(row.getChildren().get(3).getStyleClass().contains("attendance-absent"));
@@ -333,9 +402,11 @@ public class EventListPanelTest {
         }
         Event event = event(List.of(ALICE, BOB, CHARLIE),
                 Map.of(ALICE, AttendanceStatus.PRESENT, BOB, AttendanceStatus.ABSENT));
-        SplitPane root = (SplitPane) new EventListPanel(FXCollections.observableArrayList(event), persons).getRoot();
+        EventListPanel panel = new EventListPanel(FXCollections.observableArrayList(event), persons);
+        SplitPane root = (SplitPane) panel.getRoot();
         Scene scene = new Scene(root, 1400, 700);
         scene.getStylesheets().add(EventListPanelTest.class.getResource("/view/DarkTheme.css").toExternalForm());
+        panel.selectNextCard();
 
         for (int width : new int[]{1400, 560, 1400}) {
             root.resize(width, 700);
