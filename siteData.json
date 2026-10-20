@@ -125,6 +125,7 @@
         "parameter-constraints": "Parameter constraints",
         "reusing-commands-with-command-history": "Reusing commands with command history",
         "viewing-help-help": "Viewing help: help",
+        "switching-views-switch": "Switching views: switch",
         "adding-a-contact-add": "Adding a contact: add",
         "adding-an-event-addevent": "Adding an event: addevent",
         "editing-an-event-editevent": "Editing an event: editevent",
