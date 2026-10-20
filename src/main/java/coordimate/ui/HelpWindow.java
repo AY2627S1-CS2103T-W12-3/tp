@@ -12,6 +12,7 @@ import coordimate.logic.commands.CreateTagCommand;
 import coordimate.logic.commands.DeleteCommand;
 import coordimate.logic.commands.DeleteEventCommand;
 import coordimate.logic.commands.DeleteTagCommand;
+import coordimate.logic.commands.DismissCommand;
 import coordimate.logic.commands.EditCommand;
 import coordimate.logic.commands.EditEventCommand;
 import coordimate.logic.commands.EditTagCommand;
@@ -55,6 +56,7 @@ public class HelpWindow extends UiPart<Stage> {
                     "INDEX | delete n/NAME | delete p/PHONE | delete e/EMAIL"),
             commandUsage(DeleteEventCommand.COMMAND_WORD, "evn/EVENT_NAME"),
             commandUsage(DeleteTagCommand.COMMAND_WORD, "t/TAG"),
+            commandUsage(DismissCommand.COMMAND_WORD, "INDEX"),
             commandUsage(EditCommand.COMMAND_WORD,
                     "(INDEX | target/IDENTIFIER) [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] "
                             + "[a/ADDRESS] [o/ORGANISATION] [m/NOTE] [t/TAG]... [at/TAG]... [rt/TAG]..."),

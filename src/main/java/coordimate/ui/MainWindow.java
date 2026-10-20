@@ -89,6 +89,7 @@ public class MainWindow extends UiPart<Stage> {
                     + "Example: editevent evn/Final Concert nevn/Grand Concert"),
             Map.entry("deleteevent", "Format: deleteevent evn/EVENT_NAME\n"
                     + "Example: deleteevent evn/Final Concert"),
+            Map.entry("dismiss", "Format: dismiss INDEX\nExample: dismiss 1"),
             Map.entry("assign", "Format: assign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...\n"
                     + "Example: assign evn/Final Concert c/2 3"),
             Map.entry("unassign", "Format: unassign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...\n"
