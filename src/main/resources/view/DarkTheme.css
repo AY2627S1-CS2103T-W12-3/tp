@@ -357,6 +357,13 @@
 }
 #submitButton:hover, .button:hover { -fx-background-color: #1f2633; -fx-border-color: #0ea5e9; }
 .prefix-help { -fx-padding: 2 20 10; -fx-background-color: #101319; }
+.interaction-mode {
+    -fx-padding: 2 10 2 0;
+    -fx-font-family: "JetBrains Mono", "Consolas", monospace;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #38bdf8;
+}
 
 .reminder-panel {
     -fx-padding: 10 16;
