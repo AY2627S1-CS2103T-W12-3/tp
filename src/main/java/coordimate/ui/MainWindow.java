@@ -551,8 +551,7 @@ public class MainWindow extends UiPart<Stage> {
                 case CONTACTS -> showContacts();
                 case EVENTS -> showEvents();
                 case TAGS -> showTags();
-                case NONE -> { }
-                default -> throw new IllegalStateException("Unknown view: " + commandResult.getViewToShow());
+                default -> { } // NONE keeps the selected view.
             }
 
             if (commandResult.shouldExit()) {
