@@ -2,6 +2,7 @@ package coordimate.logic.commands;
 
 import static java.util.Objects.requireNonNull;
 
+import coordimate.logic.commands.CommandResult.View;
 import coordimate.model.Model;
 
 /**
@@ -15,27 +16,19 @@ public class SwitchCommand extends Command {
             + "Example: " + COMMAND_WORD + " events";
     public static final String MESSAGE_SUCCESS = "Switched to %s view.";
 
-    /** The available views. */
-    public enum View {
-        CONTACTS("Contacts"), EVENTS("Events"), TAGS("Tags");
-
-        private final String displayName;
-
-        View(String displayName) {
-            this.displayName = displayName;
-        }
-    }
-
     private final View view;
 
+    /** Creates a command to show the specified view. */
     public SwitchCommand(View view) {
         this.view = requireNonNull(view);
+        if (view == View.NONE) {
+            throw new IllegalArgumentException("SwitchCommand requires a view");
+        }
     }
 
     @Override
     public CommandResult execute(Model model) {
         requireNonNull(model);
-        return new CommandResult(String.format(MESSAGE_SUCCESS, view.displayName), false, false,
-                view == View.TAGS, view == View.CONTACTS, view == View.EVENTS);
+        return new CommandResult(String.format(MESSAGE_SUCCESS, view.getDisplayName()), view);
     }
 }

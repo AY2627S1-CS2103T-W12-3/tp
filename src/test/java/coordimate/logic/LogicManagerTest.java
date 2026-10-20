@@ -87,7 +87,7 @@ public class LogicManagerTest {
         CommandResult result = logic.execute("switch events");
 
         assertEquals(String.format(SwitchCommand.MESSAGE_SUCCESS, "Events"), result.getFeedbackToUser());
-        assertTrue(result.shouldShowEvents());
+        assertEquals(CommandResult.View.EVENTS, result.getViewToShow());
     }
 
     @Test

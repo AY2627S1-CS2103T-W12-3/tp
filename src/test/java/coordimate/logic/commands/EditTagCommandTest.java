@@ -37,7 +37,7 @@ public class EditTagCommandTest {
         expectedModel.setTag(PUBLICITY, MEDIA);
 
         CommandResult expectedResult = new CommandResult(
-                "Publicity successfully renamed to Media.", false, false, true);
+                "Publicity successfully renamed to Media.", CommandResult.View.TAGS);
         assertCommandSuccess(new EditTagCommand("publicity", MEDIA), model, expectedResult, expectedModel);
         assertEquals(List.of("EXCO", "Media"), model.getFilteredPersonList().get(0).getTags().stream()
                 .map(Tag::getTagName).sorted().toList());
@@ -66,7 +66,7 @@ public class EditTagCommandTest {
         expectedModel.setTag(new Tag("EXCO"), MEDIA);
 
         CommandResult expectedResult = new CommandResult(
-                "EXCO successfully renamed to Media.", false, false, true);
+                "EXCO successfully renamed to Media.", CommandResult.View.TAGS);
         assertCommandSuccess(new EditTagCommand("exco", MEDIA), model, expectedResult, expectedModel);
     }
 

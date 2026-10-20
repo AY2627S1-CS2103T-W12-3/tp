@@ -39,7 +39,7 @@ public class MembersCommand extends Command {
         String message = memberCount == 0
                 ? String.format(MESSAGE_NO_MEMBERS, target.getName())
                 : String.format(MESSAGE_SUCCESS, memberCount, target.getName());
-        return new CommandResult(message, false, false, false, true);
+        return new CommandResult(message, CommandResult.View.CONTACTS);
     }
 
     @Override

@@ -36,7 +36,7 @@ public class DeleteTagCommandTest {
         expectedModel.deleteTag(PUBLICITY);
 
         CommandResult expectedResult = new CommandResult(
-                "Publicity successfully deleted.", false, false, true);
+                "Publicity successfully deleted.", CommandResult.View.TAGS);
         assertCommandSuccess(new DeleteTagCommand("publicity"), model, expectedResult, expectedModel);
         assertEquals(List.of("EXCO"), model.getFilteredPersonList().get(0).getTags().stream()
                 .map(Tag::getTagName).toList());

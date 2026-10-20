@@ -547,16 +547,12 @@ public class MainWindow extends UiPart<Stage> {
                 handleHelp();
             }
 
-            if (commandResult.shouldShowTags()) {
-                showTags();
-            }
-
-            if (commandResult.shouldShowContacts()) {
-                showContacts();
-            }
-
-            if (commandResult.shouldShowEvents()) {
-                showEvents();
+            switch (commandResult.getViewToShow()) {
+                case CONTACTS -> showContacts();
+                case EVENTS -> showEvents();
+                case TAGS -> showTags();
+                case NONE -> { }
+                default -> throw new IllegalStateException("Unknown view: " + commandResult.getViewToShow());
             }
 
             if (commandResult.shouldExit()) {

@@ -2,8 +2,8 @@ package coordimate.logic.parser;
 
 import static java.util.Objects.requireNonNull;
 
+import coordimate.logic.commands.CommandResult.View;
 import coordimate.logic.commands.SwitchCommand;
-import coordimate.logic.commands.SwitchCommand.View;
 import coordimate.logic.parser.exceptions.ParseException;
 
 /**

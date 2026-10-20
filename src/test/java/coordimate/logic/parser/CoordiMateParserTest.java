@@ -183,13 +183,13 @@ public class CoordiMateParserTest {
     @Test
     public void parseCommand_switch() throws Exception {
         ModelManager model = new ModelManager();
-        assertEquals(new CommandResult("Switched to Contacts view.", false, false, false, true, false),
+        assertEquals(new CommandResult("Switched to Contacts view.", CommandResult.View.CONTACTS),
                 parser.parseCommand("switch contacts").execute(model));
-        assertEquals(new CommandResult("Switched to Events view.", false, false, false, false, true),
+        assertEquals(new CommandResult("Switched to Events view.", CommandResult.View.EVENTS),
                 parser.parseCommand("switch events").execute(model));
-        assertEquals(new CommandResult("Switched to Tags view.", false, false, true, false, false),
+        assertEquals(new CommandResult("Switched to Tags view.", CommandResult.View.TAGS),
                 parser.parseCommand("switch tags").execute(model));
-        assertEquals(new CommandResult("Switched to Events view.", false, false, false, false, true),
+        assertEquals(new CommandResult("Switched to Events view.", CommandResult.View.EVENTS),
                 parser.parseCommand(" switch   events  ").execute(model));
     }
 
