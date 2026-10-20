@@ -82,7 +82,9 @@ public class MainWindow extends UiPart<Stage> {
             Map.entry("search", "Format: search KEYWORD\nExample: search jurong west"),
             Map.entry("filter", "Format: filter FIELD/VALUE [FIELD/VALUE]...\n"
                     + "Example: filter tag/friend organisation/NUS"),
-            Map.entry("list", "Format: list\nExample: list"),
+            Map.entry("list", "Format: list [archived]\nExample: list archived"),
+            Map.entry("archive", "Format: archive INDEX\nExample: archive 2"),
+            Map.entry("unarchive", "Format: unarchive INDEX (from list archived)\nExample: unarchive 1"),
             Map.entry("addevent", "Format: addevent evn/EVENT_NAME st/START_TIME et/END_TIME\n"
                     + "Example: addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00"),
             Map.entry("editevent", "Format: editevent evn/EVENT_NAME [nevn/NEW_EVENT_NAME]"
@@ -91,6 +93,10 @@ public class MainWindow extends UiPart<Stage> {
                     + "Example: editevent evn/Final Concert nevn/Grand Concert"),
             Map.entry("deleteevent", "Format: deleteevent evn/EVENT_NAME\n"
                     + "Example: deleteevent evn/Final Concert"),
+            Map.entry("archiveevent", "Format: archiveevent evn/EVENT_NAME\n"
+                    + "Example: archiveevent evn/Final Concert"),
+            Map.entry("unarchiveevent", "Format: unarchiveevent evn/EVENT_NAME\n"
+                    + "Example: unarchiveevent evn/Final Concert"),
             Map.entry("assign", "Format: assign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...\n"
                     + "Example: assign evn/Final Concert c/2 3"),
             Map.entry("unassign", "Format: unassign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...\n"
