@@ -79,6 +79,13 @@ resizable layout. The User Guide URL remains available for more detailed instruc
 The window's **Close** button is marked as the JavaFX cancel button, allowing users to dismiss it by selecting the
 button or pressing <kbd>Esc</kbd> without exiting the application.
 
+`CommandBox` keeps submitted, nonblank commands in a session-only list. The list has no configured cap or eviction;
+its practical limit is the JVM heap, and it is discarded when the app closes. It records an attempt before execution
+so commands that fail validation can be recalled for correction. Up and Down move through the list, with the current
+input saved as a draft and restored after the newest entry. Browsing does not execute a command or modify stored
+entries. While `Logic` awaits delete confirmation, arrow-key navigation is paused and the response is not added
+to history. Inserting a command from the sidebar resets history navigation.
+
 The `UI` component uses the JavaFX UI framework. The layouts of these UI parts are defined in matching `.fxml` files in `src/main/resources/view`. For example, [`MainWindow.fxml`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/resources/view/MainWindow.fxml) specifies the layout of [`MainWindow`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/ui/MainWindow.java).
 
 At launch, `MainWindow` obtains the saved size, position, and maximized state from `GuiSettings`. It selects the screen
@@ -105,6 +112,8 @@ The `UI` component,
   assigned to it, independent of the current contact filter, and refreshes names, roles, organisations, and tags
   when contact data changes.
 * keeps a reference to the `Logic` component, because the `UI` relies on the `Logic` to execute commands.
+  The `switch` command returns a view selection request that `MainWindow` applies through the same view controls
+  used by the sidebar. `LogicManager` executes this navigation command without reading or saving contact data.
 * depends on some classes in the `Model` component because it displays `Person` objects from the model.
 
 ### Logic component
@@ -275,6 +284,11 @@ consequences that developers should be aware of:
 
 * If the data file is invalid, such a command replaces it with the data currently in the app.
 * If the data file cannot be written, such a command reports a save error even though it changed no data.
+
+`switch` is a UI navigation command and an exception to this save path. `SwitchCommandParser` accepts only
+`contacts`, `events`, or `tags` after the command word. `LogicManager` returns its `CommandResult` without
+reading or saving the data file; `MainWindow` selects the requested tab and updates the sidebar through its
+existing tab selection listener. Invalid view names are rejected before the UI changes.
 
 #### Design considerations
 

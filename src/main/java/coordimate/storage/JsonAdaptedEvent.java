@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -19,6 +20,7 @@ import coordimate.model.person.Name;
  * Stores members as contact names; files saved before members existed load with no members.
  * Stores attendance as member-name to status-text pairs; files saved before attendance existed
  * load with no attendance recorded.
+ * Missing dismissal history loads as an empty history for older files.
  */
 class JsonAdaptedEvent {
     public static final String MESSAGE_NULL_MEMBER = "Event members must not contain null entries.";
@@ -26,21 +28,25 @@ class JsonAdaptedEvent {
             "Event attendance must not contain null names or statuses.";
     public static final String MESSAGE_INVALID_ATTENDANCE_STATUS =
             "Event attendance statuses must be either \"present\" or \"absent\".";
+    public static final String MESSAGE_NULL_DISMISSED_REMINDER_START =
+            "Dismissed reminder starts must not contain null entries.";
 
     private final String name;
     private final String startTime;
     private final String endTime;
     private final List<String> members = new ArrayList<>();
     private final Map<String, String> attendance = new LinkedHashMap<>();
+    private final List<String> dismissedReminderStarts = new ArrayList<>();
 
     /**
-     * Creates a JSON event record with the given name, time strings, member names, and attendance.
+     * Creates a JSON event record with the given details, attendance and dismissed reminder starts.
      */
     @JsonCreator
     public JsonAdaptedEvent(@JsonProperty("name") String name,
                             @JsonProperty("startTime") String startTime, @JsonProperty("endTime") String endTime,
                             @JsonProperty("members") List<String> members,
-                            @JsonProperty("attendance") Map<String, String> attendance) {
+                            @JsonProperty("attendance") Map<String, String> attendance,
+                            @JsonProperty("dismissedReminderStarts") List<String> dismissedReminderStarts) {
         this.name = name;
         this.startTime = startTime;
         this.endTime = endTime;
@@ -50,6 +56,17 @@ class JsonAdaptedEvent {
         if (attendance != null) {
             this.attendance.putAll(attendance);
         }
+        if (dismissedReminderStarts != null) {
+            this.dismissedReminderStarts.addAll(dismissedReminderStarts);
+        }
+    }
+
+    /**
+     * Creates a JSON event record with attendance and no dismissed reminder starts.
+     */
+    public JsonAdaptedEvent(String name, String startTime, String endTime, List<String> members,
+                            Map<String, String> attendance) {
+        this(name, startTime, endTime, members, attendance, null);
     }
 
     /**
@@ -67,12 +84,13 @@ class JsonAdaptedEvent {
     }
 
     /**
-     * Copies an event's name, time representations, member names, and attendance into a JSON event record.
+     * Copies an event's details, attendance and dismissal history into a JSON event record.
      */
     public JsonAdaptedEvent(Event source) {
         this(source.getName(), source.getStartTime().toString(), source.getEndTime().toString(),
                 source.getMembers().stream().map(Name::toString).toList(),
-                toAttendanceStrings(source));
+                toAttendanceStrings(source),
+                source.getDismissedReminderStarts().stream().map(EventTime::toString).sorted().toList());
     }
 
     private static Map<String, String> toAttendanceStrings(Event source) {
@@ -97,6 +115,9 @@ class JsonAdaptedEvent {
         if (attendance.containsKey(null) || attendance.containsValue(null)) {
             throw new IllegalValueException(MESSAGE_NULL_ATTENDANCE);
         }
+        if (dismissedReminderStarts.contains(null)) {
+            throw new IllegalValueException(MESSAGE_NULL_DISMISSED_REMINDER_START);
+        }
         try {
             List<Name> memberNames = members.stream().map(Name::new).toList();
             Map<Name, AttendanceStatus> attendanceRecord = new LinkedHashMap<>();
@@ -104,7 +125,7 @@ class JsonAdaptedEvent {
                 attendanceRecord.put(new Name(entry.getKey()), parseStatus(entry.getValue()));
             }
             return new Event(name, new EventTime(startTime), new EventTime(endTime), memberNames,
-                    attendanceRecord);
+                    attendanceRecord, dismissedReminderStarts.stream().map(EventTime::new).collect(Collectors.toSet()));
         } catch (IllegalArgumentException e) {
             throw new IllegalValueException(e.getMessage());
         }

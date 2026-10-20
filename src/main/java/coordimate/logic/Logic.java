@@ -4,6 +4,7 @@ import coordimate.commons.core.GuiSettings;
 import coordimate.logic.commands.CommandResult;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.logic.parser.exceptions.ParseException;
+import coordimate.logic.reminder.ReminderDismissalException;
 import coordimate.model.event.Event;
 import coordimate.model.person.Person;
 import coordimate.model.tag.Tag;
@@ -38,6 +39,24 @@ public interface Logic {
      * Returns the live, unmodifiable event list in insertion order.
      */
     ObservableList<Event> getEventList();
+
+    /**
+     * Returns the live, unmodifiable list of active reminders in chronological order.
+     * Refreshes it against the current time and saved model data.
+     */
+    ObservableList<Event> getReminders();
+
+    /**
+     * Refreshes reminder eligibility after time passes. Does not access storage.
+     */
+    void refreshReminders();
+
+    /**
+     * Saves dismissal of an active reminder. Outdated or already dismissed reminders have no effect.
+     *
+     * @throws ReminderDismissalException If the dismissal is only retained for this session.
+     */
+    void dismissReminder(Event reminder) throws ReminderDismissalException;
 
     /**
      * Returns the live, unmodifiable list of saved tags.

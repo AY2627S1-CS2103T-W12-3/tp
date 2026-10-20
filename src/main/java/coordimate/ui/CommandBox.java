@@ -1,5 +1,7 @@
 package coordimate.ui;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.BooleanSupplier;
 
 import coordimate.logic.commands.CommandResult;
@@ -9,6 +11,8 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Region;
 
 /**
@@ -21,6 +25,9 @@ public class CommandBox extends UiPart<Region> {
 
     private final CommandExecutor commandExecutor;
     private final BooleanSupplier isAwaitingDeleteConfirmation;
+    private final List<String> commandHistory = new ArrayList<>();
+    private int historyIndex;
+    private String draft = "";
 
     @FXML
     private TextField commandTextField;
@@ -37,6 +44,7 @@ public class CommandBox extends UiPart<Region> {
         this.isAwaitingDeleteConfirmation = isAwaitingDeleteConfirmation;
         // calls #setStyleToDefault() whenever there is a change to the text of the command box.
         commandTextField.textProperty().addListener((unused1, unused2, unused3) -> setStyleToDefault());
+        commandTextField.addEventFilter(KeyEvent.KEY_PRESSED, this::handleHistoryNavigation);
     }
 
     /**
@@ -45,9 +53,15 @@ public class CommandBox extends UiPart<Region> {
     @FXML
     private void handleCommandEntered() {
         String commandText = commandTextField.getText();
-        if (commandText.isBlank() && !isAwaitingDeleteConfirmation.getAsBoolean()) {
+        boolean isDeleteConfirmation = isAwaitingDeleteConfirmation.getAsBoolean();
+        if (commandText.isBlank() && !isDeleteConfirmation) {
             return;
         }
+
+        if (!isDeleteConfirmation) {
+            commandHistory.add(commandText);
+        }
+        resetHistoryNavigation();
 
         try {
             commandExecutor.execute(commandText);
@@ -59,9 +73,54 @@ public class CommandBox extends UiPart<Region> {
 
     /** Places a command word in the input, ready for the user to complete. */
     void setCommand(String command) {
+        resetHistoryNavigation();
         commandTextField.setText(command);
         commandTextField.positionCaret(command.length());
         commandTextField.requestFocus();
+    }
+
+    private void handleHistoryNavigation(KeyEvent event) {
+        if (event.getCode() != KeyCode.UP && event.getCode() != KeyCode.DOWN) {
+            return;
+        }
+
+        if (!isAwaitingDeleteConfirmation.getAsBoolean()) {
+            if (event.getCode() == KeyCode.UP) {
+                showPreviousCommand();
+            } else {
+                showNextCommand();
+            }
+        }
+        event.consume();
+    }
+
+    private void showPreviousCommand() {
+        if (historyIndex == 0) {
+            return;
+        }
+        if (historyIndex == commandHistory.size()) {
+            draft = commandTextField.getText();
+        }
+        historyIndex--;
+        showHistoryText(commandHistory.get(historyIndex));
+    }
+
+    private void showNextCommand() {
+        if (historyIndex == commandHistory.size()) {
+            return;
+        }
+        historyIndex++;
+        showHistoryText(historyIndex == commandHistory.size() ? draft : commandHistory.get(historyIndex));
+    }
+
+    private void showHistoryText(String text) {
+        commandTextField.setText(text);
+        commandTextField.positionCaret(text.length());
+    }
+
+    private void resetHistoryNavigation() {
+        historyIndex = commandHistory.size();
+        draft = "";
     }
 
     /**

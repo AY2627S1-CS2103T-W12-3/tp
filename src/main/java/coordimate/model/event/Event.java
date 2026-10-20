@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 import coordimate.model.person.Name;
 import coordimate.model.person.PrintableText;
@@ -33,6 +34,7 @@ public final class Event {
     private final EventTime endTime;
     private final List<Name> members;
     private final Map<Name, AttendanceStatus> attendance;
+    private final Set<EventTime> dismissedReminderStarts;
 
     /**
      * Creates an event with no members.
@@ -56,6 +58,15 @@ public final class Event {
      */
     public Event(String name, EventTime startTime, EventTime endTime, List<Name> members,
                  Map<Name, AttendanceStatus> attendance) {
+        this(name, startTime, endTime, members, attendance, Set.of());
+    }
+
+    /**
+     * Creates an event with attendance and the start values whose reminders have been dismissed.
+     * Date-only starts and explicitly timed starts are distinct dismissal schedules.
+     */
+    public Event(String name, EventTime startTime, EventTime endTime, List<Name> members,
+                 Map<Name, AttendanceStatus> attendance, Set<EventTime> dismissedReminderStarts) {
         this.name = requireNonNull(name).strip();
         if (this.name.isEmpty()) {
             throw new IllegalArgumentException(MESSAGE_EMPTY_NAME);
@@ -80,6 +91,7 @@ public final class Event {
             throw new IllegalArgumentException(MESSAGE_UNASSIGNED_ATTENDANCE);
         }
         this.attendance = Map.copyOf(attendance);
+        this.dismissedReminderStarts = Set.copyOf(dismissedReminderStarts);
     }
 
     public String getName() {
@@ -133,6 +145,45 @@ public final class Event {
     }
 
     /**
+     * Returns the saved start values whose reminders have been dismissed.
+     */
+    public Set<EventTime> getDismissedReminderStarts() {
+        return dismissedReminderStarts;
+    }
+
+    /**
+     * Returns whether the reminder for the current start value has been dismissed.
+     */
+    public boolean isReminderDismissed() {
+        return dismissedReminderStarts.contains(startTime);
+    }
+
+    /**
+     * Returns a copy with the current start value added to its dismissal history.
+     */
+    public Event withReminderDismissed() {
+        Set<EventTime> updated = new HashSet<>(dismissedReminderStarts);
+        updated.add(startTime);
+        return new Event(name, startTime, endTime, members, attendance, updated);
+    }
+
+    /**
+     * Returns a copy with the given name and times, preserving members and attendance.
+     * Resets dismissal history when the start value changes, including a return to an earlier start.
+     */
+    public Event withDetails(String name, EventTime startTime, EventTime endTime) {
+        Set<EventTime> history = this.startTime.equals(startTime) ? dismissedReminderStarts : Set.of();
+        return new Event(name, startTime, endTime, members, attendance, history);
+    }
+
+    /**
+     * Returns a copy with the given members and attendance, preserving event details and dismissal history.
+     */
+    public Event withMembersAndAttendance(List<Name> members, Map<Name, AttendanceStatus> attendance) {
+        return new Event(name, startTime, endTime, members, attendance, dismissedReminderStarts);
+    }
+
+    /**
      * Returns a copy of this event with {@code member}'s attendance set to {@code status}.
      * {@code member} must already be assigned to this event.
      */
@@ -144,7 +195,7 @@ public final class Event {
         }
         Map<Name, AttendanceStatus> updated = new HashMap<>(attendance);
         updated.put(member, status);
-        return new Event(name, startTime, endTime, members, updated);
+        return withMembersAndAttendance(members, updated);
     }
 
     /**
@@ -158,11 +209,12 @@ public final class Event {
     public boolean equals(Object other) {
         return other instanceof Event otherEvent && name.equals(otherEvent.name)
                 && startTime.equals(otherEvent.startTime) && endTime.equals(otherEvent.endTime)
-                && members.equals(otherEvent.members) && attendance.equals(otherEvent.attendance);
+                && members.equals(otherEvent.members) && attendance.equals(otherEvent.attendance)
+                && dismissedReminderStarts.equals(otherEvent.dismissedReminderStarts);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, startTime, endTime, members, attendance);
+        return Objects.hash(name, startTime, endTime, members, attendance, dismissedReminderStarts);
     }
 }

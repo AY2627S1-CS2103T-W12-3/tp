@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
+import java.util.Optional;
 
 /**
  * Retains whether an event date has a specified time of day.
@@ -59,13 +60,27 @@ public final class EventTime {
     }
 
     /**
+     * Returns the date, whether or not a time of day is specified.
+     */
+    public LocalDate getDate() {
+        return LocalDate.parse(value.substring(0, 10), DATE_FORMAT);
+    }
+
+    /**
+     * Returns the specified date and time, or empty for a date-only value.
+     */
+    public Optional<LocalDateTime> getDateTime() {
+        return value.length() > 10 ? Optional.of(LocalDateTime.parse(value, TIME_FORMAT)) : Optional.empty();
+    }
+
+    /**
      * Returns true if this date is later, or if the dates match and this specified time is later.
      * Compares times on matching dates only when both values specify a time of day.
      */
     public boolean isAfter(EventTime other) {
         requireNonNull(other);
-        LocalDate date = LocalDate.parse(value.substring(0, 10), DATE_FORMAT);
-        LocalDate otherDate = LocalDate.parse(other.value.substring(0, 10), DATE_FORMAT);
+        LocalDate date = getDate();
+        LocalDate otherDate = other.getDate();
         if (!date.equals(otherDate)) {
             return date.isAfter(otherDate);
         }

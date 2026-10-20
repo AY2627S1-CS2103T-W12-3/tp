@@ -45,8 +45,7 @@ public class AssignCommand extends EventMembersCommand {
         }
         List<Name> members = new ArrayList<>(target.getMembers());
         members.addAll(newMembers);
-        model.setEvent(target, new Event(target.getName(), target.getStartTime(), target.getEndTime(), members,
-                target.getAttendanceRecord()));
+        model.setEvent(target, target.withMembersAndAttendance(members, target.getAttendanceRecord()));
 
         int alreadyAssigned = selected.size() - newMembers.size();
         String message = String.format(MESSAGE_SUCCESS, newMembers.size(), target.getName());

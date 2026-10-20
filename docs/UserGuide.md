@@ -31,11 +31,13 @@
    a secondary screen or changing the display resolution, CoordiMate adjusts the window to remain fully visible.<br>
 
    The left sidebar switches between Contacts, Events, and Tags and shows commands for the selected view.
+   You can also use `switch contacts`, `switch events`, or `switch tags` in the command box.
    Click a command name to put only the command word in the input and show its format and an example below the input.
    Complete the command by typing its arguments after the command word.
    The main workspace shows a list beside its details, and the command box, feedback, and prefix hints stay at the bottom.
 
 1. Type a command in the command box and press Enter to execute it. For example, type **`help`** and press Enter to open the help window.<br>
+   Press <kbd>Up</kbd> to recall earlier commands and <kbd>Down</kbd> to move toward the command you were typing.<br>
    Some example commands you can try:
 
    * `list` : Lists all contacts.
@@ -128,6 +130,18 @@ Commands parse their arguments differently. For example, `search` treats the ent
 while tag commands tokenize only their recognised `t/` prefix.
 </box>
 
+### Reusing commands with command history
+
+With the command box focused, press <kbd>Up</kbd> to recall the most recently entered command. Keep pressing
+<kbd>Up</kbd> to move through older commands, or press <kbd>Down</kbd> to move forward. Moving past the newest
+command restores any unfinished text that was in the box before you started browsing. You can edit a recalled
+command; it runs only when you press Enter or select **Enter**.
+
+History includes commands that produced errors, so you can correct and retry them. There is no fixed maximum number
+of entries; the practical limit is the memory available to the app. History clears when you close CoordiMate.
+Blank inputs and responses to a delete confirmation are not stored. History navigation is paused while CoordiMate
+is waiting for a delete confirmation.
+
 ### Viewing help: `help`
 
 Opens a resizable Help window containing a scrollable two-column table of every available command and its usage format.
@@ -138,6 +152,20 @@ Selecting **Help** in the menu bar opens this window directly. <kbd>F1</kbd> rem
 In the command formats, parameters enclosed in square brackets `[ ]` are optional.
 
 Format: `help`
+
+
+### Switching views: `switch`
+
+Switches to the Contacts, Events, or Tags view without changing saved data. Switching to the current view also succeeds.
+The view name must be lowercase. A missing or unrecognised view name is rejected without changing the selected view.
+
+Formats: `switch contacts` | `switch events` | `switch tags`
+
+Example: `switch events`
+
+| Condition | Error message |
+|---|---|
+| The view name is missing, unknown, or followed by extra text. | `Invalid command format.` |
 
 
 ### Adding a contact: `add`
@@ -336,6 +364,57 @@ Success: `Deleted Event Final Concert.`
 
 If saving fails, the command reports `Event could not be deleted. No changes were made.`
 The event and existing data file remain unchanged.
+
+### Automatic event reminders
+
+CoordiMate shows reminders in the **Upcoming events** panel below the menu bar and above the workspace.
+The panel remains visible across the **Contacts**, **Events**, and **Tags** views. No command or parameters
+are needed. Reminders appear only while CoordiMate is running.
+
+CoordiMate checks saved events on startup and once per minute while the window is open. It also refreshes
+reminders after commands, including event edits and deletions. A reminder becoming eligible or expiring
+as time passes updates at the next periodic check.
+
+Reminder timing follows your computer's local time zone:
+
+* For a start with a time of day, the reminder becomes eligible exactly **24 hours before the start**.
+  It remains eligible at the exact start time. Once the start has passed, the next check removes it,
+  even if the event has not ended.
+* For a start with only a date, the reminder is eligible throughout **the preceding calendar day and
+  the event's start date**. For example, a start of `20-10-2026` qualifies from midnight at the beginning
+  of `19-10-2026` until midnight at the beginning of `21-10-2026`, excluding that final midnight.
+
+Each reminder displays the saved event name, start, and end. For example:
+
+```text
+Upcoming event: Final Concert
+Starts: 20-10-2026 15:00
+Ends: 20-10-2026 18:00
+```
+
+This timed event qualifies from `19-10-2026 15:00` through `20-10-2026 15:00`, including both boundaries.
+Several reminders appear in ascending order of start time, with ties ordered by name, ignoring case.
+For ordering, a date-only start counts as the beginning of its date; the reminder still displays the
+saved date without adding a time. Each event has at most one active reminder.
+
+Click **Dismiss** beside a reminder to hide it. CoordiMate saves the dismissal immediately, so it stays
+dismissed after restarting. Renaming the event, editing only its end, or supplying the same start value
+keeps the dismissal. Changing its start date or time resets the dismissal, including when switching
+between a timed and date-only start or reverting to a previously dismissed start. The revised reminder
+appears if its new start qualifies under the timing rules above. Rejected or unsaved edits leave reminders
+unchanged.
+
+Deleting an event removes its reminder. The `clear` command removes all events and their reminders.
+Deleting and then recreating an event creates a new reminder if its start qualifies, even when the name
+and schedule match the deleted event.
+
+If CoordiMate cannot save a dismissal, it hides the reminder for the current session and shows
+`Reminder dismissal could not be saved and may reappear after restarting.` with a **Not saved** status
+in the feedback area above the command input. The dismissal has not been saved, so the reminder may
+return after restarting.
+
+If the saved data file is invalid, CoordiMate starts with an empty dataset and shows no event reminders.
+See [Editing the data file](#editing-the-data-file) for details of data-loading errors.
 
 ### Assigning members to an event: `assign`
 
@@ -836,14 +915,15 @@ Format: `exit`
 
 ### Saving the data
 
-CoordiMate automatically saves data after every command. You do not need to save manually.
+CoordiMate automatically saves data after commands that change it. You do not need to save manually.
 
 A command that changes your data is saved to the data file **before** the change appears in the app. If the data
 cannot be saved, the command is rejected with an error such as `Event could not be saved. No changes were made.`
 and both the app and the data file stay as they were, so what you see always matches what is saved.
 
-Commands that do not change saved data also attempt to save after running. A save failure reports one of
-the following messages; a command may already have changed the displayed view when this happens.
+Most commands that do not change saved data also attempt to save after running. The `switch` command only
+changes the selected view and does not read or save the data file. For other commands, a save failure reports
+one of the following messages; a command may already have changed the displayed view when this happens.
 
 | Condition | Error message |
 |---|---|
@@ -859,7 +939,7 @@ CoordiMate data is saved automatically as a JSON file `[JAR file location]/data/
 <box type="warning" seamless>
 
 **Caution:**
-If your changes make the data file invalid, CoordiMate starts with an empty dataset at the next run. While the file is invalid, commands that change data (such as `add`, `addevent`, and `clear`) are rejected with `Saved data could not be loaded. Check the local data file.` and leave the file untouched, so that you can close the app and fix it. However, a command that only changes what is displayed (such as `list`, `search`, or `filter`) saves the data currently in the app, which **replaces the invalid file**. We therefore recommend backing up the file before editing it.<br>
+If your changes make the data file invalid, CoordiMate starts with an empty dataset at the next run. While the file is invalid, commands that change data (such as `add`, `addevent`, and `clear`) are rejected with `Saved data could not be loaded. Check the local data file.` and leave the file untouched, so that you can close the app and fix it. Commands such as `list`, `search`, and `filter` save the data currently in the app, which **replaces the invalid file**. The `switch` command does not access the data file. We therefore recommend backing up the file before editing it.<br>
 Each name in an event's `members` list must exactly match the name of a saved contact, or the data file is invalid.<br>
 Furthermore, certain edits can cause CoordiMate to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </box>
@@ -900,6 +980,7 @@ Action | Format, Examples
 **Edit tag** | `edittag OLD_TAG t/NEW_TAG`<br> e.g., `edittag Media t/Publicity`
 **Delete tag** | `deletetag t/TAG`<br> e.g., `deletetag t/Publicity`
 **List tags** | `listtags`
+**Switch views** | `switch contacts` \| `switch events` \| `switch tags`<br> e.g., `switch events`
 **Clear** | `clear`
 **Help** | `help`
 **Exit** | `exit`
