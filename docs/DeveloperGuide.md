@@ -233,16 +233,20 @@ This section describes some noteworthy details on how certain features are imple
 
 ### Saving data atomically
 
-A command that changes data either takes effect in full, both in the app and in the data file, or not at all.
+Commands that edit contacts, event details, tags, or attendance either take effect in full, both in the app
+and in the data file, or not at all.
 This keeps the displayed data and the saved data identical even when the data file cannot be read or written,
 and meets the requirement that saved data is not lost if the app terminates unexpectedly.
+Reminder dismissal uses a separate save path with a session-only fallback, described in
+[Dismissing reminders](#dismissing-reminders).
 
 #### Implementation
 
 Two mechanisms work together.
 
 **1. Commands run on a copy of the model.** [`LogicManager#execute`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/logic/LogicManager.java)
-passes every command that changes data to `LogicManager#executeAtomicCommand`. These are `AddCommand`, `EditCommand`,
+passes commands that edit contacts, event details, tags, or attendance to `LogicManager#executeAtomicCommand`.
+These are `AddCommand`, `EditCommand`,
 `DeleteCommand`, `ClearCommand`, `AddEventCommand`, `EditEventCommand`, `DeleteEventCommand`, `AssignCommand`,
 `UnassignCommand`, `MarkAttendanceCommand`, and the tag commands that extend `MutatingTagCommand`.
 
@@ -304,9 +308,10 @@ not request a view change. Invalid view names are rejected before the UI changes
 
 * **Alternative 1 (current choice):** Execute the command on a copy of the model, save the copy, then replace the
   live model's data.
-  * Pros: Works for every command without command-specific code. The UI never shows a change that was not saved.
+  * Pros: Works for the editing commands listed above without command-specific rollback code. The UI never shows
+    an edit that was not saved.
   * Cons: Copies all data for each command, which is acceptable for the expected 250 contacts. Each new command
-    that changes data must be added to the list in `LogicManager#execute`.
+    using this save path must be added to the list in `LogicManager#execute`.
 
 * **Alternative 2:** Execute the command on the live model, and restore a snapshot if saving fails.
   * Pros: No copy is needed when saving succeeds.
@@ -315,6 +320,36 @@ not request a view change. Invalid view names are rejected before the UI changes
 * **Alternative 3:** Have each command undo its own change if saving fails.
   * Pros: Uses the least memory.
   * Cons: Every command needs correct undo logic, which is easy to get wrong.
+
+### Dismissing reminders
+
+`LogicManager` creates a shared `ReminderService` and supplies it to `CoordiMateParser`, which passes it to
+`DismissCommandParser` and `DismissCommand`. The CLI command and the panel's **Dismiss** button therefore use
+the same dismissal history and storage behavior.
+
+1. `DismissCommandParser` uses `ParserUtil#parseIndex` to accept one positive, 1-based index. Missing input
+   produces a format error; invalid integers and extra arguments are rejected before execution.
+1. `DismissCommand#execute` obtains the refreshed reminder list from `ReminderService#getReminders` and checks
+   the index against its size. `UpcomingEventFinder` orders this list by start time and then by event name,
+   ignoring case; date-only starts count as midnight for sorting. `ReminderPanel` renders the same list with
+   1-based indexes and regenerates the rows whenever it changes. An out-of-range index, including an empty
+   list, produces a command error without reading or writing storage.
+1. The command passes the selected `Event` to `ReminderService#dismissReminder`. The service creates a copy
+   with updated dismissal history, checks that the existing data can be loaded, and saves the candidate
+   before updating the live event. Event details, members, attendance, and the contact filter are preserved.
+1. On success, the command returns `Reminder dismissed: EVENT_NAME.` without requesting a view change.
+   If reading or saving fails, the service keeps the dismissal in its session map, refreshes the list, and
+   throws `ReminderDismissalException`. The command logs the failure and returns `CommandResult.warning`.
+   `MainWindow` checks `CommandResult#isWarning` and uses `ResultDisplay#setWarningFeedback` to show the
+   existing **Not saved** status. The persisted history is unchanged, so the reminder may return after restart.
+
+`LogicManager` returns the dismissal result directly, bypassing both `executeAtomicCommand` and the generic
+post-command save. `ReminderService` already performs the save; a second save would be redundant and could
+replace the warning with an unrelated error. The normal final reminder refresh still runs after execution.
+
+`ReminderLogicIntegrationTest` covers ordering, edits, persistence, event data, and read/write failures using
+a controlled clock and temporary JSON files. `MainWindowReminderTest` covers immediate panel updates,
+renumbering, feedback, selected tabs, and command focus.
 
 ### Event attendance
 
@@ -1163,6 +1198,66 @@ testers are expected to do more *exploratory* testing.
 
    1. Other incorrect deleteevent commands to try: `deleteevent`, `deleteevent evn/`<br>
       Expected: No event is deleted. The status message shows error details.
+
+### Dismissing a reminder
+
+1. Selecting by reminder order and saving the dismissal
+
+   1. Prerequisites: Use test data with no active reminders. Replace `TOMORROW` below with tomorrow's date in
+      `dd-MM-yyyy` format, using the computer's local time zone. Create `Zulu Reminder` first with
+      `addevent evn/Zulu Reminder st/TOMORROW et/TOMORROW`, then create `alpha Reminder` with the same dates.
+      The panel should show `alpha Reminder` at index 1 and `Zulu Reminder` at index 2.
+
+   1. Test case: `switch tags`, then `dismiss 1`<br>
+      Expected: `alpha Reminder` disappears, `Zulu Reminder` becomes index 1, and feedback shows
+      `Reminder dismissed: alpha Reminder.` with **OK** status. The **Tags** tab stays selected and the
+      command input keeps focus. Both events remain in the **Events** view with unchanged details.
+
+   1. Test case: Close and reopen the app while the test events still qualify for reminders.<br>
+      Expected: Only `Zulu Reminder` appears in the panel, at index 1. `alpha Reminder` remains saved.
+
+   1. Test case: `dismiss 2`<br>
+      Expected: No reminder is dismissed. Feedback shows
+      `No reminder exists at index 2. Use an index from the Upcoming events panel.` followed by usage.
+
+   1. Test case: `dismiss 1`, then `dismiss 1` again.<br>
+      Expected: The first command dismisses `Zulu Reminder` and hides the empty panel. The second command
+      reports that no reminder exists at index 1. Both events remain saved.
+
+1. Rejecting invalid input
+
+   1. Prerequisites: At least one reminder is shown.
+
+   1. Test cases: `dismiss`, `dismiss 0`, `dismiss -1`, `dismiss abc`, `dismiss 1.5`, `dismiss 1 2`,
+      `dismiss 2147483648`<br>
+      Expected: No reminders or saved events change. Feedback shows **Rejected** and an explanation with
+      `dismiss` usage. A missing index gives `Invalid command format.`; the other inputs give
+      `Index must be a positive integer. Example: 1`.
+
+1. Handling a failed save
+
+   1. Prerequisites: An active reminder exists. Record its index and use the failed-save setup in
+      [Saving data](#saving-data) to prevent writes to the test data file.
+
+   1. Test case: `dismiss INDEX`, replacing `INDEX` with the recorded reminder index.<br>
+      Expected: The reminder disappears. Feedback shows
+      `Reminder dismissal could not be saved and may reappear after restarting.` with **Not saved** status.
+      Event details and the saved data file remain unchanged.
+
+   1. Test case: Restore write permissions, then close and reopen the app while the event still qualifies.<br>
+      Expected: The reminder appears again because its dismissal was only retained for the previous session.
+
+1. Handling a failed read
+
+   1. Prerequisites: An active reminder exists and its index is recorded. Keep a copy of the test data file.
+      While the app remains open, make the JSON invalid by removing its first `{` and save the file.
+
+   1. Test case: `dismiss INDEX`, replacing `INDEX` with the recorded reminder index.<br>
+      Expected: The reminder disappears for the session, the **Not saved** warning appears, and the invalid
+      data file is not overwritten. The event in memory retains its saved details.
+
+   1. Test case: Close the app, restore the copy of the data file, and reopen it while the event still qualifies.<br>
+      Expected: The reminder appears again.
 
 ### Assigning members to an event
 

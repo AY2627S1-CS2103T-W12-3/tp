@@ -75,6 +75,9 @@ are replaced with the actual parameter prefix, name, index, or other details.
 | The command word is unknown or uses the wrong capitalization. | `Unknown command. Use help to see the available commands. Example: help` |
 | Existing data cannot be loaded before a command changes saved data. | `Saved data could not be loaded. Check the local data file.` |
 
+For `dismiss`, data-loading and saving failures instead produce the session-only warning described in
+[Dismissing a reminder](#dismissing-a-reminder-dismiss).
+
 <box type="info" seamless>
 
 **Notes about the command format:**<br>
@@ -395,8 +398,9 @@ The event and existing data file remain unchanged.
 ### Automatic event reminders
 
 CoordiMate shows reminders in the **Upcoming events** panel below the menu bar and above the workspace.
-The panel remains visible across the **Contacts**, **Events**, and **Tags** views. No command or parameters
-are needed. Reminders appear only while CoordiMate is running.
+The panel appears when reminders are available and stays visible across the **Contacts**, **Events**, and
+**Tags** views. It hides when no reminders remain. No command is needed to receive reminders, which appear
+only while CoordiMate is running.
 
 CoordiMate checks saved events on startup and once per minute while the window is open. It also refreshes
 reminders after commands, including event edits and deletions. A reminder becoming eligible or expiring
@@ -411,10 +415,10 @@ Reminder timing follows your computer's local time zone:
   the event's start date**. For example, a start of `20-10-2026` qualifies from midnight at the beginning
   of `19-10-2026` until midnight at the beginning of `21-10-2026`, excluding that final midnight.
 
-Each reminder displays the saved event name, start, and end. For example:
+Each reminder displays its index and the saved event name, start, and end. For example:
 
 ```text
-Upcoming event: Final Concert
+1. Upcoming event: Final Concert
 Starts: 20-10-2026 15:00
 Ends: 20-10-2026 18:00
 ```
@@ -423,8 +427,10 @@ This timed event qualifies from `19-10-2026 15:00` through `20-10-2026 15:00`, i
 Several reminders appear in ascending order of start time, with ties ordered by name, ignoring case.
 For ordering, a date-only start counts as the beginning of its date; the reminder still displays the
 saved date without adding a time. Each event has at most one active reminder.
+Indexes start at **1** and follow this order. They update whenever the reminder list changes.
 
-Click **Dismiss** beside a reminder to hide it. CoordiMate saves the dismissal immediately, so it stays
+Click **Dismiss** beside a reminder or use [`dismiss INDEX`](#dismissing-a-reminder-dismiss) to hide it.
+CoordiMate saves the dismissal immediately, so it stays
 dismissed after restarting. Renaming the event, editing only its end, or supplying the same start value
 keeps the dismissal. Changing its start date or time resets the dismissal, including when switching
 between a timed and date-only start or reverting to a previously dismissed start. The revised reminder
@@ -442,6 +448,39 @@ return after restarting.
 
 If the saved data file is invalid, CoordiMate starts with an empty dataset and shows no event reminders.
 See [Editing the data file](#editing-the-data-file) for details of data-loading errors.
+
+### Dismissing a reminder: `dismiss`
+
+Dismisses one reminder using its current index in the **Upcoming events** panel and saves the dismissal.
+The event, its members, and its attendance records remain available. The current tab and contact filter
+stay selected.
+
+Format: `dismiss INDEX`
+
+* `INDEX` is required and must be a positive integer starting at **1**.
+* Use the index shown beside the reminder in the **Upcoming events** panel. The contact and event lists
+  have their own ordering.
+* Remaining reminders are renumbered after dismissal. Use their current indexes for subsequent commands.
+
+Examples:
+
+* `dismiss 1` dismisses the first reminder in the panel.
+* `dismiss 2` dismisses the second reminder, if at least two reminders are shown.
+
+Success: `Reminder dismissed: {EVENT_NAME}.` The reminder disappears immediately and stays dismissed after
+restarting. Changing the event's start resets its dismissal as described in
+[Automatic event reminders](#automatic-event-reminders).
+
+| Condition | Error message |
+|---|---|
+| The index is missing. | `Invalid command format.` |
+| The index is zero, negative, non-integer, greater than 2147483647, or followed by extra arguments. | `Index must be a positive integer. Example: 1` |
+| No reminder has that index, including when the panel is empty. | `No reminder exists at index {INDEX}. Use an index from the Upcoming events panel.` |
+
+Invalid input dismisses no reminder. If loading or saving the data file fails, the reminder is hidden for
+the current session and feedback shows `Reminder dismissal could not be saved and may reappear after restarting.`
+with a **Not saved** status. The saved dismissal history remains unchanged, so the reminder may return after
+restarting. This is the same behavior as the **Dismiss** button.
 
 ### Assigning members to an event: `assign`
 
@@ -1002,6 +1041,7 @@ Action | Format, Examples
 **Add event** | `addevent evn/EVENT_NAME st/START_TIME et/END_TIME`<br> e.g., `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`
 **Edit event** | `editevent evn/EVENT_NAME [nevn/NEW_EVENT_NAME] [st/NEW_START_TIME] [et/NEW_END_TIME]`<br> e.g., `editevent evn/Final Concert st/08-08-2026 16:00 et/08-08-2026 19:00`
 **Delete event** | `deleteevent evn/EVENT_NAME`<br> e.g., `deleteevent evn/Final Concert`
+**Dismiss reminder** | `dismiss INDEX` (index from the **Upcoming events** panel)<br> e.g., `dismiss 1`
 **Assign** | `assign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...`<br> e.g., `assign evn/Final Concert c/1 4 5`
 **Unassign** | `unassign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...`<br> e.g., `unassign evn/Final Concert c/2 3`
 **Members** | `members evn/EVENT_NAME`<br> e.g., `members evn/Final Concert`
