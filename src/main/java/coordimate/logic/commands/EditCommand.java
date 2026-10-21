@@ -139,6 +139,8 @@ public class EditCommand extends Command {
                 model.registerTag(operation.tag());
             }
         }
+        assert model.getCoordiMate().getPersonList().contains(editedPerson)
+                : "Edited contact must be present in the model.";
         model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
         return new CommandResult(successMessage(editedPerson));
     }
@@ -167,6 +169,9 @@ public class EditCommand extends Command {
      */
     static Person resolveTarget(String identifier, List<Person> savedPersons, List<Person> displayedPersons)
             throws CommandException {
+        requireNonNull(identifier);
+        requireNonNull(savedPersons);
+        requireNonNull(displayedPersons);
         String trimmedIdentifier = identifier.strip();
         String normalizedPhone = trimmedIdentifier.replace(" ", "").replace("-", "")
                 .replace("(", "").replace(")", "");
@@ -316,6 +321,7 @@ public class EditCommand extends Command {
          * A defensive copy of {@code tags} is used internally.
          */
         public EditPersonDescriptor(EditPersonDescriptor toCopy) {
+            requireNonNull(toCopy);
             setName(toCopy.name);
             setPhone(toCopy.phone);
             setEmail(toCopy.email);
