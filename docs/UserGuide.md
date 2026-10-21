@@ -39,7 +39,8 @@
 1. Type a command in the command box and press Enter to execute it. For example, type **`help`** and press Enter to open the help window.<br>
    Press <kbd>Up</kbd> to recall earlier commands and <kbd>Down</kbd> to move toward the command you were typing.<br>
    To browse cards without reaching for the mouse, press <kbd>Esc</kbd> to enter Navigation mode, use
-   <kbd>J</kbd>/<kbd>K</kbd> to move through the active view, then press <kbd>I</kbd> to return to Command mode.<br>
+   <kbd>J</kbd>/<kbd>K</kbd> to move through the active view, <kbd>S</kbd> to switch views, then press <kbd>I</kbd>
+   to return to Command mode.<br>
    Some example commands you can try:
 
    * `list` : Lists all contacts.
@@ -147,10 +148,16 @@ Use the following keys to browse Contacts, Events, or Tags without the mouse:
 | <kbd>Esc</kbd> | Enter **Navigation mode** from Command mode. |
 | <kbd>J</kbd> | Select the next card in the active view. If nothing is selected, select the first card. |
 | <kbd>K</kbd> | Select the previous card in the active view. If nothing is selected, select the last card. |
+| <kbd>S</kbd> | Switch to the next view, wrapping from Tags back to Contacts. |
 | <kbd>I</kbd> | Return to **Command mode** and focus the command box. |
 
 Navigation stops at the first or last card rather than wrapping around. On an empty list, <kbd>J</kbd> and <kbd>K</kbd>
-do nothing. The shortcuts apply to whichever of the Contacts, Events, or Tags views is active.
+do nothing. The shortcuts apply to whichever of the Contacts, Events, or Tags views is active. Each view keeps its
+selection when you switch away and back.
+
+Other unmodified keys, including <kbd>Enter</kbd>, <kbd>Space</kbd>, <kbd>Tab</kbd>, and the arrow keys, are disabled
+in Navigation mode. Pressing <kbd>Esc</kbd> moves keyboard focus away from controls such as a reminder's
+**Dismiss** button, so those controls cannot be activated accidentally. Mouse controls remain available.
 
 You can chain navigation and command entry without clicking. For example, press <kbd>Esc</kbd>, <kbd>J</kbd>,
 <kbd>J</kbd>, <kbd>I</kbd>, then type a command. Any unfinished command remains in the command box while you navigate.

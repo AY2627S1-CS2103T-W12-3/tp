@@ -85,16 +85,18 @@ public class HelpWindowTest {
             assertFalse(commandTable.isEditable());
             assertEquals("Command mode (default): type commands; press Esc to navigate cards.",
                     commandModeHelp.getText());
-            assertEquals("Navigation mode: press j for next, k for previous, or i to focus the command box. "
-                    + "Click the command box or a card list to switch modes.", navigationModeHelp.getText());
+            assertEquals("Navigation mode: press j for next, k for previous, s to switch views, or i to focus "
+                    + "the command box. Other unmodified keys are disabled. Click the command box or a card list "
+                    + "to switch modes.", navigationModeHelp.getText());
             assertTrue(commandModeHelp.isWrapText());
             assertTrue(navigationModeHelp.isWrapText());
             assertEquals(Double.POSITIVE_INFINITY, commandModeHelp.getMaxWidth());
             assertEquals(Double.POSITIVE_INFINITY, navigationModeHelp.getMaxWidth());
             assertEquals("Command mode is the default. Press Escape to enter Navigation mode. "
-                    + "In Navigation mode, press J for the next card, K for the previous card, or I to focus the "
-                    + "command box. Clicking the command box enters Command mode; clicking a card list enters "
-                    + "Navigation mode.", keyboardHelp.getAccessibleText());
+                    + "In Navigation mode, press J for the next card, K for the previous card, S to switch views, "
+                    + "or I to focus the command box. Other unmodified keys are disabled. Clicking the command "
+                    + "box enters Command mode; clicking a card list enters Navigation mode.",
+                    keyboardHelp.getAccessibleText());
             assertEquals("Note: [ ] marks optional parameters; (A | B) means choose one. "
                     + "For edit, provide at least one field or tag operation. "
                     + "For editevent, provide at least one field.", syntaxNote.getText());

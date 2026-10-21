@@ -111,6 +111,10 @@ The `UI` component,
   format and an example; rows also support keyboard activation. Selecting a tag shows all saved contacts
   assigned to it, independent of the current contact filter, and refreshes names, roles, organisations, and tags
   when contact data changes.
+  A window-level key filter owns Navigation-mode input: `J` and `K` move within the active view, `S` cycles views,
+  and `I` returns to Command mode. Other unmodified keys are consumed before focused controls can act on them.
+  Entering Navigation mode transfers focus to the mode indicator, preventing controls such as reminder dismissal
+  buttons from retaining keyboard activation.
 * keeps a reference to the `Logic` component, because the `UI` relies on the `Logic` to execute commands.
   The `switch` command returns a view selection request that `MainWindow` applies through the same view controls
   used by the sidebar. `LogicManager` executes this navigation command without reading or saving contact data.
