@@ -54,8 +54,6 @@
           <HBox alignment="CENTER_LEFT" spacing="10.0">
             <children>
               <Label fx:id="helpMessage" text="Label" wrapText="true" HBox.hgrow="ALWAYS" />
-              <Button fx:id="tutorialButton" mnemonicParsing="false" onAction="#openTutorial"
-                      text="Tutorial" accessibleText="Open the CoordiMate tutorial" />
               <Button fx:id="copyButton" mnemonicParsing="false" onAction="#copyUrl" text="Copy URL" />
               <Button fx:id="closeButton" cancelButton="true" mnemonicParsing="false" onAction="#close"
                       text="Close" />

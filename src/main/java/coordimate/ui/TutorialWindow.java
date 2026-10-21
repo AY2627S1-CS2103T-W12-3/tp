@@ -85,9 +85,11 @@ public class TutorialWindow extends UiPart<StackPane> {
                             + "in the current tab. Press I to return to Command mode and focus the command box.",
                     TutorialPlacement.CENTER, TutorialTarget.NONE),
             new TutorialStep("Get help anytime",
-                    "Select Help in the top bar to see command formats and keyboard shortcuts. You can also reopen "
-                            + "this tutorial from the Help window.",
-                    TutorialPlacement.BESIDE_TARGET, TutorialTarget.HELP));
+                    "Select Help in the top bar to see command formats and keyboard shortcuts.",
+                    TutorialPlacement.BESIDE_TARGET, TutorialTarget.HELP),
+            new TutorialStep("Take the tour again",
+                    "Select Tutorial in the top bar whenever you need a reminder.",
+                    TutorialPlacement.CENTER, TutorialTarget.TUTORIAL));
 
     @FXML
     private Pane overlayPane;
@@ -441,7 +443,8 @@ public class TutorialWindow extends UiPart<StackPane> {
         TAGS_TAB,
         TAG_LIST,
         TAG_DETAILS,
-        HELP
+        HELP,
+        TUTORIAL
     }
 
     /** Content and UI target for one tutorial step. */

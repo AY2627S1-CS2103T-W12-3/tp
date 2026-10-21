@@ -186,13 +186,12 @@ Format: `help`
 ### Taking the tutorial
 
 The first time CoordiMate starts, a guided overlay opens automatically. Use **Back** and **Next** to move through
-the fifteen steps, select **Close** to leave the tutorial, or select **Finish** on the last step. The tour introduces
+the sixteen steps, select **Close** to leave the tutorial, or select **Finish** on the last step. The tour introduces
 the Contacts, Events, and Tags views; their lists and details; the command box; keyboard navigation; and Help. It
 selects each view as it is introduced and leaves the current view selected when you close it. The highlighted area
 stays bright while the rest of the app is dimmed. The app cannot be used to enter commands during the tour.
 
-To take the tutorial again, open **Help** from the top bar or press <kbd>Fn</kbd> + <kbd>F1</kbd>, then select
-**Tutorial**. You can also type `help` and press Enter.
+To take the tutorial again, select **Tutorial** beside **Help** in the top bar.
 
 
 ### Switching views: `switch`

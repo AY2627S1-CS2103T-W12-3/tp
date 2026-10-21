@@ -141,15 +141,21 @@ public class MainWindowTest {
             window.fillInnerParts();
 
             Label helpLabel = (Label) stage.getScene().getRoot().lookup("#helpLabel");
+            Label tutorialLabel = (Label) stage.getScene().getRoot().lookup("#tutorialLabel");
             HBox topMenuRow = (HBox) stage.getScene().getRoot().lookup("#topMenuRow");
             MenuBar menuBar = (MenuBar) stage.getScene().getRoot().lookup("#menuBar");
             assertEquals("Help", helpLabel.getText());
+            assertEquals("Tutorial", tutorialLabel.getText());
+            assertEquals(helpLabel.getStyleClass(), tutorialLabel.getStyleClass());
+            assertEquals(helpLabel.getAccessibleRole(), tutorialLabel.getAccessibleRole());
+            assertEquals("Open the CoordiMate tutorial", tutorialLabel.getAccessibleText());
             assertEquals("Open Help (Fn + F1)", helpLabel.getTooltip().getText());
             assertEquals(200, helpLabel.getTooltip().getShowDelay().toMillis());
             assertEquals(List.of("File"), menuBar.getMenus().stream().map(menu -> menu.getText()).toList());
             assertSame(topMenuRow, menuBar.getParent());
             assertSame(topMenuRow, helpLabel.getParent());
-            assertEquals(List.of(menuBar, helpLabel), topMenuRow.getChildren());
+            assertSame(topMenuRow, tutorialLabel.getParent());
+            assertEquals(List.of(menuBar, helpLabel, tutorialLabel), topMenuRow.getChildren());
 
             window.show();
             javafx.event.Event.fireEvent(helpLabel, mouseClickEvent());
@@ -190,7 +196,7 @@ public class MainWindowTest {
     }
 
     @Test
-    public void helpWindowTutorialButton_opensTutorialOverlay() throws Exception {
+    public void topMenuTutorialItem_opensTutorialOverlay() throws Exception {
         FutureTask<Void> task = new FutureTask<>(() -> {
             Stage stage = new Stage();
             ModelManager model = new ModelManager();
@@ -206,15 +212,15 @@ public class MainWindowTest {
             views.getSelectionModel().select(1);
             window.handleHelp();
             Stage helpStage = findOwnedStage(stage, "Help");
-            Button tutorialButton = (Button) helpStage.getScene().lookup("#tutorialButton");
-            tutorialButton.fire();
+            Label tutorialLabel = (Label) stage.getScene().lookup("#tutorialLabel");
+            javafx.event.Event.fireEvent(tutorialLabel, mouseClickEvent());
             stage.getScene().getRoot().applyCss();
             stage.getScene().getRoot().layout();
 
             StackPane tutorialOverlay = (StackPane) stage.getScene().lookup("#tutorialOverlay");
             assertTrue(tutorialOverlay.isVisible());
             assertFalse(helpStage.isShowing());
-            assertEquals("Step 1 of 15", ((Label) stage.getScene().lookup("#stepCounter")).getText());
+            assertEquals("Step 1 of 16", ((Label) stage.getScene().lookup("#stepCounter")).getText());
             assertEquals(0, views.getSelectionModel().getSelectedIndex());
             Button nextButton = (Button) stage.getScene().lookup("#nextButton");
             TextField commandInput = (TextField) stage.getScene().lookup("#commandTextField");
@@ -229,20 +235,20 @@ public class MainWindowTest {
             for (int step = 0; step < 4; step++) {
                 nextButton.fire();
             }
-            assertEquals("Step 5 of 15", ((Label) stage.getScene().lookup("#stepCounter")).getText());
+            assertEquals("Step 5 of 16", ((Label) stage.getScene().lookup("#stepCounter")).getText());
             assertTrue(stage.getScene().lookup("#targetHighlight").isVisible());
             nextButton.fire();
-            assertEquals("Step 6 of 15", ((Label) stage.getScene().lookup("#stepCounter")).getText());
+            assertEquals("Step 6 of 16", ((Label) stage.getScene().lookup("#stepCounter")).getText());
             ListView<?> contactList = (ListView<?>) stage.getScene().lookup("#personListView");
             assertEquals(0, contactList.getSelectionModel().getSelectedIndex());
             assertTrue(stage.getScene().lookup("#targetHighlight").isVisible());
             nextButton.fire();
-            assertEquals("Step 7 of 15", ((Label) stage.getScene().lookup("#stepCounter")).getText());
+            assertEquals("Step 7 of 16", ((Label) stage.getScene().lookup("#stepCounter")).getText());
             assertEquals(1, views.getSelectionModel().getSelectedIndex());
             stage.getScene().getRoot().applyCss();
             stage.getScene().getRoot().layout();
             nextButton.fire();
-            assertEquals("Step 8 of 15", ((Label) stage.getScene().lookup("#stepCounter")).getText());
+            assertEquals("Step 8 of 16", ((Label) stage.getScene().lookup("#stepCounter")).getText());
             ListView<?> eventList = (ListView<?>) stage.getScene().lookup("#eventListView");
             assertEquals(0, eventList.getSelectionModel().getSelectedIndex());
             assertTrue(stage.getScene().lookup("#targetHighlight").isVisible());
@@ -250,10 +256,10 @@ public class MainWindowTest {
                     .localToScene(stage.getScene().lookup("#targetHighlight").getLayoutBounds());
             assertTrue(eventCardHighlight.getHeight() < eventList.getHeight());
             nextButton.fire();
-            assertEquals("Step 9 of 15", ((Label) stage.getScene().lookup("#stepCounter")).getText());
+            assertEquals("Step 9 of 16", ((Label) stage.getScene().lookup("#stepCounter")).getText());
             assertTrue(stage.getScene().lookup("#targetHighlight").isVisible());
             nextButton.fire();
-            assertEquals("Step 10 of 15", ((Label) stage.getScene().lookup("#stepCounter")).getText());
+            assertEquals("Step 10 of 16", ((Label) stage.getScene().lookup("#stepCounter")).getText());
             VBox members = (VBox) stage.getScene().lookup("#members");
             assertEquals(1, members.getChildren().size());
             Bounds memberBounds = members.localToScene(members.getLayoutBounds());
@@ -263,26 +269,30 @@ public class MainWindowTest {
             Label memberCount = (Label) stage.getScene().lookup("#memberCount");
             assertFalse(highlightBounds.intersects(memberCount.localToScene(memberCount.getLayoutBounds())));
             nextButton.fire();
-            assertEquals("Step 11 of 15", ((Label) stage.getScene().lookup("#stepCounter")).getText());
+            assertEquals("Step 11 of 16", ((Label) stage.getScene().lookup("#stepCounter")).getText());
             assertEquals(2, views.getSelectionModel().getSelectedIndex());
             assertTrue(((ToggleButton) stage.getScene().lookup("#tagsView")).isSelected());
             assertTutorialHighlights(stage, "#tagsView");
             nextButton.fire();
-            assertEquals("Step 12 of 15", ((Label) stage.getScene().lookup("#stepCounter")).getText());
+            assertEquals("Step 12 of 16", ((Label) stage.getScene().lookup("#stepCounter")).getText());
             assertTutorialHighlights(stage, "#tagListView");
             nextButton.fire();
-            assertEquals("Step 13 of 15", ((Label) stage.getScene().lookup("#stepCounter")).getText());
+            assertEquals("Step 13 of 16", ((Label) stage.getScene().lookup("#stepCounter")).getText());
             assertEquals(0, ((ListView<?>) stage.getScene().lookup("#tagListView"))
                     .getSelectionModel().getSelectedIndex());
             assertTutorialHighlights(stage, "#tagDetailsPane");
             nextButton.fire();
-            assertEquals("Step 14 of 15", ((Label) stage.getScene().lookup("#stepCounter")).getText());
+            assertEquals("Step 14 of 16", ((Label) stage.getScene().lookup("#stepCounter")).getText());
             assertEquals(2, views.getSelectionModel().getSelectedIndex());
             assertFalse(stage.getScene().lookup("#targetHighlight").isVisible());
             nextButton.fire();
-            assertEquals("Step 15 of 15", ((Label) stage.getScene().lookup("#stepCounter")).getText());
+            assertEquals("Step 15 of 16", ((Label) stage.getScene().lookup("#stepCounter")).getText());
             assertEquals(2, views.getSelectionModel().getSelectedIndex());
             assertTutorialHighlights(stage, "#helpLabel");
+            nextButton.fire();
+            assertEquals("Step 16 of 16", ((Label) stage.getScene().lookup("#stepCounter")).getText());
+            assertEquals(2, views.getSelectionModel().getSelectedIndex());
+            assertTutorialHighlights(stage, "#tutorialLabel");
             assertEquals("Finish", nextButton.getText());
             assertEquals(1, logic.getEventList().size());
             Button closeButton = (Button) stage.getScene().lookup("#closeButton");
@@ -292,10 +302,12 @@ public class MainWindowTest {
             assertEquals(2, views.getSelectionModel().getSelectedIndex());
 
             window.handleHelp();
-            tutorialButton.fire();
+            KeyEvent enterEvent = keyEvent(KeyCode.ENTER);
+            tutorialLabel.getOnKeyPressed().handle(enterEvent);
+            assertTrue(enterEvent.isConsumed());
             assertTrue(tutorialOverlay.isVisible());
             assertFalse(helpStage.isShowing());
-            assertEquals("Step 1 of 15", ((Label) stage.getScene().lookup("#stepCounter")).getText());
+            assertEquals("Step 1 of 16", ((Label) stage.getScene().lookup("#stepCounter")).getText());
             window.stop();
             stage.close();
             return null;
@@ -312,9 +324,8 @@ public class MainWindowTest {
                     Path.of("data", "coordimate.json"));
             window.fillInnerParts();
             window.show();
-            window.handleHelp();
-            Button tutorialButton = (Button) findOwnedStage(stage, "Help").getScene().lookup("#tutorialButton");
-            tutorialButton.fire();
+            Label tutorialLabel = (Label) stage.getScene().lookup("#tutorialLabel");
+            javafx.event.Event.fireEvent(tutorialLabel, mouseClickEvent());
             stage.getScene().getRoot().applyCss();
             stage.getScene().getRoot().layout();
 
@@ -322,7 +333,7 @@ public class MainWindowTest {
             for (int step = 0; step < 4; step++) {
                 nextButton.fire();
             }
-            assertEquals("Step 5 of 15", ((Label) stage.getScene().lookup("#stepCounter")).getText());
+            assertEquals("Step 5 of 16", ((Label) stage.getScene().lookup("#stepCounter")).getText());
             assertTrue(stage.getScene().lookup("#targetHighlight").isVisible());
             Label contactSelectionHint = (Label) stage.getScene().lookup("#personListPanelPlaceholder")
                     .lookup("#selectionHint");
@@ -333,16 +344,16 @@ public class MainWindowTest {
             stage.getScene().getRoot().applyCss();
             stage.getScene().getRoot().layout();
             nextButton.fire();
-            assertEquals("Step 8 of 15", ((Label) stage.getScene().lookup("#stepCounter")).getText());
+            assertEquals("Step 8 of 16", ((Label) stage.getScene().lookup("#stepCounter")).getText());
             assertEquals(0, ((ListView<?>) stage.getScene().lookup("#eventListView")).getItems().size());
             assertTrue(stage.getScene().lookup("#targetHighlight").isVisible());
             nextButton.fire();
-            assertEquals("Step 9 of 15", ((Label) stage.getScene().lookup("#stepCounter")).getText());
+            assertEquals("Step 9 of 16", ((Label) stage.getScene().lookup("#stepCounter")).getText());
             Label eventSelectionHint = (Label) stage.getScene().lookup("#eventListPanelPlaceholder")
                     .lookup("#selectionHint");
             assertTrue(eventSelectionHint.isVisible());
             nextButton.fire();
-            assertEquals("Step 10 of 15", ((Label) stage.getScene().lookup("#stepCounter")).getText());
+            assertEquals("Step 10 of 16", ((Label) stage.getScene().lookup("#stepCounter")).getText());
             assertTrue(stage.getScene().lookup("#targetHighlight").isVisible());
             window.stop();
             stage.close();

@@ -78,14 +78,15 @@ The `HelpWindow` provides an in-app command quick reference. Its read-only, scro
 resizable layout. The User Guide URL remains available for more detailed instructions.
 The window's **Close** button is marked as the JavaFX cancel button, allowing users to dismiss it by selecting the
 button or pressing <kbd>Esc</kbd> without exiting the application.
-`MainWindow` hosts the guided `TutorialWindow` as an overlay above the main application scene. The fifteen-step tour
+`MainWindow` hosts the guided `TutorialWindow` as an overlay above the main application scene. The sixteen-step tour
 highlights the Contacts, Events, and Tags views, contact commands and input, lists, details, the event member list, and
 Help. It also introduces keyboard navigation. It selects an existing contact, event, or tag when needed, without
 changing saved data; empty lists show their existing hints.
 The event details pane scrolls to the member list for its step, and highlights inside a scroll pane are clipped to the
 visible viewport. The dim backdrop leaves the highlighted area clear while a transparent blocker and disabled command
 box prevent commands from running during the tour. `UiManager` opens the overlay on first launch. `MainWindow` records
-the tutorial preference when the user closes or finishes it; the Help window can open the overlay again at any time.
+the tutorial preference when the user closes or finishes it; the Tutorial item beside Help in the top bar can open the
+overlay again at any time.
 
 `CommandBox` keeps submitted, nonblank commands in a session-only list. The list has no configured cap or eviction;
 its practical limit is the JVM heap, and it is discarded when the app closes. It records an attempt before execution

@@ -48,6 +48,7 @@
             </Menu>
           </MenuBar>
           <Label fx:id="helpLabel" text="Help" focusTraversable="true" styleClass="top-menu-item" />
+          <Label fx:id="tutorialLabel" text="Tutorial" focusTraversable="true" styleClass="top-menu-item" />
         </HBox>
 
         <StackPane fx:id="reminderPanelPlaceholder" VBox.vgrow="NEVER" />

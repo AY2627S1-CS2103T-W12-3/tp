@@ -47,7 +47,7 @@ public class TutorialWindowTest {
     }
 
     @Test
-    public void navigation_showsFifteenStepsAndCloseOrFinishHidesOverlay() throws Exception {
+    public void navigation_showsSixteenStepsAndCloseOrFinishHidesOverlay() throws Exception {
         FutureTask<Void> task = new FutureTask<>(() -> {
             TutorialWindow tutorial = new TutorialWindow();
             Stage stage = createStage(tutorial, 1100, 760);
@@ -63,10 +63,10 @@ public class TutorialWindowTest {
                     "View contact details", "Explore the Events tab", "Explore an event card",
                     "View event details", "View the member list", "Explore the Tags tab",
                     "Explore the tag list", "View tag details", "Navigate with your keyboard",
-                    "Get help anytime");
+                    "Get help anytime", "Take the tour again");
             assertTrue(backButton.isDisabled());
             for (int index = 0; index < titles.size(); index++) {
-                assertEquals("Step " + (index + 1) + " of 15", stepCounter.getText());
+                assertEquals("Step " + (index + 1) + " of 16", stepCounter.getText());
                 assertEquals(titles.get(index), stepTitle.getText());
                 if (index == 5) {
                     assertTrue(tutorial.getCurrentStep().description().contains("assigned events"));
@@ -78,16 +78,16 @@ public class TutorialWindowTest {
                     nextButton.fire();
                 }
             }
-            assertTrue(tutorial.getCurrentStep().description().contains("reopen this tutorial"));
+            assertTrue(tutorial.getCurrentStep().description().contains("whenever you need a reminder"));
             assertEquals("Finish", nextButton.getText());
             backButton.fire();
-            assertEquals("Step 14 of 15", stepCounter.getText());
+            assertEquals("Step 15 of 16", stepCounter.getText());
             nextButton.fire();
             nextButton.fire();
             assertFalse(tutorial.isShowing());
 
             tutorial.show();
-            assertEquals("Step 1 of 15", stepCounter.getText());
+            assertEquals("Step 1 of 16", stepCounter.getText());
             Button closeButton = (Button) stage.getScene().lookup("#closeButton");
             closeButton.fire();
             assertFalse(tutorial.isShowing());
@@ -174,8 +174,12 @@ public class TutorialWindowTest {
             Region help = new Region();
             help.setPrefSize(100, 30);
             help.relocate(20, 20);
+            Region tutorialMenuItem = new Region();
+            tutorialMenuItem.setPrefSize(100, 30);
+            tutorialMenuItem.relocate(130, 20);
             Pane appContent = new Pane(sidebarTab, commandList, commandInput, contactCard, contactDetails,
-                    eventsTab, eventCard, eventDetails, eventMembers, tagsTab, tagList, tagDetails, help);
+                    eventsTab, eventCard, eventDetails, eventMembers, tagsTab, tagList, tagDetails, help,
+                    tutorialMenuItem);
             StackPane sceneRoot = new StackPane(appContent, tutorial.getRoot());
             StackPane.setAlignment(appContent, Pos.CENTER_LEFT);
             Stage stage = new Stage();
@@ -230,6 +234,14 @@ public class TutorialWindowTest {
             tutorial.highlight(help);
             applyLayout(stage);
             assertTrue(highlight.isVisible());
+            assertFalse(card.localToScene(card.getLayoutBounds())
+                    .intersects(highlight.localToScene(highlight.getLayoutBounds())));
+            nextButton.fire();
+            tutorial.highlight(tutorialMenuItem);
+            applyLayout(stage);
+            assertTrue(highlight.isVisible());
+            assertEquals(500, card.localToScene(card.getLayoutBounds()).getCenterX(), 1);
+            assertEquals(350, card.localToScene(card.getLayoutBounds()).getCenterY(), 1);
             assertFalse(card.localToScene(card.getLayoutBounds())
                     .intersects(highlight.localToScene(highlight.getLayoutBounds())));
             assertTrue(tutorial.isInteractiveTarget(nextButton));

@@ -135,6 +135,9 @@ public class MainWindow extends UiPart<Stage> {
     private Label helpLabel;
 
     @FXML
+    private Label tutorialLabel;
+
+    @FXML
     private Label interactionModeLabel;
 
     @FXML
@@ -230,24 +233,33 @@ public class MainWindow extends UiPart<Stage> {
         appRoot.getChildren().add(tutorialWindow.getRoot());
         tutorialWindow.setDismissHandler(this::handleTutorialDismissed);
         tutorialWindow.setStepChangeHandler(this::showTutorialStep);
-        helpWindow = new HelpWindow(new Stage(), this::showTutorial);
+        helpWindow = new HelpWindow(new Stage());
         helpWindow.getRoot().initOwner(primaryStage);
         Tooltip helpTooltip = new Tooltip("Open Help (" + HelpWindow.HELP_SHORTCUT + ")");
         helpTooltip.setShowDelay(Duration.millis(200));
         helpLabel.setTooltip(helpTooltip);
-        helpLabel.setAccessibleRole(AccessibleRole.BUTTON);
-        helpLabel.setOnMouseClicked(event -> handleHelp());
-        helpLabel.setOnKeyPressed(event -> {
-            if (event.getCode() == KeyCode.ENTER || event.getCode() == KeyCode.SPACE) {
-                handleHelp();
-                event.consume();
-            }
-        });
+        configureTopMenuItem(helpLabel, this::handleHelp);
+        Tooltip tutorialTooltip = new Tooltip("Open the CoordiMate tutorial");
+        tutorialTooltip.setShowDelay(Duration.millis(200));
+        tutorialLabel.setTooltip(tutorialTooltip);
+        tutorialLabel.setAccessibleText("Open the CoordiMate tutorial");
+        configureTopMenuItem(tutorialLabel, this::showTutorial);
         primaryStage.addEventHandler(WindowEvent.WINDOW_HIDDEN, event -> stop());
         primaryStage.addEventHandler(WindowEvent.WINDOW_SHOWN, event -> {
             if (reminderPanel != null) {
                 logic.refreshReminders();
                 reminderTimer.play();
+            }
+        });
+    }
+
+    private void configureTopMenuItem(Label label, Runnable action) {
+        label.setAccessibleRole(AccessibleRole.BUTTON);
+        label.setOnMouseClicked(event -> action.run());
+        label.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.ENTER || event.getCode() == KeyCode.SPACE) {
+                action.run();
+                event.consume();
             }
         });
     }
@@ -605,6 +617,7 @@ public class MainWindow extends UiPart<Stage> {
         if (tutorialWindow.isShowing()) {
             return;
         }
+        helpWindow.hide();
         interactionModeBeforeTutorial = interactionMode;
         showContacts();
         commandBox.setInputDisabled(true);
@@ -625,7 +638,7 @@ public class MainWindow extends UiPart<Stage> {
         switch (step.target()) {
             case EVENTS_TAB, EVENT_CARD, EVENT_DETAILS, EVENT_MEMBERS -> showEvents();
             case TAGS_TAB, TAG_LIST, TAG_DETAILS -> showTags();
-            case NONE, HELP -> { }
+            case NONE, HELP, TUTORIAL -> { }
             default -> showContacts();
         }
         if (step.target() == TutorialWindow.TutorialTarget.EVENT_MEMBERS) {
@@ -666,6 +679,7 @@ public class MainWindow extends UiPart<Stage> {
             case TAG_LIST -> tagListView;
             case TAG_DETAILS -> tagDetailsPane;
             case HELP -> helpLabel;
+            case TUTORIAL -> tutorialLabel;
             case NONE -> null;
         };
     }
