@@ -57,9 +57,10 @@ public class ReminderPanelTest {
             root.layout();
 
             assertEquals("Upcoming events (2)", label(root, "reminderHeading").getText());
-            assertEquals(List.of("Upcoming event: Student Life Fair", "Starts: 20-10-2026", "Ends: 21-10-2026"),
+            assertEquals(List.of("1. Upcoming event: Student Life Fair", "Starts: 20-10-2026", "Ends: 21-10-2026"),
                     rowTexts(rows(root).getFirst()));
-            assertEquals(List.of("Upcoming event: Final Concert", "Starts: 20-10-2026 15:00", "Ends: 20-10-2026 18:00"),
+            assertEquals(List.of("2. Upcoming event: Final Concert",
+                            "Starts: 20-10-2026 15:00", "Ends: 20-10-2026 18:00"),
                     rowTexts(rows(root).getLast()));
             assertTrue(root.isVisible());
             assertTrue(root.isManaged());
@@ -78,7 +79,8 @@ public class ReminderPanelTest {
 
             reminders.setAll(revised);
             assertEquals(1, rows(panel.getRoot()).size());
-            assertEquals(List.of("Upcoming event: Final Concert", "Starts: 20-10-2026 16:00", "Ends: 20-10-2026 19:00"),
+            assertEquals(List.of("1. Upcoming event: Final Concert",
+                            "Starts: 20-10-2026 16:00", "Ends: 20-10-2026 19:00"),
                     rowTexts(rows(panel.getRoot()).getFirst()));
             reminders.clear();
             assertFalse(panel.getRoot().isVisible());
@@ -88,6 +90,35 @@ public class ReminderPanelTest {
             assertTrue(panel.getRoot().isVisible());
             assertTrue(panel.getRoot().isManaged());
             panel.close();
+        });
+    }
+
+    @Test
+    public void reminderChanges_renumberAfterInsertionReorderingAndRemoval() throws Exception {
+        onJavaFxThread(() -> {
+            Event first = event("First", "20-10-2026", "20-10-2026");
+            Event second = event("Second", "20-10-2026 15:00", "20-10-2026 18:00");
+            ObservableList<Event> reminders = FXCollections.observableArrayList(second);
+            ReminderPanel panel = new ReminderPanel(reminders, reminders::remove);
+            try {
+                reminders.addFirst(first);
+                assertEquals(List.of("1. Upcoming event: First", "2. Upcoming event: Second"),
+                        rows(panel.getRoot()).stream().map(row -> rowTexts(row).getFirst()).toList());
+
+                reminders.setAll(second, first);
+                assertEquals(List.of("1. Upcoming event: Second", "2. Upcoming event: First"),
+                        rows(panel.getRoot()).stream().map(row -> rowTexts(row).getFirst()).toList());
+
+                dismissButton(rows(panel.getRoot()).getFirst()).fire();
+                assertEquals(List.of(first), reminders);
+                assertEquals("1. Upcoming event: First", rowTexts(rows(panel.getRoot()).getFirst()).getFirst());
+
+                reminders.clear();
+                reminders.add(second);
+                assertEquals("1. Upcoming event: Second", rowTexts(rows(panel.getRoot()).getFirst()).getFirst());
+            } finally {
+                panel.close();
+            }
         });
     }
 
@@ -118,6 +149,7 @@ public class ReminderPanelTest {
 
                 assertTrue(enter.isConsumed());
                 assertEquals(List.of(second), reminders);
+                assertEquals("1. Upcoming event: Second", rowTexts(rows(panel.getRoot()).getFirst()).getFirst());
                 Button nextDismiss = dismissButton(rows(panel.getRoot()).getFirst());
                 assertSame(nextDismiss, stage.getScene().getFocusOwner());
                 panel.getRoot().applyCss();

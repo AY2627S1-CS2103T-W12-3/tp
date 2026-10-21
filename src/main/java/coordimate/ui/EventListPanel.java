@@ -273,7 +273,7 @@ public class EventListPanel extends UiPart<Region> {
                     .sorted((left, right) -> String.CASE_INSENSITIVE_ORDER.compare(
                             left.getTagName(), right.getTagName()))
                     .map(Tag::getTagName)
-                    .map(this::createMemberTag)
+                    .map(TagStyle::createTagLabel)
                     .forEach(identityLine.getChildren()::add);
         }
 
@@ -299,22 +299,6 @@ public class EventListPanel extends UiPart<Region> {
         HBox row = new HBox(12, memberId, avatar, memberDetails, createStatusBadge(status));
         row.getStyleClass().add("attendance-member-row");
         return row;
-    }
-
-    private Label createMemberTag(String tagName) {
-        Label tag = new Label(tagName);
-        tag.getStyleClass().add("event-member-tag");
-        tag.getStyleClass().add(getTagColorClass(tagName));
-        return tag;
-    }
-
-    private String getTagColorClass(String tagName) {
-        return switch (tagName.toLowerCase(Locale.ROOT)) {
-            case "logistics" -> "event-member-tag-teal";
-            case "sponsor" -> "event-member-tag-amber";
-            case "publicity", "universitystaff" -> "event-member-tag-purple";
-            default -> "event-member-tag-blue";
-        };
     }
 
     private String getAvatarColorClass(Person person) {

@@ -29,6 +29,7 @@ public class CommandResultTest {
         assertNotEquals(commandResult, new CommandResult("feedback", View.TAGS));
         assertNotEquals(commandResult, new CommandResult("feedback", View.CONTACTS));
         assertNotEquals(commandResult, new CommandResult("feedback", View.EVENTS));
+        assertNotEquals(commandResult, CommandResult.warning("feedback"));
     }
 
     @Test
@@ -42,6 +43,7 @@ public class CommandResultTest {
         assertNotEquals(commandResult.hashCode(), new CommandResult("feedback", View.TAGS).hashCode());
         assertNotEquals(commandResult.hashCode(), new CommandResult("feedback", View.CONTACTS).hashCode());
         assertNotEquals(commandResult.hashCode(), new CommandResult("feedback", View.EVENTS).hashCode());
+        assertNotEquals(commandResult.hashCode(), CommandResult.warning("feedback").hashCode());
     }
 
     @Test
@@ -49,8 +51,21 @@ public class CommandResultTest {
         CommandResult commandResult = new CommandResult("feedback", View.EVENTS);
         String expected = CommandResult.class.getCanonicalName() + "{feedbackToUser="
                 + commandResult.getFeedbackToUser() + ", showHelp=" + commandResult.shouldShowHelp()
-                + ", exit=" + commandResult.shouldExit() + ", viewToShow=" + commandResult.getViewToShow() + "}";
+                + ", exit=" + commandResult.shouldExit() + ", viewToShow=" + commandResult.getViewToShow()
+                + ", warning=" + commandResult.isWarning() + "}";
         assertEquals(expected, commandResult.toString());
+    }
+
+    @Test
+    public void warning_marksUnsavedResultWithoutOtherActions() {
+        CommandResult result = CommandResult.warning("Not saved");
+        assertEquals("Not saved", result.getFeedbackToUser());
+        assertTrue(result.isWarning());
+        assertFalse(new CommandResult("Saved").isWarning());
+        assertFalse(result.shouldShowHelp());
+        assertFalse(result.shouldExit());
+        assertEquals(View.NONE, result.getViewToShow());
+        assertEquals(result, CommandResult.warning("Not saved"));
     }
 
     @Test

@@ -26,9 +26,9 @@ public class HelpWindowTest {
 
     private static final String EXPECTED_USER_GUIDE_URL = "https://ay2627s1-cs2103t-w12-3.github.io/tp/";
     private static final List<String> COMMAND_WORDS = List.of(
-            "add", "addevent", "addtag", "assign", "clear", "delete", "deleteevent", "deletetag", "edit",
-            "editevent", "edittag", "exit", "filter", "help", "list", "listtags", "markattendance", "members",
-            "search", "switch", "unassign");
+            "add", "addevent", "addtag", "assign", "clear", "delete", "deleteevent", "deletetag", "dismiss",
+            "edit", "editevent", "edittag", "exit", "filter", "help", "list", "listtags", "markattendance",
+            "members", "search", "switch", "unassign");
 
     @BeforeAll
     public static void startJavaFx() throws InterruptedException {
@@ -74,12 +74,14 @@ public class HelpWindowTest {
             Label commandModeHelp = (Label) root.getScene().lookup("#commandModeHelp");
             Label navigationModeHelp = (Label) root.getScene().lookup("#navigationModeHelp");
             Label syntaxNote = (Label) root.getScene().lookup("#syntaxNote");
+            Label helpMessage = (Label) root.getScene().lookup("#helpMessage");
             Button closeButton = (Button) root.getScene().lookup("#closeButton");
 
             assertTrue(root.isResizable());
             assertEquals(680.0, root.getMinWidth());
             assertEquals(450.0, root.getMinHeight());
             assertEquals(HelpWindow.COMMAND_USAGES, commandTable.getItems());
+            assertTrue(helpMessage.getText().contains("Fn + F1"));
             assertFalse(commandTable.isEditable());
             assertEquals("Command mode (default): type commands; press Esc to navigate cards.",
                     commandModeHelp.getText());

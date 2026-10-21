@@ -12,6 +12,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import coordimate.commons.core.index.Index;
 import coordimate.logic.commands.AddCommand;
 import coordimate.logic.commands.AssignCommand;
 import coordimate.logic.commands.ClearCommand;
@@ -19,6 +20,7 @@ import coordimate.logic.commands.CommandResult;
 import coordimate.logic.commands.CreateTagCommand;
 import coordimate.logic.commands.DeleteCommand;
 import coordimate.logic.commands.DeleteTagCommand;
+import coordimate.logic.commands.DismissCommand;
 import coordimate.logic.commands.EditCommand;
 import coordimate.logic.commands.EditCommand.EditPersonDescriptor;
 import coordimate.logic.commands.EditTagCommand;
@@ -33,6 +35,7 @@ import coordimate.logic.commands.SearchCommand;
 import coordimate.logic.commands.SwitchCommand;
 import coordimate.logic.commands.UnassignCommand;
 import coordimate.logic.parser.exceptions.ParseException;
+import coordimate.logic.reminder.ReminderService;
 import coordimate.model.ModelManager;
 import coordimate.model.event.AttendanceStatus;
 import coordimate.model.person.ContactMatchesKeywordPredicate;
@@ -48,7 +51,17 @@ import coordimate.testutil.PersonUtil;
 
 public class CoordiMateParserTest {
 
-    private final CoordiMateParser parser = new CoordiMateParser();
+    private final CoordiMateParser parser = CommandParserTestUtil.createParser();
+
+    @Test
+    public void parseCommand_dismiss() throws Exception {
+        ReminderService reminders = new ReminderService(new ModelManager(), null, java.time.Clock.systemDefaultZone());
+        assertEquals(new DismissCommand(Index.fromOneBased(2), reminders), parser.parseCommand("dismiss 2"));
+        assertEquals(DismissCommand.MESSAGE_USAGE, CoordiMateParser.getUsage("dismiss"));
+        String message = withUsage(ParserUtil.MESSAGE_INVALID_INDEX, DismissCommand.MESSAGE_USAGE);
+        assertThrows(ParseException.class, message, () ->
+                parser.parseCommand("dismiss 0"));
+    }
 
     @Test
     public void parseCommand_add() throws Exception {

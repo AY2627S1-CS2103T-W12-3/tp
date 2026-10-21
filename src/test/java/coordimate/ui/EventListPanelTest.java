@@ -226,6 +226,7 @@ public class EventListPanelTest {
             assertEquals("Alice Tan", ((Label) identityLine.getChildren().get(0)).getText());
             assertEquals("Finance", ((Label) identityLine.getChildren().get(1)).getText());
             assertEquals("Publicity", ((Label) identityLine.getChildren().get(2)).getText());
+            assertTrue(((Label) identityLine.getChildren().get(2)).getStyleClass().contains("tag-chip-blue"));
             assertEquals("Treasurer · Student Union", ((Label) memberDetails.getChildren().get(1)).getText());
         });
     }
@@ -370,11 +371,11 @@ public class EventListPanelTest {
             assertEquals("Sponsor", ((Label) identityLine.getChildren().get(2)).getText());
             assertEquals("UniversityStaff", ((Label) identityLine.getChildren().get(3)).getText());
             assertTrue(((Label) identityLine.getChildren().get(1)).getStyleClass()
-                    .contains("event-member-tag-teal"));
+                    .contains("tag-chip-teal"));
             assertTrue(((Label) identityLine.getChildren().get(2)).getStyleClass()
-                    .contains("event-member-tag-amber"));
+                    .contains("tag-chip-amber"));
             assertTrue(((Label) identityLine.getChildren().get(3)).getStyleClass()
-                    .contains("event-member-tag-purple"));
+                    .contains("tag-chip-purple"));
             assertTrue(((Label) row.getChildren().get(1)).getStyleClass().contains("event-member-avatar-teal"));
             assertEquals("Logistics Lead · NUS", memberMetadata(row));
 

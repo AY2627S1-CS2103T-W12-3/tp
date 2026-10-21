@@ -37,6 +37,8 @@ public class CommandResult {
     /** The view requested by the command. */
     private final View viewToShow;
 
+    private final boolean warning;
+
     /**
      * Constructs a {@code CommandResult} with the specified fields.
      */
@@ -55,10 +57,16 @@ public class CommandResult {
      * Constructs a {@code CommandResult} with the specified fields.
      */
     public CommandResult(String feedbackToUser, boolean shouldShowHelp, boolean shouldExit, View viewToShow) {
+        this(feedbackToUser, shouldShowHelp, shouldExit, viewToShow, false);
+    }
+
+    private CommandResult(String feedbackToUser, boolean shouldShowHelp, boolean shouldExit,
+            View viewToShow, boolean warning) {
         this.feedbackToUser = requireNonNull(feedbackToUser);
         this.shouldShowHelp = shouldShowHelp;
         this.shouldExit = shouldExit;
         this.viewToShow = requireNonNull(viewToShow);
+        this.warning = warning;
     }
 
     /**
@@ -67,6 +75,15 @@ public class CommandResult {
      */
     public CommandResult(String feedbackToUser) {
         this(feedbackToUser, false, false);
+    }
+
+    /** Reports an operation that took effect for this session but could not be saved. */
+    public static CommandResult warning(String feedbackToUser) {
+        return new CommandResult(feedbackToUser, false, false, View.NONE, true);
+    }
+
+    public boolean isWarning() {
+        return warning;
     }
 
     public String getFeedbackToUser() {
@@ -108,12 +125,13 @@ public class CommandResult {
         return feedbackToUser.equals(otherCommandResult.feedbackToUser)
                 && shouldShowHelp == otherCommandResult.shouldShowHelp
                 && shouldExit == otherCommandResult.shouldExit
-                && viewToShow == otherCommandResult.viewToShow;
+                && viewToShow == otherCommandResult.viewToShow
+                && warning == otherCommandResult.warning;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(feedbackToUser, shouldShowHelp, shouldExit, viewToShow);
+        return Objects.hash(feedbackToUser, shouldShowHelp, shouldExit, viewToShow, warning);
     }
 
     @Override
@@ -123,6 +141,7 @@ public class CommandResult {
                 .add("showHelp", shouldShowHelp)
                 .add("exit", shouldExit)
                 .add("viewToShow", viewToShow)
+                .add("warning", warning)
                 .toString();
     }
 
