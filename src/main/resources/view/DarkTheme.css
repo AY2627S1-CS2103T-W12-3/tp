@@ -226,12 +226,12 @@
     -fx-border-color: #0ea5e9;
     -fx-border-width: 2;
 }
-.card-index, .cell_small_label, .event-list .detail-caption {
+.card-id, .cell_small_label, .event-list .detail-caption {
     -fx-font-family: "JetBrains Mono", "Consolas", monospace;
     -fx-font-size: 11px;
     -fx-text-fill: #8b949e;
 }
-.card-index { -fx-text-fill: #38bdf8; -fx-padding: 2 0 0; }
+.card-id { -fx-text-fill: #38bdf8; -fx-padding: 2 0 0; }
 .cell_big_label, .event-card-name {
     -fx-font-size: 16px;
     -fx-font-weight: bold;
@@ -258,8 +258,7 @@
     -fx-border-color: #2b3446;
     -fx-border-radius: 5;
 }
-.event-member-index {
-    -fx-min-width: 20;
+.event-member-id {
     -fx-font-family: "JetBrains Mono", "Consolas", monospace;
     -fx-font-weight: bold;
     -fx-text-fill: #8bb8fc;

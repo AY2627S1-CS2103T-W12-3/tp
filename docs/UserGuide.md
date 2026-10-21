@@ -53,8 +53,11 @@
    * `exit` : Exits the app.
 
    In the Contacts view, select a contact from the displayed list to see their phone number, email address,
-   role, birthday, address, organisation, tags, note, and assigned events in the details pane. The number beside a contact is
-   its index in the currently displayed list. If a list change hides the selected contact, the details pane clears.
+   role, birthday, address, organisation, tags, note, and assigned events in the details pane. Contact cards and details,
+   event rosters, and tag member lists show the contact's permanent identifier as `ID: <number>`.
+   For example, `ID: 12` remains `ID: 12` when a search makes that contact the first result.
+   Use that same ID in `edit`, `delete`, `assign`, and `unassign`. Editing or reordering a contact keeps their ID;
+   if a list change hides or removes the selected contact, the details pane clears.
    Unset optional fields show `— (not specified)`; a contact with no tags shows no tag chips.
 
 1. Refer to the [Features](#features) section below for details of each command.
@@ -805,7 +808,7 @@ Format: `search KEYWORD`
 * Surrounding quotation marks are optional: `search "Jurong West"` and `search Jurong West` give the same results.
 * Leading and trailing spaces are ignored. An empty keyword is rejected.
 * Search checks all saved contacts, including those hidden by the current search or filter.
-* Results replace the displayed contact list. Permanent member IDs remain unchanged; `edit` and `delete` accept those IDs even for hidden contacts. Use `list` to show everyone.
+* Results replace the displayed contact list. Permanent member IDs remain unchanged; `edit`, `delete`, `assign`, and `unassign` accept those IDs even for hidden contacts. Use `list` to show everyone.
 * If nothing matches, the displayed list is empty and a no-matches message is shown.
 
 Examples:
@@ -840,7 +843,7 @@ Format: `filter FIELD/VALUE [FIELD/VALUE]...`
   * `organisation/VALUE` lists contacts whose organisation is that value. At least one contact must have it.
 * When several filters are given, a contact must match **all** of them.
 * Filter checks all saved contacts, including those hidden by the current search or filter.
-* Results replace the displayed contact list. Permanent member IDs remain unchanged; `edit` and `delete` accept those IDs even for hidden contacts. Use `list` to show everyone.
+* Results replace the displayed contact list. Permanent member IDs remain unchanged; `edit`, `delete`, `assign`, and `unassign` accept those IDs even for hidden contacts. Use `list` to show everyone.
 * If a value does not exist, the command is rejected and the displayed list stays as it was.
 
 **Quotation marks**

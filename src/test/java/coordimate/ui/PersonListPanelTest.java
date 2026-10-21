@@ -39,6 +39,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
 
 /**
  * Tests the contact list's selection and details states on the JavaFX application thread.
@@ -55,6 +56,84 @@ public class PersonListPanelTest {
             Platform.runLater(started::countDown);
         }
         assertTrue(started.await(10, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void memberIds_onCardsAndDetails_remainStableAcrossFiltering() throws Exception {
+        PanelFixture fixture = callOnJavaFxThread(PersonListPanelTest::createIdFixture);
+        runOnJavaFxThread(() -> {
+            assertEquals(List.of("ID: 12", "ID: 45"), cardIds(fixture.root()));
+            assertEquals("ID: 45", getLabel(fixture.root(), "selectedMemberId").getText());
+            fixture.displayedPersons().setPredicate(person -> person.getMemberId().orElseThrow().getValue() == 45);
+        });
+        runOnJavaFxThread(() -> {
+            assertEquals(List.of("ID: 45"), cardIds(fixture.root()));
+            assertEquals("ID: 45", getLabel(fixture.root(), "selectedMemberId").getText());
+            assertEquals(0, fixture.list().getSelectionModel().getSelectedIndex());
+            fixture.displayedPersons().setPredicate(person -> true);
+        });
+        runOnJavaFxThread(() -> {
+            assertEquals(List.of("ID: 12", "ID: 45"), cardIds(fixture.root()));
+            assertEquals("ID: 45", getLabel(fixture.root(), "selectedMemberId").getText());
+            assertEquals(1, fixture.list().getSelectionModel().getSelectedIndex());
+        });
+    }
+
+    @Test
+    public void bulkEditAndReorder_selectionFollowsIdAndClearsIfIdIsRemoved() throws Exception {
+        PanelFixture fixture = callOnJavaFxThread(PersonListPanelTest::createIdFixture);
+        Person alice = fixture.persons().getFirst();
+        Person editedBenson = new PersonBuilder(fixture.persons().getLast()).withName("Benson Tan")
+                .withRole("President").build();
+        runOnJavaFxThread(() -> fixture.persons().setAll(editedBenson, alice));
+        runOnJavaFxThread(() -> {
+            assertEquals(editedBenson, fixture.list().getSelectionModel().getSelectedItem());
+            assertEquals("Benson Tan", getLabel(fixture.root(), "selectedName").getText());
+            assertEquals("ID: 45", getLabel(fixture.root(), "selectedMemberId").getText());
+            assertEquals(List.of("ID: 12", "ID: 45"), cardIds(fixture.root()));
+        });
+
+        Person replacement = new PersonBuilder(editedBenson).withMemberId(99).withName("Replacement").build();
+        runOnJavaFxThread(() -> fixture.persons().setAll(replacement, alice));
+        runOnJavaFxThread(() -> {
+            assertNull(fixture.list().getSelectionModel().getSelectedItem());
+            assertEquals("", getLabel(fixture.root(), "selectedMemberId").getText());
+            assertFalse(getDetails(fixture.root()).isVisible());
+            assertEquals(List.of("ID: 12", "ID: 99"), cardIds(fixture.root()));
+        });
+    }
+
+    @Test
+    public void maximumId_onCardAndDetails_isFullyVisibleAtNarrowAndWideWidths() throws Exception {
+        runOnJavaFxThread(() -> {
+            Person member = new PersonBuilder(ALICE).withMemberId(Integer.MAX_VALUE)
+                    .withName("Alexandria Catherine Montgomery").withTags("EXCO", "Logistics").build();
+            Region card = new PersonCard(member).getRoot();
+            Scene cardScene = new Scene(card, 300, 300);
+            cardScene.getStylesheets().add(getTheme());
+            card.applyCss();
+            card.layout();
+            assertFullId(getLabel(card, "id"), "ID: 2147483647");
+
+            Region panel = new PersonListPanel(FXCollections.observableArrayList(member)).getRoot();
+            StackPane container = new StackPane(panel);
+            Scene scene = new Scene(container, 1100, 700);
+            scene.getStylesheets().add(getTheme());
+            container.applyCss();
+            container.layout();
+            getList(panel).getSelectionModel().selectFirst();
+            for (int width : new int[] {1100, 560, 1100}) {
+                container.resize(width, 700);
+                container.applyCss();
+                container.layout();
+                Label id = getLabel(panel, "selectedMemberId");
+                assertFullId(id, "ID: 2147483647");
+                var bounds = id.localToScene(id.getLayoutBounds());
+                var viewport = getDetails(panel).localToScene(getDetails(panel).getLayoutBounds());
+                assertTrue(bounds.getMinX() >= viewport.getMinX());
+                assertTrue(bounds.getMaxX() <= viewport.getMaxX());
+            }
+        });
     }
 
     @Test
@@ -75,7 +154,7 @@ public class PersonListPanelTest {
             assertFalse(getHint(root).isVisible());
             assertTrue(getDetails(root).isVisible());
             assertEquals("Benson Meier", getLabel(root, "selectedName").getText());
-            assertEquals("Index: 2", getLabel(root, "selectedIndex").getText());
+            assertEquals("ID: 2", getLabel(root, "selectedMemberId").getText());
             assertEquals("98765432", getLabel(root, "phone").getText());
             assertEquals("johnd@example.com", getLabel(root, "email").getText());
             assertEquals("NA", getLabel(root, "role").getText());
@@ -155,7 +234,7 @@ public class PersonListPanelTest {
             assertTrue(((FlowPane) root.lookup("#detailTags")).getChildren().isEmpty());
             assertEquals("0 events", getLabel(root, "assignedEventCount").getText());
 
-            Region card = new PersonCard(contact, 1).getRoot();
+            Region card = new PersonCard(contact).getRoot();
             new Scene(card);
             card.applyCss();
             Label cardAddress = (Label) card.lookup("#address");
@@ -242,7 +321,7 @@ public class PersonListPanelTest {
         runOnJavaFxThread(() -> {
             assertEquals(BENSON, fixture.list().getSelectionModel().getSelectedItem());
             assertEquals("Benson Meier", getLabel(fixture.root(), "selectedName").getText());
-            assertEquals("Index: 1", getLabel(fixture.root(), "selectedIndex").getText());
+            assertEquals("ID: 2", getLabel(fixture.root(), "selectedMemberId").getText());
             assertEquals("Records: 1", getLabel(fixture.root(), "contactCount").getText());
         });
 
@@ -280,7 +359,7 @@ public class PersonListPanelTest {
         runOnJavaFxThread(() -> {
             assertEquals(updatedBenson, fixture.list().getSelectionModel().getSelectedItem());
             assertEquals("Benson Tan", getLabel(fixture.root(), "selectedName").getText());
-            assertEquals("Index: 2", getLabel(fixture.root(), "selectedIndex").getText());
+            assertEquals("ID: 2", getLabel(fixture.root(), "selectedMemberId").getText());
             assertEquals("President", getLabel(fixture.root(), "role").getText());
             assertEquals("Updated note", getLabel(fixture.root(), "note").getText());
             assertEquals("— (not specified)", getLabel(fixture.root(), "address").getText());
@@ -307,6 +386,37 @@ public class PersonListPanelTest {
             assertNull(fixture.list().getSelectionModel().getSelectedItem());
             assertTrue(getHint(fixture.root()).isVisible());
         });
+    }
+
+    private static PanelFixture createIdFixture() {
+        Person alice = new PersonBuilder(ALICE).withMemberId(12).build();
+        Person benson = new PersonBuilder(BENSON).withMemberId(45).build();
+        ObservableList<Person> persons = FXCollections.observableArrayList(alice, benson);
+        FilteredList<Person> displayed = new FilteredList<>(persons);
+        Region root = new PersonListPanel(displayed).getRoot();
+        Scene scene = new Scene(root, 1100, 700);
+        scene.getStylesheets().add(getTheme());
+        root.applyCss();
+        root.layout();
+        ListView<Person> list = getList(root);
+        list.getSelectionModel().select(benson);
+        return new PanelFixture(persons, displayed, root, list);
+    }
+
+    private static List<String> cardIds(Region root) {
+        root.applyCss();
+        root.layout();
+        return root.lookupAll(".card-id").stream().map(node -> ((Label) node).getText()).sorted().toList();
+    }
+
+    private static void assertFullId(Label label, String expected) {
+        assertEquals(expected, label.getText());
+        assertEquals(expected, ((Text) label.lookup(".text")).getText());
+        assertTrue(label.getWidth() + 1 >= label.prefWidth(-1));
+    }
+
+    private static String getTheme() {
+        return PersonListPanelTest.class.getResource("/view/DarkTheme.css").toExternalForm();
     }
 
     private static ListView<Person> getList(Region root) {

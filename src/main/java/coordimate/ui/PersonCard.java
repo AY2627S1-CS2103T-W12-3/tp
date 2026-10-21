@@ -44,12 +44,12 @@ public class PersonCard extends UiPart<Region> {
     private FlowPane tags;
 
     /**
-     * Creates a {@code PersonCard} with the given {@code Person} and index to display.
+     * Creates a {@code PersonCard} displaying the contact's permanent member ID.
      */
-    public PersonCard(Person person, int displayedIndex) {
+    public PersonCard(Person person) {
         super(FXML);
         this.person = person;
-        id.setText(displayedIndex + ". ");
+        id.setText("ID: " + person.getMemberId().orElseThrow());
         name.setText(person.getName().getFullName());
         phone.setText(person.getPhone().getValue());
         role.setText(person.getRole().getValue());

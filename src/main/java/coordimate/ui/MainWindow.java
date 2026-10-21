@@ -48,6 +48,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
@@ -307,7 +308,7 @@ public class MainWindow extends UiPart<Stage> {
             contactsView.setSelected(tab == contactsTab);
             eventsView.setSelected(tab == eventsTab);
             tagsView.setSelected(tab == tagsTab);
-            setPrefixHelpText(tab == eventsTab ? "Prefixes: evn/Event  st/Start  et/End  c/Contact"
+            setPrefixHelpText(tab == eventsTab ? "Prefixes: evn/Event  st/Start  et/End  c/Member ID"
                     : tab == tagsTab ? "Prefixes: t/Tag"
                     : "Prefixes: n/Name  p/Phone  e/Email  r/Role  t/Tag  m/Note");
         });
@@ -530,6 +531,10 @@ public class MainWindow extends UiPart<Stage> {
             identityLine.setAlignment(Pos.CENTER_LEFT);
             identityLine.getStyleClass().add("event-member-identity");
             identityLine.getChildren().add(name);
+            Label memberId = new Label("ID: " + person.getMemberId().orElseThrow());
+            memberId.setMinWidth(Region.USE_PREF_SIZE);
+            memberId.getStyleClass().add("event-member-id");
+            identityLine.getChildren().add(memberId);
             person.getTags().stream()
                     .sorted((left, right) -> String.CASE_INSENSITIVE_ORDER.compare(
                             left.getTagName(), right.getTagName()))

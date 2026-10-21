@@ -638,6 +638,9 @@ public class MainWindowTest {
             stage.getScene().getRoot().layout();
 
             assertEquals(3, stage.getScene().getRoot().lookupAll(".event-member-name").size());
+            assertEquals(List.of("ID: 1", "ID: 2", "ID: 3"),
+                    stage.getScene().getRoot().lookupAll(".tag-member-row .event-member-id").stream()
+                            .map(node -> ((Label) node).getText()).sorted().toList());
             assertEquals(1, stage.getScene().getRoot().lookupAll(".event-member-tag-teal").size());
             assertEquals(1, stage.getScene().getRoot().lookupAll(".event-member-tag-amber").size());
             assertEquals(2, stage.getScene().getRoot().lookupAll(".event-member-tag-purple").size());
