@@ -90,8 +90,19 @@ public class CommandTestUtil {
      */
     public static void assertCommandSuccess(Command command, Model actualModel, String expectedMessage,
             Model expectedModel) {
-        CommandResult expectedCommandResult = new CommandResult(expectedMessage);
+        CommandResult expectedCommandResult = new CommandResult(expectedMessage, expectedViewFor(command));
         assertCommandSuccess(command, actualModel, expectedCommandResult, expectedModel);
+    }
+
+    private static CommandResult.View expectedViewFor(Command command) {
+        return switch (command) {
+            case AddCommand _, EditCommand _, DeleteCommand _, ListCommand _, SearchCommand _, FilterCommand _,
+                MembersCommand _ -> CommandResult.View.CONTACTS;
+            case AddEventCommand _, EditEventCommand _, DeleteEventCommand _, MarkAttendanceCommand _ ->
+                CommandResult.View.EVENTS;
+            case MutatingTagCommand _, ListTagsCommand _ -> CommandResult.View.TAGS;
+            default -> CommandResult.View.NONE;
+        };
     }
 
     /**

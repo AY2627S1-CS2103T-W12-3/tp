@@ -138,7 +138,8 @@ public class DeleteCommand extends Command {
         model.deletePerson(personToDelete);
         assert !model.getCoordiMate().getPersonList().contains(personToDelete)
                 : "Deleted contact must not remain in the model.";
-        return new CommandResult(String.format(MESSAGE_DELETE_PERSON_SUCCESS, personToDelete.getName()));
+        return new CommandResult(String.format(MESSAGE_DELETE_PERSON_SUCCESS, personToDelete.getName()),
+                CommandResult.View.CONTACTS);
     }
 
     @Override

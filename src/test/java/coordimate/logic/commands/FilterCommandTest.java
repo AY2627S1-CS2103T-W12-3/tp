@@ -43,6 +43,7 @@ public class FilterCommandTest {
         CommandResult result = command.execute(modelWithTaggedPerson);
 
         assertEquals(String.format(FilterCommand.MESSAGE_SUCCESS, 1), result.getFeedbackToUser());
+        assertEquals(CommandResult.View.CONTACTS, result.getViewToShow());
         assertEquals(1, modelWithTaggedPerson.getFilteredPersonList().size());
     }
 
@@ -56,6 +57,7 @@ public class FilterCommandTest {
         CommandResult result = command.execute(modelWithExtraTag);
 
         assertEquals(FilterCommand.MESSAGE_NO_MATCHES, result.getFeedbackToUser());
+        assertEquals(CommandResult.View.CONTACTS, result.getViewToShow());
         assertEquals(List.of(), modelWithExtraTag.getFilteredPersonList());
     }
 

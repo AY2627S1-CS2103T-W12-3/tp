@@ -38,9 +38,9 @@ public class SearchCommand extends Command {
         model.updateFilteredPersonList(predicate);
         int matchCount = model.getFilteredPersonList().size();
         if (matchCount == 0) {
-            return new CommandResult(String.format(MESSAGE_NO_MATCHES, keyword));
+            return new CommandResult(String.format(MESSAGE_NO_MATCHES, keyword), CommandResult.View.CONTACTS);
         }
-        return new CommandResult(String.format(MESSAGE_SUCCESS, matchCount, keyword));
+        return new CommandResult(String.format(MESSAGE_SUCCESS, matchCount, keyword), CommandResult.View.CONTACTS);
     }
 
     @Override

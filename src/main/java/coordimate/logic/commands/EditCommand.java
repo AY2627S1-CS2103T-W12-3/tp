@@ -142,7 +142,7 @@ public class EditCommand extends Command {
         assert model.getCoordiMate().getPersonList().contains(editedPerson)
                 : "Edited contact must be present in the model.";
         model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
-        return new CommandResult(successMessage(editedPerson));
+        return new CommandResult(successMessage(editedPerson), CommandResult.View.CONTACTS);
     }
 
     static String successMessage(Person person) {

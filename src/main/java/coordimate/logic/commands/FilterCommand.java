@@ -42,9 +42,9 @@ public class FilterCommand extends Command {
         model.updateFilteredPersonList(combined);
         int matchCount = model.getFilteredPersonList().size();
         if (matchCount == 0) {
-            return new CommandResult(MESSAGE_NO_MATCHES);
+            return new CommandResult(MESSAGE_NO_MATCHES, CommandResult.View.CONTACTS);
         }
-        return new CommandResult(String.format(MESSAGE_SUCCESS, matchCount));
+        return new CommandResult(String.format(MESSAGE_SUCCESS, matchCount), CommandResult.View.CONTACTS);
     }
 
     /**

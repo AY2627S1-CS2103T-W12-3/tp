@@ -115,7 +115,7 @@ public class LogicManager implements Logic {
             }
             Person target = deleteCommand.resolvePerson(model);
             pendingDelete = target;
-            return new CommandResult(DeleteCommand.confirmationPrompt(target));
+            return new CommandResult(DeleteCommand.confirmationPrompt(target), CommandResult.View.CONTACTS);
         }
 
         if (command instanceof AddCommand || command instanceof EditCommand || command instanceof ClearCommand

@@ -40,8 +40,9 @@ public class AssignCommandTest {
 
     @Test
     public void execute_singleContact_success() throws Exception {
-        assertEquals("Assigned 1 member(s) to Final Concert.",
-                assign("Final Concert", 2).execute(model).getFeedbackToUser());
+        CommandResult result = assign("Final Concert", 2).execute(model);
+        assertEquals("Assigned 1 member(s) to Final Concert.", result.getFeedbackToUser());
+        assertEquals(CommandResult.View.NONE, result.getViewToShow());
         assertEquals(List.of(withMembers(concert, BENSON.getName()), fair), model.getCoordiMate().getEventList());
     }
 

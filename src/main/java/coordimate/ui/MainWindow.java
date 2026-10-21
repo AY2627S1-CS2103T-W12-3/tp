@@ -709,7 +709,6 @@ public class MainWindow extends UiPart<Stage> {
             }
 
             if (commandText.strip().split("\\s+", 2)[0].equals(AddEventCommand.COMMAND_WORD)) {
-                views.getSelectionModel().select(eventsTab);
                 eventListPanel.selectNewestEvent();
             }
 

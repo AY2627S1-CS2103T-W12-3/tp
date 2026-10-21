@@ -37,6 +37,7 @@ public class MarkAttendanceCommandTest {
 
         assertEquals(String.format(MarkAttendanceCommand.MESSAGE_SUCCESS, alex, AttendanceStatus.PRESENT,
                 "Final Concert"), result.getFeedbackToUser());
+        assertEquals(CommandResult.View.EVENTS, result.getViewToShow());
         assertEquals(AttendanceStatus.PRESENT,
                 model.getCoordiMate().getEventList().getFirst().getAttendance(alex).get());
     }
@@ -50,6 +51,7 @@ public class MarkAttendanceCommandTest {
 
         assertEquals(String.format(MarkAttendanceCommand.MESSAGE_ALREADY_MARKED, alex, AttendanceStatus.PRESENT,
                 "Final Concert"), result.getFeedbackToUser());
+        assertEquals(CommandResult.View.EVENTS, result.getViewToShow());
     }
 
     @Test

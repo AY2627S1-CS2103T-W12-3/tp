@@ -35,6 +35,10 @@
    Click a command name to put only the command word in the input and show its format and an example below the input.
    Complete the command by typing its arguments after the command word.
    The main workspace shows a list beside its details, and the command box, feedback, and prefix hints stay at the bottom.
+   After a successful command, CoordiMate opens the view for its result: contact commands open Contacts, event
+   commands open Events, and tag commands open Tags. `assign` and `unassign` keep the current view and refresh its
+   related contact or event details. Failed commands keep the current view. A valid `delete` request opens Contacts
+   when its confirmation prompt appears; Contacts remains open whether deletion is confirmed or cancelled.
 
 1. Type a command in the command box and press Enter to execute it. For example, type **`help`** and press Enter to open the help window.<br>
    Press <kbd>Up</kbd> to recall earlier commands and <kbd>Down</kbd> to move toward the command you were typing.<br>
