@@ -178,8 +178,8 @@ available command and its usage format.
 The [User Guide website](https://ay2627s1-cs2103t-w12-3.github.io/tp/) and **Copy URL** button remain at the bottom of
 the window for access to detailed instructions.
 Select **Close** or press <kbd>Esc</kbd> to dismiss the Help window without exiting CoordiMate.
-Selecting **Help** in the menu bar opens this window directly. <kbd>F1</kbd> remains available as a keyboard shortcut.
-In the command formats, parameters enclosed in square brackets `[ ]` are optional.
+Selecting **Help** in the top bar opens this window directly. Press <kbd>Fn</kbd> + <kbd>F1</kbd> to open it with the
+keyboard. In the command formats, parameters enclosed in square brackets `[ ]` are optional.
 
 Format: `help`
 
@@ -1025,7 +1025,7 @@ Furthermore, certain edits can cause CoordiMate to behave in unexpected ways (e.
 
 ## Known issues
 
-1. **If you minimize the Help Window** and then run the `help` command (or use the `Help` menu, or the keyboard shortcut `F1`) again, the original Help Window will remain minimized, and no new Help Window will appear. The remedy is to manually restore the minimized Help Window.
+1. **If you minimize the Help Window** and then run the `help` command (or use the `Help` menu, or press `Fn` + `F1`) again, the original Help Window will remain minimized, and no new Help Window will appear. The remedy is to manually restore the minimized Help Window.
 
 --------------------------------------------------------------------------------------------------------------------
 

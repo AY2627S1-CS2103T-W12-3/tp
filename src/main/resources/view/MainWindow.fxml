@@ -2,24 +2,24 @@
 
 <?import java.net.URL?>
 <?import javafx.scene.Scene?>
+<?import javafx.scene.control.Label?>
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
-<?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.ToggleButton?>
 <?import javafx.scene.control.ToggleGroup?>
-<?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.image.Image?>
 <?import javafx.scene.text.Text?>
 <?import javafx.scene.text.TextFlow?>
-<?import javafx.scene.image.Image?>
-<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.VBox?>
 <?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
 
 <fx:root type="javafx.stage.Stage" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
          title="CoordiMate" onCloseRequest="#handleExit">
@@ -34,23 +34,18 @@
 
       <VBox styleClass="app-shell">
         <HBox alignment="CENTER_LEFT" styleClass="app-header" spacing="12">
-          <HBox spacing="7" styleClass="window-dots">
-            <Label text="●" styleClass="window-close-dot" />
-            <Label text="●" styleClass="window-minimize-dot" />
-            <Label text="●" styleClass="window-zoom-dot" />
-          </HBox>
-          <Label text="◈" styleClass="brand-mark" />
           <Label text="CoordiMate" styleClass="app-title" HBox.hgrow="ALWAYS" maxWidth="Infinity" />
           <Label text="DESKTOP  /  CLI" styleClass="header-meta" />
         </HBox>
-        <MenuBar fx:id="menuBar" VBox.vgrow="NEVER">
-          <Menu mnemonicParsing="false" text="File">
-            <MenuItem mnemonicParsing="false" onAction="#handleExit" text="Exit" />
-          </Menu>
-          <Menu mnemonicParsing="false" onShowing="#handleHelp" text="Help">
-            <MenuItem fx:id="helpMenuItem" mnemonicParsing="false" onAction="#handleHelp" text="Help" />
-          </Menu>
-        </MenuBar>
+        <HBox fx:id="topMenuRow" alignment="CENTER_LEFT" spacing="2" styleClass="top-menu-row"
+              VBox.vgrow="NEVER">
+          <MenuBar fx:id="menuBar">
+            <Menu mnemonicParsing="false" text="File">
+              <MenuItem mnemonicParsing="false" onAction="#handleExit" text="Exit" />
+            </Menu>
+          </MenuBar>
+          <Label fx:id="helpLabel" text="Help" focusTraversable="true" styleClass="top-menu-item" />
+        </HBox>
 
         <StackPane fx:id="reminderPanelPlaceholder" VBox.vgrow="NEVER" />
         <HBox VBox.vgrow="ALWAYS" minHeight="0">
@@ -95,7 +90,6 @@
               <HBox styleClass="cheat-row"><Label text="deletetag" styleClass="cheat-name, cheat-red" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="remove" styleClass="cheat-description" /></HBox>
             </VBox>
             <Region VBox.vgrow="ALWAYS" />
-            <Label text="●  Local workspace" styleClass="sidebar-footer" />
           </VBox>
           </content>
           </ScrollPane>

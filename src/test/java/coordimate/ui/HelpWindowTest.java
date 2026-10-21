@@ -74,12 +74,14 @@ public class HelpWindowTest {
             Label commandModeHelp = (Label) root.getScene().lookup("#commandModeHelp");
             Label navigationModeHelp = (Label) root.getScene().lookup("#navigationModeHelp");
             Label syntaxNote = (Label) root.getScene().lookup("#syntaxNote");
+            Label helpMessage = (Label) root.getScene().lookup("#helpMessage");
             Button closeButton = (Button) root.getScene().lookup("#closeButton");
 
             assertTrue(root.isResizable());
             assertEquals(680.0, root.getMinWidth());
             assertEquals(450.0, root.getMinHeight());
             assertEquals(HelpWindow.COMMAND_USAGES, commandTable.getItems());
+            assertTrue(helpMessage.getText().contains("Fn + F1"));
             assertFalse(commandTable.isEditable());
             assertEquals("Command mode (default): type commands; press Esc to navigate cards.",
                     commandModeHelp.getText());

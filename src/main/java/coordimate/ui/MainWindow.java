@@ -24,7 +24,6 @@ import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
@@ -35,12 +34,12 @@ import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
-import javafx.scene.control.MenuItem;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TextInputControl;
 import javafx.scene.control.ToggleButton;
+import javafx.scene.control.Tooltip;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
@@ -128,10 +127,10 @@ public class MainWindow extends UiPart<Stage> {
     private StackPane commandBoxPlaceholder;
 
     @FXML
-    private Label interactionModeLabel;
+    private Label helpLabel;
 
     @FXML
-    private MenuItem helpMenuItem;
+    private Label interactionModeLabel;
 
     @FXML
     private StackPane personListPanelPlaceholder;
@@ -220,6 +219,18 @@ public class MainWindow extends UiPart<Stage> {
         setAccelerators();
 
         helpWindow = new HelpWindow();
+        helpWindow.getRoot().initOwner(primaryStage);
+        Tooltip helpTooltip = new Tooltip("Open Help (" + HelpWindow.HELP_SHORTCUT + ")");
+        helpTooltip.setShowDelay(Duration.millis(200));
+        helpLabel.setTooltip(helpTooltip);
+        helpLabel.setAccessibleRole(AccessibleRole.BUTTON);
+        helpLabel.setOnMouseClicked(event -> handleHelp());
+        helpLabel.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.ENTER || event.getCode() == KeyCode.SPACE) {
+                handleHelp();
+                event.consume();
+            }
+        });
         primaryStage.addEventHandler(WindowEvent.WINDOW_HIDDEN, event -> stop());
         primaryStage.addEventHandler(WindowEvent.WINDOW_SHOWN, event -> {
             if (reminderPanel != null) {
@@ -234,36 +245,10 @@ public class MainWindow extends UiPart<Stage> {
     }
 
     private void setAccelerators() {
-        setAccelerator(helpMenuItem, KeyCombination.valueOf("F1"));
-    }
-
-    /**
-     * Sets the accelerator of a MenuItem.
-     *
-     * @param menuItem The menu item whose accelerator is assigned.
-     * @param keyCombination the KeyCombination value of the accelerator.
-     */
-    private void setAccelerator(MenuItem menuItem, KeyCombination keyCombination) {
-        menuItem.setAccelerator(keyCombination);
-
-        /*
-         * TODO: the code below can be removed once the bug reported here
-         * https://bugs.openjdk.java.net/browse/JDK-8131666
-         * is fixed in a later version of the SDK.
-         *
-         * According to the bug report, TextInputControl (TextField, TextArea) will
-         * consume function-key events. Because CommandBox contains a TextField and
-         * ResultDisplay contains a TextArea, some accelerators (e.g., F1) will
-         * not work when the focus is in them because the key event is consumed by
-         * the TextInputControl(s).
-         *
-         * For now, we add the following event filter to capture such key events and open
-         * the help window purposely so as to support accelerators even when focus is
-         * in CommandBox or ResultDisplay.
-         */
+        KeyCombination helpShortcut = KeyCombination.valueOf("F1");
         getRoot().addEventFilter(KeyEvent.KEY_PRESSED, event -> {
-            if (event.getTarget() instanceof TextInputControl && keyCombination.match(event)) {
-                menuItem.getOnAction().handle(new ActionEvent());
+            if (helpShortcut.match(event)) {
+                handleHelp();
                 event.consume();
             }
         });
@@ -469,21 +454,6 @@ public class MainWindow extends UiPart<Stage> {
         prefixHelp.setAccessibleText(text);
     }
 
-    private Label createMemberTag(String tagName) {
-        Label tag = new Label(tagName);
-        tag.getStyleClass().addAll("event-member-tag", getTagColorClass(tagName));
-        return tag;
-    }
-
-    private String getTagColorClass(String tagName) {
-        return switch (tagName.toLowerCase(Locale.ROOT)) {
-            case "logistics" -> "event-member-tag-teal";
-            case "sponsor" -> "event-member-tag-amber";
-            case "publicity", "universitystaff" -> "event-member-tag-purple";
-            default -> "event-member-tag-blue";
-        };
-    }
-
     private String getAvatarColorClass(Person person) {
         if (person.getTags().stream().anyMatch(tag -> tag.getTagName().equalsIgnoreCase("logistics"))) {
             return "event-member-avatar-teal";
@@ -535,7 +505,7 @@ public class MainWindow extends UiPart<Stage> {
                     .sorted((left, right) -> String.CASE_INSENSITIVE_ORDER.compare(
                             left.getTagName(), right.getTagName()))
                     .map(Tag::getTagName)
-                    .map(MainWindow.this::createMemberTag)
+                    .map(TagStyle::createTagLabel)
                     .forEach(identityLine.getChildren()::add);
 
             Label subtitle = new Label(formatMemberDetails(person));

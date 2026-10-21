@@ -37,6 +37,7 @@ import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.MenuBar;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TextField;
@@ -52,6 +53,7 @@ import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
+import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 
 /**
@@ -119,6 +121,63 @@ public class MainWindowTest {
             assertTrue(views.getSelectionModel().getSelectedItem().getText().startsWith("Contacts"));
             assertEquals("Bold", contacts.getFont().getStyle());
             assertTrue(getPrefixHelpText(prefixHelp).contains("n/Name"));
+            stage.close();
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void topMenuHelpItem_opensOwnedHelpWindowAndShowsShortcutTooltip() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            MainWindow window = new MainWindow(stage, new LogicManager(new ModelManager(), null),
+                    Path.of("data", "coordimate.json"));
+            window.fillInnerParts();
+
+            Label helpLabel = (Label) stage.getScene().getRoot().lookup("#helpLabel");
+            HBox topMenuRow = (HBox) stage.getScene().getRoot().lookup("#topMenuRow");
+            MenuBar menuBar = (MenuBar) stage.getScene().getRoot().lookup("#menuBar");
+            assertEquals("Help", helpLabel.getText());
+            assertEquals("Open Help (Fn + F1)", helpLabel.getTooltip().getText());
+            assertEquals(200, helpLabel.getTooltip().getShowDelay().toMillis());
+            assertEquals(List.of("File"), menuBar.getMenus().stream().map(menu -> menu.getText()).toList());
+            assertSame(topMenuRow, menuBar.getParent());
+            assertSame(topMenuRow, helpLabel.getParent());
+            assertEquals(List.of(menuBar, helpLabel), topMenuRow.getChildren());
+
+            window.show();
+            javafx.event.Event.fireEvent(helpLabel, mouseClickEvent());
+            Stage helpStage = Window.getWindows().stream()
+                    .filter(Stage.class::isInstance)
+                    .map(Stage.class::cast)
+                    .filter(candidate -> "Help".equals(candidate.getTitle()))
+                    .filter(candidate -> candidate.getOwner() == stage)
+                    .findFirst()
+                    .orElseThrow();
+            assertTrue(helpStage.isShowing());
+            assertSame(stage, helpStage.getOwner());
+
+            KeyEvent enterEvent = keyEvent(KeyCode.ENTER);
+            helpLabel.getOnKeyPressed().handle(enterEvent);
+            assertTrue(enterEvent.isConsumed());
+            assertTrue(helpStage.isShowing());
+
+            KeyEvent otherKeyEvent = keyEvent(KeyCode.A);
+            helpLabel.getOnKeyPressed().handle(otherKeyEvent);
+            assertFalse(otherKeyEvent.isConsumed());
+
+            helpStage.hide();
+            KeyEvent spaceEvent = keyEvent(KeyCode.SPACE);
+            helpLabel.getOnKeyPressed().handle(spaceEvent);
+            assertTrue(spaceEvent.isConsumed());
+            assertTrue(helpStage.isShowing());
+
+            helpStage.hide();
+            javafx.event.Event.fireEvent(stage.getScene().getRoot(), keyEvent(KeyCode.F1));
+            assertTrue(helpStage.isShowing());
+            helpStage.hide();
             stage.close();
             return null;
         });
@@ -638,10 +697,11 @@ public class MainWindowTest {
             stage.getScene().getRoot().layout();
 
             assertEquals(3, stage.getScene().getRoot().lookupAll(".event-member-name").size());
-            assertEquals(1, stage.getScene().getRoot().lookupAll(".event-member-tag-teal").size());
-            assertEquals(1, stage.getScene().getRoot().lookupAll(".event-member-tag-amber").size());
-            assertEquals(2, stage.getScene().getRoot().lookupAll(".event-member-tag-purple").size());
-            assertEquals(3, stage.getScene().getRoot().lookupAll(".event-member-tag-blue").size());
+            assertEquals(1, stage.getScene().getRoot().lookupAll(".tag-chip-teal").size());
+            assertEquals(1, stage.getScene().getRoot().lookupAll(".tag-chip-amber").size());
+            assertEquals(1, stage.getScene().getRoot().lookupAll(".tag-chip-purple").size());
+            assertEquals(3, stage.getScene().getRoot().lookupAll(".tag-chip-red").size());
+            assertEquals(1, stage.getScene().getRoot().lookupAll(".tag-chip-blue").size());
             assertEquals(1, stage.getScene().getRoot().lookupAll(".event-member-avatar-teal").size());
             assertEquals(1, stage.getScene().getRoot().lookupAll(".event-member-avatar-amber").size());
             assertEquals(1, stage.getScene().getRoot().lookupAll(".event-member-avatar-purple").size());
@@ -737,6 +797,12 @@ public class MainWindowTest {
                 false, false, false, false, true, false, false, true, false, false,
                 new PickResult(target, 0, 0));
         target.fireEvent(event.copyFor(target, target));
+    }
+
+    private static MouseEvent mouseClickEvent() {
+        return new MouseEvent(MouseEvent.MOUSE_CLICKED,
+                0, 0, 0, 0, MouseButton.PRIMARY, 1,
+                false, false, false, false, false, false, false, false, false, false, null);
     }
 
     private static String getPrefixHelpText(TextFlow prefixHelp) {

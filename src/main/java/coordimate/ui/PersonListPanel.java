@@ -253,7 +253,7 @@ public class PersonListPanel extends UiPart<Region> {
         detailTags.getChildren().clear();
         person.getTags().stream()
                 .sorted(Comparator.comparing(tag -> tag.getTagName()))
-                .forEach(tag -> detailTags.getChildren().add(new Label(tag.getTagName())));
+                .forEach(tag -> detailTags.getChildren().add(TagStyle.createTagLabel(tag.getTagName())));
         showAssignedEvents(person);
     }
 
