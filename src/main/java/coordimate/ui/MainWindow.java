@@ -110,18 +110,23 @@ public class MainWindow extends UiPart<Stage> {
     private Rectangle2D normalWindowBounds;
     private boolean isNormalBoundsUpdateScheduled;
     private InteractionMode interactionMode = InteractionMode.COMMAND;
+    private InteractionMode interactionModeBeforeTutorial;
 
     // Independent Ui parts residing in this Ui container
     private PersonListPanel personListPanel;
     private EventListPanel eventListPanel;
     private ResultDisplay resultDisplay;
     private HelpWindow helpWindow;
+    private TutorialWindow tutorialWindow;
     private CommandBox commandBox;
     private ReminderPanel reminderPanel;
     private final Timeline reminderTimer;
 
     @FXML
     private StackPane reminderPanelPlaceholder;
+
+    @FXML
+    private StackPane appRoot;
 
     @FXML
     private StackPane commandBoxPlaceholder;
@@ -218,7 +223,11 @@ public class MainWindow extends UiPart<Stage> {
 
         setAccelerators();
 
-        helpWindow = new HelpWindow();
+        tutorialWindow = new TutorialWindow();
+        appRoot.getChildren().add(tutorialWindow.getRoot());
+        tutorialWindow.setDismissHandler(this::handleTutorialDismissed);
+        tutorialWindow.setStepChangeHandler(this::showTutorialStep);
+        helpWindow = new HelpWindow(new Stage(), this::showTutorial);
         helpWindow.getRoot().initOwner(primaryStage);
         Tooltip helpTooltip = new Tooltip("Open Help (" + HelpWindow.HELP_SHORTCUT + ")");
         helpTooltip.setShowDelay(Duration.millis(200));
@@ -246,7 +255,17 @@ public class MainWindow extends UiPart<Stage> {
 
     private void setAccelerators() {
         KeyCombination helpShortcut = KeyCombination.valueOf("F1");
+        getRoot().addEventFilter(KeyEvent.ANY, event -> {
+            if (tutorialWindow != null && tutorialWindow.isShowing()) {
+                if (!tutorialWindow.isInteractiveTarget(event.getTarget())) {
+                    event.consume();
+                }
+            }
+        });
         getRoot().addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+            if (tutorialWindow != null && tutorialWindow.isShowing()) {
+                return;
+            }
             if (helpShortcut.match(event)) {
                 handleHelp();
                 event.consume();
@@ -357,7 +376,7 @@ public class MainWindow extends UiPart<Stage> {
     }
 
     private void handleModeShortcut(KeyEvent event) {
-        if (event.getCode() != KeyCode.ESCAPE || logic.isAwaitingDeleteConfirmation()) {
+        if (tutorialWindow.isShowing() || event.getCode() != KeyCode.ESCAPE || logic.isAwaitingDeleteConfirmation()) {
             return;
         }
         enterNavigationMode();
@@ -365,7 +384,7 @@ public class MainWindow extends UiPart<Stage> {
     }
 
     private void handleNavigationInput(KeyEvent event) {
-        if (interactionMode != InteractionMode.NAVIGATION) {
+        if (tutorialWindow.isShowing() || interactionMode != InteractionMode.NAVIGATION) {
             return;
         }
         if (event.isShiftDown() || event.isControlDown() || event.isAltDown() || event.isMetaDown()) {
@@ -562,10 +581,59 @@ public class MainWindow extends UiPart<Stage> {
      */
     @FXML
     public void handleHelp() {
+        if (tutorialWindow.isShowing()) {
+            return;
+        }
         if (!helpWindow.isShowing()) {
             helpWindow.show();
         } else {
             helpWindow.focus();
+        }
+    }
+
+    /** Opens the tutorial automatically if it has not been completed before. */
+    void showTutorialOnFirstLaunch() {
+        if (!logic.hasSeenTutorial()) {
+            showTutorial();
+        }
+    }
+
+    private void showTutorial() {
+        if (tutorialWindow.isShowing()) {
+            return;
+        }
+        interactionModeBeforeTutorial = interactionMode;
+        showContacts();
+        commandBox.setInputDisabled(true);
+        commandBox.setExecutionDisabled(true);
+        tutorialWindow.show();
+    }
+
+    private void handleTutorialDismissed() {
+        logic.setHasSeenTutorial(true);
+        commandBox.setExecutionDisabled(false);
+        setInteractionMode(interactionModeBeforeTutorial);
+        if (interactionModeBeforeTutorial == InteractionMode.COMMAND) {
+            commandBox.focusInput();
+        }
+    }
+
+    private void showTutorialStep(TutorialWindow.TutorialStep step) {
+        Node target = switch (step.target()) {
+            case CONTACTS_TAB -> contactsView;
+            case CONTACT_COMMANDS -> contactsCommands;
+            case COMMAND_BOX -> commandBoxPlaceholder;
+            case CONTACT_CARD -> personListPanel.getTutorialContactCardTarget();
+            case CONTACT_DETAILS -> personListPanel.getTutorialContactDetailsTarget();
+            case NONE -> null;
+        };
+        tutorialWindow.highlight(target);
+        if (step.target() == TutorialWindow.TutorialTarget.CONTACT_CARD) {
+            Platform.runLater(() -> {
+                if (tutorialWindow.isShowing() && tutorialWindow.getCurrentStep() == step) {
+                    tutorialWindow.highlight(personListPanel.getTutorialContactCardTarget());
+                }
+            });
         }
     }
 
@@ -592,7 +660,6 @@ public class MainWindow extends UiPart<Stage> {
         logger.fine("Saving window with maximized state: " + isMaximized);
         logic.setGuiSettings(guiSettings);
         stop();
-        helpWindow.hide();
         primaryStage.hide();
     }
 
@@ -657,6 +724,9 @@ public class MainWindow extends UiPart<Stage> {
      */
     void stop() {
         reminderTimer.stop();
+        helpWindow.hide();
+        tutorialWindow.hide();
+        commandBox.setExecutionDisabled(false);
         if (reminderPanel != null) {
             reminderPanel.close();
         }

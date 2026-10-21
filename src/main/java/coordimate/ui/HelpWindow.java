@@ -1,5 +1,7 @@
 package coordimate.ui;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -84,6 +86,8 @@ public class HelpWindow extends UiPart<Stage> {
     @FXML
     private Button copyButton;
 
+    private final Runnable tutorialAction;
+
     @FXML
     private Label helpMessage;
 
@@ -102,7 +106,18 @@ public class HelpWindow extends UiPart<Stage> {
      * @param root Stage to use as the root of the HelpWindow.
      */
     public HelpWindow(Stage root) {
+        this(root, () -> {});
+    }
+
+    /**
+     * Creates a new HelpWindow with an action for opening the tutorial.
+     *
+     * @param root Stage to use as the root of the HelpWindow.
+     * @param tutorialAction action to run when the tutorial button is selected.
+     */
+    public HelpWindow(Stage root, Runnable tutorialAction) {
         super(FXML, root);
+        this.tutorialAction = requireNonNull(tutorialAction);
         helpMessage.setText(HELP_MESSAGE);
         commandColumn.setCellValueFactory(usage -> new ReadOnlyStringWrapper(usage.getValue().command()));
         usageColumn.setCellValueFactory(usage -> new ReadOnlyStringWrapper(usage.getValue().format()));
@@ -171,6 +186,13 @@ public class HelpWindow extends UiPart<Stage> {
         final ClipboardContent url = new ClipboardContent();
         url.putString(USERGUIDE_URL);
         clipboard.setContent(url);
+    }
+
+    /** Opens the tutorial and hides the command reference window. */
+    @FXML
+    private void openTutorial() {
+        tutorialAction.run();
+        hide();
     }
 
     /**

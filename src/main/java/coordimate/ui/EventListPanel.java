@@ -182,6 +182,11 @@ public class EventListPanel extends UiPart<Region> {
         eventListView.scrollTo(eventListView.getItems().size() - 1);
     }
 
+    /** Returns the event details or empty-state hint for highlighting in the onboarding tutorial. */
+    Region getTutorialDetailsTarget() {
+        return eventDetails.isVisible() ? eventDetails : selectionHint;
+    }
+
     /**
      * Shows the selected event's details, or a selection hint when no event is selected.
      */

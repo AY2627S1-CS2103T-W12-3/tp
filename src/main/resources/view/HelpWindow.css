@@ -10,6 +10,7 @@
 
 #helpMessage,
 #copyButton,
+#tutorialButton,
 #closeButton,
 .help-heading,
 .syntax-note {
@@ -95,6 +96,7 @@
 }
 
 #copyButton,
+#tutorialButton,
 #closeButton {
     -fx-background-color: #132233;
     -fx-border-color: #0ea5e9;
@@ -105,11 +107,13 @@
 }
 
 #copyButton:hover,
+#tutorialButton:hover,
 #closeButton:hover {
     -fx-background-color: #1f2633;
 }
 
 #copyButton:armed,
+#tutorialButton:armed,
 #closeButton:armed {
     -fx-background-color: #263748;
 }

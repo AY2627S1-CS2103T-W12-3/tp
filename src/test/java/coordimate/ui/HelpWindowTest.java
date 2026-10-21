@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
@@ -40,6 +41,7 @@ public class HelpWindowTest {
             Platform.runLater(started::countDown);
         }
         assertTrue(started.await(10, TimeUnit.SECONDS));
+        Platform.setImplicitExit(false);
     }
 
     @Test
@@ -75,6 +77,7 @@ public class HelpWindowTest {
             Label navigationModeHelp = (Label) root.getScene().lookup("#navigationModeHelp");
             Label syntaxNote = (Label) root.getScene().lookup("#syntaxNote");
             Label helpMessage = (Label) root.getScene().lookup("#helpMessage");
+            Button tutorialButton = (Button) root.getScene().lookup("#tutorialButton");
             Button closeButton = (Button) root.getScene().lookup("#closeButton");
 
             assertTrue(root.isResizable());
@@ -82,6 +85,8 @@ public class HelpWindowTest {
             assertEquals(450.0, root.getMinHeight());
             assertEquals(HelpWindow.COMMAND_USAGES, commandTable.getItems());
             assertTrue(helpMessage.getText().contains("Fn + F1"));
+            assertEquals("Tutorial", tutorialButton.getText());
+            assertEquals("Open the CoordiMate tutorial", tutorialButton.getAccessibleText());
             assertFalse(commandTable.isEditable());
             assertEquals("Command mode (default): type commands; press Esc to navigate cards.",
                     commandModeHelp.getText());
@@ -105,6 +110,25 @@ public class HelpWindowTest {
                     commandTable.getColumns().get(1).getCellObservableValue(0).getValue());
             assertTrue(closeButton.isCancelButton());
             closeButton.fire();
+            assertFalse(root.isShowing());
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void tutorialButton_runsActionAndHidesHelpWindow() throws Exception {
+        AtomicBoolean tutorialOpened = new AtomicBoolean();
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            HelpWindow helpWindow = new HelpWindow(new Stage(), () -> tutorialOpened.set(true));
+            Stage root = helpWindow.getRoot();
+            root.show();
+            Button tutorialButton = (Button) root.getScene().lookup("#tutorialButton");
+
+            tutorialButton.fire();
+
+            assertTrue(tutorialOpened.get());
             assertFalse(root.isShowing());
             return null;
         });

@@ -30,6 +30,12 @@ public interface Model {
      */
     void setGuiSettings(GuiSettings guiSettings);
 
+    /** Returns whether the first-launch tutorial has already been shown. */
+    boolean hasSeenTutorial();
+
+    /** Records whether the first-launch tutorial has been shown. */
+    void setHasSeenTutorial(boolean hasSeenTutorial);
+
     /**
      * Replaces CoordiMate data with the data in {@code coordiMate}.
      */

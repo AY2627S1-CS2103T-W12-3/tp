@@ -30,8 +30,11 @@
     <Scene>
       <stylesheets>
         <URL value="@DarkTheme.css" />
+        <URL value="@TutorialWindow.css" />
       </stylesheets>
 
+      <StackPane fx:id="appRoot">
+        <children>
       <VBox styleClass="app-shell">
         <HBox alignment="CENTER_LEFT" styleClass="app-header" spacing="12">
           <Label text="CoordiMate" styleClass="app-title" HBox.hgrow="ALWAYS" maxWidth="Infinity" />
@@ -134,6 +137,8 @@
         </HBox>
         <StackPane fx:id="statusbarPlaceholder" VBox.vgrow="NEVER" />
       </VBox>
+        </children>
+      </StackPane>
     </Scene>
   </scene>
 </fx:root>

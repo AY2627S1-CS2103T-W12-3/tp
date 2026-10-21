@@ -29,6 +29,8 @@ public class CommandBox extends UiPart<Region> {
     private final List<String> commandHistory = new ArrayList<>();
     private int historyIndex;
     private String draft = "";
+    private boolean isInputDisabled;
+    private boolean isExecutionDisabled;
 
     @FXML
     private TextField commandTextField;
@@ -54,7 +56,7 @@ public class CommandBox extends UiPart<Region> {
      */
     @FXML
     private void handleCommandEntered() {
-        if (commandTextField.isDisabled()) {
+        if (isInputDisabled || isExecutionDisabled) {
             return;
         }
 
@@ -102,8 +104,19 @@ public class CommandBox extends UiPart<Region> {
 
     /** Enables or disables all command input controls. */
     void setInputDisabled(boolean isDisabled) {
-        commandTextField.setDisable(isDisabled);
-        submitButton.setDisable(isDisabled);
+        isInputDisabled = isDisabled;
+        updateDisabledState();
+    }
+
+    /** Prevents submission while still allowing the user to edit the command field. */
+    void setExecutionDisabled(boolean isDisabled) {
+        isExecutionDisabled = isDisabled;
+        updateDisabledState();
+    }
+
+    private void updateDisabledState() {
+        commandTextField.setDisable(isInputDisabled);
+        submitButton.setDisable(isInputDisabled || isExecutionDisabled);
     }
 
     private void blockInputWhenDisabled(KeyEvent event) {

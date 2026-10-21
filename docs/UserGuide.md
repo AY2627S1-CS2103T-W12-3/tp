@@ -183,6 +183,17 @@ keyboard. In the command formats, parameters enclosed in square brackets `[ ]` a
 
 Format: `help`
 
+### Taking the tutorial
+
+The first time CoordiMate starts, a guided overlay opens automatically. Use **Back** and **Next** to move through
+the six steps, select **Close** to leave the tutorial, or select **Finish** on the last step. The tour introduces the
+Contacts tab, its command list and command box, contact cards, and the details pane. It highlights each part of the
+Contacts view while explaining it. The highlighted area stays bright while the rest of the app is dimmed. The app
+cannot be used to enter commands during the tour, and the Contacts view remains selected when you close it.
+
+To take the tutorial again, open **Help** from the top bar or press <kbd>Fn</kbd> + <kbd>F1</kbd>, then select
+**Tutorial**. You can also type `help` and press Enter.
+
 
 ### Switching views: `switch`
 

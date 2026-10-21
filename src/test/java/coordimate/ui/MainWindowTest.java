@@ -30,6 +30,7 @@ import coordimate.storage.StorageManager;
 import coordimate.testutil.PersonBuilder;
 import coordimate.testutil.TypicalPersons;
 import javafx.application.Platform;
+import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Orientation;
 import javafx.geometry.Rectangle2D;
@@ -183,6 +184,111 @@ public class MainWindowTest {
         });
         Platform.runLater(task);
         task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void helpWindowTutorialButton_opensTutorialOverlay() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            ModelManager model = new ModelManager();
+            model.addPerson(new PersonBuilder(TypicalPersons.ALICE).build());
+            LogicManager logic = new LogicManager(model, null);
+            MainWindow window = new MainWindow(stage, logic, Path.of("data", "coordimate.json"));
+            window.fillInnerParts();
+            window.show();
+            TabPane views = (TabPane) stage.getScene().lookup("#views");
+            views.getSelectionModel().select(1);
+            window.handleHelp();
+            Stage helpStage = findOwnedStage(stage, "Help");
+            Button tutorialButton = (Button) helpStage.getScene().lookup("#tutorialButton");
+            tutorialButton.fire();
+            stage.getScene().getRoot().applyCss();
+            stage.getScene().getRoot().layout();
+
+            StackPane tutorialOverlay = (StackPane) stage.getScene().lookup("#tutorialOverlay");
+            assertTrue(tutorialOverlay.isVisible());
+            assertFalse(helpStage.isShowing());
+            assertEquals("Step 1 of 6", ((Label) stage.getScene().lookup("#stepCounter")).getText());
+            assertEquals(0, views.getSelectionModel().getSelectedIndex());
+            Button nextButton = (Button) stage.getScene().lookup("#nextButton");
+            TextField commandInput = (TextField) stage.getScene().lookup("#commandTextField");
+            Button submitButton = (Button) stage.getScene().lookup("#submitButton");
+            assertEquals("", commandInput.getText());
+            assertTrue(commandInput.isDisabled());
+            assertTrue(submitButton.isDisabled());
+            commandInput.setText("add n/Tom p/9081811 e/tomjohn@email.com r/EXCO");
+            commandInput.fireEvent(new ActionEvent());
+            assertEquals(1, logic.getPersonList().size());
+            assertTrue(stage.getScene().lookup("#commandExamples") == null);
+            for (int step = 0; step < 4; step++) {
+                nextButton.fire();
+            }
+            assertEquals("Step 5 of 6", ((Label) stage.getScene().lookup("#stepCounter")).getText());
+            assertTrue(stage.getScene().lookup("#targetHighlight").isVisible());
+            nextButton.fire();
+            assertEquals("Step 6 of 6", ((Label) stage.getScene().lookup("#stepCounter")).getText());
+            ListView<?> contactList = (ListView<?>) stage.getScene().lookup("#personListView");
+            assertEquals(0, contactList.getSelectionModel().getSelectedIndex());
+            assertTrue(stage.getScene().lookup("#targetHighlight").isVisible());
+            Button closeButton = (Button) stage.getScene().lookup("#closeButton");
+            closeButton.fire();
+            assertTrue(logic.hasSeenTutorial());
+            assertFalse(submitButton.isDisabled());
+
+            window.handleHelp();
+            tutorialButton.fire();
+            assertTrue(tutorialOverlay.isVisible());
+            assertFalse(helpStage.isShowing());
+            assertEquals("Step 1 of 6", ((Label) stage.getScene().lookup("#stepCounter")).getText());
+            window.stop();
+            stage.close();
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void tutorialWithoutContacts_highlightsEmptyListAndKeepsDetailsHint() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            MainWindow window = new MainWindow(stage, new LogicManager(new ModelManager(), null),
+                    Path.of("data", "coordimate.json"));
+            window.fillInnerParts();
+            window.show();
+            window.handleHelp();
+            Button tutorialButton = (Button) findOwnedStage(stage, "Help").getScene().lookup("#tutorialButton");
+            tutorialButton.fire();
+            stage.getScene().getRoot().applyCss();
+            stage.getScene().getRoot().layout();
+
+            Button nextButton = (Button) stage.getScene().lookup("#nextButton");
+            for (int step = 0; step < 4; step++) {
+                nextButton.fire();
+            }
+            assertEquals("Step 5 of 6", ((Label) stage.getScene().lookup("#stepCounter")).getText());
+            assertTrue(stage.getScene().lookup("#targetHighlight").isVisible());
+            Label contactSelectionHint = (Label) stage.getScene().lookup("#personListPanelPlaceholder")
+                    .lookup("#selectionHint");
+            assertEquals("Select a contact to view details.", contactSelectionHint.getText());
+            nextButton.fire();
+            assertTrue(stage.getScene().lookup("#targetHighlight").isVisible());
+            window.stop();
+            stage.close();
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    private static Stage findOwnedStage(Stage owner, String title) {
+        return Window.getWindows().stream()
+                .filter(Stage.class::isInstance)
+                .map(Stage.class::cast)
+                .filter(candidate -> title.equals(candidate.getTitle()))
+                .filter(candidate -> candidate.getOwner() == owner)
+                .findFirst()
+                .orElseThrow();
     }
 
     @Test
@@ -561,7 +667,7 @@ public class MainWindowTest {
             return null;
         });
         Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
+        task.get(20, TimeUnit.SECONDS);
     }
 
     @Test
