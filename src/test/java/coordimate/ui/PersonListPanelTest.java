@@ -129,7 +129,7 @@ public class PersonListPanelTest {
             }
         });
     }
-  
+
     @Test
     public void navigateCards_handlesUnselectedEmptyAndBoundaryStates() throws Exception {
         runOnJavaFxThread(() -> {
