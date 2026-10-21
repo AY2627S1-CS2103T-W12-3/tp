@@ -21,9 +21,11 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
@@ -45,7 +47,7 @@ public class TutorialWindowTest {
     }
 
     @Test
-    public void navigation_showsSixStepsAndCloseOrFinishHidesOverlay() throws Exception {
+    public void navigation_showsFifteenStepsAndCloseOrFinishHidesOverlay() throws Exception {
         FutureTask<Void> task = new FutureTask<>(() -> {
             TutorialWindow tutorial = new TutorialWindow();
             Stage stage = createStage(tutorial, 1100, 760);
@@ -58,25 +60,34 @@ public class TutorialWindowTest {
             Button nextButton = (Button) stage.getScene().lookup("#nextButton");
             List<String> titles = List.of("Welcome to CoordiMate!", "Explore the Contacts tab",
                     "Explore contact commands", "Use the command box", "Select a contact card",
-                    "View contact details");
+                    "View contact details", "Explore the Events tab", "Explore an event card",
+                    "View event details", "View the member list", "Explore the Tags tab",
+                    "Explore the tag list", "View tag details", "Navigate with your keyboard",
+                    "Get help anytime");
             assertTrue(backButton.isDisabled());
             for (int index = 0; index < titles.size(); index++) {
-                assertEquals("Step " + (index + 1) + " of 6", stepCounter.getText());
+                assertEquals("Step " + (index + 1) + " of 15", stepCounter.getText());
                 assertEquals(titles.get(index), stepTitle.getText());
+                if (index == 5) {
+                    assertTrue(tutorial.getCurrentStep().description().contains("assigned events"));
+                }
+                if (index == 9) {
+                    assertTrue(tutorial.getCurrentStep().description().contains("mark attendance"));
+                }
                 if (index < titles.size() - 1) {
                     nextButton.fire();
                 }
             }
-            assertTrue(tutorial.getCurrentStep().description().contains("assigned events"));
+            assertTrue(tutorial.getCurrentStep().description().contains("reopen this tutorial"));
             assertEquals("Finish", nextButton.getText());
             backButton.fire();
-            assertEquals("Step 5 of 6", stepCounter.getText());
+            assertEquals("Step 14 of 15", stepCounter.getText());
             nextButton.fire();
             nextButton.fire();
             assertFalse(tutorial.isShowing());
 
             tutorial.show();
-            assertEquals("Step 1 of 6", stepCounter.getText());
+            assertEquals("Step 1 of 15", stepCounter.getText());
             Button closeButton = (Button) stage.getScene().lookup("#closeButton");
             closeButton.fire();
             assertFalse(tutorial.isShowing());
@@ -98,7 +109,7 @@ public class TutorialWindowTest {
             applyLayout(stage);
 
             Button nextButton = (Button) stage.getScene().lookup("#nextButton");
-            for (int step = 0; step < 5; step++) {
+            for (int step = 0; step < 9; step++) {
                 nextButton.fire();
             }
             applyLayout(stage);
@@ -139,7 +150,32 @@ public class TutorialWindowTest {
             Region contactDetails = new Region();
             contactDetails.setPrefSize(400, 400);
             contactDetails.relocate(550, 150);
-            Pane appContent = new Pane(sidebarTab, commandList, commandInput, contactCard, contactDetails);
+            Region eventsTab = new Region();
+            eventsTab.setPrefSize(150, 40);
+            eventsTab.relocate(20, 200);
+            Region eventCard = new Region();
+            eventCard.setPrefSize(300, 80);
+            eventCard.relocate(220, 170);
+            Region eventDetails = new Region();
+            eventDetails.setPrefSize(400, 400);
+            eventDetails.relocate(550, 150);
+            Region eventMembers = new Region();
+            eventMembers.setPrefSize(400, 200);
+            eventMembers.relocate(550, 330);
+            Region tagsTab = new Region();
+            tagsTab.setPrefSize(150, 40);
+            tagsTab.relocate(20, 200);
+            Region tagList = new Region();
+            tagList.setPrefSize(300, 400);
+            tagList.relocate(220, 150);
+            Region tagDetails = new Region();
+            tagDetails.setPrefSize(400, 400);
+            tagDetails.relocate(550, 150);
+            Region help = new Region();
+            help.setPrefSize(100, 30);
+            help.relocate(20, 20);
+            Pane appContent = new Pane(sidebarTab, commandList, commandInput, contactCard, contactDetails,
+                    eventsTab, eventCard, eventDetails, eventMembers, tagsTab, tagList, tagDetails, help);
             StackPane sceneRoot = new StackPane(appContent, tutorial.getRoot());
             StackPane.setAlignment(appContent, Pos.CENTER_LEFT);
             Stage stage = new Stage();
@@ -157,7 +193,8 @@ public class TutorialWindowTest {
             Node highlight = stage.getScene().lookup("#targetHighlight");
             Region targetBlocker = (Region) stage.getScene().lookup("#targetBlocker");
             Button nextButton = (Button) stage.getScene().lookup("#nextButton");
-            Node[] targets = {sidebarTab, commandList, commandInput, contactCard, contactDetails};
+            Node[] targets = {sidebarTab, commandList, commandInput, contactCard, contactDetails,
+                eventsTab, eventCard, eventDetails, eventMembers, tagsTab, tagList, tagDetails};
             for (Node target : targets) {
                 nextButton.fire();
                 tutorial.highlight(target);
@@ -183,6 +220,18 @@ public class TutorialWindowTest {
                 }
                 assertFalse(tutorial.isInteractiveTarget(target));
             }
+            nextButton.fire();
+            tutorial.highlight(null);
+            applyLayout(stage);
+            assertFalse(highlight.isVisible());
+            assertEquals(500, card.localToScene(card.getLayoutBounds()).getCenterX(), 1);
+            assertEquals(350, card.localToScene(card.getLayoutBounds()).getCenterY(), 1);
+            nextButton.fire();
+            tutorial.highlight(help);
+            applyLayout(stage);
+            assertTrue(highlight.isVisible());
+            assertFalse(card.localToScene(card.getLayoutBounds())
+                    .intersects(highlight.localToScene(highlight.getLayoutBounds())));
             assertTrue(tutorial.isInteractiveTarget(nextButton));
             tutorial.hide();
             stage.close();
@@ -202,6 +251,47 @@ public class TutorialWindowTest {
             TextFlow description = (TextFlow) stage.getScene().lookup("#stepDescription");
             Text text = (Text) description.getChildren().getFirst();
             assertEquals(Color.web("#f0f6fc"), text.getFill());
+            tutorial.hide();
+            stage.close();
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void highlightInsideScrollPane_staysWithinVisibleViewport() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            TutorialWindow tutorial = new TutorialWindow();
+            Region spacer = new Region();
+            spacer.setPrefHeight(250);
+            Region memberList = new Region();
+            memberList.setPrefWidth(350);
+            memberList.setPrefHeight(500);
+            VBox content = new VBox(spacer, memberList);
+            ScrollPane details = new ScrollPane(content);
+            details.setFitToWidth(true);
+            details.setPrefSize(400, 220);
+            details.relocate(550, 140);
+            Pane appContent = new Pane(details);
+            StackPane sceneRoot = new StackPane(appContent, tutorial.getRoot());
+            Stage stage = new Stage();
+            stage.setScene(new Scene(sceneRoot, 1000, 700));
+            addTutorialStyles(stage);
+            stage.show();
+            tutorial.show();
+            applyLayout(stage);
+            details.setVvalue(0.5);
+            applyLayout(stage);
+
+            tutorial.highlight(memberList);
+            Node highlight = stage.getScene().lookup("#targetHighlight");
+            Node viewport = details.lookup(".viewport");
+            Bounds highlightBounds = highlight.localToScene(highlight.getLayoutBounds());
+            Bounds viewportBounds = viewport.localToScene(viewport.getLayoutBounds());
+            assertTrue(highlight.isVisible());
+            assertTrue(highlightBounds.getMinY() >= viewportBounds.getMinY() - 6);
+            assertTrue(highlightBounds.getMaxY() <= viewportBounds.getMaxY() + 6);
             tutorial.hide();
             stage.close();
             return null;

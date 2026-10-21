@@ -156,6 +156,9 @@ public class MainWindow extends UiPart<Stage> {
     private ListView<Person> tagMemberListView;
 
     @FXML
+    private VBox tagDetailsPane;
+
+    @FXML
     private SplitPane tagSplitPane;
 
     @FXML
@@ -619,22 +622,52 @@ public class MainWindow extends UiPart<Stage> {
     }
 
     private void showTutorialStep(TutorialWindow.TutorialStep step) {
-        Node target = switch (step.target()) {
+        switch (step.target()) {
+            case EVENTS_TAB, EVENT_CARD, EVENT_DETAILS, EVENT_MEMBERS -> showEvents();
+            case TAGS_TAB, TAG_LIST, TAG_DETAILS -> showTags();
+            case NONE, HELP -> { }
+            default -> showContacts();
+        }
+        if (step.target() == TutorialWindow.TutorialTarget.EVENT_MEMBERS) {
+            eventListPanel.revealTutorialMemberList();
+        }
+        if (step.target() == TutorialWindow.TutorialTarget.TAG_DETAILS
+                && tagListView.getSelectionModel().isEmpty()) {
+            tagListView.getSelectionModel().selectFirst();
+        }
+        tutorialWindow.highlight(getTutorialTarget(step.target()));
+        if (step.target() == TutorialWindow.TutorialTarget.CONTACT_CARD
+                || step.target() == TutorialWindow.TutorialTarget.EVENT_CARD
+                || step.target() == TutorialWindow.TutorialTarget.EVENT_DETAILS
+                || step.target() == TutorialWindow.TutorialTarget.EVENT_MEMBERS) {
+            Platform.runLater(() -> {
+                if (tutorialWindow.isShowing() && tutorialWindow.getCurrentStep() == step) {
+                    if (step.target() == TutorialWindow.TutorialTarget.EVENT_MEMBERS) {
+                        eventListPanel.revealTutorialMemberList();
+                    }
+                    tutorialWindow.highlight(getTutorialTarget(step.target()));
+                }
+            });
+        }
+    }
+
+    private Node getTutorialTarget(TutorialWindow.TutorialTarget target) {
+        return switch (target) {
             case CONTACTS_TAB -> contactsView;
             case CONTACT_COMMANDS -> contactsCommands;
             case COMMAND_BOX -> commandBoxPlaceholder;
             case CONTACT_CARD -> personListPanel.getTutorialContactCardTarget();
             case CONTACT_DETAILS -> personListPanel.getTutorialContactDetailsTarget();
+            case EVENTS_TAB -> eventsView;
+            case EVENT_CARD -> eventListPanel.getTutorialEventCardTarget();
+            case EVENT_DETAILS -> eventListPanel.getTutorialDetailsTarget();
+            case EVENT_MEMBERS -> eventListPanel.getTutorialMemberListTarget();
+            case TAGS_TAB -> tagsView;
+            case TAG_LIST -> tagListView;
+            case TAG_DETAILS -> tagDetailsPane;
+            case HELP -> helpLabel;
             case NONE -> null;
         };
-        tutorialWindow.highlight(target);
-        if (step.target() == TutorialWindow.TutorialTarget.CONTACT_CARD) {
-            Platform.runLater(() -> {
-                if (tutorialWindow.isShowing() && tutorialWindow.getCurrentStep() == step) {
-                    tutorialWindow.highlight(personListPanel.getTutorialContactCardTarget());
-                }
-            });
-        }
     }
 
     void show() {

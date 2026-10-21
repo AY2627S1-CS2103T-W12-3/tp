@@ -110,16 +110,17 @@ public class UiManagerTest {
             uiManager.start(primaryStage);
 
             Button nextButton = (Button) primaryStage.getScene().lookup("#nextButton");
-            for (int step = 0; step < 5; step++) {
+            for (int step = 0; step < 14; step++) {
                 nextButton.fire();
             }
-            assertEquals("Step 6 of 6", ((Label) primaryStage.getScene().lookup("#stepCounter")).getText());
+            assertEquals("Step 15 of 15", ((Label) primaryStage.getScene().lookup("#stepCounter")).getText());
             assertEquals("Finish", nextButton.getText());
             assertFalse(logic.hasSeenTutorial());
 
             nextButton.fire();
             assertTrue(logic.hasSeenTutorial());
             assertFalse(primaryStage.getScene().lookup("#tutorialOverlay").isVisible());
+            assertTrue(((ToggleButton) primaryStage.getScene().lookup("#tagsView")).isSelected());
             uiManager.stop();
             primaryStage.close();
             return null;

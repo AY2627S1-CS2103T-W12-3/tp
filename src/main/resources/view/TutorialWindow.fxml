@@ -34,7 +34,7 @@
           <children>
             <HBox alignment="CENTER_LEFT" spacing="10.0">
               <children>
-                <Label fx:id="stepCounter" styleClass="tutorial-progress" text="Step 1 of 6" />
+                <Label fx:id="stepCounter" styleClass="tutorial-progress" text="Step 1 of 15" />
                 <Region HBox.hgrow="ALWAYS" />
                 <Button fx:id="closeButton" mnemonicParsing="false" onAction="#close" text="Close" />
               </children>

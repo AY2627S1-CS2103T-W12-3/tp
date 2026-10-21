@@ -111,7 +111,7 @@
                   <ListView fx:id="tagListView" VBox.vgrow="ALWAYS" minWidth="0" minHeight="0"
                             accessibleText="All saved tags." styleClass="tag-list" />
                 </VBox>
-                <VBox spacing="16" minWidth="0" styleClass="tag-details-section">
+                <VBox fx:id="tagDetailsPane" spacing="16" minWidth="0" styleClass="tag-details-section">
                   <Label text="TAG DETAILS" styleClass="section-heading" />
                   <Label fx:id="selectedTagName" text="Select a tag" wrapText="true" styleClass="contact-name" />
                   <Label fx:id="tagMemberCount" text="Members (0)" styleClass="section-heading" />

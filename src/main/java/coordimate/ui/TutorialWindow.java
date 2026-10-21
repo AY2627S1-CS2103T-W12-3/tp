@@ -11,6 +11,7 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
@@ -51,8 +52,42 @@ public class TutorialWindow extends UiPart<StackPane> {
                     TutorialPlacement.BESIDE_TARGET, TutorialTarget.CONTACT_CARD),
             new TutorialStep("View contact details",
                     "The details pane shows a contact's phone number, email, role, tags, notes, and assigned events. "
-                            + "You can use commands to add, edit, delete, search, or filter contacts.",
-                    TutorialPlacement.BESIDE_TARGET, TutorialTarget.CONTACT_DETAILS));
+                            + "You can use commands to add, edit, delete, search, filter, archive, or unarchive "
+                            + "contacts.",
+                    TutorialPlacement.BESIDE_TARGET, TutorialTarget.CONTACT_DETAILS),
+            new TutorialStep("Explore the Events tab",
+                    "The Events tab shows your saved events. Select an event to see its details and assigned members.",
+                    TutorialPlacement.LEFT_BAR, TutorialTarget.EVENTS_TAB),
+            new TutorialStep("Explore an event card",
+                    "Each card shows the event's name, start and end times, number of assigned members, and an "
+                            + "attendance summary. Select a card to open the event's details.",
+                    TutorialPlacement.BESIDE_TARGET, TutorialTarget.EVENT_CARD),
+            new TutorialStep("View event details",
+                    "The details pane shows the event's name, start and end times, duration, and attendance counts.",
+                    TutorialPlacement.BESIDE_TARGET, TutorialTarget.EVENT_DETAILS),
+            new TutorialStep("View the member list",
+                    "The member list shows everyone assigned to the event and whether each person is Present, "
+                            + "Absent, or Not marked. Use commands to add, edit, delete, archive, or unarchive "
+                            + "events; assign or unassign members; and mark attendance.",
+                    TutorialPlacement.BESIDE_TARGET, TutorialTarget.EVENT_MEMBERS),
+            new TutorialStep("Explore the Tags tab",
+                    "The Tags tab shows the tags you use to group contacts by committee, role, or responsibility.",
+                    TutorialPlacement.LEFT_BAR, TutorialTarget.TAGS_TAB),
+            new TutorialStep("Explore the tag list",
+                    "The tag list shows your available tags. Select a tag to see which contacts belong to it.",
+                    TutorialPlacement.BESIDE_TARGET, TutorialTarget.TAG_LIST),
+            new TutorialStep("View tag details",
+                    "The details pane shows the selected tag's name, how many contacts use it, and a list of those "
+                            + "contacts.",
+                    TutorialPlacement.BESIDE_TARGET, TutorialTarget.TAG_DETAILS),
+            new TutorialStep("Navigate with your keyboard",
+                    "Press Esc to enter Navigation mode. Press J to select the next item or K for the previous one "
+                            + "in the current tab. Press I to return to Command mode and focus the command box.",
+                    TutorialPlacement.CENTER, TutorialTarget.NONE),
+            new TutorialStep("Get help anytime",
+                    "Select Help in the top bar to see command formats and keyboard shortcuts. You can also reopen "
+                            + "this tutorial from the Help window.",
+                    TutorialPlacement.BESIDE_TARGET, TutorialTarget.HELP));
 
     @FXML
     private Pane overlayPane;
@@ -313,7 +348,27 @@ public class TutorialWindow extends UiPart<StackPane> {
             return null;
         }
         Bounds sceneBounds = node.localToScene(node.getLayoutBounds());
+        for (Node ancestor = node.getParent(); ancestor != null; ancestor = ancestor.getParent()) {
+            if (ancestor instanceof ScrollPane scrollPane) {
+                Node viewport = scrollPane.lookup(".viewport");
+                if (viewport != null) {
+                    sceneBounds = intersect(sceneBounds, viewport.localToScene(viewport.getLayoutBounds()));
+                    if (sceneBounds == null) {
+                        return null;
+                    }
+                }
+            }
+        }
         return getRoot().sceneToLocal(sceneBounds);
+    }
+
+    private Bounds intersect(Bounds first, Bounds second) {
+        double left = Math.max(first.getMinX(), second.getMinX());
+        double top = Math.max(first.getMinY(), second.getMinY());
+        double right = Math.min(first.getMaxX(), second.getMaxX());
+        double bottom = Math.min(first.getMaxY(), second.getMaxY());
+        return right > left && bottom > top
+                ? new BoundingBox(left, top, right - left, bottom - top) : null;
     }
 
     private Position getCardPosition(double width, double height, double cardWidth, double cardHeight,
@@ -378,7 +433,15 @@ public class TutorialWindow extends UiPart<StackPane> {
         CONTACT_COMMANDS,
         COMMAND_BOX,
         CONTACT_CARD,
-        CONTACT_DETAILS
+        CONTACT_DETAILS,
+        EVENTS_TAB,
+        EVENT_CARD,
+        EVENT_DETAILS,
+        EVENT_MEMBERS,
+        TAGS_TAB,
+        TAG_LIST,
+        TAG_DETAILS,
+        HELP
     }
 
     /** Content and UI target for one tutorial step. */
