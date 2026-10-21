@@ -331,6 +331,10 @@ public class MainWindowTest {
 
             tutorialLabel.fireEvent(mouseClickEvent());
             assertTrue(commandInput.isDisabled());
+            Button nextButton = (Button) stage.getScene().lookup("#nextButton");
+            assertTrue(keyReachesTarget(nextButton, keyEvent(KeyCode.F1)));
+            assertTrue(keyReachesTarget(nextButton, typedKeyEvent("i")));
+            assertTrue(commandInput.isDisabled());
             assertFalse(keyReachesTarget(helpLabel, keyEvent(KeyCode.RIGHT)));
             assertEquals("Step 2 of 16", counter.getText());
             tutorialLabel.fireEvent(mouseClickEvent());
@@ -359,6 +363,58 @@ public class MainWindowTest {
         });
         Platform.runLater(task);
         task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void tutorialCardAndMemberSteps_rehighlightAfterJavaFxLayout() throws Exception {
+        FutureTask<MainWindow> setup = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            ModelManager model = new ModelManager();
+            Person contact = new PersonBuilder(TypicalPersons.ALICE).build();
+            model.addPerson(contact);
+            EventTime time = new EventTime("25-10-2026");
+            model.addEvent(new Event("Welcome Fair", time, time, List.of(contact.getName()), Map.of()));
+            MainWindow window = new MainWindow(stage, new LogicManager(model, null),
+                    Path.of("data", "coordimate.json"));
+            window.fillInnerParts();
+            window.show();
+            Label tutorialLabel = (Label) stage.getScene().lookup("#tutorialLabel");
+            tutorialLabel.fireEvent(mouseClickEvent());
+            Button nextButton = (Button) stage.getScene().lookup("#nextButton");
+            for (int step = 0; step < 4; step++) {
+                nextButton.fire();
+            }
+            assertEquals("Step 5 of 16", ((Label) stage.getScene().lookup("#stepCounter")).getText());
+            return window;
+        });
+        Platform.runLater(setup);
+        MainWindow window = setup.get(10, TimeUnit.SECONDS);
+
+        FutureTask<Void> verifyCard = new FutureTask<>(() -> {
+            Stage stage = window.getPrimaryStage();
+            ListView<?> contacts = (ListView<?>) stage.getScene().lookup("#personListView");
+            Node highlight = stage.getScene().lookup("#targetHighlight");
+            assertEquals(0, contacts.getSelectionModel().getSelectedIndex());
+            assertTrue(highlight.localToScene(highlight.getLayoutBounds()).getHeight() < contacts.getHeight());
+            Button nextButton = (Button) stage.getScene().lookup("#nextButton");
+            for (int step = 0; step < 5; step++) {
+                nextButton.fire();
+            }
+            assertEquals("Step 10 of 16", ((Label) stage.getScene().lookup("#stepCounter")).getText());
+            return null;
+        });
+        Platform.runLater(verifyCard);
+        verifyCard.get(10, TimeUnit.SECONDS);
+
+        FutureTask<Void> verifyMembers = new FutureTask<>(() -> {
+            Stage stage = window.getPrimaryStage();
+            assertTutorialHighlights(stage, "#members");
+            window.stop();
+            stage.close();
+            return null;
+        });
+        Platform.runLater(verifyMembers);
+        verifyMembers.get(10, TimeUnit.SECONDS);
     }
 
     @Test

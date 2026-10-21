@@ -259,6 +259,17 @@ public class TutorialWindowTest {
             assertTrue(card.localToScene(card.getLayoutBounds()).getMaxY()
                     < highlight.localToScene(highlight.getLayoutBounds()).getMinY());
 
+            target.relocate(1050, 150);
+            applyLayout(stage);
+            tutorial.highlight(target);
+            assertFalse(highlight.isVisible());
+            assertTrue(stage.getScene().lookup("#backdropFull").isVisible());
+
+            target.relocate(150, 750);
+            applyLayout(stage);
+            tutorial.highlight(target);
+            assertFalse(highlight.isVisible());
+
             target.setVisible(false);
             tutorial.highlight(target);
             assertFalse(highlight.isVisible());
