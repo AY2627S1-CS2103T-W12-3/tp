@@ -259,6 +259,43 @@ public class CommandBoxTest {
         task.get(10, TimeUnit.SECONDS);
     }
 
+    @Test
+    public void disabledInput_blocksEditingHistoryAndSubmission() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            List<String> submitted = new ArrayList<>();
+            CommandBox commandBox = new CommandBox(text -> {
+                submitted.add(text);
+                return new CommandResult("Result");
+            }, () -> false);
+            Region root = commandBox.getRoot();
+            new Scene(root);
+            TextField input = (TextField) root.lookup("#commandTextField");
+            Button button = (Button) root.lookup("#submitButton");
+
+            input.setText("list");
+            button.fire();
+            input.setText("unfinished draft");
+            commandBox.setInputDisabled(true);
+
+            for (KeyCode key : List.of(KeyCode.BACK_SPACE, KeyCode.DELETE, KeyCode.UP,
+                    KeyCode.DOWN, KeyCode.ENTER)) {
+                input.fireEvent(new KeyEvent(KeyEvent.KEY_PRESSED, "", "", key,
+                        false, false, false, false));
+            }
+            input.fireEvent(new KeyEvent(KeyEvent.KEY_TYPED, "a", "a", KeyCode.UNDEFINED,
+                    false, false, false, false));
+            button.fire();
+
+            assertTrue(input.isDisabled());
+            assertTrue(button.isDisabled());
+            assertEquals("unfinished draft", input.getText());
+            assertEquals(List.of("list"), submitted);
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
     private static void pressArrow(TextField input, KeyCode keyCode) {
         input.fireEvent(new KeyEvent(KeyEvent.KEY_PRESSED, "", "", keyCode,
                 false, false, false, false));

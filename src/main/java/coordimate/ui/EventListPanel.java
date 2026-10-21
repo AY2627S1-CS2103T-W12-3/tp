@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
+import java.util.Objects;
 
 import coordimate.model.event.AttendanceStatus;
 import coordimate.model.event.Event;
@@ -22,6 +23,7 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MultipleSelectionModel;
 import javafx.scene.control.SplitPane;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -111,7 +113,6 @@ public class EventListPanel extends UiPart<Region> {
                 eventSplitPane.setOrientation(width.doubleValue() < 760
                 ? Orientation.VERTICAL : Orientation.HORIZONTAL));
         showDetails(null);
-        eventListView.getSelectionModel().selectFirst();
     }
 
     /**
@@ -120,10 +121,57 @@ public class EventListPanel extends UiPart<Region> {
      */
     private void keepSelectionAfterChange() {
         MultipleSelectionModel<Event> selection = eventListView.getSelectionModel();
-        if (selection.getSelectedIndex() < 0 && !eventListView.getItems().isEmpty()) {
+        if (lastSelectedIndex >= 0 && selection.getSelectedIndex() < 0 && !eventListView.getItems().isEmpty()) {
             selection.select(Math.max(0, Math.min(lastSelectedIndex, eventListView.getItems().size() - 1)));
         }
         showDetails(selection.getSelectedItem());
+    }
+
+    /**
+     * Selects and reveals the next displayed event. If no event is selected, selects the first event.
+     * At the end of the list, keeps the last event selected.
+     *
+     * @return {@code true} if the list contains an event and handled the navigation request
+     */
+    boolean selectNextCard() {
+        int itemCount = eventListView.getItems().size();
+        if (itemCount == 0) {
+            return false;
+        }
+
+        int selectedIndex = eventListView.getSelectionModel().getSelectedIndex();
+        int targetIndex = selectedIndex < 0 ? 0 : Math.min(selectedIndex + 1, itemCount - 1);
+        selectAndReveal(targetIndex);
+        return true;
+    }
+
+    /**
+     * Selects and reveals the previous displayed event. If no event is selected, selects the last event.
+     * At the start of the list, keeps the first event selected.
+     *
+     * @return {@code true} if the list contains an event and handled the navigation request
+     */
+    boolean selectPreviousCard() {
+        int itemCount = eventListView.getItems().size();
+        if (itemCount == 0) {
+            return false;
+        }
+
+        int selectedIndex = eventListView.getSelectionModel().getSelectedIndex();
+        int targetIndex = selectedIndex < 0 ? itemCount - 1 : Math.max(selectedIndex - 1, 0);
+        selectAndReveal(targetIndex);
+        return true;
+    }
+
+    private void selectAndReveal(int targetIndex) {
+        eventListView.getSelectionModel().select(targetIndex);
+        eventListView.scrollTo(targetIndex);
+    }
+
+    /** Runs the given action whenever the displayed event list is clicked. */
+    void setCardListClickHandler(Runnable handler) {
+        Objects.requireNonNull(handler);
+        eventListView.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> handler.run());
     }
 
     /**
@@ -225,7 +273,7 @@ public class EventListPanel extends UiPart<Region> {
                     .sorted((left, right) -> String.CASE_INSENSITIVE_ORDER.compare(
                             left.getTagName(), right.getTagName()))
                     .map(Tag::getTagName)
-                    .map(this::createMemberTag)
+                    .map(TagStyle::createTagLabel)
                     .forEach(identityLine.getChildren()::add);
         }
 
@@ -251,22 +299,6 @@ public class EventListPanel extends UiPart<Region> {
         HBox row = new HBox(12, index, avatar, memberDetails, createStatusBadge(status));
         row.getStyleClass().add("attendance-member-row");
         return row;
-    }
-
-    private Label createMemberTag(String tagName) {
-        Label tag = new Label(tagName);
-        tag.getStyleClass().add("event-member-tag");
-        tag.getStyleClass().add(getTagColorClass(tagName));
-        return tag;
-    }
-
-    private String getTagColorClass(String tagName) {
-        return switch (tagName.toLowerCase(Locale.ROOT)) {
-            case "logistics" -> "event-member-tag-teal";
-            case "sponsor" -> "event-member-tag-amber";
-            case "publicity", "universitystaff" -> "event-member-tag-purple";
-            default -> "event-member-tag-blue";
-        };
     }
 
     private String getAvatarColorClass(Person person) {

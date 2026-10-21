@@ -2,6 +2,7 @@ package coordimate.ui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.awt.GraphicsEnvironment;
@@ -10,6 +11,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
@@ -19,6 +21,8 @@ import org.junit.jupiter.api.io.TempDir;
 import coordimate.commons.core.GuiSettings;
 import coordimate.logic.LogicManager;
 import coordimate.model.ModelManager;
+import coordimate.model.event.Event;
+import coordimate.model.event.EventTime;
 import coordimate.model.person.Person;
 import coordimate.storage.JsonCoordiMateStorage;
 import coordimate.storage.JsonUserPrefsStorage;
@@ -26,22 +30,30 @@ import coordimate.storage.StorageManager;
 import coordimate.testutil.PersonBuilder;
 import coordimate.testutil.TypicalPersons;
 import javafx.application.Platform;
+import javafx.event.EventHandler;
 import javafx.geometry.Orientation;
 import javafx.geometry.Rectangle2D;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.MenuBar;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.input.PickResult;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
+import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 
 /**
@@ -110,6 +122,330 @@ public class MainWindowTest {
             assertEquals("Bold", contacts.getFont().getStyle());
             assertTrue(getPrefixHelpText(prefixHelp).contains("n/Name"));
             stage.close();
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void topMenuHelpItem_opensOwnedHelpWindowAndShowsShortcutTooltip() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            MainWindow window = new MainWindow(stage, new LogicManager(new ModelManager(), null),
+                    Path.of("data", "coordimate.json"));
+            window.fillInnerParts();
+
+            Label helpLabel = (Label) stage.getScene().getRoot().lookup("#helpLabel");
+            HBox topMenuRow = (HBox) stage.getScene().getRoot().lookup("#topMenuRow");
+            MenuBar menuBar = (MenuBar) stage.getScene().getRoot().lookup("#menuBar");
+            assertEquals("Help", helpLabel.getText());
+            assertEquals("Open Help (Fn + F1)", helpLabel.getTooltip().getText());
+            assertEquals(200, helpLabel.getTooltip().getShowDelay().toMillis());
+            assertEquals(List.of("File"), menuBar.getMenus().stream().map(menu -> menu.getText()).toList());
+            assertSame(topMenuRow, menuBar.getParent());
+            assertSame(topMenuRow, helpLabel.getParent());
+            assertEquals(List.of(menuBar, helpLabel), topMenuRow.getChildren());
+
+            window.show();
+            javafx.event.Event.fireEvent(helpLabel, mouseClickEvent());
+            Stage helpStage = Window.getWindows().stream()
+                    .filter(Stage.class::isInstance)
+                    .map(Stage.class::cast)
+                    .filter(candidate -> "Help".equals(candidate.getTitle()))
+                    .filter(candidate -> candidate.getOwner() == stage)
+                    .findFirst()
+                    .orElseThrow();
+            assertTrue(helpStage.isShowing());
+            assertSame(stage, helpStage.getOwner());
+
+            KeyEvent enterEvent = keyEvent(KeyCode.ENTER);
+            helpLabel.getOnKeyPressed().handle(enterEvent);
+            assertTrue(enterEvent.isConsumed());
+            assertTrue(helpStage.isShowing());
+
+            KeyEvent otherKeyEvent = keyEvent(KeyCode.A);
+            helpLabel.getOnKeyPressed().handle(otherKeyEvent);
+            assertFalse(otherKeyEvent.isConsumed());
+
+            helpStage.hide();
+            KeyEvent spaceEvent = keyEvent(KeyCode.SPACE);
+            helpLabel.getOnKeyPressed().handle(spaceEvent);
+            assertTrue(spaceEvent.isConsumed());
+            assertTrue(helpStage.isShowing());
+
+            helpStage.hide();
+            javafx.event.Event.fireEvent(stage.getScene().getRoot(), keyEvent(KeyCode.F1));
+            assertTrue(helpStage.isShowing());
+            helpStage.hide();
+            stage.close();
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void cardNavigation_routesJAndKToActiveView() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            MainWindow window = null;
+            try {
+                ModelManager model = new ModelManager();
+                Person firstContact = new PersonBuilder(TypicalPersons.ALICE).withTags("Alpha").build();
+                Person secondContact = new PersonBuilder(TypicalPersons.BENSON).withTags("Beta").build();
+                model.addPerson(firstContact);
+                model.addPerson(secondContact);
+                EventTime time = new EventTime("25-10-2026");
+                Event firstEvent = new Event("First Event", time, time);
+                Event secondEvent = new Event("Second Event", time, time);
+                model.addEvent(firstEvent);
+                model.addEvent(secondEvent);
+                window = new MainWindow(stage, new LogicManager(model, null), Path.of("data", "coordimate.json"));
+                window.show();
+                window.fillInnerParts();
+                stage.getScene().getRoot().applyCss();
+
+                TextField input = (TextField) stage.getScene().getRoot().lookup("#commandTextField");
+                @SuppressWarnings("unchecked")
+                ListView<Person> contacts = (ListView<Person>) stage.getScene().getRoot().lookup("#personListView");
+                @SuppressWarnings("unchecked")
+                ListView<Event> events = (ListView<Event>) stage.getScene().getRoot().lookup("#eventListView");
+                @SuppressWarnings("unchecked")
+                ListView<String> tags = (ListView<String>) stage.getScene().getRoot().lookup("#tagListView");
+                ToggleButton contactsView = (ToggleButton) stage.getScene().getRoot().lookup("#contactsView");
+                ToggleButton eventsView = (ToggleButton) stage.getScene().getRoot().lookup("#eventsView");
+                ToggleButton tagsView = (ToggleButton) stage.getScene().getRoot().lookup("#tagsView");
+                Label mode = (Label) stage.getScene().getRoot().lookup("#interactionModeLabel");
+                Button submit = (Button) stage.getScene().getRoot().lookup("#submitButton");
+
+                assertEquals("COMMAND · Esc to navigate", mode.getText());
+                assertFalse(input.isDisabled());
+                assertFalse(submit.isDisabled());
+                assertTrue(keyReachesTarget(input, typedKeyEvent("j")));
+                input.clear();
+                assertFalse(keyReachesTarget(input, keyEvent(KeyCode.ESCAPE)));
+                assertEquals("NAVIGATION · j/k move · i to type", mode.getText());
+                assertTrue(input.isDisabled());
+                assertTrue(submit.isDisabled());
+                assertFalse(keyReachesTarget(input, typedKeyEvent("j")));
+                assertEquals(firstContact, contacts.getSelectionModel().getSelectedItem());
+                assertTrue(input.getText().isEmpty());
+                assertFalse(keyReachesTarget(input, typedKeyEvent("j")));
+                assertEquals(secondContact, contacts.getSelectionModel().getSelectedItem());
+                assertTrue(input.getText().isEmpty());
+                assertFalse(keyReachesTarget(input, typedKeyEvent("k")));
+                assertEquals(firstContact, contacts.getSelectionModel().getSelectedItem());
+                assertFalse(keyReachesTarget(input, typedKeyEvent("k")));
+                assertEquals(firstContact, contacts.getSelectionModel().getSelectedItem());
+
+                eventsView.fire();
+                assertFalse(keyReachesTarget(input, typedKeyEvent("j")));
+                assertEquals(firstEvent, events.getSelectionModel().getSelectedItem());
+                assertFalse(keyReachesTarget(input, typedKeyEvent("j")));
+                assertEquals(secondEvent, events.getSelectionModel().getSelectedItem());
+                assertFalse(keyReachesTarget(input, typedKeyEvent("k")));
+                assertEquals(firstEvent, events.getSelectionModel().getSelectedItem());
+
+                tagsView.fire();
+                assertFalse(keyReachesTarget(input, typedKeyEvent("k")));
+                assertEquals(tags.getItems().size() - 1, tags.getSelectionModel().getSelectedIndex());
+                assertFalse(keyReachesTarget(input, typedKeyEvent("j")));
+                assertEquals(tags.getItems().size() - 1, tags.getSelectionModel().getSelectedIndex());
+                assertFalse(keyReachesTarget(input, typedKeyEvent("k")));
+                assertEquals(tags.getItems().size() - 2, tags.getSelectionModel().getSelectedIndex());
+                tags.getSelectionModel().clearSelection();
+                assertFalse(keyReachesTarget(input, typedKeyEvent("j")));
+                assertEquals(0, tags.getSelectionModel().getSelectedIndex());
+
+                contactsView.fire();
+                assertEquals(firstContact, contacts.getSelectionModel().getSelectedItem());
+                assertFalse(keyReachesTarget(contactsView, typedKeyEvent("j")));
+                assertEquals(secondContact, contacts.getSelectionModel().getSelectedItem());
+
+                fireMousePress(input);
+                assertEquals("NAVIGATION · j/k move · i to type", mode.getText());
+                assertFalse(keyReachesTarget(contactsView, typedKeyEvent("i")));
+                assertEquals("COMMAND · Esc to navigate", mode.getText());
+                assertFalse(input.isDisabled());
+                assertFalse(submit.isDisabled());
+                fireMousePress(contacts);
+                assertEquals("NAVIGATION · j/k move · i to type", mode.getText());
+                fireMousePress(input);
+                assertEquals("NAVIGATION · j/k move · i to type", mode.getText());
+                fireMousePress(events);
+                assertEquals("NAVIGATION · j/k move · i to type", mode.getText());
+                fireMousePress(input);
+                fireMousePress(tags);
+                assertEquals("NAVIGATION · j/k move · i to type", mode.getText());
+            } finally {
+                if (window != null) {
+                    window.stop();
+                }
+                stage.close();
+            }
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void cardNavigation_ignoresUnsafeInputContexts() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            MainWindow window = null;
+            try {
+                ModelManager model = new ModelManager();
+                Person contact = new PersonBuilder(TypicalPersons.ALICE).build();
+                model.addPerson(contact);
+                window = new MainWindow(stage, new LogicManager(model, null), Path.of("data", "coordimate.json"));
+                window.fillInnerParts();
+                window.show();
+
+                TextField input = (TextField) stage.getScene().getRoot().lookup("#commandTextField");
+                @SuppressWarnings("unchecked")
+                ListView<Person> contacts = (ListView<Person>) stage.getScene().getRoot().lookup("#personListView");
+                Label mode = (Label) stage.getScene().getRoot().lookup("#interactionModeLabel");
+
+                input.setText("list");
+                assertTrue(keyReachesTarget(input, typedKeyEvent("j")));
+                assertEquals(-1, contacts.getSelectionModel().getSelectedIndex());
+                input.setText("list");
+                assertFalse(keyReachesTarget(input, keyEvent(KeyCode.ESCAPE)));
+                assertEquals("NAVIGATION · j/k move · i to type", mode.getText());
+                assertFalse(keyReachesTarget(input, typedKeyEvent("j")));
+                assertEquals(contact, contacts.getSelectionModel().getSelectedItem());
+                assertEquals("list", input.getText());
+                assertFalse(keyReachesTarget(input, typedKeyEvent("i")));
+                assertEquals("COMMAND · Esc to navigate", mode.getText());
+                assertEquals("list", input.getText());
+                input.clear();
+                contacts.getSelectionModel().clearSelection();
+
+                assertFalse(keyReachesTarget(input, keyEvent(KeyCode.ESCAPE)));
+
+                assertFalse(keyReachesTarget(input, typedKeyEvent("a")));
+                assertTrue(input.getText().isEmpty());
+                assertFalse(keyReachesTarget(input, typedKeyEvent("j", true, false, false, false)));
+                input.clear();
+                assertFalse(keyReachesTarget(input, typedKeyEvent("j", false, true, false, false)));
+                input.clear();
+                assertFalse(keyReachesTarget(input, typedKeyEvent("j", false, false, true, false)));
+                input.clear();
+                assertFalse(keyReachesTarget(input, typedKeyEvent("j", false, false, false, true)));
+                input.clear();
+                assertEquals(-1, contacts.getSelectionModel().getSelectedIndex());
+
+                input.requestFocus();
+                assertSame(input, stage.getScene().getFocusOwner());
+                assertFalse(keyReachesTarget(input, typedKeyEvent("j")));
+                assertEquals(contact, contacts.getSelectionModel().getSelectedItem());
+                contacts.getSelectionModel().clearSelection();
+
+                TextField otherInput = new TextField();
+                StackPane commandPlaceholder =
+                        (StackPane) stage.getScene().getRoot().lookup("#commandBoxPlaceholder");
+                commandPlaceholder.getChildren().add(otherInput);
+                otherInput.requestFocus();
+                assertSame(otherInput, stage.getScene().getFocusOwner());
+                assertTrue(keyReachesTarget(otherInput, typedKeyEvent("j")));
+                assertEquals(-1, contacts.getSelectionModel().getSelectedIndex());
+
+                contacts.requestFocus();
+                assertFalse(keyReachesTarget(contacts, typedKeyEvent("i")));
+                assertEquals("COMMAND · Esc to navigate", mode.getText());
+
+                TabPane views = (TabPane) stage.getScene().getRoot().lookup("#views");
+                views.getSelectionModel().clearSelection();
+                assertFalse(keyReachesTarget(input, keyEvent(KeyCode.ESCAPE)));
+                assertFalse(keyReachesTarget(input, typedKeyEvent("j")));
+                assertEquals(-1, contacts.getSelectionModel().getSelectedIndex());
+            } finally {
+                if (window != null) {
+                    window.stop();
+                }
+                stage.close();
+            }
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void cardNavigation_emptyListsConsumeNavigationKeysWithoutChangingSelection() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            MainWindow window = null;
+            try {
+                ModelManager model = new ModelManager();
+                List.copyOf(model.getTagList()).forEach(model::deleteTag);
+                window = new MainWindow(stage, new LogicManager(model, null),
+                        Path.of("data", "coordimate.json"));
+                window.fillInnerParts();
+                stage.getScene().getRoot().applyCss();
+
+                TextField input = (TextField) stage.getScene().getRoot().lookup("#commandTextField");
+                ToggleButton eventsView = (ToggleButton) stage.getScene().getRoot().lookup("#eventsView");
+                ToggleButton tagsView = (ToggleButton) stage.getScene().getRoot().lookup("#tagsView");
+
+                assertFalse(keyReachesTarget(input, keyEvent(KeyCode.ESCAPE)));
+                assertFalse(keyReachesTarget(input, typedKeyEvent("j")));
+                eventsView.fire();
+                assertFalse(keyReachesTarget(input, typedKeyEvent("k")));
+                tagsView.fire();
+                assertFalse(keyReachesTarget(input, typedKeyEvent("j")));
+            } finally {
+                if (window != null) {
+                    window.stop();
+                }
+                stage.close();
+            }
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void cardNavigation_deleteConfirmationLeavesNavigationKeysForInput() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            MainWindow window = null;
+            try {
+                ModelManager model = new ModelManager();
+                model.addPerson(new PersonBuilder(TypicalPersons.ALICE).build());
+                StorageManager storage = new StorageManager(
+                        new JsonCoordiMateStorage(temporaryFolder.resolve("navigation-data.json")),
+                        new JsonUserPrefsStorage(temporaryFolder.resolve("navigation-prefs.json")));
+                LogicManager logic = new LogicManager(model, storage);
+                window = new MainWindow(stage, logic, temporaryFolder.resolve("navigation-data.json"));
+                window.fillInnerParts();
+                stage.getScene().getRoot().applyCss();
+
+                TextField input = (TextField) stage.getScene().getRoot().lookup("#commandTextField");
+                Button submit = (Button) stage.getScene().getRoot().lookup("#submitButton");
+                input.setText("delete 1");
+                submit.fire();
+
+                assertTrue(logic.isAwaitingDeleteConfirmation());
+                assertTrue(input.getText().isEmpty());
+                assertTrue(keyReachesTarget(input, keyEvent(KeyCode.ESCAPE)));
+                assertTrue(keyReachesTarget(input, keyEvent(KeyCode.A)));
+                assertTrue(keyReachesTarget(input, typedKeyEvent("j")));
+                @SuppressWarnings("unchecked")
+                ListView<Person> contacts = (ListView<Person>) stage.getScene().getRoot().lookup("#personListView");
+                Label mode = (Label) stage.getScene().getRoot().lookup("#interactionModeLabel");
+                fireMousePress(contacts);
+                assertEquals("COMMAND · Esc to navigate", mode.getText());
+                assertEquals(-1, contacts.getSelectionModel().getSelectedIndex());
+            } finally {
+                if (window != null) {
+                    window.stop();
+                }
+                stage.close();
+            }
             return null;
         });
         Platform.runLater(task);
@@ -361,10 +697,11 @@ public class MainWindowTest {
             stage.getScene().getRoot().layout();
 
             assertEquals(3, stage.getScene().getRoot().lookupAll(".event-member-name").size());
-            assertEquals(1, stage.getScene().getRoot().lookupAll(".event-member-tag-teal").size());
-            assertEquals(1, stage.getScene().getRoot().lookupAll(".event-member-tag-amber").size());
-            assertEquals(2, stage.getScene().getRoot().lookupAll(".event-member-tag-purple").size());
-            assertEquals(3, stage.getScene().getRoot().lookupAll(".event-member-tag-blue").size());
+            assertEquals(1, stage.getScene().getRoot().lookupAll(".tag-chip-teal").size());
+            assertEquals(1, stage.getScene().getRoot().lookupAll(".tag-chip-amber").size());
+            assertEquals(1, stage.getScene().getRoot().lookupAll(".tag-chip-purple").size());
+            assertEquals(3, stage.getScene().getRoot().lookupAll(".tag-chip-red").size());
+            assertEquals(1, stage.getScene().getRoot().lookupAll(".tag-chip-blue").size());
             assertEquals(1, stage.getScene().getRoot().lookupAll(".event-member-avatar-teal").size());
             assertEquals(1, stage.getScene().getRoot().lookupAll(".event-member-avatar-amber").size());
             assertEquals(1, stage.getScene().getRoot().lookupAll(".event-member-avatar-purple").size());
@@ -401,10 +738,15 @@ public class MainWindowTest {
 
             HBox addRow = (HBox) stage.getScene().getRoot().lookup(".cheat-row");
             TextField commandInput = (TextField) stage.getScene().getRoot().lookup(".text-field");
+            Label mode = (Label) stage.getScene().getRoot().lookup("#interactionModeLabel");
+            assertFalse(keyReachesTarget(commandInput, keyEvent(KeyCode.ESCAPE)));
+            assertEquals("NAVIGATION · j/k move · i to type", mode.getText());
+
             KeyEvent enter = keyEvent(KeyCode.ENTER);
             addRow.getOnKeyPressed().handle(enter);
             assertTrue(enter.isConsumed());
             assertEquals("add", commandInput.getText());
+            assertEquals("COMMAND · Esc to navigate", mode.getText());
 
             KeyEvent space = keyEvent(KeyCode.SPACE);
             addRow.getOnKeyPressed().handle(space);
@@ -422,8 +764,45 @@ public class MainWindowTest {
     }
 
     private static KeyEvent keyEvent(KeyCode keyCode) {
+        return keyEvent(keyCode, false, false, false, false);
+    }
+
+    private static KeyEvent keyEvent(KeyCode keyCode, boolean shiftDown, boolean controlDown,
+                                     boolean altDown, boolean metaDown) {
         return new KeyEvent(KeyEvent.KEY_PRESSED, "", "", keyCode,
-                false, false, false, false);
+                shiftDown, controlDown, altDown, metaDown);
+    }
+
+    private static KeyEvent typedKeyEvent(String character) {
+        return typedKeyEvent(character, false, false, false, false);
+    }
+
+    private static KeyEvent typedKeyEvent(String character, boolean shiftDown, boolean controlDown,
+                                          boolean altDown, boolean metaDown) {
+        return new KeyEvent(KeyEvent.KEY_TYPED, character, character, KeyCode.UNDEFINED,
+                shiftDown, controlDown, altDown, metaDown);
+    }
+
+    private static boolean keyReachesTarget(Node target, KeyEvent event) {
+        AtomicBoolean reachedTarget = new AtomicBoolean();
+        EventHandler<KeyEvent> observer = ignored -> reachedTarget.set(true);
+        target.addEventHandler(event.getEventType(), observer);
+        target.fireEvent(event.copyFor(target, target));
+        target.removeEventHandler(event.getEventType(), observer);
+        return reachedTarget.get();
+    }
+
+    private static void fireMousePress(Node target) {
+        MouseEvent event = new MouseEvent(MouseEvent.MOUSE_PRESSED, 0, 0, 0, 0, MouseButton.PRIMARY, 1,
+                false, false, false, false, true, false, false, true, false, false,
+                new PickResult(target, 0, 0));
+        target.fireEvent(event.copyFor(target, target));
+    }
+
+    private static MouseEvent mouseClickEvent() {
+        return new MouseEvent(MouseEvent.MOUSE_CLICKED,
+                0, 0, 0, 0, MouseButton.PRIMARY, 1,
+                false, false, false, false, false, false, false, false, false, false, null);
     }
 
     private static String getPrefixHelpText(TextFlow prefixHelp) {

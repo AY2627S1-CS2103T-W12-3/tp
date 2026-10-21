@@ -12,6 +12,7 @@ import coordimate.logic.commands.CreateTagCommand;
 import coordimate.logic.commands.DeleteCommand;
 import coordimate.logic.commands.DeleteEventCommand;
 import coordimate.logic.commands.DeleteTagCommand;
+import coordimate.logic.commands.DismissCommand;
 import coordimate.logic.commands.EditCommand;
 import coordimate.logic.commands.EditEventCommand;
 import coordimate.logic.commands.EditTagCommand;
@@ -41,7 +42,9 @@ import javafx.stage.Stage;
 public class HelpWindow extends UiPart<Stage> {
 
     public static final String USERGUIDE_URL = "https://ay2627s1-cs2103t-w12-3.github.io/tp/";
-    public static final String HELP_MESSAGE = "Refer to the user guide: " + USERGUIDE_URL;
+    public static final String HELP_SHORTCUT = "Fn + F1";
+    public static final String HELP_MESSAGE = "Keyboard shortcut: " + HELP_SHORTCUT
+            + ". Refer to the user guide: " + USERGUIDE_URL;
 
     static final List<CommandUsage> COMMAND_USAGES = List.of(
             commandUsage(AddCommand.COMMAND_WORD,
@@ -56,6 +59,7 @@ public class HelpWindow extends UiPart<Stage> {
                     "INDEX | delete n/NAME | delete p/PHONE | delete e/EMAIL"),
             commandUsage(DeleteEventCommand.COMMAND_WORD, "evn/EVENT_NAME"),
             commandUsage(DeleteTagCommand.COMMAND_WORD, "t/TAG"),
+            commandUsage(DismissCommand.COMMAND_WORD, "INDEX"),
             commandUsage(EditCommand.COMMAND_WORD,
                     "(INDEX | target/IDENTIFIER) [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] "
                             + "[a/ADDRESS] [o/ORGANISATION] [m/NOTE] [lv/LEAVE_END_DATE] [t/TAG]... [at/TAG]... "

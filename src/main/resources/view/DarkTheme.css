@@ -21,13 +21,8 @@
     -fx-background-color: #0b0e14;
     -fx-border-color: transparent transparent #212734 transparent;
 }
-.window-dots .label { -fx-font-size: 13px; }
-.window-close-dot { -fx-text-fill: #ff5f56; }
-.window-minimize-dot { -fx-text-fill: #ffbd2e; }
-.window-zoom-dot { -fx-text-fill: #27c93f; }
-.brand-mark { -fx-text-fill: #38bdf8; -fx-font-size: 17px; }
 .app-title { -fx-font-size: 15px; -fx-font-weight: bold; -fx-alignment: center; }
-.header-meta, .sidebar-caption, .sidebar-footer {
+.header-meta, .sidebar-caption {
     -fx-text-fill: #64748b;
     -fx-font-family: "JetBrains Mono", "Consolas", monospace;
     -fx-font-size: 11px;
@@ -39,6 +34,25 @@
 }
 .menu-bar .label { -fx-text-fill: #8b949e; }
 .menu:hover, .menu:showing { -fx-background-color: #1f2633; }
+.top-menu-row {
+    -fx-background-color: #101319;
+    -fx-border-color: transparent transparent #2b3446 transparent;
+    -fx-padding: 1 8;
+}
+.top-menu-row > .menu-bar {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 0;
+}
+.top-menu-item {
+    -fx-padding: 3 10;
+    -fx-background-color: transparent;
+    -fx-background-radius: 4;
+    -fx-border-color: transparent;
+    -fx-text-fill: #8b949e;
+    -fx-cursor: hand;
+}
+.top-menu-item:hover { -fx-background-color: #1f2633; -fx-text-fill: #f0f6fc; }
 .context-menu { -fx-background-color: #1b202a; -fx-border-color: #2b3446; }
 .context-menu .label { -fx-text-fill: #f0f6fc; }
 .dialog-pane, .dialog-pane:header .header-panel,
@@ -101,7 +115,6 @@
 .cheat-yellow { -fx-text-fill: #fbbf24; }
 .cheat-purple { -fx-text-fill: #c084fc; }
 .cheat-teal { -fx-text-fill: #2dd4bf; }
-.sidebar-footer { -fx-padding: 12 8 2; -fx-border-color: #212734 transparent transparent transparent; }
 
 .workspace-tabs { -fx-padding: 0; }
 .workspace-tabs > .tab-header-area { -fx-min-height: 0; -fx-pref-height: 0; -fx-max-height: 0; }
@@ -191,16 +204,6 @@
     -fx-border-radius: 6;
 }
 .assigned-event-name { -fx-font-weight: bold; -fx-text-fill: #f0f6fc; }
-.contact-detail-tags .label, #tags .label {
-    -fx-padding: 3 8;
-    -fx-background-color: #082f49;
-    -fx-background-radius: 4;
-    -fx-border-color: #0ea5e9;
-    -fx-border-radius: 4;
-    -fx-text-fill: #38bdf8;
-    -fx-font-size: 11px;
-}
-
 .list-view, .list-view:focused, .list-view .virtual-flow,
 .list-view .virtual-flow .clipped-container .sheet { -fx-background-color: transparent; }
 .list-cell, .list-cell:empty, .list-cell:filled {
@@ -291,17 +294,18 @@
 .event-member-details { -fx-spacing: 4; }
 .event-member-name { -fx-font-weight: bold; -fx-text-fill: #f0f6fc; }
 .event-member-metadata { -fx-font-size: 12px; -fx-text-fill: #94a3b8; }
-.event-member-tag {
+.tag-chip {
     -fx-padding: 2 7;
     -fx-background-radius: 4;
     -fx-border-radius: 4;
     -fx-border-width: 1;
     -fx-font-size: 11px;
 }
-.event-member-tag-blue { -fx-background-color: #172554; -fx-border-color: #3730a3; -fx-text-fill: #a5b4fc; }
-.event-member-tag-purple { -fx-background-color: #3b0764; -fx-border-color: #7e22ce; -fx-text-fill: #d8b4fe; }
-.event-member-tag-teal { -fx-background-color: #083344; -fx-border-color: #0891b2; -fx-text-fill: #67e8f9; }
-.event-member-tag-amber { -fx-background-color: #451a03; -fx-border-color: #b45309; -fx-text-fill: #fcd34d; }
+.tag-chip-blue { -fx-background-color: #172554; -fx-border-color: #3730a3; -fx-text-fill: #a5b4fc; }
+.tag-chip-red { -fx-background-color: #450a0a; -fx-border-color: #b91c1c; -fx-text-fill: #fca5a5; }
+.tag-chip-purple { -fx-background-color: #3b0764; -fx-border-color: #7e22ce; -fx-text-fill: #d8b4fe; }
+.tag-chip-teal { -fx-background-color: #083344; -fx-border-color: #0891b2; -fx-text-fill: #67e8f9; }
+.tag-chip-amber { -fx-background-color: #451a03; -fx-border-color: #b45309; -fx-text-fill: #fcd34d; }
 .attendance-badge { -fx-padding: 5 9; -fx-background-radius: 4; -fx-border-radius: 4; -fx-border-width: 1; -fx-font-weight: bold; }
 .attendance-present { -fx-background-color: #064e3b; -fx-border-color: #10b981; -fx-text-fill: #34d399; }
 .attendance-absent { -fx-background-color: #450a0a; -fx-border-color: #ef4444; -fx-text-fill: #f87171; }
@@ -367,6 +371,13 @@
 }
 #submitButton:hover, .button:hover { -fx-background-color: #1f2633; -fx-border-color: #0ea5e9; }
 .prefix-help { -fx-padding: 2 20 10; -fx-background-color: #101319; }
+.interaction-mode {
+    -fx-padding: 2 10 2 0;
+    -fx-font-family: "JetBrains Mono", "Consolas", monospace;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #38bdf8;
+}
 
 .reminder-panel {
     -fx-padding: 10 16;
@@ -393,14 +404,14 @@
     -fx-background-radius: 5;
 }
 .reminder-name { -fx-text-fill: #f0f6fc; -fx-font-weight: bold; }
-.reminder-time, .reminder-empty-state { -fx-text-fill: #a8b3c2; }
+.reminder-time { -fx-text-fill: #a8b3c2; }
 .reminder-dismiss {
     -fx-min-height: 36;
     -fx-text-fill: #cbd5e1;
     -fx-border-color: #8b949e;
 }
 .reminder-dismiss:hover { -fx-border-color: #38bdf8; }
-.reminder-dismiss:focused, .reminder-empty-state:focused {
+.reminder-dismiss:focused {
     -fx-border-color: #38bdf8;
     -fx-border-width: 2;
     -fx-border-radius: 5;

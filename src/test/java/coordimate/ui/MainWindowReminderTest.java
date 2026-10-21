@@ -3,6 +3,7 @@ package coordimate.ui;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.awt.GraphicsEnvironment;
@@ -77,7 +78,7 @@ public class MainWindowReminderTest {
                 fixture.logic().refreshReminders();
                 Parent root = fixture.stage().getScene().getRoot();
 
-                assertEquals(List.of("Upcoming event: Student Life Fair", "Upcoming event: Final Concert"),
+                assertEquals(List.of("1. Upcoming event: Student Life Fair", "2. Upcoming event: Final Concert"),
                         names(root));
                 assertEquals("Starts: 20-10-2026", ((Label) root.lookup(".reminder-time")).getText());
                 for (String view : List.of("eventsView", "tagsView", "contactsView")) {
@@ -86,6 +87,41 @@ public class MainWindowReminderTest {
                     assertTrue(root.lookup("#reminderPanel").isVisible());
                     assertEquals(2, rows(root).getChildren().size());
                 }
+            } finally {
+                fixture.stage().close();
+            }
+            return null;
+        });
+    }
+
+    @Test
+    public void startup_noReminders_collapsesPanelAndPeriodicCheckShowsNewReminder() throws Exception {
+        onJavaFxThread(() -> {
+            ModelManager model = new ModelManager();
+            model.addEvent(event("Later", "20-10-2026 15:01", "20-10-2026 18:00"));
+            ControlledStorage storage = new ControlledStorage(temporaryFolder.resolve("data.json"));
+            storage.saveCoordiMate(model.getCoordiMate());
+            Fixture fixture = openWindow(model, storage, new AdjustableClock(), false, 1100, 800);
+            try {
+                Parent root = fixture.stage().getScene().getRoot();
+                assertPanelHidden(root);
+                assertEquals(Animation.Status.RUNNING, fixture.timer().getStatus());
+                double emptyWorkspaceHeight = root.lookup("#views").getBoundsInParent().getHeight();
+
+                fixture.clock().advance(java.time.Duration.ofMinutes(1));
+                fixture.timer().getKeyFrames().getFirst().getOnFinished().handle(new ActionEvent());
+                layout(root);
+
+                assertEquals(List.of("1. Upcoming event: Later"), names(root));
+                assertTrue(root.lookup("#reminderPanel").isVisible());
+                assertTrue(root.lookup("#reminderPanelPlaceholder").isManaged());
+                assertTrue(root.lookup("#views").getBoundsInParent().getHeight() < emptyWorkspaceHeight);
+
+                Button dismiss = (Button) root.lookup(".reminder-dismiss");
+                dismiss.fire();
+                assertPanelHidden(root);
+                assertEquals(emptyWorkspaceHeight, root.lookup("#views").getBoundsInParent().getHeight(), 1);
+                assertEquals(Animation.Status.RUNNING, fixture.timer().getStatus());
             } finally {
                 fixture.stage().close();
             }
@@ -110,7 +146,7 @@ public class MainWindowReminderTest {
                 fixture.clock().advance(java.time.Duration.ofMinutes(1));
                 fixture.timer().getKeyFrames().getFirst().getOnFinished().handle(new ActionEvent());
 
-                assertEquals(List.of("Upcoming event: Final Concert", "Upcoming event: Later"), names(root));
+                assertEquals(List.of("1. Upcoming event: Final Concert", "2. Upcoming event: Later"), names(root));
                 assertArrayEquals(before, Files.readAllBytes(fixture.storage().getCoordiMateFilePath()));
                 fixture.stage().close();
                 assertEquals(Animation.Status.STOPPED, fixture.timer().getStatus());
@@ -125,7 +161,96 @@ public class MainWindowReminderTest {
     }
 
     @Test
-    public void dismissButton_savesDismissalAndShowsEmptyState() throws Exception {
+    public void dismissCommand_validIndex_updatesPanelAndShowsSuccessAfterRejectedIndex() throws Exception {
+        onJavaFxThread(() -> {
+            Fixture fixture = openWindow(true);
+            try {
+                Parent root = fixture.stage().getScene().getRoot();
+                TextField input = (TextField) root.lookup("#commandTextField");
+                input.setText("dismiss 2");
+                input.fireEvent(new ActionEvent());
+                assertEquals("Rejected", ((Label) root.lookup("#feedbackStatus")).getText());
+                assertEquals(1, rows(root).getChildren().size());
+                assertEquals("dismiss 2", input.getText());
+
+                input.setText("dismiss 1");
+                input.fireEvent(new ActionEvent());
+
+                assertEquals(0, rows(root).getChildren().size());
+                assertPanelHidden(root);
+                assertEquals("Reminder dismissed: Final Concert.", ((Label) root.lookup("#resultDisplay")).getText());
+                assertEquals("OK", ((Label) root.lookup("#feedbackStatus")).getText());
+                assertEquals("", input.getText());
+                assertTrue(fixture.storage().readCoordiMate().orElseThrow().getEventList().getFirst()
+                        .isReminderDismissed());
+            } finally {
+                fixture.stage().close();
+            }
+            return null;
+        });
+    }
+
+    @Test
+    public void dismissCommand_repeatedIndex_renumbersPanelAndPreservesSelectedTabAndFocus() throws Exception {
+        onJavaFxThread(() -> {
+            Fixture fixture = openWindow(true);
+            try {
+                fixture.model().addEvent(event("alpha", "20-10-2026 15:00", "20-10-2026 18:00"));
+                fixture.model().addEvent(event("Zulu", "20-10-2026 15:00", "20-10-2026 18:00"));
+                fixture.logic().refreshReminders();
+                Parent root = fixture.stage().getScene().getRoot();
+                assertEquals(List.of("1. Upcoming event: alpha", "2. Upcoming event: Final Concert",
+                        "3. Upcoming event: Zulu"), names(root));
+                ToggleButton tags = (ToggleButton) root.lookup("#tagsView");
+                tags.fire();
+                TextField input = (TextField) root.lookup("#commandTextField");
+                input.requestFocus();
+
+                input.setText("dismiss 2");
+                input.fireEvent(new ActionEvent());
+                assertEquals(List.of("1. Upcoming event: alpha", "2. Upcoming event: Zulu"), names(root));
+                assertEquals("Reminder dismissed: Final Concert.", ((Label) root.lookup("#resultDisplay")).getText());
+                assertTrue(tags.isSelected());
+                assertSame(input, fixture.stage().getScene().getFocusOwner());
+
+                input.setText("dismiss 2");
+                input.fireEvent(new ActionEvent());
+                assertEquals(List.of("1. Upcoming event: alpha"), names(root));
+                assertEquals("Reminder dismissed: Zulu.", ((Label) root.lookup("#resultDisplay")).getText());
+                assertTrue(tags.isSelected());
+                assertSame(input, fixture.stage().getScene().getFocusOwner());
+            } finally {
+                fixture.stage().close();
+            }
+            return null;
+        });
+    }
+
+    @Test
+    public void dismissCommand_saveFailure_showsNotSavedWarningAndHidesReminder() throws Exception {
+        onJavaFxThread(() -> {
+            Fixture fixture = openWindow(true);
+            try {
+                fixture.storage().failSave = true;
+                Parent root = fixture.stage().getScene().getRoot();
+                TextField input = (TextField) root.lookup("#commandTextField");
+                input.setText("dismiss 1");
+                input.fireEvent(new ActionEvent());
+
+                assertEquals(0, rows(root).getChildren().size());
+                assertEquals(ReminderDismissalException.MESSAGE, ((Label) root.lookup("#resultDisplay")).getText());
+                assertEquals("Not saved", ((Label) root.lookup("#feedbackStatus")).getText());
+                assertEquals("", input.getText());
+                assertFalse(fixture.model().getCoordiMate().getEventList().getFirst().isReminderDismissed());
+            } finally {
+                fixture.stage().close();
+            }
+            return null;
+        });
+    }
+
+    @Test
+    public void dismissButton_savesDismissalAndHidesEmptyPanel() throws Exception {
         onJavaFxThread(() -> {
             Fixture fixture = openWindow(true);
             try {
@@ -135,11 +260,43 @@ public class MainWindowReminderTest {
                 dismiss.fire();
 
                 assertEquals(0, rows(root).getChildren().size());
-                assertTrue(root.lookup("#reminderEmptyState").isVisible());
+                assertPanelHidden(root);
+                assertSame(root.lookup("#commandTextField"), fixture.stage().getScene().getFocusOwner());
                 assertEquals("Reminder dismissed: Final Concert.", ((Label) root.lookup("#resultDisplay")).getText());
                 assertEquals("OK", ((Label) root.lookup("#feedbackStatus")).getText());
                 assertTrue(fixture.storage().readCoordiMate().orElseThrow().getEventList().getFirst()
                         .isReminderDismissed());
+            } finally {
+                fixture.stage().close();
+            }
+            return null;
+        });
+    }
+
+    @Test
+    public void dismissButton_multipleReminders_focusesCommandOnlyAfterLastDismissal() throws Exception {
+        onJavaFxThread(() -> {
+            Fixture fixture = openWindow(true);
+            try {
+                fixture.model().addEvent(event("Student Life Fair", "20-10-2026", "21-10-2026"));
+                fixture.logic().refreshReminders();
+                Parent root = fixture.stage().getScene().getRoot();
+                Button firstDismiss = (Button) rows(root).getChildren().getFirst().lookup(".reminder-dismiss");
+                firstDismiss.requestFocus();
+                assertSame(firstDismiss, fixture.stage().getScene().getFocusOwner());
+
+                firstDismiss.fire();
+
+                assertEquals(List.of("1. Upcoming event: Final Concert"), names(root));
+                assertTrue(root.lookup("#reminderPanel").isVisible());
+                Button lastDismiss = (Button) rows(root).getChildren().getFirst().lookup(".reminder-dismiss");
+                assertSame(lastDismiss, fixture.stage().getScene().getFocusOwner());
+
+                lastDismiss.fire();
+
+                assertEquals(List.of(), names(root));
+                assertPanelHidden(root);
+                assertSame(root.lookup("#commandTextField"), fixture.stage().getScene().getFocusOwner());
             } finally {
                 fixture.stage().close();
             }
@@ -165,7 +322,7 @@ public class MainWindowReminderTest {
                 try {
                     Parent restartedRoot = restarted.stage().getScene().getRoot();
                     assertEquals(List.of(), names(restartedRoot));
-                    assertTrue(restartedRoot.lookup("#reminderEmptyState").isVisible());
+                    assertPanelHidden(restartedRoot);
                     byte[] before = Files.readAllBytes(reloadedStorage.getCoordiMateFilePath());
 
                     restarted.clock().advance(java.time.Duration.ofMinutes(1));
@@ -198,14 +355,14 @@ public class MainWindowReminderTest {
                     fixture.clock().advance(elapsed);
                     fixture.timer().getKeyFrames().getFirst().getOnFinished().handle(new ActionEvent());
 
-                    assertEquals(List.of("Upcoming event: Final Concert"), names(root));
+                    assertEquals(List.of("1. Upcoming event: Final Concert"), names(root));
                     assertEquals("Starts: 21-10-2026", ((Label) root.lookup(".reminder-time")).getText());
                 }
                 fixture.clock().advance(java.time.Duration.ofNanos(1));
                 fixture.timer().getKeyFrames().getFirst().getOnFinished().handle(new ActionEvent());
 
                 assertEquals(List.of(), names(root));
-                assertTrue(root.lookup("#reminderEmptyState").isVisible());
+                assertPanelHidden(root);
                 assertArrayEquals(before, Files.readAllBytes(fixture.storage().getCoordiMateFilePath()));
             } finally {
                 fixture.stage().close();
@@ -248,10 +405,10 @@ public class MainWindowReminderTest {
                 Parent root = fixture.stage().getScene().getRoot();
                 fixture.logic().execute("editevent evn/Final Concert nevn/Grand Concert st/19-10-2026 17:00");
 
-                assertEquals(List.of("Upcoming event: Grand Concert"), names(root));
+                assertEquals(List.of("1. Upcoming event: Grand Concert"), names(root));
                 assertEquals("Starts: 19-10-2026 17:00", ((Label) root.lookup(".reminder-time")).getText());
                 fixture.logic().execute("deleteevent evn/Grand Concert");
-                assertTrue(root.lookup("#reminderEmptyState").isVisible());
+                assertPanelHidden(root);
                 assertEquals(0, rows(root).getChildren().size());
             } finally {
                 fixture.stage().close();
@@ -395,6 +552,14 @@ public class MainWindowReminderTest {
         root.applyCss();
         root.layout();
         root.layout();
+    }
+
+    private static void assertPanelHidden(Parent root) {
+        layout(root);
+        assertFalse(root.lookup("#reminderPanel").isVisible());
+        assertFalse(root.lookup("#reminderPanel").isManaged());
+        assertFalse(root.lookup("#reminderPanelPlaceholder").isVisible());
+        assertFalse(root.lookup("#reminderPanelPlaceholder").isManaged());
     }
 
     private static void snapshot(Parent root, String filename) throws IOException {

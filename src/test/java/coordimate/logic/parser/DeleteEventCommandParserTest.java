@@ -16,9 +16,9 @@ public class DeleteEventCommandParserTest {
     @Test
     public void parse_examples_success() throws Exception {
         assertEquals(new DeleteEventCommand("Final Concert"),
-                new CoordiMateParser().parseCommand("deleteevent evn/Final Concert"));
+                CommandParserTestUtil.createParser().parseCommand("deleteevent evn/Final Concert"));
         assertEquals(new DeleteEventCommand("Student Life Fair"),
-                new CoordiMateParser().parseCommand("deleteevent evn/Student Life Fair"));
+                CommandParserTestUtil.createParser().parseCommand("deleteevent evn/Student Life Fair"));
         assertEquals(new DeleteEventCommand("Student  Life Fair"),
                 parser.parse("  evn/ Student  Life Fair  "));
     }
