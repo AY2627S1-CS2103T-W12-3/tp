@@ -5,6 +5,9 @@
 
 # Logging guide
 
+Successful contact additions, edits, and deletions are logged without contact details. Failures to load or save contact
+data are logged at `WARNING` with the underlying exception.
+
 * The project uses the `java.util.logging` package for logging.
 * `LogsCenter` manages logging levels and destinations.
 * A class obtains a `Logger` with `LogsCenter.getLogger(Class)`, which logs messages at the configured level.

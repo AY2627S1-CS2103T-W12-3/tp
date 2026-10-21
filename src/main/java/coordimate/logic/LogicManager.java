@@ -5,6 +5,7 @@ import static coordimate.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.time.Clock;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import coordimate.commons.core.GuiSettings;
@@ -109,6 +110,7 @@ public class LogicManager implements Logic {
             try {
                 storage.readCoordiMate();
             } catch (DataLoadingException e) {
+                logContactOperationFailure(deleteCommand, "load contact data", e);
                 throw new CommandException(DeleteCommand.MESSAGE_LOAD_ERROR, e);
             }
             Person target = deleteCommand.resolvePerson(model);
@@ -146,6 +148,7 @@ public class LogicManager implements Logic {
         try {
             storage.readCoordiMate();
         } catch (DataLoadingException e) {
+            logContactOperationFailure(command, "load contact data", e);
             String message = switch (command) {
                 case AddCommand _ -> AddCommand.MESSAGE_LOAD_ERROR;
                 case EditCommand _ -> EditCommand.MESSAGE_LOAD_ERROR;
@@ -162,6 +165,7 @@ public class LogicManager implements Logic {
         try {
             storage.saveCoordiMate(candidate.getCoordiMate());
         } catch (IOException e) {
+            logContactOperationFailure(command, "save contact data", e);
             String message = switch (command) {
                 case AddCommand _ -> AddCommand.MESSAGE_SAVE_ERROR;
                 case EditCommand _ -> EditCommand.MESSAGE_SAVE_ERROR;
@@ -183,7 +187,31 @@ public class LogicManager implements Logic {
             model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
         }
         keepMembersViewAfterRename(command);
+        logContactOperationSuccess(command);
         return result;
+    }
+
+    private void logContactOperationSuccess(Command command) {
+        String action = getContactOperation(command);
+        if (action != null) {
+            logger.info("Contact " + action + " completed successfully.");
+        }
+    }
+
+    private void logContactOperationFailure(Command command, String operation, Exception exception) {
+        String action = getContactOperation(command);
+        if (action != null) {
+            logger.log(Level.WARNING, "Failed to " + operation + " during contact " + action + ".", exception);
+        }
+    }
+
+    private static String getContactOperation(Command command) {
+        return switch (command) {
+            case AddCommand _ -> "addition";
+            case EditCommand _ -> "edit";
+            case DeleteCommand _ -> "deletion";
+            default -> null;
+        };
     }
 
     /**
