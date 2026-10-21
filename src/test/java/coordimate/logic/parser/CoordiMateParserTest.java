@@ -16,7 +16,6 @@ import coordimate.commons.core.index.Index;
 import coordimate.logic.commands.AddCommand;
 import coordimate.logic.commands.AssignCommand;
 import coordimate.logic.commands.ClearCommand;
-import coordimate.logic.commands.CommandResult;
 import coordimate.logic.commands.CreateTagCommand;
 import coordimate.logic.commands.DeleteCommand;
 import coordimate.logic.commands.DeleteTagCommand;
@@ -32,7 +31,6 @@ import coordimate.logic.commands.ListTagsCommand;
 import coordimate.logic.commands.MarkAttendanceCommand;
 import coordimate.logic.commands.MembersCommand;
 import coordimate.logic.commands.SearchCommand;
-import coordimate.logic.commands.SwitchCommand;
 import coordimate.logic.commands.UnassignCommand;
 import coordimate.logic.parser.exceptions.ParseException;
 import coordimate.logic.reminder.ReminderService;
@@ -165,6 +163,8 @@ public class CoordiMateParserTest {
                 parser.parseCommand("find"));
         assertThrows(ParseException.class, withUsage(MESSAGE_UNKNOWN_COMMAND, HelpCommand.MESSAGE_USAGE), () ->
                 parser.parseCommand("find Alice"));
+        assertThrows(ParseException.class, withUsage(MESSAGE_UNKNOWN_COMMAND, HelpCommand.MESSAGE_USAGE), () ->
+                parser.parseCommand("switch events"));
     }
 
     @Test
@@ -190,28 +190,6 @@ public class CoordiMateParserTest {
         SearchCommand command = (SearchCommand) parser.parseCommand(
                 SearchCommand.COMMAND_WORD + " Alice");
         assertEquals(new SearchCommand(new ContactMatchesKeywordPredicate("Alice"), "Alice"), command);
-    }
-
-    @Test
-    public void parseCommand_switch() throws Exception {
-        ModelManager model = new ModelManager();
-        assertEquals(new CommandResult("Switched to Contacts view.", CommandResult.View.CONTACTS),
-                parser.parseCommand("switch contacts").execute(model));
-        assertEquals(new CommandResult("Switched to Events view.", CommandResult.View.EVENTS),
-                parser.parseCommand("switch events").execute(model));
-        assertEquals(new CommandResult("Switched to Tags view.", CommandResult.View.TAGS),
-                parser.parseCommand("switch tags").execute(model));
-        assertEquals(new CommandResult("Switched to Events view.", CommandResult.View.EVENTS),
-                parser.parseCommand(" switch   events  ").execute(model));
-    }
-
-    @Test
-    public void parseCommand_switchInvalidView_throwsParseException() {
-        String expected = String.format(MESSAGE_INVALID_COMMAND_FORMAT, SwitchCommand.MESSAGE_USAGE);
-        assertThrows(ParseException.class, expected, () -> parser.parseCommand("switch"));
-        assertThrows(ParseException.class, expected, () -> parser.parseCommand("switch calendar"));
-        assertThrows(ParseException.class, expected, () -> parser.parseCommand("switch Events"));
-        assertThrows(ParseException.class, expected, () -> parser.parseCommand("switch events extra"));
     }
 
     @Test

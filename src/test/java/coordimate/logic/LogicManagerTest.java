@@ -30,7 +30,6 @@ import coordimate.logic.commands.EditTagCommand;
 import coordimate.logic.commands.ListCommand;
 import coordimate.logic.commands.MarkAttendanceCommand;
 import coordimate.logic.commands.MutatingTagCommand;
-import coordimate.logic.commands.SwitchCommand;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.logic.parser.CoordiMateParser;
 import coordimate.logic.parser.exceptions.ParseException;
@@ -78,16 +77,6 @@ public class LogicManagerTest {
     public void execute_validCommand_success() throws Exception {
         String listCommand = ListCommand.COMMAND_WORD;
         assertCommandSuccess(listCommand, ListCommand.MESSAGE_SUCCESS, model);
-    }
-
-    @Test
-    public void execute_switchView_doesNotRequireStorage() throws Exception {
-        logic = new LogicManager(model, null);
-
-        CommandResult result = logic.execute("switch events");
-
-        assertEquals(String.format(SwitchCommand.MESSAGE_SUCCESS, "Events"), result.getFeedbackToUser());
-        assertEquals(CommandResult.View.EVENTS, result.getViewToShow());
     }
 
     @Test

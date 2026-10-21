@@ -226,6 +226,7 @@ public class MainWindowTest {
                 input.clear();
                 assertFalse(keyReachesTarget(input, keyEvent(KeyCode.ESCAPE)));
                 assertEquals("NAVIGATION · j/k move · s switch view · i to type", mode.getText());
+                assertFalse(keyReachesTarget(mode, keyEvent(KeyCode.ESCAPE)));
                 assertTrue(input.isDisabled());
                 assertTrue(submit.isDisabled());
                 assertFalse(keyReachesTarget(input, keyEvent(KeyCode.J)));
@@ -278,6 +279,9 @@ public class MainWindowTest {
                 assertEquals("COMMAND · Esc to navigate", mode.getText());
                 assertFalse(input.isDisabled());
                 assertFalse(submit.isDisabled());
+                assertTrue(keyReachesTarget(input, typedKeyEvent("a")));
+                input.clear();
+                assertTrue(keyReachesTarget(input, keyReleasedEvent(KeyCode.A)));
                 assertFalse(keyReachesTarget(input, typedKeyEvent("i")));
                 assertTrue(input.getText().isEmpty());
                 input.fireEvent(keyReleasedEvent(KeyCode.I));
@@ -367,6 +371,9 @@ public class MainWindowTest {
                 assertFalse(keyReachesTarget(input, keyEvent(KeyCode.ESCAPE)));
                 assertFalse(keyReachesTarget(input, keyEvent(KeyCode.J)));
                 assertEquals(-1, contacts.getSelectionModel().getSelectedIndex());
+                views.getTabs().clear();
+                assertFalse(keyReachesTarget(mode, keyEvent(KeyCode.S)));
+                assertTrue(views.getTabs().isEmpty());
             } finally {
                 if (window != null) {
                     window.stop();
@@ -452,57 +459,6 @@ public class MainWindowTest {
                 }
                 stage.close();
             }
-            return null;
-        });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
-    }
-
-    @Test
-    public void switchCommand_selectsViewAndRejectsInvalidView() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
-            Stage stage = new Stage();
-            MainWindow window = new MainWindow(stage, new LogicManager(new ModelManager(), null),
-                    Path.of("data", "coordimate.json"));
-            window.fillInnerParts();
-            stage.getScene().getRoot().applyCss();
-
-            TabPane views = (TabPane) stage.getScene().getRoot().lookup("#views");
-            TextField input = (TextField) stage.getScene().getRoot().lookup("#commandTextField");
-            Button submit = (Button) stage.getScene().getRoot().lookup("#submitButton");
-            Label feedback = (Label) stage.getScene().getRoot().lookup("#resultDisplay");
-            ToggleButton contacts = (ToggleButton) stage.getScene().getRoot().lookup("#contactsView");
-            ToggleButton events = (ToggleButton) stage.getScene().getRoot().lookup("#eventsView");
-            ToggleButton tags = (ToggleButton) stage.getScene().getRoot().lookup("#tagsView");
-
-            input.setText("switch events");
-            submit.fire();
-            assertTrue(events.isSelected());
-            assertTrue(views.getSelectionModel().getSelectedItem().getText().startsWith("Events"));
-            assertEquals("Switched to Events view.", feedback.getText());
-
-            input.setText("switch tags");
-            submit.fire();
-            assertTrue(tags.isSelected());
-            assertEquals("Tags", views.getSelectionModel().getSelectedItem().getText());
-
-            input.setText("switch contacts");
-            submit.fire();
-            assertTrue(contacts.isSelected());
-            assertTrue(views.getSelectionModel().getSelectedItem().getText().startsWith("Contacts"));
-
-            input.setText("switch contacts");
-            submit.fire();
-            assertTrue(contacts.isSelected());
-            assertEquals("Switched to Contacts view.", feedback.getText());
-
-            input.setText("switch missing");
-            submit.fire();
-            assertTrue(contacts.isSelected());
-            assertEquals("switch missing", input.getText());
-            assertTrue(feedback.getText().startsWith("Invalid command format."));
-
-            stage.close();
             return null;
         });
         Platform.runLater(task);

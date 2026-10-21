@@ -28,7 +28,7 @@ public class HelpWindowTest {
     private static final List<String> COMMAND_WORDS = List.of(
             "add", "addevent", "addtag", "assign", "clear", "delete", "deleteevent", "deletetag", "dismiss",
             "edit", "editevent", "edittag", "exit", "filter", "help", "list", "listtags", "markattendance",
-            "members", "search", "switch", "unassign");
+            "members", "search", "unassign");
 
     @BeforeAll
     public static void startJavaFx() throws InterruptedException {
@@ -52,11 +52,6 @@ public class HelpWindowTest {
         assertEquals(COMMAND_WORDS.size(), HelpWindow.COMMAND_USAGES.size());
         assertEquals("filter FIELD/VALUE [FIELD/VALUE]...", HelpWindow.COMMAND_USAGES.stream()
                 .filter(usage -> usage.command().equals("filter"))
-                .findFirst()
-                .orElseThrow()
-                .format());
-        assertEquals("switch contacts | switch events | switch tags", HelpWindow.COMMAND_USAGES.stream()
-                .filter(usage -> usage.command().equals("switch"))
                 .findFirst()
                 .orElseThrow()
                 .format());
