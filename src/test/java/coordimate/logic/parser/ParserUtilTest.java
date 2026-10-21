@@ -16,6 +16,7 @@ import coordimate.model.event.Event;
 import coordimate.model.person.Address;
 import coordimate.model.person.Birthday;
 import coordimate.model.person.Email;
+import coordimate.model.person.MemberId;
 import coordimate.model.person.Name;
 import coordimate.model.person.Note;
 import coordimate.model.person.Organisation;
@@ -38,6 +39,20 @@ public class ParserUtilTest {
     private static final String VALID_TAG_2 = "neighbour";
 
     private static final String WHITESPACE = " \t\r\n";
+
+    @Test
+    public void parseMemberId_acceptsPositiveIntegersWithoutListPositionConversion() throws Exception {
+        assertEquals(new MemberId(12), ParserUtil.parseMemberId(" 12 "));
+        assertEquals(new MemberId(Integer.MAX_VALUE), ParserUtil.parseMemberId("2147483647"));
+    }
+
+    @Test
+    public void parseMemberId_invalidValues_throwsParseException() {
+        assertThrows(NullPointerException.class, () -> ParserUtil.parseMemberId(null));
+        for (String input : List.of("", "0", "-1", "1.5", "12.0", "1 2", "2147483648", "999999999999999999")) {
+            assertThrows(ParseException.class, MemberId.MESSAGE_CONSTRAINTS, () -> ParserUtil.parseMemberId(input));
+        }
+    }
 
     @Test
     public void parseIndex_invalidInput_throwsParseException() {

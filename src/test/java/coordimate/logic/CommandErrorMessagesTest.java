@@ -160,7 +160,7 @@ public class CommandErrorMessagesTest {
     }
 
     @Test
-    public void execute_missingContact_usesSameMessageAcrossCommands() {
+    public void execute_missingContact_usesMessageForIdentifierType() {
         ModelManager model = new ModelManager();
         model.addEvent(new Event("Concert", new EventTime("17-09-2026"), new EventTime("17-09-2026")));
         String[] inputs = {"delete 1", "edit 1 r/Logistics", "assign evn/Concert c/1", "unassign evn/Concert c/1"};
@@ -168,7 +168,10 @@ public class CommandErrorMessagesTest {
         for (String input : inputs) {
             CommandException error = assertThrows(CommandException.class, () ->
                     parser.parseCommand(input).execute(model), input);
-            assertEquals("No contact exists at index 1. Use an index from the current contact list.",
+            String expected = input.startsWith("delete") || input.startsWith("edit")
+                    ? "No contact exists with member ID: 1. Use an existing member ID."
+                    : "No contact exists at index 1. Use an index from the current contact list.";
+            assertEquals(expected,
                     error.getMessage(), input);
         }
     }

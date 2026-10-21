@@ -24,6 +24,8 @@ public class Messages {
     public static final String MESSAGE_INVALID_COMMAND_FORMAT = "Invalid command format.\n%1$s";
     public static final String MESSAGE_INVALID_PERSON_DISPLAYED_INDEX =
             "No contact exists at index %1$d. Use an index from the current contact list.";
+    public static final String MESSAGE_MEMBER_ID_NOT_FOUND =
+            "No contact exists with member ID: %d. Use an existing member ID.";
     public static final String MESSAGE_EVENT_NOT_FOUND =
             "Event %s does not exist. Use a saved event name.";
     public static final String MESSAGE_TAG_NOT_FOUND =
@@ -31,7 +33,7 @@ public class Messages {
     public static final String MESSAGE_CONTACT_NO_MATCH =
             "No contact matches that identifier. Use an exact saved name, phone number, or email address.";
     public static final String MESSAGE_CONTACT_AMBIGUOUS_MATCH = "Multiple contacts match that identifier:\n%s\n"
-            + "Use a displayed index, phone number, or email address to identify the contact.";
+            + "Use a member ID, phone number, or email address to identify the contact.";
     public static final String MESSAGE_PERSONS_LISTED_OVERVIEW = "%1$d contact(s) listed!";
 
     /**
@@ -53,6 +55,14 @@ public class Messages {
      */
     public static String withUsage(String message, String usage) {
         return message.endsWith(usage) ? message : message + "\n" + usage;
+    }
+
+    /**
+     * Formats an ambiguous match with its permanent ID, including contacts hidden by the current view.
+     */
+    public static String formatContactMatch(Person person) {
+        return "- " + person.getName() + " | ID: " + person.getMemberId().orElseThrow()
+                + " | Phone: " + person.getPhone() + " | Email: " + person.getEmail();
     }
 
     /**

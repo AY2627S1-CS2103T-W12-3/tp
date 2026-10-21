@@ -16,6 +16,7 @@ import coordimate.model.event.EventTime;
 import coordimate.model.person.Address;
 import coordimate.model.person.Birthday;
 import coordimate.model.person.Email;
+import coordimate.model.person.MemberId;
 import coordimate.model.person.Name;
 import coordimate.model.person.Note;
 import coordimate.model.person.Organisation;
@@ -29,6 +30,18 @@ import coordimate.model.tag.Tag;
 public class ParserUtil {
 
     public static final String MESSAGE_INVALID_INDEX = "Index must be a positive integer. Example: 1";
+
+    /**
+     * Parses a positive integer as a permanent member ID, without converting it to a list position.
+     */
+    public static MemberId parseMemberId(String value) throws ParseException {
+        requireNonNull(value);
+        String trimmed = value.trim();
+        if (!StringUtil.isNonZeroUnsignedInteger(trimmed)) {
+            throw new ParseException(MemberId.MESSAGE_CONSTRAINTS);
+        }
+        return new MemberId(Integer.parseInt(trimmed));
+    }
 
     /**
      * Creates a format error containing the command's usage instructions.

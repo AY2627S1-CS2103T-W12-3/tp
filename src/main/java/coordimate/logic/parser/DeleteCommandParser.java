@@ -7,19 +7,18 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.Set;
 
-import coordimate.commons.core.index.Index;
 import coordimate.logic.Messages;
 import coordimate.logic.commands.DeleteCommand;
 import coordimate.logic.commands.DeleteCommand.IdentifierType;
 import coordimate.logic.parser.exceptions.ParseException;
 
-/** Parses a single displayed index, name, phone number, or email address for deletion. */
+/** Parses a permanent member ID, name, phone number, or email address for deletion. */
 public class DeleteCommandParser implements Parser<DeleteCommand> {
     public static final String MESSAGE_UNKNOWN_PARAMETER =
             Messages.MESSAGE_UNKNOWN_PARAMETER + "\n" + DeleteCommand.MESSAGE_USAGE;
     public static final String MESSAGE_MULTIPLE_IDENTIFIERS =
             "Specify exactly one contact identifier. Example: delete n/Aisha Tan";
-    public static final String MESSAGE_INVALID_INDEX = "Invalid contact index. Example: delete 3";
+    public static final String MESSAGE_INVALID_MEMBER_ID = "Invalid member ID. Example: delete 12";
 
     private static final Set<String> ALLOWED_PREFIXES =
             Set.of(PREFIX_NAME.toString(), PREFIX_PHONE.toString(), PREFIX_EMAIL.toString());
@@ -45,10 +44,9 @@ public class DeleteCommandParser implements Parser<DeleteCommand> {
         }
         if (prefixCount == 0) {
             try {
-                Index index = ParserUtil.parseIndex(arguments.getPreamble());
-                return new DeleteCommand(index);
+                return new DeleteCommand(ParserUtil.parseMemberId(arguments.getPreamble()));
             } catch (ParseException | NumberFormatException e) {
-                throw new ParseException(MESSAGE_INVALID_INDEX, e);
+                throw new ParseException(MESSAGE_INVALID_MEMBER_ID, e);
             }
         }
         if (!arguments.getAllValues(PREFIX_NAME).isEmpty()) {

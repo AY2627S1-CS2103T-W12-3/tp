@@ -18,7 +18,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import coordimate.commons.core.index.Index;
 import coordimate.logic.Messages;
 import coordimate.logic.commands.EditCommand;
 import coordimate.logic.commands.EditCommand.EditPersonDescriptor;
@@ -26,6 +25,7 @@ import coordimate.logic.commands.EditCommand.TagOperation;
 import coordimate.logic.commands.EditCommand.TagOperationType;
 import coordimate.logic.parser.ArgumentMultimap.PrefixedValue;
 import coordimate.logic.parser.exceptions.ParseException;
+import coordimate.model.person.MemberId;
 import coordimate.model.tag.Tag;
 
 /**
@@ -33,7 +33,7 @@ import coordimate.model.tag.Tag;
  */
 public class EditCommandParser implements Parser<EditCommand> {
 
-    public static final String MESSAGE_INVALID_INDEX = "Invalid contact index. Example: edit 2 r/President";
+    public static final String MESSAGE_INVALID_MEMBER_ID = "Invalid member ID. Example: edit 12 r/President";
     public static final String MESSAGE_REPEATED_PARAMETER =
             Messages.MESSAGE_REPEATED_PARAMETER + "\n" + EditCommand.MESSAGE_USAGE;
     public static final String MESSAGE_UNKNOWN_PARAMETER =
@@ -69,7 +69,7 @@ public class EditCommandParser implements Parser<EditCommand> {
                         PREFIX_TAG, PREFIX_ADD_TAG, PREFIX_REMOVE_TAG, PREFIX_TARGET);
 
         rejectRepeatedParameters(argMultimap);
-        Index index = null;
+        MemberId memberId = null;
         String targetIdentifier = null;
         if (argMultimap.getValue(PREFIX_TARGET).isPresent()) {
             if (!argMultimap.getPreamble().isEmpty()) {
@@ -81,9 +81,9 @@ public class EditCommandParser implements Parser<EditCommand> {
             }
         } else {
             try {
-                index = ParserUtil.parseIndex(argMultimap.getPreamble());
+                memberId = ParserUtil.parseMemberId(argMultimap.getPreamble());
             } catch (ParseException pe) {
-                throw new ParseException(MESSAGE_INVALID_INDEX, pe);
+                throw new ParseException(MESSAGE_INVALID_MEMBER_ID, pe);
             }
         }
 
@@ -125,7 +125,7 @@ public class EditCommandParser implements Parser<EditCommand> {
         }
 
         return targetIdentifier == null
-                ? new EditCommand(index, editPersonDescriptor)
+                ? new EditCommand(memberId, editPersonDescriptor)
                 : new EditCommand(targetIdentifier, editPersonDescriptor);
     }
 

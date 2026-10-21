@@ -52,11 +52,11 @@ public class HelpWindow extends UiPart<Stage> {
                     "evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]..."),
             commandUsage(ClearCommand.COMMAND_WORD, ""),
             commandUsage(DeleteCommand.COMMAND_WORD,
-                    "INDEX | delete n/NAME | delete p/PHONE | delete e/EMAIL"),
+                    "MEMBER_ID | delete n/NAME | delete p/PHONE | delete e/EMAIL"),
             commandUsage(DeleteEventCommand.COMMAND_WORD, "evn/EVENT_NAME"),
             commandUsage(DeleteTagCommand.COMMAND_WORD, "t/TAG"),
             commandUsage(EditCommand.COMMAND_WORD,
-                    "(INDEX | target/IDENTIFIER) [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] "
+                    "(MEMBER_ID | target/IDENTIFIER) [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] "
                             + "[a/ADDRESS] [o/ORGANISATION] [m/NOTE] [t/TAG]... [at/TAG]... [rt/TAG]..."),
             commandUsage(EditEventCommand.COMMAND_WORD,
                     "evn/EVENT_NAME [nevn/NEW_EVENT_NAME] [st/NEW_START_TIME] [et/NEW_END_TIME]"),

@@ -7,7 +7,6 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import coordimate.commons.core.index.Index;
 import coordimate.logic.commands.EditCommand;
 import coordimate.logic.commands.EditCommand.EditPersonDescriptor;
 import coordimate.model.person.MemberId;
@@ -35,7 +34,7 @@ public class MemberIdLifecycleTest {
         descriptor.setNote(replacement.getNote().orElseThrow());
         descriptor.setTags(replacement.getTags());
 
-        new EditCommand(Index.fromOneBased(1), descriptor).execute(model);
+        new EditCommand(new MemberId(12), descriptor).execute(model);
 
         assertEquals(replacement.withMemberId(new MemberId(12)), model.getFilteredPersonList().getFirst());
     }
