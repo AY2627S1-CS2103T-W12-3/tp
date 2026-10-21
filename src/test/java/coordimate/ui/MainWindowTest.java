@@ -293,7 +293,7 @@ public class MainWindowTest {
             assertEquals("Step 16 of 16", ((Label) stage.getScene().lookup("#stepCounter")).getText());
             assertEquals(2, views.getSelectionModel().getSelectedIndex());
             assertTutorialHighlights(stage, "#tutorialLabel");
-            assertEquals("Finish", nextButton.getText());
+            assertEquals("Finish →", nextButton.getText());
             assertEquals(1, logic.getEventList().size());
             Button closeButton = (Button) stage.getScene().lookup("#closeButton");
             closeButton.fire();

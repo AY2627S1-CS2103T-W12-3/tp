@@ -79,7 +79,7 @@ public class TutorialWindowTest {
                 }
             }
             assertTrue(tutorial.getCurrentStep().description().contains("whenever you need a reminder"));
-            assertEquals("Finish", nextButton.getText());
+            assertEquals("Finish →", nextButton.getText());
             backButton.fire();
             assertEquals("Step 15 of 16", stepCounter.getText());
             nextButton.fire();

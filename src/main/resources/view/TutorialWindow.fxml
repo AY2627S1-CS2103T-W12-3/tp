@@ -36,7 +36,8 @@
               <children>
                 <Label fx:id="stepCounter" styleClass="tutorial-progress" text="Step 1 of 16" />
                 <Region HBox.hgrow="ALWAYS" />
-                <Button fx:id="closeButton" mnemonicParsing="false" onAction="#close" text="Close" />
+                <Button fx:id="closeButton" mnemonicParsing="false" onAction="#close" text="Close (Esc)"
+                        accessibleText="Close tutorial, Escape" />
               </children>
             </HBox>
             <Label fx:id="stepTitle" maxWidth="Infinity" styleClass="tutorial-heading" text="Welcome"
@@ -51,10 +52,11 @@
             </VBox>
             <HBox alignment="CENTER_LEFT" spacing="10.0">
               <children>
-                <Button fx:id="backButton" mnemonicParsing="false" onAction="#showPreviousStep" text="Back" />
+                <Button fx:id="backButton" mnemonicParsing="false" onAction="#showPreviousStep" text="← Back"
+                        accessibleText="Back, Left Arrow" />
                 <Region HBox.hgrow="ALWAYS" />
                 <Button fx:id="nextButton" defaultButton="true" mnemonicParsing="false" onAction="#showNextStep"
-                        text="Next" />
+                        text="Next →" />
               </children>
             </HBox>
           </children>

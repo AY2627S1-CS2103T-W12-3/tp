@@ -114,7 +114,7 @@ public class UiManagerTest {
                 nextButton.fire();
             }
             assertEquals("Step 16 of 16", ((Label) primaryStage.getScene().lookup("#stepCounter")).getText());
-            assertEquals("Finish", nextButton.getText());
+            assertEquals("Finish →", nextButton.getText());
             assertFalse(logic.hasSeenTutorial());
 
             nextButton.fire();

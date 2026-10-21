@@ -272,7 +272,8 @@ public class MainWindow extends UiPart<Stage> {
         KeyCombination helpShortcut = KeyCombination.valueOf("F1");
         getRoot().addEventFilter(KeyEvent.ANY, event -> {
             if (tutorialWindow != null && tutorialWindow.isShowing()) {
-                if (!tutorialWindow.isInteractiveTarget(event.getTarget())) {
+                if (tutorialWindow.handleShortcut(event)
+                        || !tutorialWindow.isInteractiveTarget(event.getTarget())) {
                     event.consume();
                 }
             }
@@ -391,7 +392,8 @@ public class MainWindow extends UiPart<Stage> {
     }
 
     private void handleModeShortcut(KeyEvent event) {
-        if (tutorialWindow.isShowing() || event.getCode() != KeyCode.ESCAPE || logic.isAwaitingDeleteConfirmation()) {
+        if (event.isConsumed() || tutorialWindow.isShowing() || event.getCode() != KeyCode.ESCAPE
+                || logic.isAwaitingDeleteConfirmation()) {
             return;
         }
         enterNavigationMode();

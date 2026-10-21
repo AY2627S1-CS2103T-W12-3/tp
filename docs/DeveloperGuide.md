@@ -86,7 +86,8 @@ The event details pane scrolls to the member list for its step, and highlights i
 visible viewport. The dim backdrop leaves the highlighted area clear while a transparent blocker and disabled command
 box prevent commands from running during the tour. `UiManager` opens the overlay on first launch. `MainWindow` records
 the tutorial preference when the user closes or finishes it; the Tutorial item beside Help in the top bar can open the
-overlay again at any time.
+overlay again at any time. The overlay handles Left and Right Arrow navigation and Escape dismissal before key events
+can reach the command box or the main window's navigation shortcuts.
 
 `CommandBox` keeps submitted, nonblank commands in a session-only list. The list has no configured cap or eviction;
 its practical limit is the JVM heap, and it is discarded when the app closes. It records an attempt before execution

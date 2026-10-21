@@ -12,6 +12,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
@@ -152,7 +153,7 @@ public class TutorialWindow extends UiPart<StackPane> {
             }
         });
         root.addEventFilter(KeyEvent.ANY, event -> {
-            if (!isInteractiveTarget(event.getTarget())) {
+            if (handleShortcut(event) || !isInteractiveTarget(event.getTarget())) {
                 event.consume();
             }
         });
@@ -237,6 +238,25 @@ public class TutorialWindow extends UiPart<StackPane> {
         dismiss();
     }
 
+    /** Handles tutorial shortcuts before keys can reach the application beneath the overlay. */
+    boolean handleShortcut(KeyEvent event) {
+        if (!isShowing() || event.getEventType() != KeyEvent.KEY_PRESSED
+                || event.isAltDown() || event.isControlDown() || event.isMetaDown()) {
+            return false;
+        }
+        KeyCode code = event.getCode();
+        if (code == KeyCode.LEFT) {
+            showPreviousStep();
+        } else if (code == KeyCode.RIGHT) {
+            showNextStep();
+        } else if (code == KeyCode.ESCAPE) {
+            close();
+        } else {
+            return false;
+        }
+        return true;
+    }
+
     private void dismiss() {
         hide();
         dismissHandler.run();
@@ -253,7 +273,9 @@ public class TutorialWindow extends UiPart<StackPane> {
         stepDescription.getChildren().setAll(description);
         stepDescription.setAccessibleText(step.description());
         backButton.setDisable(stepIndex == 0);
-        nextButton.setText(stepIndex == STEPS.size() - 1 ? "Finish" : "Next");
+        boolean isLastStep = stepIndex == STEPS.size() - 1;
+        nextButton.setText(isLastStep ? "Finish →" : "Next →");
+        nextButton.setAccessibleText(isLastStep ? "Finish, Right Arrow" : "Next, Right Arrow");
         stepChangeHandler.accept(step);
         Platform.runLater(this::layoutOverlay);
     }
