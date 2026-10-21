@@ -5,10 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.awt.GraphicsEnvironment;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
@@ -22,6 +24,10 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
@@ -99,6 +105,97 @@ public class TutorialWindowTest {
     }
 
     @Test
+    public void keyboardShortcuts_navigateAndDismiss() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            TutorialWindow tutorial = new TutorialWindow();
+            Stage stage = createStage(tutorial, 900, 650);
+            tutorial.show();
+            applyLayout(stage);
+
+            Button nextButton = (Button) stage.getScene().lookup("#nextButton");
+            Label counter = (Label) stage.getScene().lookup("#stepCounter");
+            stage.getScene().lookup("#backdropFull").fireEvent(keyEvent(KeyCode.RIGHT));
+            assertEquals("Step 2 of 16", counter.getText());
+
+            nextButton.fireEvent(keyEvent(KeyCode.LEFT));
+            assertEquals("Step 1 of 16", counter.getText());
+            nextButton.fireEvent(keyEvent(KeyCode.LEFT));
+            assertEquals("Step 1 of 16", counter.getText());
+            nextButton.fireEvent(new KeyEvent(KeyEvent.KEY_RELEASED, "", "", KeyCode.RIGHT,
+                    false, false, false, false));
+            nextButton.fireEvent(new KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.RIGHT,
+                    false, true, false, false));
+            nextButton.fireEvent(keyEvent(KeyCode.J));
+            assertEquals("Step 1 of 16", counter.getText());
+
+            nextButton.fireEvent(keyEvent(KeyCode.RIGHT));
+            assertEquals("Step 2 of 16", counter.getText());
+            nextButton.fireEvent(keyEvent(KeyCode.ESCAPE));
+            assertFalse(tutorial.isShowing());
+            assertFalse(tutorial.handleShortcut(keyEvent(KeyCode.RIGHT)));
+            stage.close();
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void mouseFilter_blocksBackdropButAllowsCardControls() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            TutorialWindow tutorial = new TutorialWindow();
+            Stage stage = createStage(tutorial, 900, 650);
+            tutorial.show();
+            applyLayout(stage);
+            Node backdrop = stage.getScene().lookup("#backdropFull");
+            Button nextButton = (Button) stage.getScene().lookup("#nextButton");
+            AtomicBoolean backdropReceivedClick = new AtomicBoolean();
+            AtomicBoolean cardReceivedClick = new AtomicBoolean();
+            backdrop.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> backdropReceivedClick.set(true));
+            nextButton.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> cardReceivedClick.set(true));
+
+            backdrop.fireEvent(mouseClickEvent());
+            nextButton.fireEvent(mouseClickEvent());
+            assertFalse(backdropReceivedClick.get());
+            assertTrue(cardReceivedClick.get());
+            tutorial.hide();
+            stage.close();
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void stepChangeHandler_setWhileShowingReceivesCurrentStep() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            TutorialWindow tutorial = new TutorialWindow();
+            Stage stage = createStage(tutorial, 900, 650);
+            tutorial.show();
+            Button nextButton = (Button) stage.getScene().lookup("#nextButton");
+            nextButton.fire();
+            List<String> titles = new ArrayList<>();
+            tutorial.setStepChangeHandler(step -> titles.add(step.title()));
+            assertEquals(List.of("Explore the Contacts tab"), titles);
+            tutorial.hide();
+            stage.close();
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    private static KeyEvent keyEvent(KeyCode code) {
+        return new KeyEvent(KeyEvent.KEY_PRESSED, "", "", code,
+                false, false, false, false);
+    }
+
+    private static MouseEvent mouseClickEvent() {
+        return new MouseEvent(MouseEvent.MOUSE_CLICKED, 0, 0, 0, 0, MouseButton.PRIMARY, 1,
+                false, false, false, false, false, false, false, false, false, false, null);
+    }
+
+    @Test
     public void overlayCard_staysWithinWindowAfterResize() throws Exception {
         FutureTask<Void> task = new FutureTask<>(() -> {
             TutorialWindow tutorial = new TutorialWindow();
@@ -123,6 +220,51 @@ public class TutorialWindowTest {
             assertTrue(cardBounds.getMaxY() <= stage.getScene().getHeight());
             assertTrue(nextBounds.getMaxY() <= cardBounds.getMaxY());
             assertTrue(stage.getScene().lookup("#commandExamples") == null);
+            tutorial.hide();
+            stage.close();
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void highlightedTarget_nearTopOrBottomPlacesCardOnVisibleSide() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            TutorialWindow tutorial = new TutorialWindow();
+            Region target = new Region();
+            target.setPrefSize(700, 50);
+            Pane appContent = new Pane(target);
+            Stage stage = new Stage();
+            stage.setScene(new Scene(new StackPane(appContent, tutorial.getRoot()), 1000, 700));
+            addTutorialStyles(stage);
+            stage.show();
+            tutorial.show();
+            Button nextButton = (Button) stage.getScene().lookup("#nextButton");
+            for (int step = 0; step < 4; step++) {
+                nextButton.fire();
+            }
+            Node card = stage.getScene().lookup("#tutorialCard");
+            Node highlight = stage.getScene().lookup("#targetHighlight");
+
+            target.relocate(150, 50);
+            applyLayout(stage);
+            tutorial.highlight(target);
+            assertTrue(card.localToScene(card.getLayoutBounds()).getMinY()
+                    > highlight.localToScene(highlight.getLayoutBounds()).getMaxY());
+
+            target.relocate(150, 580);
+            applyLayout(stage);
+            tutorial.highlight(target);
+            assertTrue(card.localToScene(card.getLayoutBounds()).getMaxY()
+                    < highlight.localToScene(highlight.getLayoutBounds()).getMinY());
+
+            target.setVisible(false);
+            tutorial.highlight(target);
+            assertFalse(highlight.isVisible());
+            assertTrue(stage.getScene().lookup("#backdropFull").isVisible());
+            tutorial.highlight(new Region());
+            assertFalse(highlight.isVisible());
             tutorial.hide();
             stage.close();
             return null;
@@ -304,6 +446,11 @@ public class TutorialWindowTest {
             assertTrue(highlight.isVisible());
             assertTrue(highlightBounds.getMinY() >= viewportBounds.getMinY() - 6);
             assertTrue(highlightBounds.getMaxY() <= viewportBounds.getMaxY() + 6);
+            details.setVvalue(1);
+            applyLayout(stage);
+            tutorial.highlight(spacer);
+            assertFalse(highlight.isVisible());
+            assertTrue(stage.getScene().lookup("#backdropFull").isVisible());
             tutorial.hide();
             stage.close();
             return null;

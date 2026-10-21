@@ -1,6 +1,7 @@
 package coordimate.model;
 
 import static coordimate.testutil.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -28,6 +29,17 @@ public class UserPrefsTest {
 
         assertTrue(copy.hasSeenTutorial());
         assertTrue(copy.equals(original));
+        assertEquals(copy.hashCode(), original.hashCode());
+    }
+
+    @Test
+    public void equals_tutorialStateIsPartOfIdentity() {
+        UserPrefs unseen = new UserPrefs();
+        UserPrefs seen = new UserPrefs();
+        seen.setHasSeenTutorial(true);
+
+        assertFalse(unseen.equals(seen));
+        assertTrue(seen.equals(new UserPrefs(seen)));
     }
 
 }

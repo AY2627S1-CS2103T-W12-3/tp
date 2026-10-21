@@ -317,6 +317,51 @@ public class MainWindowTest {
     }
 
     @Test
+    public void tutorialKeyboardShortcuts_blockAppAndRestoreInputOnClose() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            LogicManager logic = new LogicManager(new ModelManager(), null);
+            MainWindow window = new MainWindow(stage, logic, Path.of("data", "coordimate.json"));
+            window.fillInnerParts();
+            window.show();
+            Label tutorialLabel = (Label) stage.getScene().lookup("#tutorialLabel");
+            Label helpLabel = (Label) stage.getScene().lookup("#helpLabel");
+            TextField commandInput = (TextField) stage.getScene().lookup("#commandTextField");
+            Label counter = (Label) stage.getScene().lookup("#stepCounter");
+
+            tutorialLabel.fireEvent(mouseClickEvent());
+            assertTrue(commandInput.isDisabled());
+            assertFalse(keyReachesTarget(helpLabel, keyEvent(KeyCode.RIGHT)));
+            assertEquals("Step 2 of 16", counter.getText());
+            tutorialLabel.fireEvent(mouseClickEvent());
+            assertEquals("Step 2 of 16", counter.getText());
+            window.handleHelp();
+            assertTrue(stage.getScene().lookup("#tutorialOverlay").isVisible());
+
+            assertFalse(keyReachesTarget(helpLabel, keyEvent(KeyCode.LEFT)));
+            assertEquals("Step 1 of 16", counter.getText());
+            assertFalse(keyReachesTarget(helpLabel, keyEvent(KeyCode.ESCAPE)));
+            assertFalse(stage.getScene().lookup("#tutorialOverlay").isVisible());
+            assertTrue(logic.hasSeenTutorial());
+            assertFalse(commandInput.isDisabled());
+
+            commandInput.fireEvent(keyEvent(KeyCode.ESCAPE));
+            Label modeLabel = (Label) stage.getScene().lookup("#interactionModeLabel");
+            assertTrue(modeLabel.getText().startsWith("NAVIGATION"));
+            tutorialLabel.fireEvent(mouseClickEvent());
+            assertEquals("Step 1 of 16", counter.getText());
+            assertFalse(keyReachesTarget(helpLabel, keyEvent(KeyCode.ESCAPE)));
+            assertTrue(modeLabel.getText().startsWith("NAVIGATION"));
+            assertTrue(commandInput.isDisabled());
+            window.stop();
+            stage.close();
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
     public void tutorialWithoutContacts_highlightsEmptyListAndKeepsDetailsHint() throws Exception {
         FutureTask<Void> task = new FutureTask<>(() -> {
             Stage stage = new Stage();
