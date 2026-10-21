@@ -22,8 +22,6 @@ public class Messages {
     public static final String MESSAGE_LOAD_ERROR = "Saved data could not be loaded. Check the local data file.";
     public static final String MESSAGE_EMPTY_FIELD = "%s must not be empty. Example: %s";
     public static final String MESSAGE_INVALID_COMMAND_FORMAT = "Invalid command format.\n%1$s";
-    public static final String MESSAGE_INVALID_PERSON_DISPLAYED_INDEX =
-            "No contact exists at index %1$d. Use an index from the current contact list.";
     public static final String MESSAGE_MEMBER_ID_NOT_FOUND =
             "No contact exists with member ID: %d. Use an existing member ID.";
     public static final String MESSAGE_EVENT_NOT_FOUND =

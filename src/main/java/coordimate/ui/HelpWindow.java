@@ -49,7 +49,7 @@ public class HelpWindow extends UiPart<Stage> {
             commandUsage(AddEventCommand.COMMAND_WORD, "evn/EVENT_NAME st/START_TIME et/END_TIME"),
             commandUsage(CreateTagCommand.COMMAND_WORD, "t/TAG"),
             commandUsage(AssignCommand.COMMAND_WORD,
-                    "evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]..."),
+                    "evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]..."),
             commandUsage(ClearCommand.COMMAND_WORD, ""),
             commandUsage(DeleteCommand.COMMAND_WORD,
                     "MEMBER_ID | delete n/NAME | delete p/PHONE | delete e/EMAIL"),
@@ -72,7 +72,7 @@ public class HelpWindow extends UiPart<Stage> {
             commandUsage(SearchCommand.COMMAND_WORD, "KEYWORD"),
             commandUsage(SwitchCommand.COMMAND_WORD, "contacts | switch events | switch tags"),
             commandUsage(UnassignCommand.COMMAND_WORD,
-                    "evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]..."));
+                    "evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]..."));
 
     private static final Logger logger = LogsCenter.getLogger(HelpWindow.class);
     private static final String FXML = "HelpWindow.fxml";

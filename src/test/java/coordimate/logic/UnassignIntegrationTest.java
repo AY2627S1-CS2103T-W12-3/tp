@@ -56,20 +56,20 @@ public class UnassignIntegrationTest {
     }
 
     @Test
-    public void execute_filteredContactList_removesDisplayedContact() throws Exception {
+    public void execute_filteredContactList_removesPermanentId() throws Exception {
         ModelManager model = new ModelManager(getTypicalCoordiMate(), new UserPrefs());
         JsonCoordiMateStorage storage = new JsonCoordiMateStorage(temporaryFolder.resolve("data.json"));
         Logic logic = newLogic(model, storage);
         logic.execute(ADD);
         logic.execute(ASSIGN);
         model.updateFilteredPersonList(person -> person.equals(CARL));
-        logic.execute("unassign evn/Final Concert c/1");
+        logic.execute("unassign evn/Final Concert c/3");
         assertEquals(List.of(ALICE.getName(), BENSON.getName()),
                 model.getCoordiMate().getEventList().getFirst().getMembers());
         assertEquals(List.of(CARL), model.getFilteredPersonList());
-        assertEquals(Messages.withUsage(String.format(UnassignCommand.MESSAGE_CONTACT_NOT_FOUND,
-                2), UnassignCommand.MESSAGE_USAGE),
-                assertThrows(CommandException.class, () -> logic.execute("unassign evn/Final Concert c/2"))
+        assertEquals(Messages.withUsage(String.format(UnassignCommand.MESSAGE_UNKNOWN_MEMBER_ID,
+                99), UnassignCommand.MESSAGE_USAGE),
+                assertThrows(CommandException.class, () -> logic.execute("unassign evn/Final Concert c/99"))
                         .getMessage());
     }
 

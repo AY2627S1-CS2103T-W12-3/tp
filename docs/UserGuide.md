@@ -67,7 +67,7 @@ Every command error is followed by the relevant command's description, `Paramete
 Error messages shown below omit that usage text.
 Conditions in the error tables assume the rest of the command is valid. If a command has several errors,
 the first one encountered during validation is reported. Placeholders such as `{PREFIX}` and `{EVENT_NAME}`
-are replaced with the actual parameter prefix, name, index, or other details.
+are replaced with the actual parameter prefix, name, member ID, or other details.
 
 | Condition | Error message |
 |---|---|
@@ -116,8 +116,7 @@ A command that breaks a constraint is rejected and makes no changes.
 | `EVENT_NAME`, `NEW_EVENT_NAME` | `evn/`, `nevn/` | At least one non-space character. Any characters are allowed, subject to the note below. Event names are unique, ignoring case. |
 | `START_TIME`, `END_TIME` | `st/`, `et/` | A real date in `dd-MM-yyyy` format, optionally followed by a 24-hour time in `HH:mm` format, e.g. `17-09-2026` or `17-09-2026 16:30`. The start must not be after the end. |
 | `STATUS` | `att/` | `present` or `absent`, ignoring case. |
-| `MEMBER_ID` | none | A permanent positive integer from 1 to 2147483647 identifying a saved contact, independent of the displayed list. Used by `edit` and `delete`. |
-| `CONTACT_INDEX` | `c/` | A positive integer (1, 2, 3, ...) that appears in the displayed contact list. Used by `assign` and `unassign`. |
+| `MEMBER_ID` | `c/` for `assign` and `unassign`; none for `edit` and `delete` | A permanent positive integer from 1 to 2147483647 identifying a saved contact, independent of the displayed list. |
 | `KEYWORD` | none | At least one non-space character. |
 
 <box type="info" seamless>
@@ -448,22 +447,23 @@ See [Editing the data file](#editing-the-data-file) for details of data-loading 
 
 Assigns one or more contacts to an existing event as members and saves the change.
 
-Format: `assign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...`
+Format: `assign evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]...`
 
 * `EVENT_NAME` must match a saved event name, ignoring case. Leading and trailing whitespace is removed.
-* `CONTACT_INDEX` refers to the index number shown in the displayed contact list. If the list is filtered (e.g. after `search`), the index refers to the filtered list. Use `list` to show everyone again. Separate several indexes with spaces. Each index **must be a positive integer starting at 1**.
+* `MEMBER_ID` is a contact's permanent numeric ID, from `1` to `2147483647`. Separate several IDs with spaces.
+  IDs resolve across all saved contacts, including those hidden by searches, filters, or an empty results list.
 * Each parameter may appear only once.
-* All indexes are checked before any change is made. If any index is invalid, no contacts are assigned.
-* Contacts who are already assigned to the event are skipped, and an index repeated in the same command is counted once.
+* All IDs are checked before any change is made. If any ID is invalid or does not exist, no contacts are assigned.
+* Contacts who are already assigned to the event are skipped, and an ID repeated in the same command is counted once.
 * New members are added after the existing members, in the order given.
 
 Selecting the event in the **Events** tab shows its members under **Members**.
 
 Examples:
 
-* `assign evn/Final Concert c/2` assigns the 2nd contact in the displayed list to `Final Concert`.
-* `assign evn/student life fair c/1 4 5` assigns the 1st, 4th and 5th contacts to `Student Life Fair`.
-* `search Bernice` followed by `assign evn/Final Concert c/1` assigns the 1st contact in the results of the `search` command.
+* `assign evn/Final Concert c/2` assigns the contact with member ID `2` to `Final Concert`.
+* `assign evn/student life fair c/1 4 5` assigns the contacts with member IDs `1`, `4`, and `5` to `Student Life Fair`.
+* If Bernice has member ID `12`, `search Bernice` followed by `assign evn/Final Concert c/12` assigns Bernice regardless of her position in the results.
 
 Success: `Assigned 2 member(s) to Final Concert.`
 
@@ -472,13 +472,13 @@ If some contacts were already assigned: `Assigned 1 member(s) to Final Concert. 
 | Condition | Error message |
 |---|---|
 | No saved event has the supplied name, ignoring case. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
-| An index is larger than the displayed contact list. | `No contact exists at index {CONTACT_INDEX}. Use an index from the current contact list.` |
-| An index is not written as digits representing a value from 1 to 2147483647. | `Contact indexes must be positive integers separated by spaces. Example: c/1 3 5` |
+| A member ID does not exist. | `No contact exists with member ID: {MEMBER_ID}. Use an existing member ID.` |
+| A member ID is not written as digits representing a value from 1 to 2147483647. | `Member IDs must be positive integers separated by spaces. Example: c/1 3 5` |
 | Every specified contact is already assigned. | `All specified contacts are already assigned to {EVENT_NAME}. No changes were made.` |
 | The event name is empty. | `Event name must not be empty. Example: evn/Final Concert` |
 | The event name is longer than 100 characters. | `Event name must not exceed 100 characters. Example: evn/Final Concert` |
 | The event name contains a line break or other control character. | `Invalid event name. Use letters, digits, spaces, or punctuation. Example: evn/Final-Concert` |
-| `c/` has no indexes. | `Contact indexes must not be empty. Example: c/1 3 5` |
+| `c/` has no member IDs. | `Member IDs must not be empty. Example: c/1 3 5` |
 | `evn/` or `c/` is missing, or there is text before the first parameter. | `Invalid command format.` |
 | A parameter is repeated. | `Parameter {PREFIX} may only be specified once.` |
 | An unknown parameter is used. | `Unknown parameter: {PREFIX}.` |
@@ -490,21 +490,22 @@ No contacts are assigned and the existing data file remains unchanged.
 
 Removes one or more members from an existing event and saves the change. The contacts themselves are not deleted.
 
-Format: `unassign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...`
+Format: `unassign evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]...`
 
 * `EVENT_NAME` must match a saved event name, ignoring case. Leading and trailing whitespace is removed.
-* `CONTACT_INDEX` refers to the index number shown in the displayed contact list, as in `assign`. If the list is filtered (e.g. after `search`), the index refers to the filtered list. Use `list` to show everyone again. Separate several indexes with spaces. Each index **must be a positive integer starting at 1**.
+* `MEMBER_ID` is a contact's permanent numeric ID, from `1` to `2147483647`. Separate several IDs with spaces.
+  IDs resolve across all saved contacts, including those hidden by searches, filters, or an empty results list.
 * Each parameter may appear only once.
-* All indexes are checked before any change is made. If any index is invalid, no members are removed.
-* Contacts who are not assigned to the event are skipped, and an index repeated in the same command is counted once.
+* All IDs are checked before any change is made. If any ID is invalid or does not exist, no members are removed.
+* Contacts who are not assigned to the event are skipped, and an ID repeated in the same command is counted once.
 * The remaining members keep their order.
 * A removed member's attendance record for the event, if any, is also removed. Other members' attendance is kept.
 
 Examples:
 
-* `unassign evn/Final Concert c/2` removes the 2nd contact in the displayed list from `Final Concert`.
-* `unassign evn/student life fair c/1 3` removes the 1st and 3rd contacts from `Student Life Fair`.
-* `search Bernice` followed by `unassign evn/Final Concert c/1` removes the 1st contact in the results of the `search` command.
+* `unassign evn/Final Concert c/2` removes the contact with member ID `2` from `Final Concert`.
+* `unassign evn/student life fair c/1 3` removes the contacts with member IDs `1` and `3` from `Student Life Fair`.
+* If Bernice has member ID `12`, `search Bernice` followed by `unassign evn/Final Concert c/12` removes Bernice regardless of her position in the results.
 
 Success: `Removed 2 member(s) from Final Concert.`
 
@@ -513,13 +514,13 @@ If some contacts were not assigned: `Removed 1 member(s) from Final Concert. 1 c
 | Condition | Error message |
 |---|---|
 | No saved event has the supplied name, ignoring case. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
-| An index is larger than the displayed contact list. | `No contact exists at index {CONTACT_INDEX}. Use an index from the current contact list.` |
-| An index is not written as digits representing a value from 1 to 2147483647. | `Contact indexes must be positive integers separated by spaces. Example: c/1 3 5` |
+| A member ID does not exist. | `No contact exists with member ID: {MEMBER_ID}. Use an existing member ID.` |
+| A member ID is not written as digits representing a value from 1 to 2147483647. | `Member IDs must be positive integers separated by spaces. Example: c/1 3 5` |
 | None of the specified contacts are assigned. | `None of the specified contacts are assigned to {EVENT_NAME}. No changes were made.` |
 | The event name is empty. | `Event name must not be empty. Example: evn/Final Concert` |
 | The event name is longer than 100 characters. | `Event name must not exceed 100 characters. Example: evn/Final Concert` |
 | The event name contains a line break or other control character. | `Invalid event name. Use letters, digits, spaces, or punctuation. Example: evn/Final-Concert` |
-| `c/` has no indexes. | `Contact indexes must not be empty. Example: c/1 3 5` |
+| `c/` has no member IDs. | `Member IDs must not be empty. Example: c/1 3 5` |
 | `evn/` or `c/` is missing, or there is text before the first parameter. | `Invalid command format.` |
 | A parameter is repeated. | `Parameter {PREFIX} may only be specified once.` |
 | An unknown parameter is used. | `Unknown parameter: {PREFIX}.` |
@@ -535,7 +536,7 @@ Format: `members evn/EVENT_NAME`
 
 * `EVENT_NAME` must match a saved event name, ignoring case. Leading and trailing whitespace is removed.
 * CoordiMate switches to the **Contacts** view and lists the event's members in contact list order.
-* Use the members' displayed index numbers for `unassign`. Use their permanent member IDs for `edit` and `delete`.
+* Use the members' permanent IDs in `assign`, `unassign`, `edit`, and `delete`, independently of the displayed list.
 * The list stays up to date while it is shown: members removed with `unassign` disappear from it, and renaming the event with `editevent` keeps showing its members. If the event is deleted, the list becomes empty.
 * `add` and `edit` show all contacts again afterwards, so that you can see the contact you changed.
 * Use `list` to show all contacts again.
@@ -1012,8 +1013,8 @@ Action | Format, Examples
 **Add event** | `addevent evn/EVENT_NAME st/START_TIME et/END_TIME`<br> e.g., `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`
 **Edit event** | `editevent evn/EVENT_NAME [nevn/NEW_EVENT_NAME] [st/NEW_START_TIME] [et/NEW_END_TIME]`<br> e.g., `editevent evn/Final Concert st/08-08-2026 16:00 et/08-08-2026 19:00`
 **Delete event** | `deleteevent evn/EVENT_NAME`<br> e.g., `deleteevent evn/Final Concert`
-**Assign** | `assign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...`<br> e.g., `assign evn/Final Concert c/1 4 5`
-**Unassign** | `unassign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...`<br> e.g., `unassign evn/Final Concert c/2 3`
+**Assign** | `assign evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]...`<br> e.g., `assign evn/Final Concert c/1 4 5`
+**Unassign** | `unassign evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]...`<br> e.g., `unassign evn/Final Concert c/2 3`
 **Members** | `members evn/EVENT_NAME`<br> e.g., `members evn/Final Concert`
 **Mark attendance** | `markattendance evn/EVENT_NAME mem/MEMBER_NAME att/STATUS`<br> e.g., `markattendance evn/Final Concert mem/Alex Yeoh att/present`
 **Add tag** | `addtag t/TAG`<br> e.g., `addtag t/Publicity`

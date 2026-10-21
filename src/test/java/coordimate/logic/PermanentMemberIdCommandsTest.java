@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -22,6 +23,7 @@ import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.CoordiMate;
 import coordimate.model.ModelManager;
 import coordimate.model.UserPrefs;
+import coordimate.model.event.AttendanceStatus;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
 import coordimate.model.person.Person;
@@ -43,6 +45,93 @@ public class PermanentMemberIdCommandsTest {
     private ModelManager model;
     private JsonCoordiMateStorage storage;
     private LogicManager logic;
+
+    @Test
+    public void assignIds_acrossSearchesFiltersAndEmptyResults_preservesCommandOrder() throws Exception {
+        for (String view : VIEWS) {
+            startApplication();
+            logic.execute("addevent evn/Fair st/08-08-2026 et/08-08-2026");
+            logic.execute(view);
+            List<Person> displayed = List.copyOf(model.getFilteredPersonList());
+
+            assertEquals("Assigned 3 member(s) to Fair.",
+                    logic.execute("assign evn/Fair c/99 12 99 45").getFeedbackToUser());
+            assertEquals(List.of(CARL_99.getName(), ALICE_12.getName(), BENSON_45.getName()),
+                    model.getCoordiMate().getEventList().getLast().getMembers(), view);
+            assertEquals(displayed, model.getFilteredPersonList());
+            assertEquals(List.of(BENSON_45, ALICE_12, CARL_99), model.getCoordiMate().getPersonList());
+            assertEquals(model.getCoordiMate(), storage.readCoordiMate().orElseThrow());
+        }
+    }
+
+    @Test
+    public void unassignIds_acrossSearchesFiltersAndEmptyResults_preservesRemainingAttendance() throws Exception {
+        for (String view : VIEWS) {
+            startApplication();
+            logic.execute("markattendance evn/Concert mem/Alice Pauline att/present");
+            logic.execute("markattendance evn/Concert mem/Benson Meier att/absent");
+            logic.execute(view);
+
+            assertEquals("Removed 1 member(s) from Concert. 1 contact(s) were not assigned.",
+                    logic.execute("unassign evn/Concert c/12 99 12").getFeedbackToUser());
+            Event concert = model.getCoordiMate().getEventList().getFirst();
+            assertEquals(List.of(BENSON_45.getName()), concert.getMembers(), view);
+            assertEquals(Map.of(BENSON_45.getName(), AttendanceStatus.ABSENT), concert.getAttendanceRecord());
+            assertEquals(List.of(BENSON_45, ALICE_12, CARL_99), model.getCoordiMate().getPersonList());
+            assertEquals(model.getCoordiMate(), storage.readCoordiMate().orElseThrow());
+        }
+    }
+
+    @Test
+    public void assignAndUnassign_mixedKnownAndUnknownIds_neverPartiallyChangeData() throws Exception {
+        startApplication();
+        logic.execute("markattendance evn/Concert mem/Alice Pauline att/present");
+        logic.execute("search Carl");
+        CoordiMate before = new CoordiMate(model.getCoordiMate());
+        byte[] savedBefore = Files.readAllBytes(storage.getCoordiMateFilePath());
+        for (int unknownId : new int[] {1, 2, 3, 46}) {
+            for (String input : List.of("assign evn/Concert c/99 " + unknownId + " 12",
+                    "unassign evn/Concert c/12 " + unknownId + " 45")) {
+                CommandException error = assertThrows(CommandException.class, () -> logic.execute(input));
+                assertTrue(error.getMessage().startsWith(
+                        String.format(Messages.MESSAGE_MEMBER_ID_NOT_FOUND, unknownId)));
+                assertEquals(before, model.getCoordiMate());
+                assertEquals(List.of(CARL_99), model.getFilteredPersonList());
+                assertArrayEquals(savedBefore, Files.readAllBytes(storage.getCoordiMateFilePath()));
+            }
+        }
+    }
+
+    @Test
+    public void assignAndUnassign_afterEditsDeletionReorderingAndRestart_useSameIds() throws Exception {
+        startApplication();
+        logic.execute("assign evn/Concert c/99");
+        logic.execute("markattendance evn/Concert mem/Carl Kurz att/present");
+        logic.execute("edit 12 n/Alice Tan");
+        logic.execute("delete 45");
+        logic.execute("y");
+        logic.execute("add n/Amy Bee p/85355255 e/amy@gmail.com r/Member");
+        Person newMember = model.getCoordiMate().getPersonList().getLast();
+        assertEquals(100, newMember.getMemberId().orElseThrow().getValue());
+        Person renamedAlice = model.getCoordiMate().getPersonList().getFirst();
+        CoordiMate reordered = new CoordiMate(model.getCoordiMate());
+        reordered.setPersons(List.of(newMember, CARL_99, renamedAlice));
+        storage.saveCoordiMate(reordered);
+
+        model = new ModelManager(new JsonCoordiMateStorage(storage.getCoordiMateFilePath())
+                .readCoordiMate().orElseThrow(), new UserPrefs());
+        logic = newLogic();
+        logic.execute("search Nobody");
+        logic.execute("unassign evn/Concert c/12");
+        logic.execute("assign evn/Concert c/100");
+        Event concert = model.getCoordiMate().getEventList().getFirst();
+        assertEquals(List.of(CARL_99.getName(), newMember.getName()), concert.getMembers());
+        assertEquals(Map.of(CARL_99.getName(), AttendanceStatus.PRESENT), concert.getAttendanceRecord());
+        assertEquals(List.of(newMember, CARL_99, renamedAlice), model.getCoordiMate().getPersonList());
+        assertThrows(CommandException.class, () -> logic.execute("assign evn/Concert c/45"));
+        assertTrue(model.getFilteredPersonList().isEmpty());
+        assertEquals(model.getCoordiMate(), storage.readCoordiMate().orElseThrow());
+    }
 
     @Test
     public void editId_acrossSearchesFiltersAndEmptyResults_targetsSameSavedMember() throws Exception {
