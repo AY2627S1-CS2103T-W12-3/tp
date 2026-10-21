@@ -9,7 +9,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import org.junit.jupiter.api.Test;
 
@@ -164,6 +166,30 @@ public class UniquePersonListTest {
     }
 
     @Test
+    public void setPerson_targetWithoutId_updatesDetailsWithoutAllocatingId() {
+        Person draft = new PersonBuilder(ALICE).withoutMemberId().build();
+        Person editedDraft = new PersonBuilder(draft).withRole("President").build();
+        uniquePersonList.add(draft);
+        uniquePersonList.add(BOB);
+
+        uniquePersonList.setPerson(draft, editedDraft);
+
+        assertEquals(List.of(editedDraft, BOB), uniquePersonList.asUnmodifiableObservableList());
+        assertTrue(uniquePersonList.asUnmodifiableObservableList().getFirst().getMemberId().isEmpty());
+    }
+
+    @Test
+    public void setPerson_editedPersonWithoutId_preservesTargetId() {
+        uniquePersonList.add(ALICE);
+        Person editedDraft = new PersonBuilder(ALICE).withoutMemberId().withRole("President").build();
+
+        uniquePersonList.setPerson(ALICE, editedDraft);
+
+        Person expected = new PersonBuilder(ALICE).withRole("President").build();
+        assertEquals(List.of(expected), uniquePersonList.asUnmodifiableObservableList());
+    }
+
+    @Test
     public void remove_nullPerson_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> uniquePersonList.remove(null));
     }
@@ -227,6 +253,49 @@ public class UniquePersonListTest {
     public void asUnmodifiableObservableList_modifyList_throwsUnsupportedOperationException() {
         assertThrows(UnsupportedOperationException.class, ()
                 -> uniquePersonList.asUnmodifiableObservableList().remove(0));
+    }
+
+    @Test
+    public void iterator_contactsInInsertionOrder_returnsEachContactOnce() {
+        uniquePersonList.add(ALICE);
+        uniquePersonList.add(BOB);
+        Iterator<Person> iterator = uniquePersonList.iterator();
+
+        assertTrue(iterator.hasNext());
+        assertEquals(ALICE, iterator.next());
+        assertTrue(iterator.hasNext());
+        assertEquals(BOB, iterator.next());
+        assertFalse(iterator.hasNext());
+        assertThrows(NoSuchElementException.class, iterator::next);
+    }
+
+    @Test
+    public void iterator_emptyList_hasNoContacts() {
+        Iterator<Person> iterator = uniquePersonList.iterator();
+
+        assertFalse(iterator.hasNext());
+        assertThrows(NoSuchElementException.class, iterator::next);
+    }
+
+    @Test
+    public void equals_comparesOrderedContactDetails() {
+        uniquePersonList.setPersons(List.of(ALICE, BOB));
+        UniquePersonList copy = new UniquePersonList();
+        copy.setPersons(List.of(new PersonBuilder(ALICE).build(), new PersonBuilder(BOB).build()));
+        UniquePersonList reordered = new UniquePersonList();
+        reordered.setPersons(List.of(BOB, ALICE));
+        UniquePersonList edited = new UniquePersonList();
+        edited.setPersons(List.of(new PersonBuilder(ALICE).withRole("President").build(), BOB));
+
+        assertEquals(uniquePersonList, uniquePersonList);
+        assertEquals(uniquePersonList, copy);
+        assertEquals(copy, uniquePersonList);
+        assertEquals(uniquePersonList.hashCode(), copy.hashCode());
+        assertFalse(uniquePersonList.equals(null));
+        assertFalse(uniquePersonList.equals(List.of(ALICE, BOB)));
+        assertFalse(uniquePersonList.equals(new UniquePersonList()));
+        assertFalse(uniquePersonList.equals(reordered));
+        assertFalse(uniquePersonList.equals(edited));
     }
 
     @Test

@@ -34,6 +34,22 @@ public class DeleteCommandTest {
     private Model model = new ModelManager(getTypicalCoordiMate(), new UserPrefs());
 
     @Test
+    public void constructor_nullArguments_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> new DeleteCommand((MemberId) null));
+        assertThrows(NullPointerException.class, () -> new DeleteCommand(null, "Alice Pauline"));
+        assertThrows(NullPointerException.class, () -> new DeleteCommand(IdentifierType.NAME, null));
+        assertThrows(NullPointerException.class, () -> DeleteCommand.forResolvedPerson(null));
+    }
+
+    @Test
+    public void constructor_blankIdentifier_throwsIllegalArgumentException() {
+        for (IdentifierType type : IdentifierType.values()) {
+            assertThrows(IllegalArgumentException.class, () -> new DeleteCommand(type, ""));
+            assertThrows(IllegalArgumentException.class, () -> new DeleteCommand(type, " \t\n "));
+        }
+    }
+
+    @Test
     public void execute_validMemberIdUnfilteredList_success() {
         Person personToDelete = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
         DeleteCommand deleteCommand = new DeleteCommand(new MemberId(1));
@@ -142,6 +158,41 @@ public class DeleteCommandTest {
 
         // different person -> returns false
         assertFalse(deleteFirstCommand.equals(deleteSecondCommand));
+    }
+
+    @Test
+    public void equals_detailIdentifiers_comparesTypeAndTrimmedValue() {
+        DeleteCommand byName = new DeleteCommand(IdentifierType.NAME, "Alice Pauline");
+        DeleteCommand sameName = new DeleteCommand(IdentifierType.NAME, "  Alice Pauline  ");
+
+        assertEquals(byName, sameName);
+        assertEquals(sameName, byName);
+        assertEquals(byName.hashCode(), sameName.hashCode());
+        assertFalse(byName.equals(new DeleteCommand(IdentifierType.EMAIL, "Alice Pauline")));
+        assertFalse(byName.equals(new DeleteCommand(IdentifierType.NAME, "Benson Meier")));
+        assertFalse(byName.equals(DeleteCommand.forResolvedPerson(ALICE)));
+    }
+
+    @Test
+    public void equals_resolvedContacts_comparesAllContactDetails() {
+        DeleteCommand confirmed = DeleteCommand.forResolvedPerson(ALICE);
+        DeleteCommand sameContact = DeleteCommand.forResolvedPerson(new PersonBuilder(ALICE).build());
+        Person editedAlice = new PersonBuilder(ALICE).withRole("President").build();
+
+        assertEquals(confirmed, sameContact);
+        assertEquals(sameContact, confirmed);
+        assertEquals(confirmed.hashCode(), sameContact.hashCode());
+        assertFalse(confirmed.equals(DeleteCommand.forResolvedPerson(editedAlice)));
+        assertFalse(confirmed.equals(DeleteCommand.forResolvedPerson(BENSON)));
+    }
+
+    @Test
+    public void hashCode_equalMemberIds_returnsSameHashCode() {
+        DeleteCommand command = new DeleteCommand(new MemberId(1));
+        DeleteCommand copy = new DeleteCommand(new MemberId(1));
+
+        assertEquals(command, copy);
+        assertEquals(command.hashCode(), copy.hashCode());
     }
 
     @Test
