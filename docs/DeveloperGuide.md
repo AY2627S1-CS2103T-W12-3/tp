@@ -101,8 +101,10 @@ The `UI` component,
 
 * executes user commands using the `Logic` component.
 * listens for changes to `Model` data so that the UI can be updated with the modified data. The Contacts view
-  displays the filtered contact list beside a details pane, follows a selected contact when an edit replaces that
-  list entry, and clears the selection when the contact leaves the list. The details pane displays all saved contact
+  displays the filtered contact list beside a details pane, follows a selected contact by permanent member ID
+  across edits and reordering, and clears the selection when that ID leaves the displayed list.
+  Contact cards, contact details, event rosters, and tag member lists display `ID: <number>` from the saved contact,
+  independently of the current contact filter. The details pane displays all saved contact
   fields, showing a placeholder for unset optional fields and no tag chips for an empty tag set.
   It also derives assigned-event rows from the live event list. The Events view resolves each assigned
   member to contact role, organisation, and tags, and refreshes when contact data changes. Contact and
@@ -184,6 +186,8 @@ Command error messages follow these conventions:
 The `Model` component,
 
 * stores CoordiMate data, including all `Person` objects (which are contained in a `UniquePersonList` object).
+* assigns each saved `Person` an immutable `MemberId`. `CoordiMate` maintains the next ID to allocate, and
+  `UniquePersonList` rejects duplicate IDs. Replacing or editing a contact preserves its ID.
 * stores a case-insensitively unique global tag list. Every tag assigned to a contact is also registered in this list;
   adding, editing, or replacing contacts registers any missing tags while preserving existing unused tags.
 * stores all `Event` objects. Each `Event` records its assigned members as an ordered list of contact `Name`s. `CoordiMate` keeps these lists in sync with the contacts: deleting a contact removes their name from every event, and renaming a contact updates it.
@@ -231,6 +235,58 @@ Classes used by multiple components are in the `coordimate.commons` package.
 
 This section describes some noteworthy details on how certain features are implemented.
 
+### Permanent member IDs
+
+Each saved contact has a unique `MemberId` in the range `1` to `2147483647`. The displayed label is
+`ID: <number>`; search results, filters, and list order never determine its value.
+
+#### Allocation and editing
+
+`Person` holds an immutable ID. A new contact can be an unassigned draft until `CoordiMate#addPerson` accepts it.
+`CoordiMate` allocates from its `long nextMemberId` counter, advances the counter after successful additions,
+and preserves imported IDs. `UniquePersonList` rejects duplicate assigned IDs and prevents replacements from
+changing a contact's ID. Bulk replacement reserves all supplied IDs before assigning any missing ones.
+Copies and resets preserve both IDs and allocation state, including when the highest ID has been deleted.
+Deleting contacts does not recycle IDs. `clear` creates a new empty dataset and resets allocation to `1`.
+The counter value `2147483648` represents exhaustion; further automatic allocation is rejected.
+
+#### Command targeting
+
+`ParserUtil#parseMemberId` parses a positive integer without converting it to a list position.
+`MemberIdResolver` searches `Model#getCoordiMate().getPersonList()`, including contacts hidden by the active
+view. `edit` and `delete` resolve one ID; `assign` and `unassign` resolve every ID before changing an event.
+An unknown ID reports `No contact exists with member ID: <number>. Use an existing member ID.` without
+changing data or falling back to a position. Event membership and attendance still use contact names internally;
+the commands translate IDs to those names after resolution.
+
+Deletion confirmation retains the resolved contact. On confirmation, the command resolves its ID again and
+rejects the deletion if that contact was removed or edited. Reordering or filtering cannot redirect it.
+
+#### Storage and migration
+
+`JsonAdaptedPerson` writes a numeric `memberId`, and `JsonSerializableCoordiMate` writes a numeric
+`nextMemberId`. Loading first parses all contacts and finds the highest supplied ID. It then validates the
+saved counter, or derives one greater than the highest ID when no counter exists. Contacts with missing or
+null IDs receive consecutive IDs in file order starting from that counter. An entirely legacy file therefore
+receives IDs starting at `1`; mixed files preserve all existing IDs before allocating new ones.
+
+Loading does not rewrite the file. The next successful save records migrated IDs and the counter, so future
+launches retain IDs and do not reuse deleted ones. Duplicate IDs, non-integral or out-of-range values, a counter
+not greater than every saved ID, and exhausted allocation for a contact without an ID reject the file through
+the normal storage-loading error path. Numeric strings are not accepted as IDs or counters.
+
+#### Design considerations and verification
+
+A saved counter avoids reusing an ID after deleting the highest-numbered contact. Deriving the next ID from
+the current list on every launch would lose that history. Full-list lookup keeps command behavior independent
+of the UI and is adequate for the expected contact count.
+
+`MemberIdPersistenceTest` covers saved counters, legacy and mixed-file migration, invalid data, and exhaustion.
+`PermanentMemberIdCommandsTest` covers targeting across searches, tag filters, event-member views, empty
+results, reordering, and restarts. It also runs a legacy migration through editing, event assignment and
+unassignment, deletion, saving, and restart, then checks that a deleted ID cannot target another contact.
+UI tests verify the same labels and selection behavior in Contacts, Events, and Tags.
+
 ### Saving data atomically
 
 A command that changes data either takes effect in full, both in the app and in the data file, or not at all.
@@ -251,9 +307,9 @@ passes every command that changes data to `LogicManager#executeAtomicCommand`. T
 1. It calls `Storage#readCoordiMate()` to check that the existing data file can still be loaded. If it cannot,
    the command is rejected with a load error and the file is left untouched, so that the user can repair it.
    A missing data file is not an error.
-1. It creates a second `ModelManager`, the _candidate_, from a copy of the live model's data. The candidate's
-   filtered contact list is set to show the same contacts as the live displayed list, so that a contact index
-   typed by the user refers to the same contact in both models.
+1. It creates a second `ModelManager`, the _candidate_, from a copy of the live model's data, including member
+   IDs and allocation state. Its filtered contact list initially shows the same contacts as the live view.
+   Commands resolve member IDs against the complete saved contact list in either model.
 1. It executes the command on the candidate. If the command fails, the candidate is discarded.
 1. It saves the candidate's data with `Storage#saveCoordiMate`. If saving fails, the command is rejected with a
    save error such as `Event could not be saved. No changes were made.` and the candidate is discarded.
@@ -687,10 +743,10 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **Main success scenario (MSS)**
 
-1. EXCO member requests to delete a contact, identifying the contact by its displayed index, exact name, phone number, or email address.
+1. EXCO member requests to delete a contact, identifying the contact by its permanent member ID, exact name, phone number, or email address.
 2. CoordiMate displays the matching contact and requests confirmation.
 3. EXCO member confirms the deletion.
-4. Coordimate  model without the selected contact, their assignments in any event roster, or their
+4. CoordiMate saves a model without the selected contact, their assignments in any event roster, or their
    associated attendance records, then updates the live model and confirms the deletion. Events and other contacts
    remain unchanged.
 
@@ -698,7 +754,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **Extensions**
 
-* 1a. The EXCO member provides no identifier, more than one identifier, an unknown field, or an invalid index.
+* 1a. The EXCO member provides no identifier, more than one identifier, an unknown field, or an invalid member ID.
 
   * 1a1. CoordiMate informs the EXCO member of the error.
   * 1a2. EXCO member provides one valid identifier.
@@ -713,7 +769,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * 1c. More than one contact matches the provided name.
 
-  * 1c1. CoordiMate requests a phone number, email address, or displayed index to identify the contact.
+  * 1c1. CoordiMate requests a phone number, email address, or member ID to identify the contact.
   * 1c2. EXCO member provides one of the requested identifiers.
 
     Use case resumes from step 2.
@@ -757,7 +813,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **MSS**
 
-1. The Exco member assigns one or more contacts to an event using the `assign` command, specifying the event name and the displayed indexes of the contacts.
+1. The Exco member assigns one or more contacts to an event using the `assign` command, specifying the event name and the permanent member IDs of the contacts.
 2. CoordiMate verifies the event and contacts, then associates the contacts with the event.
 3. CoordiMate confirms how many members were assigned.
 
@@ -765,15 +821,15 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **Extensions**
 
-* 1a. No saved event has the given name, or a contact index is invalid.
+* 1a. No saved event has the given name, or a member ID is invalid or unknown.
   * 1a1. CoordiMate displays the relevant error and assigns no contacts.
-  * 1a2. The Exco member corrects the event name or index and retries step 1.
+  * 1a2. The Exco member corrects the event name or member ID and retries step 1.
 
-* 1b. No contact indexes are provided.
+* 1b. No member IDs are provided.
   * 1b1. CoordiMate reports that at least one contact must be specified.
-  * 1b2. The Exco member provides one or more contact indexes and retries step 1.
+  * 1b2. The Exco member provides one or more member IDs and retries step 1.
 
-* 2a. A contact is already assigned, or the same contact index appears more than once.
+* 2a. A contact is already assigned, or the same member ID appears more than once.
   * 2a1. CoordiMate avoids creating duplicate assignments and reports the number of newly assigned members.
 
 * 2b. Every specified contact is already assigned.
@@ -792,7 +848,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **MSS**
 
-1. The Exco member removes one or more members from an event using the `unassign` command, specifying the event name and the displayed indexes of the contacts.
+1. The Exco member removes one or more members from an event using the `unassign` command, specifying the event name and the permanent member IDs of the contacts.
 2. CoordiMate verifies the event and contacts, then removes the contacts from the event's members, together with their attendance records for that event.
 3. CoordiMate confirms how many members were removed.
 
@@ -800,15 +856,15 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **Extensions**
 
-* 1a. No saved event has the given name, or a contact index is invalid.
+* 1a. No saved event has the given name, or a member ID is invalid or unknown.
   * 1a1. CoordiMate displays the relevant error and removes no members.
-  * 1a2. The Exco member corrects the event name or index and retries step 1.
+  * 1a2. The Exco member corrects the event name or member ID and retries step 1.
 
-* 1b. No contact indexes are provided.
+* 1b. No member IDs are provided.
   * 1b1. CoordiMate reports that at least one contact must be specified.
-  * 1b2. The Exco member provides one or more contact indexes and retries step 1.
+  * 1b2. The Exco member provides one or more member IDs and retries step 1.
 
-* 2a. A specified contact is not assigned to the event, or the same contact index appears more than once.
+* 2a. A specified contact is not assigned to the event, or the same member ID appears more than once.
   * 2a1. CoordiMate skips those contacts and reports the number of members removed.
 
 * 2b. None of the specified contacts are assigned to the event.
@@ -923,7 +979,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * **Contact**: A person saved in CoordiMate, with details such as name, phone number, email address and role.
 * **Custom tag**: A tag created by the user, to categorise contacts in ways not covered by the default tags.
 * **Default tag**: A tag that is available without the user creating it: `EXCO`, `Sponsor`, `UniversityStaff` and `Logistics`.
-* **Displayed index**: The number shown beside a contact in the currently displayed list, used to identify that contact in commands.
+* **Member ID**: A unique, permanent positive integer assigned to a contact, displayed as `ID: <number>`, and used to identify them in commands across searches, filters, and restarts.
 * **Duplicate contact**: A contact with the same name (ignoring case and surrounding spaces), normalised phone number, or email address as another saved contact.
 * **Event**: An activity organised by the CCA, such as a concert or fair, with a unique name, a start date/time and an end date/time.
 * **Event lead**: An EXCO member who is in charge of organising a particular event.
@@ -1025,18 +1081,18 @@ testers are expected to do more *exploratory* testing.
 
 1. Deleting a contact while all contacts are being shown
 
-   1. Prerequisites: List all contacts using the `list` command, with multiple contacts in the list.
+   1. Prerequisites: Restore the sample contacts and run `list`. Alex Yeoh has member ID `1`.
 
    1. Test case: `delete 1`, then `n`<br>
-      Expected: The first contact's name, phone, email, and role are shown, followed by `Confirm deletion? [y/N]`. After `n`, the status message shows `Deletion cancelled. No changes were made.` and no contact is deleted.
+      Expected: `ID: 1` and Alex Yeoh's name, phone, email, and role are shown, followed by `Confirm deletion? [y/N]`. After `n`, the status message shows `Deletion cancelled. No changes were made.` and no contact is deleted.
 
    1. Test case: `delete 1`, then `y`<br>
-      Expected: The first contact is deleted from the list. The status message shows `Contact deleted successfully: ` followed by the contact's name.
+      Expected: Alex Yeoh (member ID `1`) is deleted. Other contacts keep their IDs. The status message shows `Contact deleted successfully: ` followed by the contact's name.
 
    1. Test case: `delete 0`<br>
-      Expected: No confirmation is requested and no contact is deleted. The status message shows `Invalid contact index. Example: delete 3`
+      Expected: No confirmation is requested and no contact is deleted. The status message shows `Invalid member ID. Example: delete 12` followed by the usage.
 
-   1. Other incorrect delete commands to try: `delete`, `delete x`, `delete 99` (where the list has fewer than 99 contacts)<br>
+   1. Other incorrect delete commands to try: `delete`, `delete x`, `delete 99` (where member ID `99` does not exist)<br>
       Expected: No confirmation is requested and no contact is deleted. The status message shows error details.
 
 ### Searching contacts
@@ -1168,13 +1224,13 @@ testers are expected to do more *exploratory* testing.
 
 1. Assigning contacts while all persons are being shown
 
-   1. Prerequisites: List all persons using the `list` command, with at least 3 persons in the list. Create an event using `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`. Select it in the **Events** tab.
+   1. Prerequisites: Restore the sample contacts and run `list`; Alex Yeoh, Bernice Yu, and Charlotte Oliveiro have IDs `1`, `2`, and `3`. Create an event using `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`. Select it in the **Events** tab.
 
    1. Test case: `assign evn/Final Concert c/1 2`<br>
-      Expected: The status message shows `Assigned 2 member(s) to Final Concert.` The event's details list the 1st and 2nd persons under **Members (2)**.
+      Expected: The status message shows `Assigned 2 member(s) to Final Concert.` The event's details list Alex Yeoh (`ID: 1`) and Bernice Yu (`ID: 2`) under **Members (2)**.
 
    1. Test case: `assign evn/final concert c/2 3`<br>
-      Expected: Only the 3rd person is added. The status message also shows `1 contact(s) were already assigned.`
+      Expected: Only Charlotte Oliveiro (`ID: 3`) is added. The status message also shows `1 contact(s) were already assigned.`
 
    1. Test case: `assign evn/Final Concert c/1`<br>
       Expected: No change. The status message shows that all specified contacts are already assigned.
@@ -1182,15 +1238,18 @@ testers are expected to do more *exploratory* testing.
    1. Test case: `assign evn/Gala c/1`<br>
       Expected: No change. The status message shows `Event Gala does not exist.`
 
-   1. Other incorrect assign commands to try: `assign evn/Final Concert c/0`, `assign evn/Final Concert c/x` (where x is larger than the list size), `assign evn/Final Concert c/1 c/2`, `assign evn/Final Concert`<br>
+   1. Other incorrect assign commands to try: `assign evn/Final Concert c/0`, `assign evn/Final Concert c/99` (where member ID `99` does not exist), `assign evn/Final Concert c/1 c/2`, `assign evn/Final Concert`<br>
       Expected: No change. The status message shows error details.
 
 1. Assigning contacts from a filtered list
 
-   1. Prerequisites: The `Final Concert` event exists. Use `search` so that the displayed list starts with a person who is not first in the full list.
+   1. Prerequisites: The sample contacts are loaded. Create an empty event using `addevent evn/Filtered Fair st/08-08-2026 et/08-08-2026`. Run `search Charlotte`, showing only `ID: 3`.
 
-   1. Test case: `assign evn/Final Concert c/1`<br>
-      Expected: The 1st person in the filtered list, not the full list, is added to the event's members.
+   1. Test case: `assign evn/Filtered Fair c/3`<br>
+      Expected: Charlotte Oliveiro is assigned with `ID: 3` unchanged, even though she is the first result.
+
+   1. Test case: `assign evn/Filtered Fair c/1`<br>
+      Expected: Alex Yeoh (`ID: 1`) is assigned despite being hidden by the search. Charlotte stays assigned.
 
 1. Keeping members in sync with contacts
 
@@ -1206,10 +1265,10 @@ testers are expected to do more *exploratory* testing.
 
 1. Removing members while all persons are being shown
 
-   1. Prerequisites: List all persons using the `list` command, with at least 4 persons in the list. Create an event using `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`, then run `assign evn/Final Concert c/1 2 3`. Select the event in the **Events** tab.
+   1. Prerequisites: Restore the sample contacts (IDs `1` to `6`) and run `list`. Create an event using `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`, then run `assign evn/Final Concert c/1 2 3`. Select the event in the **Events** tab.
 
    1. Test case: `unassign evn/final concert c/2 4`<br>
-      Expected: The status message shows `Removed 1 member(s) from Final Concert. 1 contact(s) were not assigned.` The event's details list the 1st and 3rd persons under **Members (2)**, in that order.
+      Expected: The status message shows `Removed 1 member(s) from Final Concert. 1 contact(s) were not assigned.` The event's details list member IDs `1` and `3` under **Members (2)**, in that order.
 
    1. Test case: `unassign evn/Final Concert c/4`<br>
       Expected: No change. The status message shows that none of the specified contacts are assigned.
@@ -1217,24 +1276,24 @@ testers are expected to do more *exploratory* testing.
    1. Test case: `unassign evn/Gala c/1`<br>
       Expected: No change. The status message shows `Event Gala does not exist.`
 
-   1. Other incorrect unassign commands to try: `unassign evn/Final Concert c/0`, `unassign evn/Final Concert c/1 x` (where x is larger than the list size), `unassign evn/Final Concert c/1 c/3`, `unassign evn/Final Concert`<br>
+   1. Other incorrect unassign commands to try: `unassign evn/Final Concert c/0`, `unassign evn/Final Concert c/1 99` (where member ID `99` does not exist), `unassign evn/Final Concert c/1 c/3`, `unassign evn/Final Concert`<br>
       Expected: No change. The status message shows error details.
 
 1. Removing members from a filtered list
 
-   1. Prerequisites: The `Final Concert` event has the 1st and 3rd persons as members. Use `search` so that the displayed list shows only the 3rd person.
+   1. Prerequisites: The `Final Concert` event has member IDs `1` and `3` assigned. Run `search Charlotte`, showing only `ID: 3`.
 
-   1. Test case: `unassign evn/Final Concert c/1`<br>
-      Expected: The 3rd person of the full list, shown 1st in the filtered list, is removed. The 1st person of the full list remains a member.
+   1. Test case: `unassign evn/Final Concert c/3`<br>
+      Expected: Charlotte Oliveiro (`ID: 3`) is removed. Alex Yeoh (`ID: 1`) remains assigned.
 
 ### Viewing members of an event
 
 1. Viewing the members of an event
 
-   1. Prerequisites: List all persons using the `list` command, with at least 3 persons in the list. Create an event using `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`, then run `assign evn/Final Concert c/3 1`. Switch to the **Events** view.
+   1. Prerequisites: Restore the sample contacts (IDs `1` to `6`) and run `list`. Create an event using `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`, then run `assign evn/Final Concert c/3 1`. Switch to the **Events** view.
 
    1. Test case: `members evn/final concert`<br>
-      Expected: CoordiMate switches to the **Contacts** view and shows only the 1st and 3rd persons, numbered 1 and 2. The status message shows `Listed 2 member(s) of Final Concert. Use list to show all contacts.`
+      Expected: CoordiMate switches to the **Contacts** view and shows Alex Yeoh (`ID: 1`) and Charlotte Oliveiro (`ID: 3`), in contact list order. The status message shows `Listed 2 member(s) of Final Concert. Use list to show all contacts.`
 
    1. Test case: `members evn/Gala`<br>
       Expected: The contact list is unchanged. The status message shows `Event Gala does not exist.`
@@ -1247,7 +1306,7 @@ testers are expected to do more *exploratory* testing.
    1. Prerequisites: The members of `Final Concert` are shown, as above.
 
    1. Test case: `unassign evn/Final Concert c/1`<br>
-      Expected: The removed person disappears from the list straight away, and the remaining member is numbered 1.
+      Expected: Alex Yeoh disappears from the list straight away. Charlotte Oliveiro keeps `ID: 3` as the only result.
 
    1. Test case: `editevent evn/Final Concert nevn/Grand Concert`<br>
       Expected: The list still shows the event's members.
@@ -1284,7 +1343,7 @@ testers are expected to do more *exploratory* testing.
    1. Prerequisites: Continue from the previous test, with `Alex Yeoh` marked absent. List all contacts using `list`.
 
    1. Test case: `assign evn/Final Concert c/3`<br>
-      Expected: The 3rd contact is added as **Not marked**. `Alex Yeoh` is still **Absent**.
+      Expected: Charlotte Oliveiro (`ID: 3`) is added as **Not marked**. `Alex Yeoh` is still **Absent**.
 
    1. Test case: `editevent evn/Final Concert et/08-08-2026 20:00`<br>
       Expected: The end time changes. `Alex Yeoh` is still **Absent**.
@@ -1320,10 +1379,10 @@ testers are expected to do more *exploratory* testing.
       Expected: The tag is renamed. The status message shows `Publicity successfully renamed to Media.`
 
    1. Test case: `edit 1 at/Media`, then `edittag media t/Press`<br>
-      Expected: The 1st contact's details show the tag `Press`.
+      Expected: The details of member ID `1` show the tag `Press`.
 
    1. Test case: `deletetag t/press`<br>
-      Expected: The tag is removed from the Tags view and from the 1st contact. The status message shows `Press successfully deleted.`
+      Expected: The tag is removed from the Tags view and from member ID `1`. The status message shows `Press successfully deleted.`
 
    1. Test case: `deletetag t/Nope`<br>
       Expected: No tag is deleted. The status message shows `No such tag exists: Nope.`
@@ -1349,6 +1408,37 @@ want to keep.
    1. Test case: Run `list`, then check the `data` folder.<br>
       Expected: `data/coordimate.json` has been created again.
 
+1. Migrating legacy member IDs and keeping command targets across restarts
+
+   1. Prerequisites: Restore the sample contacts, run `list`, and close the app. In `data/coordimate.json`,
+      remove every contact's `memberId` property and the top-level `nextMemberId` property, keeping valid JSON.
+
+   1. Test case: Relaunch the app.<br>
+      Expected: The six contacts receive distinct IDs `1` to `6` in file order. Cards and selected-contact details
+      show the same `ID: <number>`. Loading alone has not changed the file.
+
+   1. Test case: Run `search Charlotte`, then `edit 3 r/Treasurer`, then `filter tag/neighbours`.<br>
+      Expected: Charlotte keeps `ID: 3` and shows the new role, including as the only result. The successful save
+      records all member IDs and `nextMemberId: 7` in the file.
+
+   1. Test case: Run `addevent evn/ID Check st/08-08-2026 et/08-08-2026`, `assign evn/ID Check c/3 1`, then
+      `unassign evn/ID Check c/1`.<br>
+      Expected: Charlotte stays assigned with `ID: 3`. Alex (`ID: 1`) is assigned and removed despite being hidden
+      by the tag filter. The event roster and the neighbours tag's member list show Charlotte with `ID: 3`.
+
+   1. Test case: Run `delete 2`, then `y`, followed by `delete 6`, then `y`. Close and relaunch the app.<br>
+      Expected: Bernice and Roy are absent. Charlotte still has `ID: 3`; remaining contacts keep their IDs.
+
+   1. Test case: Run `add n/ID Test p/91234567 e/idtest@example.com r/Member`, then `members evn/ID Check`.<br>
+      Expected: The new contact has `ID: 7`, so neither deleted ID is reused. Charlotte is the only event member,
+      still showing `ID: 3`.
+
+   1. Test case: Run `list`, then try `edit 2 r/President`, `delete 2`, `assign evn/ID Check c/7 2`, and
+      `unassign evn/ID Check c/3 2`.<br>
+      Expected: Each command reports `No contact exists with member ID: 2. Use an existing member ID.` followed
+      by usage. No confirmation is requested, no contact changes, neither batch partially changes membership,
+      and the data file is unchanged. In particular, Charlotte remains the second saved contact with `ID: 3`.
+
 1. Dealing with a corrupted data file
 
    1. Prerequisites: The app is closed and `data/coordimate.json` contains at least one contact. Keep a copy of the file.
@@ -1357,7 +1447,7 @@ want to keep.
       Expected: The app starts with no contacts and no events.
 
    1. Test case: Without closing the app, run `addevent evn/Test st/01-01-2027 et/01-01-2027`.<br>
-      Expected: No event is added. The status message shows `Contact data could not be loaded. Please check the local data file.` The data file is unchanged.
+      Expected: No event is added. The status message shows `Saved data could not be loaded. Check the local data file.` The data file is unchanged.
 
    1. Test case: Close the app, put the `{` back, save, then launch the app.<br>
       Expected: The original contacts and events are shown again.

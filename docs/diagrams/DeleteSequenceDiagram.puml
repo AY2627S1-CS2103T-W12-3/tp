@@ -49,7 +49,15 @@ deactivate CoordiMateParser
 LogicManager -> DeleteCommand : execute(m)
 activate DeleteCommand
 
-DeleteCommand -> Model : deletePerson(1)
+DeleteCommand -> Model : getCoordiMate().getPersonList()
+activate Model
+
+Model --> DeleteCommand : all contacts
+deactivate Model
+
+note right of DeleteCommand : Resolve member ID 1 to contact p
+
+DeleteCommand -> Model : deletePerson(p)
 activate Model
 
 Model --> DeleteCommand

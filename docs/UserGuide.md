@@ -550,7 +550,7 @@ Examples:
 
 * `members evn/Final Concert` shows the members of `Final Concert`.
 * `members evn/student life fair` shows the members of `Student Life Fair`.
-* `members evn/Final Concert` followed by `unassign evn/Final Concert c/2` removes the 2nd member shown.
+* `members evn/Final Concert` followed by `unassign evn/Final Concert c/2` removes the contact with member ID `2`, even if they are not the second result.
 
 Success: `Listed 2 member(s) of Final Concert. Use list to show all contacts.`
 
@@ -953,6 +953,10 @@ Format: `exit`
 
 Saved member IDs stay tied to the same contacts across restarts. Older files receive unique IDs for contacts
 that lack them when loaded; the next successful save records those IDs.
+
+IDs are assigned automatically and cannot be changed through commands. Deleting a contact leaves a gap;
+adding another contact does not reuse the deleted ID. Editing contacts, searching, filtering, and changing
+list order keep existing IDs. The `clear` command starts an empty dataset, with IDs starting from `1` again.
 
 CoordiMate automatically saves data after commands that change it. You do not need to save manually.
 

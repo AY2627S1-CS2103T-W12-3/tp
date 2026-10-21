@@ -47,6 +47,77 @@ public class PermanentMemberIdCommandsTest {
     private LogicManager logic;
 
     @Test
+    public void legacyMigration_throughCommandsAndRestarts_preservesIdsAndDeletedIdGaps() throws Exception {
+        Path legacyFile = Path.of("src", "test", "data", "JsonSerializableCoordiMateTest",
+                "typicalPersonsCoordiMate.json");
+        storage = new JsonCoordiMateStorage(testFolder.resolve("members.json"));
+        Files.copy(legacyFile, storage.getCoordiMateFilePath());
+        model = new ModelManager(storage.readCoordiMate().orElseThrow(), new UserPrefs());
+        logic = newLogic();
+        assertEquals(List.of(1, 2, 3, 4, 5, 6, 7), model.getCoordiMate().getPersonList().stream()
+                .map(person -> person.getMemberId().orElseThrow().getValue()).toList());
+        assertArrayEquals(Files.readAllBytes(legacyFile), Files.readAllBytes(storage.getCoordiMateFilePath()));
+
+        logic.execute("search Carl");
+        assertEquals(3, model.getFilteredPersonList().getFirst().getMemberId().orElseThrow().getValue());
+        logic.execute("edit 3 r/Treasurer t/Sponsor");
+        Person editedCarl = model.getCoordiMate().getPersonList().get(2);
+        assertEquals(3, editedCarl.getMemberId().orElseThrow().getValue());
+        assertEquals("Treasurer", editedCarl.getRole().toString());
+        logic.execute("filter tag/Sponsor");
+        assertEquals(List.of(editedCarl), model.getFilteredPersonList());
+        logic.execute("addevent evn/Concert st/08-08-2026 et/08-08-2026");
+        logic.execute("assign evn/Concert c/3 1");
+        logic.execute("markattendance evn/Concert mem/Carl Kurz att/present");
+        logic.execute("unassign evn/Concert c/1");
+        logic.execute("delete 2");
+        logic.execute("y");
+        logic.execute("delete 7");
+        logic.execute("y");
+        List<Person> remaining = List.copyOf(model.getCoordiMate().getPersonList());
+        assertEquals(List.of(1, 3, 4, 5, 6), remaining.stream()
+                .map(person -> person.getMemberId().orElseThrow().getValue()).toList());
+
+        storage = new JsonCoordiMateStorage(storage.getCoordiMateFilePath());
+        model = new ModelManager(storage.readCoordiMate().orElseThrow(), new UserPrefs());
+        logic = newLogic();
+        assertEquals(remaining, model.getCoordiMate().getPersonList());
+        assertEquals(8, model.getCoordiMate().getNextMemberId());
+        logic.execute("add n/Amy Bee p/85355255 e/amy@gmail.com r/Member");
+        Person amy = model.getCoordiMate().getPersonList().getLast();
+        assertEquals(8, amy.getMemberId().orElseThrow().getValue());
+        assertEquals(remaining, model.getCoordiMate().getPersonList().subList(0, remaining.size()));
+        logic.execute("members evn/Concert");
+        assertEquals(List.of(editedCarl), model.getFilteredPersonList());
+        assertEquals(Map.of(editedCarl.getName(), AttendanceStatus.PRESENT),
+                model.getCoordiMate().getEventList().getFirst().getAttendanceRecord());
+
+        CoordiMate before = new CoordiMate(model.getCoordiMate());
+        byte[] savedBefore = Files.readAllBytes(storage.getCoordiMateFilePath());
+        for (String command : List.of("edit 2 r/President", "delete 2",
+                "assign evn/Concert c/8 2", "unassign evn/Concert c/3 2")) {
+            CommandException error = assertThrows(CommandException.class, () -> logic.execute(command));
+            assertTrue(error.getMessage().startsWith(String.format(Messages.MESSAGE_MEMBER_ID_NOT_FOUND, 2)));
+            assertEquals(before, model.getCoordiMate());
+            assertEquals(List.of(editedCarl), model.getFilteredPersonList());
+            assertArrayEquals(savedBefore, Files.readAllBytes(storage.getCoordiMateFilePath()));
+            assertFalse(logic.isAwaitingDeleteConfirmation());
+        }
+
+        logic.execute("search Nobody");
+        logic.execute("unassign evn/Concert c/3");
+        logic.execute("assign evn/Concert c/8");
+        assertTrue(model.getFilteredPersonList().isEmpty());
+        CoordiMate saved = new CoordiMate(model.getCoordiMate());
+        model = new ModelManager(new JsonCoordiMateStorage(storage.getCoordiMateFilePath())
+                .readCoordiMate().orElseThrow(), new UserPrefs());
+        assertEquals(saved, model.getCoordiMate());
+        assertEquals(editedCarl, model.getCoordiMate().getPersonList().get(1));
+        assertEquals(List.of(amy.getName()), model.getCoordiMate().getEventList().getFirst().getMembers());
+        assertTrue(model.getCoordiMate().getEventList().getFirst().getAttendanceRecord().isEmpty());
+    }
+
+    @Test
     public void assignIds_acrossSearchesFiltersAndEmptyResults_preservesCommandOrder() throws Exception {
         for (String view : VIEWS) {
             startApplication();
