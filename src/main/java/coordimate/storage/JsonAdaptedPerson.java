@@ -8,11 +8,14 @@ import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.IntNode;
 
 import coordimate.commons.exceptions.IllegalValueException;
 import coordimate.model.person.Address;
 import coordimate.model.person.Birthday;
 import coordimate.model.person.Email;
+import coordimate.model.person.MemberId;
 import coordimate.model.person.Name;
 import coordimate.model.person.Note;
 import coordimate.model.person.Organisation;
@@ -28,6 +31,7 @@ class JsonAdaptedPerson {
 
     public static final String MISSING_FIELD_MESSAGE_FORMAT = "Person's %s field is missing!";
 
+    private final JsonNode memberId;
     private final String name;
     private final String phone;
     private final String email;
@@ -46,7 +50,8 @@ class JsonAdaptedPerson {
             @JsonProperty("email") String email, @JsonProperty("address") String address,
             @JsonProperty("role") String role, @JsonProperty("birthday") String birthday,
             @JsonProperty("organisation") String organisation, @JsonProperty("note") String note,
-            @JsonProperty("tags") List<JsonAdaptedTag> tags) {
+            @JsonProperty("tags") List<JsonAdaptedTag> tags, @JsonProperty("memberId") JsonNode memberId) {
+        this.memberId = memberId;
         this.name = name;
         this.phone = phone;
         this.email = email;
@@ -58,6 +63,14 @@ class JsonAdaptedPerson {
         if (tags != null) {
             this.tags.addAll(tags);
         }
+    }
+
+    /**
+     * Creates a legacy record without a member ID.
+     */
+    public JsonAdaptedPerson(String name, String phone, String email, String address, String role, String birthday,
+            String organisation, String note, List<JsonAdaptedTag> tags) {
+        this(name, phone, email, address, role, birthday, organisation, note, tags, null);
     }
 
     /**
@@ -80,6 +93,7 @@ class JsonAdaptedPerson {
      * Converts a given {@code Person} into this class for Jackson use.
      */
     public JsonAdaptedPerson(Person source) {
+        memberId = source.getMemberId().map(id -> IntNode.valueOf(id.getValue())).orElse(null);
         name = source.getName().getFullName();
         phone = source.getPhone().getValue();
         email = source.getEmail().getValue();
@@ -99,6 +113,13 @@ class JsonAdaptedPerson {
      * @throws IllegalValueException if there were any data constraints violated in the adapted person.
      */
     public Person toModelType() throws IllegalValueException {
+        MemberId modelMemberId = null;
+        if (memberId != null && !memberId.isNull()) {
+            if (!memberId.isIntegralNumber() || !memberId.canConvertToInt() || memberId.intValue() <= 0) {
+                throw new IllegalValueException(MemberId.MESSAGE_CONSTRAINTS);
+            }
+            modelMemberId = new MemberId(memberId.intValue());
+        }
         final List<Tag> personTags = new ArrayList<>();
         for (JsonAdaptedTag tag : tags) {
             personTags.add(tag.toModelType());
@@ -155,7 +176,7 @@ class JsonAdaptedPerson {
         final Note modelNote = note == null ? null : new Note(note);
 
         final Set<Tag> modelTags = new HashSet<>(personTags);
-        return new Person(modelName, modelPhone, modelEmail, modelRole, modelBirthday, modelAddress,
+        return new Person(modelMemberId, modelName, modelPhone, modelEmail, modelRole, modelBirthday, modelAddress,
                 modelOrganisation, modelNote, modelTags);
     }
 

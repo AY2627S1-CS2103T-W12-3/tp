@@ -1,6 +1,5 @@
 package coordimate.logic;
 
-import static coordimate.testutil.Assert.assertStoredDetailsEqual;
 import static coordimate.testutil.TypicalPersons.ALICE;
 import static coordimate.testutil.TypicalPersons.BENSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -200,7 +199,7 @@ public class ReminderHistoryIntegrationTest {
     private Event savedEvent() throws Exception {
         JsonCoordiMateStorage reloadedStorage = new JsonCoordiMateStorage(storage.getCoordiMateFilePath());
         var saved = reloadedStorage.readCoordiMate().orElseThrow();
-        assertStoredDetailsEqual(model.getCoordiMate(), saved);
+        assertEquals(model.getCoordiMate(), saved);
         return saved.getEventList().getFirst();
     }
 }

@@ -1,6 +1,5 @@
 package coordimate.storage;
 
-import static coordimate.testutil.Assert.assertStoredDetailsEqual;
 import static coordimate.testutil.TypicalPersons.ALICE;
 import static coordimate.testutil.TypicalPersons.HOON;
 import static coordimate.testutil.TypicalPersons.IDA;
@@ -193,13 +192,13 @@ public class JsonCoordiMateStorageTest {
         original.removePerson(ALICE);
         jsonCoordiMateStorage.saveCoordiMate(original, filePath);
         readBack = jsonCoordiMateStorage.readCoordiMate(filePath).get();
-        assertStoredDetailsEqual(original, readBack);
+        assertEquals(original, new CoordiMate(readBack));
 
         // Save and read without specifying file path
         original.addPerson(IDA);
         jsonCoordiMateStorage.saveCoordiMate(original); // file path not specified
         readBack = jsonCoordiMateStorage.readCoordiMate().get(); // file path not specified
-        assertStoredDetailsEqual(original, readBack);
+        assertEquals(original, new CoordiMate(readBack));
 
     }
 

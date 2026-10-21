@@ -43,14 +43,13 @@ public class JsonAdaptedPersonTest {
 
     @Test
     public void toModelType_validPersonDetails_returnsPerson() throws Exception {
-        Person contact = new PersonBuilder(BENSON).withoutMemberId().build();
-        JsonAdaptedPerson person = new JsonAdaptedPerson(contact);
-        assertEquals(contact, person.toModelType());
+        JsonAdaptedPerson person = new JsonAdaptedPerson(BENSON);
+        assertEquals(BENSON, person.toModelType());
     }
 
     @Test
     public void toModelType_personWithRole_preservesRole() throws Exception {
-        Person contact = new PersonBuilder(BENSON).withoutMemberId().withRole("Logistics").build();
+        Person contact = new PersonBuilder(BENSON).withRole("Logistics").build();
         JsonAdaptedPerson person = new JsonAdaptedPerson(contact);
 
         assertEquals(contact, person.toModelType());
@@ -58,7 +57,7 @@ public class JsonAdaptedPersonTest {
 
     @Test
     public void toModelType_personWithOptionalDetails_preservesDetails() throws Exception {
-        Person contact = new PersonBuilder(BENSON).withoutMemberId().withBirthday("18-06-2004")
+        Person contact = new PersonBuilder(BENSON).withBirthday("18-06-2004")
                 .withOrganisation("NUS Student Affairs").withNote("Handles venue bookings").build();
         JsonAdaptedPerson person = new JsonAdaptedPerson(contact);
 

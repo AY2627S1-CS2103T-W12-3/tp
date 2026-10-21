@@ -47,6 +47,17 @@ public class CoordiMate implements ReadOnlyCoordiMate {
      * Creates an empty contact and event store.
      */
     public CoordiMate() {
+        this(1);
+    }
+
+    /**
+     * Creates an empty store with restored allocation state, including IDs of deleted members.
+     */
+    public CoordiMate(long nextMemberId) {
+        if (nextMemberId < 1 || nextMemberId > Integer.MAX_VALUE + 1L) {
+            throw new IllegalArgumentException("Invalid next member ID.");
+        }
+        this.nextMemberId = nextMemberId;
         tags.setTags(DEFAULT_TAGS);
     }
 
@@ -104,12 +115,7 @@ public class CoordiMate implements ReadOnlyCoordiMate {
     public void resetData(ReadOnlyCoordiMate newData) {
         requireNonNull(newData);
 
-        CoordiMate replacement = new CoordiMate();
-        long incomingNextId = newData.getNextMemberId();
-        if (incomingNextId < 1 || incomingNextId > Integer.MAX_VALUE + 1L) {
-            throw new IllegalArgumentException("Invalid next member ID.");
-        }
-        replacement.nextMemberId = incomingNextId;
+        CoordiMate replacement = new CoordiMate(newData.getNextMemberId());
         replacement.setEvents(newData.getEventList());
         replacement.setPersons(newData.getPersonList());
         replacement.setTags(newData.getTagList());

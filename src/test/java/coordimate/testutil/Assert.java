@@ -3,24 +3,10 @@ package coordimate.testutil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.function.Executable;
 
-import coordimate.model.ReadOnlyCoordiMate;
-
 /**
  * A set of assertion methods useful for writing tests.
  */
 public class Assert {
-
-    /**
-     * Checks the legacy JSON data contract, which does not yet store member IDs or allocation state.
-     */
-    public static void assertStoredDetailsEqual(ReadOnlyCoordiMate expected, ReadOnlyCoordiMate actual) {
-        Assertions.assertEquals(expected.getPersonList().stream()
-                .map(person -> new PersonBuilder(person).withoutMemberId().build()).toList(),
-                actual.getPersonList().stream()
-                        .map(person -> new PersonBuilder(person).withoutMemberId().build()).toList());
-        Assertions.assertEquals(expected.getTagList(), actual.getTagList());
-        Assertions.assertEquals(expected.getEventList(), actual.getEventList());
-    }
 
     /**
      * Asserts that the {@code executable} throws the {@code expectedType} Exception.

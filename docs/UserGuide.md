@@ -943,6 +943,9 @@ Format: `exit`
 
 ### Saving the data
 
+Saved member IDs stay tied to the same contacts across restarts. Older files receive unique IDs for contacts
+that lack them when loaded; the next successful save records those IDs.
+
 CoordiMate automatically saves data after commands that change it. You do not need to save manually.
 
 A command that changes your data is saved to the data file **before** the change appears in the app. If the data
@@ -969,6 +972,9 @@ CoordiMate data is saved automatically as a JSON file `[JAR file location]/data/
 **Caution:**
 If your changes make the data file invalid, CoordiMate starts with an empty dataset at the next run. While the file is invalid, commands that change data (such as `add`, `addevent`, and `clear`) are rejected with `Saved data could not be loaded. Check the local data file.` and leave the file untouched, so that you can close the app and fix it. Commands such as `list`, `search`, and `filter` save the data currently in the app, which **replaces the invalid file**. The `switch` command does not access the data file. We therefore recommend backing up the file before editing it.<br>
 Each name in an event's `members` list must exactly match the name of a saved contact, or the data file is invalid.<br>
+Each contact's `memberId` must be a unique integer from `1` to `2147483647`. Keep existing IDs unchanged.
+Keep the top-level `nextMemberId` field: it must exceed every saved ID, must not be reduced after deleting contacts,
+and cannot exceed `2147483648`.<br>
 If a contact uses a tag that is missing from the top-level `tags` list, CoordiMate adds it to the global tag list when
 the file is loaded. Existing top-level tags, including unused tags, retain their saved order and capitalization.<br>
 Furthermore, certain edits can cause CoordiMate to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.

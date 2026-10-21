@@ -1,6 +1,5 @@
 package coordimate.logic;
 
-import static coordimate.testutil.Assert.assertStoredDetailsEqual;
 import static coordimate.testutil.TypicalPersons.ALICE;
 import static coordimate.testutil.TypicalPersons.BENSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -54,7 +53,7 @@ public class DeleteCommandIntegrationTest {
         assertFalse(logic.isAwaitingDeleteConfirmation());
         assertEquals(List.of(BENSON), model.getCoordiMate().getPersonList());
         assertEquals(List.of(BENSON.getName()), model.getCoordiMate().getEventList().getFirst().getMembers());
-        assertStoredDetailsEqual(model.getCoordiMate(), storage.readCoordiMate().orElseThrow());
+        assertEquals(model.getCoordiMate(), storage.readCoordiMate().orElseThrow());
     }
 
     @Test
