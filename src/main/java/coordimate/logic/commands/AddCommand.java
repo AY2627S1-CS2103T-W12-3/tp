@@ -70,7 +70,8 @@ public class AddCommand extends Command {
 
         model.addPerson(toAdd);
         assert model.hasPerson(toAdd) : "Added contact must be present in the model.";
-        return new CommandResult(String.format(MESSAGE_SUCCESS, toAdd.getName()), CommandResult.View.CONTACTS);
+        return CommandResult.withContactToFocus(String.format(MESSAGE_SUCCESS, toAdd.getName()),
+                CommandResult.View.CONTACTS, toAdd);
     }
 
     @Override

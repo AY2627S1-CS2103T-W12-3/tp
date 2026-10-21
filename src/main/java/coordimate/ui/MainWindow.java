@@ -712,6 +712,9 @@ public class MainWindow extends UiPart<Stage> {
                 eventListPanel.selectNewestEvent();
             }
 
+            commandResult.getContactToFocus().ifPresent(personListPanel::selectContact);
+            commandResult.getContactIndexToFocus().ifPresent(personListPanel::selectContactAt);
+
             if (commandResult.shouldShowHelp()) {
                 handleHelp();
             }

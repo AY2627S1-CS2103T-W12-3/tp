@@ -105,6 +105,7 @@ public class PersonListPanel extends UiPart<Region> {
 
     private Person selectedPerson;
     private final ObservableList<Event> events;
+    private long focusRequestVersion;
 
     /**
      * Creates a {@code PersonListPanel} with the given {@code ObservableList}.
@@ -123,7 +124,8 @@ public class PersonListPanel extends UiPart<Region> {
             if (selectedPerson != null) {
                 Person previouslySelected = selectedPerson;
                 Person replacement = findReplacement(change, previouslySelected);
-                Platform.runLater(() -> restoreSelection(persons, previouslySelected, replacement));
+                long versionAtChange = focusRequestVersion;
+                Platform.runLater(() -> restoreSelection(persons, previouslySelected, replacement, versionAtChange));
             }
         });
         events.addListener((ListChangeListener<Event>) change -> showDetails(selectedPerson));
@@ -159,7 +161,11 @@ public class PersonListPanel extends UiPart<Region> {
         return null;
     }
 
-    private void restoreSelection(ObservableList<Person> persons, Person previouslySelected, Person replacement) {
+    private void restoreSelection(ObservableList<Person> persons, Person previouslySelected, Person replacement,
+            long versionAtChange) {
+        if (versionAtChange != focusRequestVersion) {
+            return;
+        }
         if (persons.contains(previouslySelected)) {
             personListView.getSelectionModel().select(previouslySelected);
             selectedIndex.setText("Index: " + (persons.indexOf(previouslySelected) + 1));
@@ -215,6 +221,27 @@ public class PersonListPanel extends UiPart<Region> {
     private void selectAndReveal(int targetIndex) {
         personListView.getSelectionModel().select(targetIndex);
         personListView.scrollTo(targetIndex);
+    }
+
+    /** Selects a displayed contact and reveals it in the list. */
+    boolean selectContact(Person contact) {
+        Objects.requireNonNull(contact);
+        return selectContactAt(personListView.getItems().indexOf(contact));
+    }
+
+    /** Selects the row at the supplied displayed index, clamping to the last row after a deletion. */
+    boolean selectContactAt(int targetIndex) {
+        if (targetIndex < 0) {
+            return false;
+        }
+        focusRequestVersion++;
+        int itemCount = personListView.getItems().size();
+        if (itemCount == 0) {
+            personListView.getSelectionModel().clearSelection();
+            return false;
+        }
+        selectAndReveal(Math.min(targetIndex, itemCount - 1));
+        return true;
     }
 
     /** Runs the given action whenever the displayed contact list is clicked. */

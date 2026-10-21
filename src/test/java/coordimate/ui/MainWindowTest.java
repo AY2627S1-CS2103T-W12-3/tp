@@ -643,6 +643,70 @@ public class MainWindowTest {
     }
 
     @Test
+    public void contactCommands_switchToContactsAndFocusAffectedContact() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            MainWindow window = null;
+            try {
+                ModelManager model = new ModelManager();
+                model.addPerson(TypicalPersons.ALICE);
+                model.addPerson(TypicalPersons.BENSON);
+                Path dataPath = temporaryFolder.resolve("contact-focus-data.json");
+                StorageManager storage = new StorageManager(new JsonCoordiMateStorage(dataPath),
+                        new JsonUserPrefsStorage(temporaryFolder.resolve("contact-focus-prefs.json")));
+                storage.saveCoordiMate(model.getCoordiMate());
+                LogicManager logic = new LogicManager(model, storage);
+                window = new MainWindow(stage, logic, dataPath);
+                window.fillInnerParts();
+                stage.getScene().getRoot().applyCss();
+
+                ToggleButton contactsView = (ToggleButton) stage.getScene().getRoot().lookup("#contactsView");
+                ToggleButton eventsView = (ToggleButton) stage.getScene().getRoot().lookup("#eventsView");
+                TextField input = (TextField) stage.getScene().getRoot().lookup("#commandTextField");
+                Button submit = (Button) stage.getScene().getRoot().lookup("#submitButton");
+                @SuppressWarnings("unchecked")
+                ListView<Person> contacts = (ListView<Person>) stage.getScene().getRoot().lookup("#personListView");
+                Label selectedName = (Label) window.getPersonListPanel().getRoot().lookup("#selectedName");
+
+                eventsView.fire();
+                input.setText("add n/Charlie Clark p/98765430 e/charlie@example.com r/Member");
+                submit.fire();
+                assertTrue(contactsView.isSelected());
+                assertEquals("Charlie Clark", selectedName.getText());
+                Label selectedEmail = (Label) window.getPersonListPanel().getRoot().lookup("#email");
+                assertEquals("charlie@example.com", selectedEmail.getText());
+
+                eventsView.fire();
+                input.setText("edit target/charlie@example.com n/Charles Clark");
+                submit.fire();
+                assertTrue(contactsView.isSelected());
+                assertEquals("Charles Clark", selectedName.getText());
+                assertEquals("Charles Clark", contacts.getSelectionModel().getSelectedItem().getName().getFullName());
+
+                eventsView.fire();
+                input.setText("delete e/charlie@example.com");
+                submit.fire();
+                assertTrue(logic.isAwaitingDeleteConfirmation());
+                assertEquals("Charles Clark", selectedName.getText());
+
+                input.setText("y");
+                submit.fire();
+                assertFalse(logic.isAwaitingDeleteConfirmation());
+                assertEquals("Benson Meier", selectedName.getText());
+                assertEquals(TypicalPersons.BENSON, contacts.getSelectionModel().getSelectedItem());
+            } finally {
+                if (window != null) {
+                    window.stop();
+                }
+                stage.close();
+            }
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
     public void showWindow_startsMaximized() throws Exception {
         FutureTask<Void> task = new FutureTask<>(() -> {
             Stage stage = new Stage();

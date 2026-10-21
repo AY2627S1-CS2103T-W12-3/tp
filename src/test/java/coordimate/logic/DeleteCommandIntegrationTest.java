@@ -54,6 +54,8 @@ public class DeleteCommandIntegrationTest {
         CommandResult deletion = logic.execute("y");
         assertEquals("Contact deleted successfully: Alice Pauline.", deletion.getFeedbackToUser());
         assertEquals(CommandResult.View.CONTACTS, deletion.getViewToShow());
+        assertEquals(0, deletion.getContactIndexToFocus().orElseThrow());
+        assertTrue(deletion.getContactToFocus().isEmpty());
         assertFalse(logic.isAwaitingDeleteConfirmation());
         assertEquals(List.of(BENSON), model.getCoordiMate().getPersonList());
         assertEquals(List.of(BENSON.getName()), model.getCoordiMate().getEventList().getFirst().getMembers());

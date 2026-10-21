@@ -64,6 +64,20 @@ public class EditCommandTest {
     }
 
     @Test
+    public void execute_returnsEditedContactForUiFocus() throws Exception {
+        Model editModel = new ModelManager(getTypicalCoordiMate(), new UserPrefs());
+        Person originalPerson = editModel.getFilteredPersonList().getFirst();
+        Person editedPerson = new PersonBuilder(originalPerson).withName("Alice Tan").build();
+        EditCommand command = new EditCommand(INDEX_FIRST_PERSON,
+                new EditPersonDescriptorBuilder().withName("Alice Tan").build());
+
+        CommandResult result = command.execute(editModel);
+
+        assertEquals(editedPerson, result.getContactToFocus().orElseThrow());
+        assertTrue(result.getContactIndexToFocus().isEmpty());
+    }
+
+    @Test
     public void execute_allFieldsSpecifiedUnfilteredList_success() {
         Person editedPerson = new PersonBuilder().build();
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder(editedPerson).build();

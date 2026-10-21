@@ -40,6 +40,8 @@ public class AddCommandTest {
 
         assertEquals(String.format(AddCommand.MESSAGE_SUCCESS, validPerson.getName()),
                 commandResult.getFeedbackToUser());
+        assertEquals(validPerson, commandResult.getContactToFocus().orElseThrow());
+        assertTrue(commandResult.getContactIndexToFocus().isEmpty());
         assertEquals(List.of(validPerson), modelStub.personsAdded);
     }
 

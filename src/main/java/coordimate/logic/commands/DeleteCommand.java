@@ -135,11 +135,14 @@ public class DeleteCommand extends Command {
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
         Person personToDelete = resolvePerson(model);
+        int deletedContactIndex = model.getFilteredPersonList().indexOf(personToDelete);
         model.deletePerson(personToDelete);
         assert !model.getCoordiMate().getPersonList().contains(personToDelete)
                 : "Deleted contact must not remain in the model.";
-        return new CommandResult(String.format(MESSAGE_DELETE_PERSON_SUCCESS, personToDelete.getName()),
-                CommandResult.View.CONTACTS);
+        String feedback = String.format(MESSAGE_DELETE_PERSON_SUCCESS, personToDelete.getName());
+        return deletedContactIndex < 0
+                ? new CommandResult(feedback, CommandResult.View.CONTACTS)
+                : CommandResult.withContactIndexToFocus(feedback, CommandResult.View.CONTACTS, deletedContactIndex);
     }
 
     @Override

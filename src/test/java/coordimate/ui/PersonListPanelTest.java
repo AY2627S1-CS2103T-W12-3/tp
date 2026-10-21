@@ -117,6 +117,88 @@ public class PersonListPanelTest {
     }
 
     @Test
+    public void selectContact_revealsContactAndShowsItsDetails() throws Exception {
+        runOnJavaFxThread(() -> {
+            PersonListPanel panel = new PersonListPanel(FXCollections.observableArrayList(ALICE, BENSON));
+            Region root = panel.getRoot();
+            new Scene(root);
+            root.applyCss();
+
+            assertTrue(panel.selectContact(BENSON));
+
+            assertEquals(BENSON, getList(root).getSelectionModel().getSelectedItem());
+            assertEquals("Benson Meier", getLabel(root, "selectedName").getText());
+            assertEquals("Index: 2", getLabel(root, "selectedIndex").getText());
+            assertTrue(getDetails(root).isVisible());
+            assertFalse(getHint(root).isVisible());
+        });
+    }
+
+    @Test
+    public void selectContact_whenContactIsNotDisplayed_keepsCurrentSelection() throws Exception {
+        runOnJavaFxThread(() -> {
+            PersonListPanel panel = new PersonListPanel(FXCollections.observableArrayList(BENSON));
+            Region root = panel.getRoot();
+            new Scene(root);
+            root.applyCss();
+            ListView<Person> list = getList(root);
+
+            assertTrue(panel.selectContact(BENSON));
+            assertFalse(panel.selectContact(ALICE));
+            assertFalse(panel.selectContactAt(-1));
+
+            assertEquals(BENSON, list.getSelectionModel().getSelectedItem());
+            assertEquals("Benson Meier", getLabel(root, "selectedName").getText());
+        });
+    }
+
+    @Test
+    public void selectContactAt_afterDeletionSelectsNearestRemainingContact() throws Exception {
+        runOnJavaFxThread(() -> {
+            ObservableList<Person> persons = FXCollections.observableArrayList(ALICE, BENSON);
+            PersonListPanel panel = new PersonListPanel(persons);
+            Region root = panel.getRoot();
+            new Scene(root);
+            root.applyCss();
+            ListView<Person> list = getList(root);
+
+            persons.remove(BENSON);
+            assertTrue(panel.selectContactAt(1));
+            assertEquals(ALICE, list.getSelectionModel().getSelectedItem());
+            assertEquals("Alice Pauline", getLabel(root, "selectedName").getText());
+
+            persons.clear();
+            assertFalse(panel.selectContactAt(0));
+            assertNull(list.getSelectionModel().getSelectedItem());
+            assertTrue(getHint(root).isVisible());
+        });
+    }
+
+    @Test
+    public void explicitFocusAfterListChange_supersedesDeferredSelectionRestore() throws Exception {
+        FocusFixture fixture = callOnJavaFxThread(() -> {
+            ObservableList<Person> persons = FXCollections.observableArrayList(ALICE, BENSON);
+            PersonListPanel panel = new PersonListPanel(persons);
+            Region root = panel.getRoot();
+            new Scene(root);
+            root.applyCss();
+            ListView<Person> list = getList(root);
+            list.getSelectionModel().select(ALICE);
+            return new FocusFixture(persons, panel, root, list);
+        });
+
+        runOnJavaFxThread(() -> {
+            fixture.persons().setAll(ALICE, BENSON);
+            assertTrue(fixture.panel().selectContact(BENSON));
+        });
+
+        runOnJavaFxThread(() -> {
+            assertEquals(BENSON, fixture.list().getSelectionModel().getSelectedItem());
+            assertEquals("Benson Meier", getLabel(fixture.root(), "selectedName").getText());
+        });
+    }
+
+    @Test
     public void contactWithAllDetails_showsSavedValues() throws Exception {
         runOnJavaFxThread(() -> {
             Person contact = new PersonBuilder(ALICE).withRole("Logistics Lead")
@@ -361,4 +443,7 @@ public class PersonListPanelTest {
 
     private record PanelFixture(ObservableList<Person> persons, FilteredList<Person> displayedPersons,
                                 Region root, ListView<Person> list) {}
+
+    private record FocusFixture(ObservableList<Person> persons, PersonListPanel panel, Region root,
+                                ListView<Person> list) {}
 }

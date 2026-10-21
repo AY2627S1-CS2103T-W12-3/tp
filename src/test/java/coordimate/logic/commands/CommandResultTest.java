@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 
 import coordimate.logic.commands.CommandResult.View;
+import coordimate.testutil.TypicalPersons;
 
 public class CommandResultTest {
     @Test
@@ -30,6 +31,11 @@ public class CommandResultTest {
         assertNotEquals(commandResult, new CommandResult("feedback", View.CONTACTS));
         assertNotEquals(commandResult, new CommandResult("feedback", View.EVENTS));
         assertNotEquals(commandResult, CommandResult.warning("feedback"));
+        assertNotEquals(commandResult, CommandResult.withContactToFocus("feedback", View.CONTACTS,
+                TypicalPersons.ALICE));
+        assertNotEquals(commandResult, CommandResult.withContactIndexToFocus("feedback", View.CONTACTS, 0));
+        assertEquals(CommandResult.withContactIndexToFocus("feedback", View.CONTACTS, 1),
+                CommandResult.withContactIndexToFocus("feedback", View.CONTACTS, 1));
     }
 
     @Test
@@ -52,7 +58,7 @@ public class CommandResultTest {
         String expected = CommandResult.class.getCanonicalName() + "{feedbackToUser="
                 + commandResult.getFeedbackToUser() + ", showHelp=" + commandResult.shouldShowHelp()
                 + ", exit=" + commandResult.shouldExit() + ", viewToShow=" + commandResult.getViewToShow()
-                + ", warning=" + commandResult.isWarning() + "}";
+                + ", warning=" + commandResult.isWarning() + ", contactToFocus=null, contactIndexToFocus=-1}";
         assertEquals(expected, commandResult.toString());
     }
 
@@ -79,5 +85,23 @@ public class CommandResultTest {
     @Test
     public void constructor_nullView_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> new CommandResult("feedback", (View) null));
+    }
+
+    @Test
+    public void contactFocus_accessorsReturnRequestedTarget() {
+        CommandResult contactResult = CommandResult.withContactToFocus("Saved", View.CONTACTS,
+                TypicalPersons.ALICE);
+        CommandResult indexResult = CommandResult.withContactIndexToFocus("Deleted", View.CONTACTS, 2);
+        CommandResult anotherIndexResult = CommandResult.withContactIndexToFocus("Deleted", View.CONTACTS, 3);
+
+        assertEquals(TypicalPersons.ALICE, contactResult.getContactToFocus().orElseThrow());
+        assertTrue(contactResult.getContactIndexToFocus().isEmpty());
+        assertTrue(indexResult.getContactToFocus().isEmpty());
+        assertEquals(2, indexResult.getContactIndexToFocus().orElseThrow());
+        assertEquals(contactResult, CommandResult.withContactToFocus("Saved", View.CONTACTS, TypicalPersons.ALICE));
+        assertNotEquals(contactResult, CommandResult.withContactToFocus("Saved", View.CONTACTS, TypicalPersons.BENSON));
+        assertNotEquals(indexResult, anotherIndexResult);
+        assertThrows(IllegalArgumentException.class, () ->
+                CommandResult.withContactIndexToFocus("Deleted", View.CONTACTS, -1));
     }
 }
