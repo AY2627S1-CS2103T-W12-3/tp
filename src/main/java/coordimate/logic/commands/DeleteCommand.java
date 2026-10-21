@@ -87,6 +87,8 @@ public class DeleteCommand extends Command {
     }
 
     Person resolveMatches(List<Person> saved, List<Person> displayed) throws CommandException {
+        requireNonNull(saved);
+        requireNonNull(displayed);
         List<Person> matches = saved.stream()
                 .filter(this::matchesIdentifier).toList();
         if (matches.isEmpty()) {
@@ -121,6 +123,7 @@ public class DeleteCommand extends Command {
 
     /** Formats the contact details and the confirmation prompt. */
     public static String confirmationPrompt(Person person) {
+        requireNonNull(person);
         return "Contact found:\nName: " + person.getName()
                 + "\nPhone: " + person.getPhone()
                 + "\nEmail: " + person.getEmail()
@@ -130,8 +133,11 @@ public class DeleteCommand extends Command {
 
     @Override
     public CommandResult execute(Model model) throws CommandException {
+        requireNonNull(model);
         Person personToDelete = resolvePerson(model);
         model.deletePerson(personToDelete);
+        assert !model.getCoordiMate().getPersonList().contains(personToDelete)
+                : "Deleted contact must not remain in the model.";
         return new CommandResult(String.format(MESSAGE_DELETE_PERSON_SUCCESS, personToDelete.getName()));
     }
 

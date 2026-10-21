@@ -69,6 +69,7 @@ public class AddCommand extends Command {
         }
 
         model.addPerson(toAdd);
+        assert model.hasPerson(toAdd) : "Added contact must be present in the model.";
         return new CommandResult(String.format(MESSAGE_SUCCESS, toAdd.getName()));
     }
 
