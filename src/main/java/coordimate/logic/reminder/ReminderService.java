@@ -48,6 +48,13 @@ public class ReminderService {
     }
 
     /**
+     * Returns the reminders as last shown, without refreshing, so indexes match the panel.
+     */
+    public List<Event> getShownReminders() {
+        return unmodifiableReminders;
+    }
+
+    /**
      * Replaces reminders with the eligible, undismissed events in chronological order.
      * Forgets temporary dismissals when their event is deleted or its start value changes.
      */

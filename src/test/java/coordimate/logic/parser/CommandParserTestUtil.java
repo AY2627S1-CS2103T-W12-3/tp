@@ -2,13 +2,22 @@ package coordimate.logic.parser;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.time.Clock;
+
 import coordimate.logic.commands.Command;
 import coordimate.logic.parser.exceptions.ParseException;
+import coordimate.logic.reminder.ReminderService;
+import coordimate.model.ModelManager;
 
 /**
  * Contains helper methods for testing command parsers.
  */
 public class CommandParserTestUtil {
+
+    /** Creates a parser with an empty reminder list for tests that do not execute dismissals. */
+    public static CoordiMateParser createParser() {
+        return new CoordiMateParser(new ReminderService(new ModelManager(), null, Clock.systemDefaultZone()));
+    }
 
     /**
      * Asserts that the parsing of {@code userInput} by {@code parser} is successful and the command created
