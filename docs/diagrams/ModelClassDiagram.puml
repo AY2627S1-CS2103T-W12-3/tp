@@ -13,13 +13,21 @@ Class ModelManager
 Class UserPrefs
 
 Class UniquePersonList
+Class UniqueTagList
+Class Event
 Class Person
 Class MemberId
-Class Address
-Class Email
 Class Name
 Class Phone
+Class Email
+Class Role
+Class Birthday
+Class Address
+Class Organisation
+Class Note
+Class LeaveDate
 Class Tag
+note "Compared by value;\nnot the same objects\nas in UniqueTagList." as TagNote
 
 Class I #FFFFFF
 }
@@ -37,20 +45,41 @@ ModelManager -right-> "1" UserPrefs
 UserPrefs .up.|> ReadOnlyUserPrefs
 
 CoordiMate *--> "1" UniquePersonList
+CoordiMate *--> "1" UniqueTagList
+CoordiMate *--> "*" Event
 UniquePersonList --> "~* all" Person
-Person *--> MemberId
-Person *--> Name
-Person *--> Phone
-Person *--> Email
-Person *--> Address
-Person *--> "*" Tag
+UniqueTagList --> "*" Tag
+Person *-left-> "*" Tag
+
+Person *--> "0..1" MemberId
+Person *--> "1" Name
+Person *--> "1" Phone
+Person *--> "1" Email
+Person *--> "1" Role
+Person *---> "0..1" Birthday
+Person *---> "0..1" Address
+Person *---> "0..1" Organisation
+Person *---> "0..1" Note
+Person *---> "0..1" LeaveDate
+
+TagNote .. Tag
 
 Person -[hidden]up--> I
 UniquePersonList -[hidden]right-> I
 
+MemberId -[hidden]right-> Name
 Name -[hidden]right-> Phone
-Phone -[hidden]right-> Address
-Address -[hidden]right-> Email
+Phone -[hidden]right-> Email
+Email -[hidden]right-> Role
+Birthday -[hidden]right-> Address
+Address -[hidden]right-> Organisation
+Organisation -[hidden]right-> Note
+Note -[hidden]right-> LeaveDate
+MemberId -[hidden]down- Birthday
+Name -[hidden]down- Address
+Phone -[hidden]down- Organisation
+Email -[hidden]down- Note
+Role -[hidden]down- LeaveDate
 
 ModelManager --> "~* filtered" Person
 @enduml
