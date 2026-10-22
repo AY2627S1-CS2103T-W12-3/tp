@@ -83,6 +83,7 @@ public class CommandTestUtil {
             assertEquals(expectedCommandResult.getFeedbackToUser(), result.getFeedbackToUser());
             assertEquals(expectedCommandResult.shouldShowHelp(), result.shouldShowHelp());
             assertEquals(expectedCommandResult.shouldExit(), result.shouldExit());
+            assertEquals(expectedCommandResult.shouldShowTutorial(), result.shouldShowTutorial());
             assertEquals(expectedCommandResult.getViewToShow(), result.getViewToShow());
             assertEquals(expectedCommandResult.isWarning(), result.isWarning());
             assertCommandFocus(command, result, contactsBefore, expectedModel, expectedDeleteFocusIndex);

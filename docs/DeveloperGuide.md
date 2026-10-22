@@ -85,9 +85,12 @@ changing saved data; empty lists show their existing hints.
 The event details pane scrolls to the member list for its step, and highlights inside a scroll pane are clipped to the
 visible viewport. The dim backdrop leaves the highlighted area clear while a transparent blocker and disabled command
 box prevent commands from running during the tour. `UiManager` opens the overlay on first launch. `MainWindow` records
-the tutorial preference when the user closes or finishes it; the Tutorial item beside Help in the top bar can open the
-overlay again at any time. The overlay handles Left and Right Arrow navigation and Escape dismissal before key events
-can reach the command box or the main window's navigation shortcuts.
+the tutorial preference when the user closes or finishes it. The `tutorial` command, the Tutorial item beside Help in
+the top bar, and the <kbd>F2</kbd> shortcut can open the overlay again at any time. `TutorialCommand` returns a
+`CommandResult` whose `shouldShowTutorial()` flag asks `MainWindow` to open the overlay, in the same way that
+`shouldShowHelp()` opens the Help window. The overlay handles Left and Right Arrow navigation, Escape dismissal, and
+Tab focus movement before key events can reach the command box or the main window's navigation shortcuts. Tab and
+Shift+Tab cycle through the card's enabled buttons so that keyboard focus cannot leave the card.
 
 `CommandBox` keeps submitted, nonblank commands in a session-only list. The list has no configured cap or eviction;
 its practical limit is the JVM heap, and it is discarded when the app closes. It records an attempt before execution

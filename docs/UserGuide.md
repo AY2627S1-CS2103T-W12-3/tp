@@ -104,7 +104,8 @@ For `dismiss`, data-loading and saving failures instead produce the session-only
 * Parameters can be in any order.<br>
   For example, if the command specifies `n/NAME p/PHONE_NUMBER`, `p/PHONE_NUMBER n/NAME` is also acceptable.
 
-* Extraneous parameters for commands that take no parameters, such as `help`, `list`, `exit`, and `clear`, are ignored.<br>
+* Extraneous parameters for commands that take no parameters, such as `help`, `tutorial`, `list`, `exit`, and `clear`,
+  are ignored.<br>
   For example, `help 123` is interpreted as `help`.
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
@@ -200,16 +201,19 @@ keyboard. In the command formats, parameters enclosed in square brackets `[ ]` a
 
 Format: `help`
 
-### Taking the tutorial
+### Taking the tutorial: `tutorial`
 
 The first time CoordiMate starts, a guided overlay opens automatically. Use **← Back** and **Next →** or press the
-Left and Right Arrow keys to move through the sixteen steps. Select **Close (Esc)** or press <kbd>Esc</kbd> to leave
-the tutorial. On the last step, **Finish →** or the Right Arrow key completes it. The tour introduces
+Left and Right Arrow keys to move through the sixteen steps. Press <kbd>Tab</kbd> or <kbd>Shift</kbd> + <kbd>Tab</kbd> to
+move between the tutorial's buttons. Select **Close (Esc)** or press <kbd>Esc</kbd> to leave the tutorial. On the last step, **Finish →** or the Right Arrow key completes it. The tour introduces
 the Contacts, Events, and Tags views; their lists and details; the command box; keyboard navigation; and Help. It
 selects each view as it is introduced and leaves the current view selected when you close it. The highlighted area
 stays bright while the rest of the app is dimmed. The app cannot be used to enter commands during the tour.
 
-To take the tutorial again, select **Tutorial** beside **Help** in the top bar.
+To take the tutorial again, enter `tutorial`, select **Tutorial** beside **Help** in the top bar, or press
+<kbd>Fn</kbd> + <kbd>F2</kbd>. The tutorial always starts again from its first step.
+
+Format: `tutorial`
 
 
 ### Adding a contact: `add`
@@ -1115,4 +1119,5 @@ Action | Format, Examples
 **List tags** | `listtags`
 **Clear** | `clear`
 **Help** | `help`
+**Tutorial** | `tutorial`
 **Exit** | `exit`
