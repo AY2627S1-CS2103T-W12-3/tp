@@ -249,6 +249,9 @@ changing a contact's ID. Bulk replacement reserves all supplied IDs before assig
 Copies and resets preserve both IDs and allocation state, including when the highest ID has been deleted.
 Deleting contacts does not recycle IDs. `clear` creates a new empty dataset and resets allocation to `1`.
 The counter value `2147483648` represents exhaustion; further automatic allocation is rejected.
+`AddCommand` translates the allocation failure into a `CommandException` with the message
+`No more member IDs are available.` so the UI displays normal command feedback. Contacts, tags, the
+allocation counter, and the saved file remain unchanged.
 
 #### Command targeting
 
