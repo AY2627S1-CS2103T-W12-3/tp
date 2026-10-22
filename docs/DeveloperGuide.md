@@ -71,7 +71,11 @@ The **API** of this component is specified in [`Ui.java`](https://github.com/AY2
 
 <puml src="diagrams/UiClassDiagram.puml" alt="Structure of the UI Component"/>
 
-The UI consists of a `MainWindow` and its parts, such as `CommandBox`, `ResultDisplay`, `PersonListPanel`, and `StatusBarFooter`. All of these, including `MainWindow`, inherit from the abstract `UiPart` class, which captures common behavior among classes that represent visible GUI parts.
+The first diagram shows the parts created or used by `MainWindow`, including `CommandBox`, `ResultDisplay`, `PersonListPanel`, `EventListPanel`, `ReminderPanel`, `StatusBarFooter`, and `TutorialWindow`. `MainWindow` also uses `TagListViewModel` to keep the Tags view synchronized with contact and tag data.
+
+The inheritance diagram shows all ten subclasses of the abstract `UiPart`, which captures behavior shared by visible GUI parts. Each `UiPart` box represents the same superclass, repeated to keep the arrows clear. `TagListViewModel` and `WindowBounds` are helpers rather than `UiPart` subclasses.
+
+<puml src="diagrams/UiPartInheritanceDiagram.puml" alt="UI component inheritance from UiPart"/>
 
 The `HelpWindow` provides an in-app command quick reference. Its read-only, scrollable command table is populated by
 `HelpWindow` using the command words defined by the corresponding command classes, while its FXML file controls the
@@ -143,30 +147,20 @@ Here's a (partial) class diagram of the `Logic` component:
 
 <puml src="diagrams/LogicClassDiagram.puml" width="550"/>
 
-The sequence diagram below illustrates the interactions within the `Logic` component, taking `execute("delete 1")` API call as an example.
+The sequence diagram below follows `execute("delete 1")` and the subsequent confirmation response. The first call resolves and stores the contact without deleting it. If the response is `y` or `Y`, the confirmed command deletes the contact on a candidate model through the atomic save path; any other response cancels the deletion without changing data.
 
 <puml src="diagrams/DeleteSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `delete 1` Command" />
 
-<box type="info" seamless>
-
-**Note:** The lifeline for `DeleteCommandParser` should end at the destroy marker (X), but due to a limitation of PlantUML, the lifeline continues till the end of diagram.
-</box>
-
-<box type="info" seamless>
-
-**Note:** This diagram and the architecture sequence diagram above are simplified to show the general flow of a
-command. In the actual implementation, `delete` first asks the user for confirmation, and commands that change data
-are executed on a copy of the model and saved before the change is applied. Both are described in
-[Saving data atomically](#saving-data-atomically).
-</box>
+Both delete diagrams use a reference to the detailed atomic-save sequence in
+[Saving data atomically](#saving-data-atomically). The confirmed command deletes the resolved contact from a candidate
+model; `LogicManager` replaces the live data only after saving the candidate succeeds.
 
 
 How the `Logic` component works:
 
 1. When `Logic` is called upon to execute a command, the command is passed to a `CoordiMateParser` object, which in turn creates a parser that matches the command (e.g., `DeleteCommandParser`) and uses it to parse the command.
-1. This results in a `Command` object (more precisely, an object of one of its subclasses e.g., `DeleteCommand`) which is executed by the `LogicManager`.
-1. The command can communicate with the `Model` when it is executed (e.g. to delete a person).<br>
-   Note that although this is shown as a single step in the diagram above for simplicity, the code can require several interactions between the command object and the `Model` to complete the operation.
+1. This results in a `Command` object (more precisely, an object of one of its subclasses e.g., `DeleteCommand`). For `delete`, `LogicManager` first calls `resolvePerson` and returns a confirmation prompt without executing the deletion.
+1. If the next input is `y` or `Y`, `LogicManager` creates a command for the resolved `Person` and executes it on a candidate model. That command deletes the contact from the candidate, which is saved before the live model changes. Any other input cancels the deletion.
 1. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
 
 Here are the other classes in `Logic` (omitted from the class diagram above) that are used for parsing a user command:
@@ -347,7 +341,7 @@ These are `AddCommand`, `EditCommand`,
 
 The live model is not touched until step 5, so a failure at any earlier step leaves the app exactly as it was.
 
-The sequence diagram below shows these steps for an `addevent` command that succeeds. Parsing is omitted.
+The sequence diagram below shows a successful call to `executeAtomicCommand(c)` with an `AddEventCommand` as `c`. Parsing is omitted.
 
 <puml src="diagrams/AtomicCommandSequenceDiagram.puml" alt="Interactions when a command that changes data is executed" />
 

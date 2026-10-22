@@ -1,0 +1,46 @@
+@startuml
+!include style.puml
+left to right direction
+skinparam arrowThickness 1.1
+skinparam arrowColor UI_COLOR_T4
+skinparam classBackgroundColor UI_COLOR
+
+package UI <<Rectangle>> {
+  package Windows {
+    Class "{abstract}\nUiPart" as WindowUiPart
+    Class MainWindow
+    Class HelpWindow
+    Class TutorialWindow
+  }
+
+  package "Input and feedback" {
+    Class "{abstract}\nUiPart" as InputUiPart
+    Class CommandBox
+    Class ResultDisplay
+    Class StatusBarFooter
+  }
+
+  package Contacts {
+    Class "{abstract}\nUiPart" as ContactUiPart
+    Class PersonListPanel
+    Class PersonCard
+  }
+
+  package "Events and reminders" {
+    Class "{abstract}\nUiPart" as EventUiPart
+    Class EventListPanel
+    Class ReminderPanel
+  }
+}
+
+MainWindow --|> WindowUiPart
+HelpWindow --|> WindowUiPart
+TutorialWindow --|> WindowUiPart
+CommandBox --|> InputUiPart
+ResultDisplay --|> InputUiPart
+StatusBarFooter --|> InputUiPart
+PersonListPanel --|> ContactUiPart
+PersonCard --|> ContactUiPart
+EventListPanel --|> EventUiPart
+ReminderPanel --|> EventUiPart
+@enduml
