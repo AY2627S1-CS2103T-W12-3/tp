@@ -120,12 +120,11 @@ public class PersonListPanel extends UiPart<Region> {
         super(FXML);
         this.events = events;
         persons.addListener((ListChangeListener<Person>) change -> {
-          if (selectedPerson != null) {
-            Person previouslySelected = selectedPerson;
-            long versionAtChange = focusRequestVersion;
-            Platform.runLater(() ->
-                restoreSelection(persons, previouslySelected, versionAtChange));
-          }
+            if (selectedPerson != null) {
+                Person previouslySelected = selectedPerson;
+                long versionAtChange = focusRequestVersion;
+                Platform.runLater(() -> restoreSelection(persons, previouslySelected, versionAtChange));
+            }
         });
         events.addListener((ListChangeListener<Event>) change -> showDetails(selectedPerson));
         personListView.setItems(persons);
@@ -150,15 +149,15 @@ public class PersonListPanel extends UiPart<Region> {
      */
     private void restoreSelection(ObservableList<Person> persons,
             Person previouslySelected, long versionAtChange) {
-      if (versionAtChange != focusRequestVersion) {
-        return;
-      }
+        if (versionAtChange != focusRequestVersion) {
+            return;
+        }
 
-      Person current = persons.stream()
-            .filter(person -> person.getMemberId().equals(previouslySelected.getMemberId()))
-            .findFirst()
-            .orElse(null);
-      personListView.getSelectionModel().select(current);
+        Person current = persons.stream()
+                .filter(person -> person.getMemberId().equals(previouslySelected.getMemberId()))
+                .findFirst()
+                .orElse(null);
+        personListView.getSelectionModel().select(current);
     }
 
     /**

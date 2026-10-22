@@ -69,7 +69,7 @@ public class EditCommandTest {
         Model editModel = new ModelManager(getTypicalCoordiMate(), new UserPrefs());
         Person originalPerson = editModel.getFilteredPersonList().getFirst();
         Person editedPerson = new PersonBuilder(originalPerson).withName("Alice Tan").build();
-        EditCommand command = new EditCommand(INDEX_FIRST_PERSON,
+        EditCommand command = new EditCommand(originalPerson.getMemberId().orElseThrow(),
                 new EditPersonDescriptorBuilder().withName("Alice Tan").build());
 
         CommandResult result = command.execute(editModel);
