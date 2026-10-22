@@ -38,6 +38,8 @@ import javafx.scene.layout.VBox;
  * Shows the displayed contact list and details of the selected contact.
  */
 public class PersonListPanel extends UiPart<Region> {
+    static final String MESSAGE_NO_CONTACTS = "No contacts found.";
+    static final String MESSAGE_NO_ARCHIVED_CONTACTS = "No archived contacts.";
     private static final String FXML = "PersonListPanel.fxml";
     private static final double SPLIT_PANE_DIVIDER_WIDTH = 2;
     private static final String NOT_SPECIFIED = "— (not specified)";
@@ -114,6 +116,7 @@ public class PersonListPanel extends UiPart<Region> {
     private final Clock clock;
     private LocalDate shownDate;
     private long focusRequestVersion;
+    private final Label emptyListMessage = new Label(MESSAGE_NO_CONTACTS);
 
     /**
      * Creates a {@code PersonListPanel} with the given {@code ObservableList}.
@@ -147,7 +150,7 @@ public class PersonListPanel extends UiPart<Region> {
         events.addListener((ListChangeListener<Event>) change -> showDetails(selectedPerson));
         personListView.setItems(persons);
         personListView.setCellFactory(listView -> new PersonListViewCell());
-        personListView.setPlaceholder(new Label("No contacts found."));
+        personListView.setPlaceholder(emptyListMessage);
         contactCount.textProperty().bind(Bindings.size(persons).asString("Records: %d"));
         personListView.getSelectionModel().selectedItemProperty().addListener((observable, oldPerson, person) ->
                 showDetails(person));
@@ -254,6 +257,13 @@ public class PersonListPanel extends UiPart<Region> {
         showDetails(selectedPerson);
     }
 
+    /**
+     * Shows an empty-list message suited to the archived view if {@code isShowingArchived} is true.
+     */
+    void setShowingArchived(boolean isShowingArchived) {
+        emptyListMessage.setText(isShowingArchived ? MESSAGE_NO_ARCHIVED_CONTACTS : MESSAGE_NO_CONTACTS);
+    }
+
     /** Runs the given action whenever the displayed contact list is clicked. */
     void setCardListClickHandler(Runnable handler) {
         Objects.requireNonNull(handler);
@@ -343,7 +353,8 @@ public class PersonListPanel extends UiPart<Region> {
         }
         for (int index = 0; index < matchingEvents.size(); index++) {
             Event event = matchingEvents.get(index);
-            Label title = new Label((index + 1) + ". " + event.getName());
+            Label title = new Label((index + 1) + ". " + event.getName()
+                    + (event.isArchived() ? " (archived)" : ""));
             title.setWrapText(true);
             title.getStyleClass().add("assigned-event-name");
             HBox.setHgrow(title, Priority.ALWAYS);

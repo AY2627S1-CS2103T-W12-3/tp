@@ -7,6 +7,8 @@ import java.util.logging.Logger;
 import coordimate.commons.core.LogsCenter;
 import coordimate.logic.commands.AddCommand;
 import coordimate.logic.commands.AddEventCommand;
+import coordimate.logic.commands.ArchiveCommand;
+import coordimate.logic.commands.ArchiveEventCommand;
 import coordimate.logic.commands.AssignCommand;
 import coordimate.logic.commands.ClearCommand;
 import coordimate.logic.commands.CreateTagCommand;
@@ -60,6 +62,8 @@ public class HelpWindow extends UiPart<Stage> {
                             + "[t/TAG]... [m/NOTE]"),
             commandUsage(AddEventCommand.COMMAND_WORD, "evn/EVENT_NAME st/START_TIME et/END_TIME"),
             commandUsage(CreateTagCommand.COMMAND_WORD, "t/TAG"),
+            commandUsage(ArchiveCommand.COMMAND_WORD, "MEMBER_ID"),
+            commandUsage(ArchiveEventCommand.COMMAND_WORD, "evn/EVENT_NAME"),
             commandUsage(AssignCommand.COMMAND_WORD,
                     "evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]..."),
             commandUsage(ClearCommand.COMMAND_WORD, ""),
@@ -78,7 +82,7 @@ public class HelpWindow extends UiPart<Stage> {
             commandUsage(ExitCommand.COMMAND_WORD, ""),
             commandUsage(FilterCommand.COMMAND_WORD, "FIELD/VALUE [FIELD/VALUE]..."),
             commandUsage(HelpCommand.COMMAND_WORD, ""),
-            commandUsage(ListCommand.COMMAND_WORD, ""),
+            commandUsage(ListCommand.COMMAND_WORD, "[archived]"),
             commandUsage(ListTagsCommand.COMMAND_WORD, ""),
             commandUsage(MarkAttendanceCommand.COMMAND_WORD,
                     "evn/EVENT_NAME mem/MEMBER_NAME att/STATUS"),
@@ -86,7 +90,9 @@ public class HelpWindow extends UiPart<Stage> {
             commandUsage(SearchCommand.COMMAND_WORD, "KEYWORD"),
             commandUsage(TutorialCommand.COMMAND_WORD, ""),
             commandUsage(UnassignCommand.COMMAND_WORD,
-                    "evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]..."));
+                    "evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]..."),
+            commandUsage(ArchiveCommand.UNARCHIVE_COMMAND_WORD, "MEMBER_ID"),
+            commandUsage(ArchiveEventCommand.UNARCHIVE_COMMAND_WORD, "evn/EVENT_NAME"));
 
     private static final Logger logger = LogsCenter.getLogger(HelpWindow.class);
     private static final String FXML = "HelpWindow.fxml";

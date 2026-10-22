@@ -43,10 +43,13 @@ class JsonAdaptedPerson {
     private final String note;
     private final String leaveUntil;
     private final List<JsonAdaptedTag> tags = new ArrayList<>();
+    private final boolean archived;
 
     /**
      * Constructs a {@code JsonAdaptedPerson} with the given person details.
      * {@code leaveUntil} is absent from files saved before leave existed, and such contacts are not on leave.
+     * {@code archived} is absent from files saved before archiving existed, and a missing or null value loads
+     * the contact as not archived.
      */
     @JsonCreator
     public JsonAdaptedPerson(@JsonProperty("name") String name, @JsonProperty("phone") String phone,
@@ -54,7 +57,7 @@ class JsonAdaptedPerson {
             @JsonProperty("role") String role, @JsonProperty("birthday") String birthday,
             @JsonProperty("organisation") String organisation, @JsonProperty("note") String note,
             @JsonProperty("leaveUntil") String leaveUntil, @JsonProperty("tags") List<JsonAdaptedTag> tags,
-            @JsonProperty("memberId") JsonNode memberId) {
+            @JsonProperty("memberId") JsonNode memberId, @JsonProperty("archived") Boolean archived) {
         this.memberId = memberId;
         this.name = name;
         this.phone = phone;
@@ -68,6 +71,15 @@ class JsonAdaptedPerson {
         if (tags != null) {
             this.tags.addAll(tags);
         }
+        this.archived = Boolean.TRUE.equals(archived);
+    }
+
+    /**
+     * Creates a record of a contact that is not archived.
+     */
+    public JsonAdaptedPerson(String name, String phone, String email, String address, String role, String birthday,
+            String organisation, String note, String leaveUntil, List<JsonAdaptedTag> tags, JsonNode memberId) {
+        this(name, phone, email, address, role, birthday, organisation, note, leaveUntil, tags, memberId, null);
     }
 
     /**
@@ -111,6 +123,7 @@ class JsonAdaptedPerson {
         tags.addAll(source.getTags().stream()
                 .map(JsonAdaptedTag::new)
                 .collect(Collectors.toList()));
+        archived = source.isArchived();
     }
 
     /**
@@ -189,7 +202,7 @@ class JsonAdaptedPerson {
 
         final Set<Tag> modelTags = new HashSet<>(personTags);
         return new Person(modelMemberId, modelName, modelPhone, modelEmail, modelRole, modelBirthday, modelAddress,
-                modelOrganisation, modelNote, modelLeaveDate, modelTags);
+                modelOrganisation, modelNote, modelLeaveDate, modelTags, archived);
     }
 
 }

@@ -12,6 +12,8 @@ import coordimate.model.person.Name;
 import coordimate.model.person.Person;
 import coordimate.model.tag.Tag;
 import javafx.beans.binding.Bindings;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -37,6 +39,8 @@ import javafx.scene.layout.VBox;
  * Keeps event selection and details connected to the live model list.
  */
 public class EventListPanel extends UiPart<Region> {
+    static final String MESSAGE_NO_EVENTS = "No events yet. Create one with addevent.";
+    static final String MESSAGE_NO_ARCHIVED_EVENTS = "No archived events.";
     private static final String FXML = "EventListPanel.fxml";
     private static final DateTimeFormatter DATE_TIME_FORMAT = DateTimeFormatter.ofPattern("dd-MM-uuuu HH:mm");
 
@@ -87,6 +91,8 @@ public class EventListPanel extends UiPart<Region> {
 
     private int lastSelectedIndex = -1;
     private final ObservableList<Person> persons;
+    private final Label emptyListMessage = new Label(MESSAGE_NO_EVENTS);
+    private final BooleanProperty showingArchived = new SimpleBooleanProperty(false);
 
     /**
      * Observes saved events and stacks the panes when the window is narrow.
@@ -103,8 +109,9 @@ public class EventListPanel extends UiPart<Region> {
         this.persons = getPersonSource(persons);
         eventListView.setItems(events);
         eventListView.setCellFactory(list -> new EventListCell());
-        eventListView.setPlaceholder(new Label("No events yet. Create one with addevent."));
-        eventCount.textProperty().bind(Bindings.size(events).asString("Events (%d)"));
+        eventListView.setPlaceholder(emptyListMessage);
+        eventCount.textProperty().bind(Bindings.createStringBinding(() -> countText(events.size()),
+                events, showingArchived));
         eventListView.getSelectionModel().selectedItemProperty().addListener((observable, oldEvent, event) ->
                 showDetails(event));
         eventListView.getSelectionModel().selectedIndexProperty().addListener((observable, oldIndex, index) -> {
@@ -282,6 +289,19 @@ public class EventListPanel extends UiPart<Region> {
                 .orElse(null);
     }
 
+    /**
+     * Labels the list header and empty-list message for the archived view if {@code isShowingArchived} is true.
+     * The normal empty-list message suggests {@code addevent}, which would be misleading there.
+     */
+    public void setShowingArchived(boolean isShowingArchived) {
+        showingArchived.set(isShowingArchived);
+        emptyListMessage.setText(isShowingArchived ? MESSAGE_NO_ARCHIVED_EVENTS : MESSAGE_NO_EVENTS);
+    }
+
+    private String countText(int count) {
+        return (showingArchived.get() ? "Archived events (" : "Events (") + count + ")";
+    }
+
     @SuppressWarnings("unchecked")
     private static ObservableList<Person> getPersonSource(ObservableList<Person> persons) {
         if (persons instanceof FilteredList<?> filteredPersons) {
@@ -316,7 +336,8 @@ public class EventListPanel extends UiPart<Region> {
         avatar.getStyleClass().add("event-member-avatar");
         avatar.getStyleClass().add(getAvatarColorClass(person));
 
-        Label name = new Label(member.getFullName());
+        Label name = new Label(member.getFullName()
+                + (person != null && person.isArchived() ? " (archived)" : ""));
         name.setWrapText(true);
         name.setMinWidth(0);
         name.getStyleClass().add("event-member-name");

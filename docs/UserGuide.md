@@ -104,8 +104,8 @@ For `dismiss`, data-loading and saving failures instead produce the session-only
 * Parameters can be in any order.<br>
   For example, if the command specifies `n/NAME p/PHONE_NUMBER`, `p/PHONE_NUMBER n/NAME` is also acceptable.
 
-* Extraneous parameters for commands that take no parameters, such as `help`, `tutorial`, `list`, `exit`, and `clear`,
-  are ignored.<br>
+* Extraneous parameters for commands that take no parameters, such as `help`, `tutorial`, `exit`, and `clear`, are
+  ignored.<br>
   For example, `help 123` is interpreted as `help`.
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
@@ -131,7 +131,7 @@ A command that breaks a constraint is rejected and makes no changes.
 | `EVENT_NAME`, `NEW_EVENT_NAME` | `evn/`, `nevn/` | At least one non-space character. Any characters are allowed, subject to the note below. Event names are unique, ignoring case. |
 | `START_TIME`, `END_TIME` | `st/`, `et/` | A real date in `dd-MM-yyyy` format, optionally followed by a 24-hour time in `HH:mm` format, e.g. `17-09-2026` or `17-09-2026 16:30`. The start must not be after the end. |
 | `STATUS` | `att/` | `present` or `absent`, ignoring case. |
-| `MEMBER_ID` | `c/` for `assign` and `unassign`; none for `edit` and `delete` | A permanent positive integer from 1 to 2147483647 identifying a saved contact, independent of the displayed list. |
+| `MEMBER_ID` | `c/` for `assign` and `unassign`; none for `edit`, `delete`, `archive`, and `unarchive` | A permanent positive integer from 1 to 2147483647 identifying a saved contact, independent of the displayed list. |
 | `KEYWORD` | none | At least one non-space character. |
 
 <box type="info" seamless>
@@ -331,6 +331,7 @@ correct it, then press Enter or click **Retry**.
 | Condition | Error message |
 |---|---|
 | An event with the same name already exists, ignoring case. | `An event with this name already exists. No changes were made.` |
+| An archived event with the same name already exists, ignoring case. | `An archived event named {EVENT_NAME} already exists. No changes were made. To restore it, use: unarchiveevent evn/{EVENT_NAME}` |
 | The event name is empty. | `Event name must not be empty. Example: evn/Final Concert` |
 | All required parameters are present, but `st/` contains only whitespace. | `Start time must not be empty. Example: st/17-09-2026 16:30` |
 | All required parameters are present, but `et/` contains only whitespace. | `End time must not be empty. Example: et/17-09-2026 18:30` |
@@ -427,7 +428,8 @@ only while CoordiMate is running.
 
 CoordiMate checks saved events on startup and once per minute while the window is open. It also refreshes
 reminders after commands, including event edits and deletions. A reminder becoming eligible or expiring
-as time passes updates at the next periodic check.
+as time passes updates at the next periodic check. [Archived](#archiving-contacts-and-events-archive-archiveevent)
+events do not produce reminders.
 
 Reminder timing follows your computer's local time zone:
 
@@ -535,8 +537,10 @@ If some contacts were already assigned: `Assigned 1 member(s) to Final Concert. 
 | Condition | Error message |
 |---|---|
 | No saved event has the supplied name, ignoring case. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
+| The event is archived. | `Event {EVENT_NAME} is archived, so its members cannot be changed. Unarchive it first with: unarchiveevent evn/{EVENT_NAME}` |
 | A member ID does not exist. | `No contact exists with member ID: {MEMBER_ID}. Use an existing member ID.` |
 | A member ID is not written as digits representing a value from 1 to 2147483647. | `Member IDs must be positive integers separated by spaces. Example: c/1 3 5` |
+| A specified contact is archived. | `{NAME} is archived, so it cannot be assigned. No changes were made. Unarchive it first with: unarchive {MEMBER_ID}` |
 | Every specified contact is already assigned. | `All specified contacts are already assigned to {EVENT_NAME}. No changes were made.` |
 | The event name is empty. | `Event name must not be empty. Example: evn/Final Concert` |
 | The event name is longer than 100 characters. | `Event name must not exceed 100 characters. Example: evn/Final Concert` |
@@ -577,6 +581,7 @@ If some contacts were not assigned: `Removed 1 member(s) from Final Concert. 1 c
 | Condition | Error message |
 |---|---|
 | No saved event has the supplied name, ignoring case. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
+| The event is archived. | `Event {EVENT_NAME} is archived, so its members cannot be changed. Unarchive it first with: unarchiveevent evn/{EVENT_NAME}` |
 | A member ID does not exist. | `No contact exists with member ID: {MEMBER_ID}. Use an existing member ID.` |
 | A member ID is not written as digits representing a value from 1 to 2147483647. | `Member IDs must be positive integers separated by spaces. Example: c/1 3 5` |
 | None of the specified contacts are assigned. | `None of the specified contacts are assigned to {EVENT_NAME}. No changes were made.` |
@@ -671,13 +676,34 @@ Removing a member with `unassign`, or deleting the contact, also removes that me
 If saving fails, the attendance is not changed and the command reports
 `Attendance could not be saved. No changes were made.`
 
-### Listing all contacts: `list`
+### Listing contacts and events: `list`
 
-Shows a list of all contacts in CoordiMate, removing any search, filter, or members view.
+Shows all active contacts and events, removing any search, filter, or members view. `list archived` instead shows
+only [archived](#archiving-contacts-and-events-archive-archiveevent) contacts and events.
 
-Format: `list`
+Format: `list [archived]`
 
-Success: `Listed all contacts.`
+* `list` shows the contacts and events that are not archived. This is the normal view.
+* `list archived` shows only archived contacts in the **Contacts** tab and only archived events in the **Events** tab.
+  The tabs and the event list heading read **Archived contacts** and **Archived events** while this view is open, and
+  an empty list shows `No archived contacts.` or `No archived events.` `archived` may be written in any capitalization.
+* Both forms open the **Contacts** tab.
+* In the archived view, the left sidebar lists only `unarchive` (or `unarchiveevent` in the **Events** tab) and `list`.
+  Other commands still work: `search`, `filter`, and `members` look only at archived contacts, and `edit`, `delete`,
+  `editevent`, `deleteevent`, and `markattendance` work on archived items. Unarchived items leave the view immediately.
+* `add` and `addevent` return to the normal view, so that the new contact or event is visible. Opening the
+  tutorial also returns to the normal view, since it walks through the normal lists and commands.
+
+Examples:
+
+* `list` returns to the normal view.
+* `list archived` shows the archived contacts and their member IDs. `unarchive 12` then restores the contact with member ID `12`.
+
+Success: `Listed all contacts.` or `Listed archived contacts and events. Use list to return to active contacts and events.`
+
+| Condition | Error message |
+|---|---|
+| Anything other than `archived` follows `list`. | `Unknown list option: {OPTION}. Use list, or list archived to show archived contacts and events.` |
 
 ### Deleting a tag: `deletetag`
 
@@ -774,8 +800,8 @@ Format: `listtags`
 
 Select a tag in the **Tags** tab to see the contacts assigned to it and the member count. The member list includes
 all saved contacts, regardless of the current contact search or filter, and is ordered by name. Each member shows
-their tags, role, and organisation. Every tag assigned to a contact is included in this global tag list, including
-tags recovered from older saved data.
+their tags, role, and organisation. Archived contacts are included and marked `(archived)`. Every tag assigned to a
+contact is included in this global tag list, including tags recovered from older saved data.
 Success: `Here is the list of all existing tags.` followed by `Tags: ` and the tag names, separated by commas.
 
 Unlike `list`, `listtags` does not ignore extra text: `listtags 123` is rejected with
@@ -1014,6 +1040,77 @@ non-matching identifiers are rejected without opening a confirmation prompt.
 Cancelling reports `Deletion cancelled. No changes were made.`
 If saving a confirmed deletion fails, the command reports `Contact could not be saved. No changes were made.`
 
+### Archiving contacts and events: `archive`, `archiveevent`
+
+Archiving hides a contact or an event from the normal lists without deleting it, so that the lists show only the
+people and events you are working with now. Everything is kept: an archived contact keeps its details and stays a
+member of its events, and an archived event keeps its details, members, and attendance records. Use
+[`list archived`](#listing-contacts-and-events-list) to see archived items, and the `unarchive` commands to bring
+them back.
+
+Formats:
+
+* `archive MEMBER_ID` archives the contact with that member ID.
+* `unarchive MEMBER_ID` restores the contact with that member ID.
+* `archiveevent evn/EVENT_NAME` archives the event with the supplied name, ignoring capitalization.
+* `unarchiveevent evn/EVENT_NAME` restores the event with the supplied name.
+
+All four commands work from any view. `MEMBER_ID` is the permanent ID shown on each contact, as in `edit` and
+`delete`, so it does not depend on the displayed list. A contact hidden by a search, a filter, or the archived view can
+still be archived or restored.
+
+While a contact or event is archived:
+
+* It does not appear in the **Contacts** or **Events** tab, or in the results of `search`, `filter`, or `members`.
+  It appears only in the archived view opened by `list archived`, where an archived contact's card shows an
+  **Archived** badge.
+* It is marked `(archived)` wherever it still appears: an archived contact in event member lists and in tag member
+  lists in the **Tags** tab, and an archived event in the event list of each of its members' details.
+* An archived event does not produce reminders. Archiving an event removes its reminder from the
+  **Upcoming events** panel, and unarchiving it shows the reminder again if it is still upcoming and not dismissed.
+* An archived contact cannot be assigned to an event, but can still be removed from one with `unassign`.
+* Contacts cannot be assigned to or removed from an archived event. You can still use `editevent`,
+  `markattendance`, and `deleteevent` on it, for example to correct its records.
+* Its name stays taken: `add` or `addevent` with the same name is rejected as a duplicate.
+
+Examples:
+
+* `archive 12` archives the contact with member ID `12`.
+* `unarchive 12` restores that contact, from either view.
+* `archiveevent evn/Orientation 2025` archives that event.
+* `unarchiveevent evn/orientation 2025` restores it.
+
+Success: `Archived contact: {NAME}.`, `Unarchived contact: {NAME}.`, `Archived Event {EVENT_NAME}.`, or
+`Unarchived Event {EVENT_NAME}.` The change is saved immediately and stays after restarting.
+
+Errors for `archive` and `unarchive`:
+
+| Condition | Error message |
+|---|---|
+| The member ID is missing. | `Invalid command format.` |
+| The member ID is zero, negative, non-integer, greater than 2147483647, or followed by extra arguments. | `Invalid member ID. Example: archive 2` or `Invalid member ID. Example: unarchive 2` |
+| No contact has that member ID. | `No contact exists with member ID: {MEMBER_ID}. Use an existing member ID.` |
+| `archive` is used on a contact that is already archived. | `{NAME} is already archived. No changes were made.` |
+| `unarchive` is used on a contact that is not archived. | `{NAME} is not archived. No changes were made.` |
+
+Errors for `archiveevent` and `unarchiveevent`:
+
+| Condition | Error message |
+|---|---|
+| `evn/` is missing, or there is text before `evn/`. | `Invalid command format.` |
+| The event name is empty or contains only whitespace. | `Event name must not be empty. Example: evn/Final Concert` |
+| No saved event has the supplied name, ignoring case. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
+| `archiveevent` is used on an event that is already archived. | `Event {EVENT_NAME} is already archived. No changes were made.` |
+| `unarchiveevent` is used on an event that is not archived. | `Event {EVENT_NAME} is not archived. No changes were made.` |
+| The event name is longer than 100 characters. | `Event name must not exceed 100 characters. Example: evn/Final Concert` |
+| The event name contains a line break or other control character. | `Invalid event name. Use letters, digits, spaces, or punctuation. Example: evn/Final-Concert` |
+| `evn/` is repeated. | `Parameter evn/ may only be specified once.` |
+| An unknown parameter is used. | `Unknown parameter: {PREFIX}.` |
+
+If saving fails, the command reports `Contact archive status could not be saved. No changes were made.` or
+`Event archive status could not be saved. No changes were made.` The contact or event and the existing data file
+remain unchanged.
+
 ### Clearing all entries: `clear`
 
 Deletes all contacts, events, and custom tags from CoordiMate. The default tags (`EXCO`, `Sponsor`,
@@ -1075,6 +1172,7 @@ Each name in an event's `members` list must exactly match the name of a saved co
 Each contact's `memberId` must be a unique integer from `1` to `2147483647`. Keep existing IDs unchanged.
 Keep the top-level `nextMemberId` field: it must exceed every saved ID, must not be reduced after deleting contacts,
 and cannot exceed `2147483648`.<br>
+Each contact and event has an `archived` value of `true` or `false`. A missing value is read as `false`.<br>
 If a contact uses a tag that is missing from the top-level `tags` list, CoordiMate adds it to the global tag list when
 the file is loaded. Existing top-level tags, including unused tags, retain their saved order and capitalization.<br>
 Furthermore, certain edits can cause CoordiMate to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
@@ -1102,12 +1200,16 @@ Action | Format, Examples
 **Add contact** | `add n/NAME p/PHONE e/EMAIL r/ROLE [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [lv/LEAVE_END_DATE] [t/TAG]... [m/NOTE]`<br> e.g., `add n/James Ho p/22224444 e/jamesho@example.com r/Member t/EXCO`
 **Edit contact** | `edit MEMBER_ID [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [lv/LEAVE_END_DATE] [t/TAG]... [at/TAG]... [rt/TAG]...`<br> or `edit target/IDENTIFIER [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [lv/LEAVE_END_DATE] [t/TAG]... [at/TAG]... [rt/TAG]...`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
 **Delete contact** | `delete MEMBER_ID` or `delete n/NAME`, `delete p/PHONE`, `delete e/EMAIL`; confirm with `y`<br> e.g., `delete 3`
-**List contacts** | `list`
+**List contacts and events** | `list [archived]`<br> e.g., `list`, `list archived`
+**Archive contact** | `archive MEMBER_ID`<br> e.g., `archive 12`
+**Unarchive contact** | `unarchive MEMBER_ID`<br> e.g., `unarchive 12`
 **Search** | `search KEYWORD`<br> e.g., `search James`, `search "Jurong West"`
 **Filter** | `filter FIELD/VALUE [FIELD/VALUE]...`<br> e.g., `filter tag/EXCO`, `filter event/"Final Concert" tag/EXCO`
 **Add event** | `addevent evn/EVENT_NAME st/START_TIME et/END_TIME`<br> e.g., `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`
 **Edit event** | `editevent evn/EVENT_NAME [nevn/NEW_EVENT_NAME] [st/NEW_START_TIME] [et/NEW_END_TIME]`<br> e.g., `editevent evn/Final Concert st/08-08-2026 16:00 et/08-08-2026 19:00`
 **Delete event** | `deleteevent evn/EVENT_NAME`<br> e.g., `deleteevent evn/Final Concert`
+**Archive event** | `archiveevent evn/EVENT_NAME`<br> e.g., `archiveevent evn/Final Concert`
+**Unarchive event** | `unarchiveevent evn/EVENT_NAME`<br> e.g., `unarchiveevent evn/Final Concert`
 **Dismiss reminder** | `dismiss INDEX` (index from the **Upcoming events** panel)<br> e.g., `dismiss 1`
 **Assign** | `assign evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]...`<br> e.g., `assign evn/Final Concert c/1 4 5`
 **Unassign** | `unassign evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]...`<br> e.g., `unassign evn/Final Concert c/2 3`

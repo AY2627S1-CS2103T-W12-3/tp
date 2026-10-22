@@ -25,6 +25,10 @@ import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
+import javafx.beans.binding.StringBinding;
+import javafx.beans.property.ReadOnlyBooleanProperty;
+import javafx.beans.value.ObservableBooleanValue;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
@@ -80,7 +84,9 @@ public class MainWindow extends UiPart<Stage> {
             Map.entry("search", "Format: search KEYWORD\nExample: search jurong west"),
             Map.entry("filter", "Format: filter FIELD/VALUE [FIELD/VALUE]...\n"
                     + "Example: filter tag/friend organisation/NUS"),
-            Map.entry("list", "Format: list\nExample: list"),
+            Map.entry("list", "Format: list [archived]\nExample: list archived"),
+            Map.entry("archive", "Format: archive MEMBER_ID\nExample: archive 2"),
+            Map.entry("unarchive", "Format: unarchive MEMBER_ID\nExample: unarchive 2"),
             Map.entry("addevent", "Format: addevent evn/EVENT_NAME st/START_TIME et/END_TIME\n"
                     + "Example: addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00"),
             Map.entry("editevent", "Format: editevent evn/EVENT_NAME [nevn/NEW_EVENT_NAME]"
@@ -89,6 +95,10 @@ public class MainWindow extends UiPart<Stage> {
                     + "Example: editevent evn/Final Concert nevn/Grand Concert"),
             Map.entry("deleteevent", "Format: deleteevent evn/EVENT_NAME\n"
                     + "Example: deleteevent evn/Final Concert"),
+            Map.entry("archiveevent", "Format: archiveevent evn/EVENT_NAME\n"
+                    + "Example: archiveevent evn/Final Concert"),
+            Map.entry("unarchiveevent", "Format: unarchiveevent evn/EVENT_NAME\n"
+                    + "Example: unarchiveevent evn/Final Concert"),
             Map.entry("dismiss", "Format: dismiss INDEX\nExample: dismiss 1"),
             Map.entry("assign", "Format: assign evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]...\n"
                     + "Example: assign evn/Final Concert c/2 3"),
@@ -174,6 +184,12 @@ public class MainWindow extends UiPart<Stage> {
 
     @FXML
     private VBox tagsCommands;
+
+    @FXML
+    private VBox archivedContactsCommands;
+
+    @FXML
+    private VBox archivedEventsCommands;
 
     @FXML
     private TextFlow prefixHelp;
@@ -308,8 +324,11 @@ public class MainWindow extends UiPart<Stage> {
         personListPanel = new PersonListPanel(logic.getFilteredPersonList(), logic.getEventList(), clock);
         personListPanelPlaceholder.getChildren().add(personListPanel.getRoot());
 
-        eventListPanel = new EventListPanel(logic.getEventList(), logic.getFilteredPersonList());
+        eventListPanel = new EventListPanel(logic.getFilteredEventList(), logic.getFilteredPersonList());
         eventListPanelPlaceholder.getChildren().add(eventListPanel.getRoot());
+        showArchivedEmptyMessages(logic.showingArchivedProperty().get());
+        logic.showingArchivedProperty().addListener((observable, wasArchived, isArchived) ->
+                showArchivedEmptyMessages(isArchived));
         TagListViewModel tagListViewModel = new TagListViewModel(logic.getTagList(), logic.getPersonList());
         tagListView.setItems(tagListViewModel.getTagNames());
         tagMemberListView.setItems(tagListViewModel.getMembers());
@@ -325,14 +344,15 @@ public class MainWindow extends UiPart<Stage> {
         tagSplitPane.widthProperty().addListener((observable, oldWidth, width) ->
                 tagSplitPane.setOrientation(width.doubleValue() < 650
                         ? Orientation.VERTICAL : Orientation.HORIZONTAL));
-        contactsCommands.visibleProperty().bind(contactsView.selectedProperty());
-        contactsCommands.managedProperty().bind(contactsCommands.visibleProperty());
-        eventsCommands.visibleProperty().bind(eventsView.selectedProperty());
-        eventsCommands.managedProperty().bind(eventsCommands.visibleProperty());
-        tagsCommands.visibleProperty().bind(tagsView.selectedProperty());
-        tagsCommands.managedProperty().bind(tagsCommands.visibleProperty());
-        contactsTab.textProperty().bind(Bindings.size(logic.getFilteredPersonList()).asString("Contacts (%d)"));
-        eventsTab.textProperty().bind(Bindings.size(logic.getEventList()).asString("Events (%d)"));
+        // The archived view lists only the commands that restore items or leave the view.
+        ReadOnlyBooleanProperty showingArchived = logic.showingArchivedProperty();
+        showCommandsWhen(contactsCommands, contactsView.selectedProperty().and(showingArchived.not()));
+        showCommandsWhen(archivedContactsCommands, contactsView.selectedProperty().and(showingArchived));
+        showCommandsWhen(eventsCommands, eventsView.selectedProperty().and(showingArchived.not()));
+        showCommandsWhen(archivedEventsCommands, eventsView.selectedProperty().and(showingArchived));
+        showCommandsWhen(tagsCommands, tagsView.selectedProperty());
+        contactsTab.textProperty().bind(tabTitle("Contacts", logic.getFilteredPersonList()));
+        eventsTab.textProperty().bind(tabTitle("Events", logic.getFilteredEventList()));
         contactsView.textProperty().bind(contactsTab.textProperty());
         eventsView.textProperty().bind(eventsTab.textProperty());
         tagsView.textProperty().bind(tagListViewModel.tagCountTextProperty());
@@ -376,6 +396,13 @@ public class MainWindow extends UiPart<Stage> {
         makeCommandRowsInteractive(contactsCommands);
         makeCommandRowsInteractive(eventsCommands);
         makeCommandRowsInteractive(tagsCommands);
+        makeCommandRowsInteractive(archivedContactsCommands);
+        makeCommandRowsInteractive(archivedEventsCommands);
+    }
+
+    private static void showCommandsWhen(VBox commandList, ObservableBooleanValue condition) {
+        commandList.visibleProperty().bind(condition);
+        commandList.managedProperty().bind(commandList.visibleProperty());
     }
 
     private void makeCommandRowsInteractive(VBox commandList) {
@@ -580,7 +607,7 @@ public class MainWindow extends UiPart<Stage> {
             Label avatar = new Label(initials(person.getName().getFullName()));
             avatar.getStyleClass().addAll("event-member-avatar", getAvatarColorClass(person));
 
-            Label name = new Label(person.getName().getFullName());
+            Label name = new Label(person.getName().getFullName() + (person.isArchived() ? " (archived)" : ""));
             name.setWrapText(true);
             name.setMinWidth(0);
             name.getStyleClass().add("event-member-name");
@@ -677,6 +704,8 @@ public class MainWindow extends UiPart<Stage> {
         }
         helpWindow.hide();
         interactionModeBeforeTutorial = interactionMode;
+        // The tutorial points at the normal lists and command panels, which the archived view hides.
+        logic.showActiveItems();
         showContacts();
         commandBox.setInputDisabled(true);
         commandBox.setExecutionDisabled(true);
@@ -808,6 +837,20 @@ public class MainWindow extends UiPart<Stage> {
                 rememberNormalWindowBounds();
             }
         });
+    }
+
+    private void showArchivedEmptyMessages(boolean isShowingArchived) {
+        personListPanel.setShowingArchived(isShowingArchived);
+        eventListPanel.setShowingArchived(isShowingArchived);
+    }
+
+    /**
+     * Returns a tab title with the number of shown items, marked while archived items are shown.
+     */
+    private StringBinding tabTitle(String items, ObservableList<?> shown) {
+        return Bindings.createStringBinding(() -> (logic.showingArchivedProperty().get()
+                ? "Archived " + items.toLowerCase(Locale.ROOT) : items) + " (" + shown.size() + ")",
+                shown, logic.showingArchivedProperty());
     }
 
     private void dismissReminder(Event reminder) {

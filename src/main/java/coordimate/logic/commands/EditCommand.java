@@ -222,7 +222,8 @@ public class EditCommand extends Command {
         Set<Tag> updatedTags = createUpdatedTags(personToEdit, editPersonDescriptor, savedTags);
 
         return new Person(personToEdit.getMemberId().orElse(null), updatedName, updatedPhone, updatedEmail, updatedRole,
-                updatedBirthday, updatedAddress, updatedOrganisation, updatedNote, updatedLeaveDate, updatedTags);
+                updatedBirthday, updatedAddress, updatedOrganisation, updatedNote, updatedLeaveDate, updatedTags,
+                personToEdit.isArchived());
     }
 
     private static Set<Tag> createUpdatedTags(Person personToEdit, EditPersonDescriptor descriptor,

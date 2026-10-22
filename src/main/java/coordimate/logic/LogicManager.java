@@ -13,6 +13,8 @@ import coordimate.commons.core.LogsCenter;
 import coordimate.commons.exceptions.DataLoadingException;
 import coordimate.logic.commands.AddCommand;
 import coordimate.logic.commands.AddEventCommand;
+import coordimate.logic.commands.ArchiveCommand;
+import coordimate.logic.commands.ArchiveEventCommand;
 import coordimate.logic.commands.AssignCommand;
 import coordimate.logic.commands.ClearCommand;
 import coordimate.logic.commands.Command;
@@ -37,6 +39,7 @@ import coordimate.model.event.EventMembersPredicate;
 import coordimate.model.person.Person;
 import coordimate.model.tag.Tag;
 import coordimate.storage.Storage;
+import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.collections.ObservableList;
 
 /**
@@ -119,7 +122,8 @@ public class LogicManager implements Logic {
 
         if (command instanceof AddCommand || command instanceof EditCommand || command instanceof ClearCommand
                 || command instanceof MutatingTagCommand
-                || command instanceof AddEventCommand
+                || command instanceof AddEventCommand || command instanceof ArchiveEventCommand
+                || command instanceof ArchiveCommand
                 || command instanceof EditEventCommand || command instanceof AssignCommand
                 || command instanceof DeleteEventCommand || command instanceof MarkAttendanceCommand
                 || command instanceof UnassignCommand) {
@@ -159,6 +163,7 @@ public class LogicManager implements Logic {
             throw new CommandException(message, e);
         }
         Model candidate = new ModelManager(model.getCoordiMate(), model.getUserPrefs());
+        candidate.setShowingArchived(model.isShowingArchived());
         candidate.updateFilteredPersonList(model.getFilteredPersonList()::contains);
         CommandResult result = command.execute(candidate);
         try {
@@ -172,6 +177,8 @@ public class LogicManager implements Logic {
                 case EditEventCommand _ -> EditEventCommand.MESSAGE_SAVE_ERROR;
                 case AssignCommand _ -> AssignCommand.MESSAGE_SAVE_ERROR;
                 case DeleteEventCommand _ -> DeleteEventCommand.MESSAGE_SAVE_ERROR;
+                case ArchiveEventCommand _ -> ArchiveEventCommand.MESSAGE_SAVE_ERROR;
+                case ArchiveCommand _ -> ArchiveCommand.MESSAGE_SAVE_ERROR;
                 case ClearCommand _ -> ClearCommand.MESSAGE_SAVE_ERROR;
                 case MarkAttendanceCommand _ -> MarkAttendanceCommand.MESSAGE_SAVE_ERROR;
                 case UnassignCommand _ -> UnassignCommand.MESSAGE_SAVE_ERROR;
@@ -182,6 +189,10 @@ public class LogicManager implements Logic {
         }
         keepReminderDismissalAfterRename(command);
         model.setCoordiMate(candidate.getCoordiMate());
+        if (command instanceof AddCommand || command instanceof AddEventCommand) {
+            // Return to active items so that the new contact or event is visible.
+            model.setShowingArchived(false);
+        }
         if (command instanceof AddCommand || command instanceof EditCommand) {
             model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
         }
@@ -253,6 +264,21 @@ public class LogicManager implements Logic {
     @Override
     public ObservableList<Event> getEventList() {
         return model.getCoordiMate().getEventList();
+    }
+
+    @Override
+    public ObservableList<Event> getFilteredEventList() {
+        return model.getFilteredEventList();
+    }
+
+    @Override
+    public ReadOnlyBooleanProperty showingArchivedProperty() {
+        return model.showingArchivedProperty();
+    }
+
+    @Override
+    public void showActiveItems() {
+        model.setShowingArchived(false);
     }
 
     @Override

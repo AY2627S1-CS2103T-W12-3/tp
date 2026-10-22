@@ -209,6 +209,26 @@ public class AddCommandTest {
         public Predicate<? super Person> getFilteredPersonPredicate() {
             throw new AssertionError("This method should not be called.");
         }
+
+        @Override
+        public void setShowingArchived(boolean isShowingArchived) {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
+        public boolean isShowingArchived() {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
+        public javafx.beans.property.ReadOnlyBooleanProperty showingArchivedProperty() {
+            throw new AssertionError("This method should not be called.");
+        }
+
+        @Override
+        public ObservableList<coordimate.model.event.Event> getFilteredEventList() {
+            throw new AssertionError("This method should not be called.");
+        }
     }
 
     /**

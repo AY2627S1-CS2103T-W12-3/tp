@@ -197,7 +197,46 @@ public class PersonTest {
                 + ", phone=" + ALICE.getPhone()
                 + ", email=" + ALICE.getEmail() + ", role=" + ALICE.getRole() + ", birthday=null, address="
                 + ALICE.getAddress().orElseThrow() + ", organisation=null, note=null, leaveDate=null, tags="
-                + ALICE.getTags() + "}";
+                + ALICE.getTags() + ", archived=false}";
         assertEquals(expected, ALICE.toString());
+    }
+
+    @Test
+    public void withArchived_keepsDetailsAndChangesEquality() {
+        Person archived = ALICE.withArchived(true);
+
+        assertFalse(ALICE.isArchived());
+        assertTrue(archived.isArchived());
+        assertFalse(ALICE.equals(archived));
+        assertNotEquals(ALICE.hashCode(), archived.hashCode());
+        assertTrue(ALICE.isSamePerson(archived));
+        assertEquals(ALICE, archived.withArchived(false));
+        assertSame(ALICE, ALICE.withArchived(false));
+        assertEquals(ALICE.getName(), archived.getName());
+        assertEquals(ALICE.getTags(), archived.getTags());
+        assertEquals(ALICE.getAddress(), archived.getAddress());
+        assertTrue(archived.toString().endsWith("archived=true}"));
+    }
+
+    @Test
+    public void withMemberId_archivedContactWithoutId_staysArchived() {
+        Person withoutId = new Person(ALICE.getName(), ALICE.getPhone(), ALICE.getEmail(), ALICE.getRole(),
+                ALICE.getAddress().orElse(null), ALICE.getTags()).withArchived(true);
+
+        Person identified = withoutId.withMemberId(new MemberId(7));
+
+        assertEquals(new MemberId(7), identified.getMemberId().orElseThrow());
+        assertTrue(identified.isArchived());
+        assertEquals(new MemberId(7), identified.withArchived(false).getMemberId().orElseThrow());
+    }
+
+    @Test
+    public void constructor_archivedArgument_setsStatusThatCopiesKeep() {
+        Person archived = new PersonBuilder(ALICE).withArchived(true).build();
+
+        assertTrue(archived.isArchived());
+        assertEquals(ALICE.withArchived(true), archived);
+        assertTrue(new PersonBuilder(archived).build().isArchived());
+        assertFalse(new PersonBuilder(archived).withArchived(false).build().isArchived());
     }
 }

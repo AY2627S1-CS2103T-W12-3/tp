@@ -35,6 +35,7 @@ public final class Event {
     private final List<Name> members;
     private final Map<Name, AttendanceStatus> attendance;
     private final Set<EventTime> dismissedReminderStarts;
+    private final boolean archived;
 
     /**
      * Creates an event with no members.
@@ -67,6 +68,15 @@ public final class Event {
      */
     public Event(String name, EventTime startTime, EventTime endTime, List<Name> members,
                  Map<Name, AttendanceStatus> attendance, Set<EventTime> dismissedReminderStarts) {
+        this(name, startTime, endTime, members, attendance, dismissedReminderStarts, false);
+    }
+
+    /**
+     * Creates an event with all saved details, including whether it is archived.
+     * An archived event keeps its members, attendance and dismissal history.
+     */
+    public Event(String name, EventTime startTime, EventTime endTime, List<Name> members,
+                 Map<Name, AttendanceStatus> attendance, Set<EventTime> dismissedReminderStarts, boolean archived) {
         this.name = requireNonNull(name).strip();
         if (this.name.isEmpty()) {
             throw new IllegalArgumentException(MESSAGE_EMPTY_NAME);
@@ -92,6 +102,7 @@ public final class Event {
         }
         this.attendance = Map.copyOf(attendance);
         this.dismissedReminderStarts = Set.copyOf(dismissedReminderStarts);
+        this.archived = archived;
     }
 
     public String getName() {
@@ -159,12 +170,26 @@ public final class Event {
     }
 
     /**
+     * Returns whether the event is archived, which hides it from the event list and its reminders.
+     */
+    public boolean isArchived() {
+        return archived;
+    }
+
+    /**
+     * Returns a copy with the given archive status, preserving all other details.
+     */
+    public Event withArchived(boolean archived) {
+        return new Event(name, startTime, endTime, members, attendance, dismissedReminderStarts, archived);
+    }
+
+    /**
      * Returns a copy with the current start value added to its dismissal history.
      */
     public Event withReminderDismissed() {
         Set<EventTime> updated = new HashSet<>(dismissedReminderStarts);
         updated.add(startTime);
-        return new Event(name, startTime, endTime, members, attendance, updated);
+        return new Event(name, startTime, endTime, members, attendance, updated, archived);
     }
 
     /**
@@ -173,14 +198,14 @@ public final class Event {
      */
     public Event withDetails(String name, EventTime startTime, EventTime endTime) {
         Set<EventTime> history = this.startTime.equals(startTime) ? dismissedReminderStarts : Set.of();
-        return new Event(name, startTime, endTime, members, attendance, history);
+        return new Event(name, startTime, endTime, members, attendance, history, archived);
     }
 
     /**
      * Returns a copy with the given members and attendance, preserving event details and dismissal history.
      */
     public Event withMembersAndAttendance(List<Name> members, Map<Name, AttendanceStatus> attendance) {
-        return new Event(name, startTime, endTime, members, attendance, dismissedReminderStarts);
+        return new Event(name, startTime, endTime, members, attendance, dismissedReminderStarts, archived);
     }
 
     /**
@@ -210,11 +235,12 @@ public final class Event {
         return other instanceof Event otherEvent && name.equals(otherEvent.name)
                 && startTime.equals(otherEvent.startTime) && endTime.equals(otherEvent.endTime)
                 && members.equals(otherEvent.members) && attendance.equals(otherEvent.attendance)
-                && dismissedReminderStarts.equals(otherEvent.dismissedReminderStarts);
+                && dismissedReminderStarts.equals(otherEvent.dismissedReminderStarts)
+                && archived == otherEvent.archived;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, startTime, endTime, members, attendance, dismissedReminderStarts);
+        return Objects.hash(name, startTime, endTime, members, attendance, dismissedReminderStarts, archived);
     }
 }

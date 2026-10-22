@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import coordimate.commons.exceptions.DataLoadingException;
+import coordimate.logic.commands.ArchiveEventCommand;
 import coordimate.logic.commands.CommandResult;
 import coordimate.logic.commands.DismissCommand;
 import coordimate.logic.commands.exceptions.CommandException;
@@ -887,6 +888,34 @@ public class ReminderLogicIntegrationTest {
     private Logic newLogic(ModelManager source) {
         return new LogicManager(source, new StorageManager(storage,
                 new JsonUserPrefsStorage(temporaryFolder.resolve("prefs.json"))), clock);
+    }
+
+    @Test
+    public void executeArchiveEvent_removesReminderAndUnarchiveRestoresIt() throws Exception {
+        ObservableList<Event> view = logic.getReminders();
+        assertEquals(List.of(concert), view);
+
+        logic.execute("archiveevent evn/Concert");
+        assertEquals(List.of(), view);
+        assertEquals(List.of(), logic.getFilteredEventList());
+        assertTrue(savedEvent().isArchived());
+
+        restartFromSavedData();
+        assertEquals(List.of(), logic.getReminders());
+        logic.execute("unarchiveevent evn/concert");
+        assertEquals(List.of(concert), logic.getReminders());
+        assertEquals(concert, savedEvent());
+    }
+
+    @Test
+    public void executeArchiveEvent_saveFailure_keepsEventActive() throws Exception {
+        storage.failSave = true;
+
+        assertEquals(ArchiveEventCommand.MESSAGE_SAVE_ERROR, assertThrows(CommandException.class, () ->
+                logic.execute("archiveevent evn/Concert")).getMessage().split("\n")[0]);
+        assertEquals(List.of(concert), logic.getFilteredEventList());
+        assertEquals(List.of(concert), logic.getReminders());
+        assertFalse(savedEvent().isArchived());
     }
 
     private void restartFromSavedData() throws Exception {

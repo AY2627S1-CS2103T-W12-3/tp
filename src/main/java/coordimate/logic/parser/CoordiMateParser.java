@@ -11,6 +11,8 @@ import coordimate.commons.core.LogsCenter;
 import coordimate.logic.Messages;
 import coordimate.logic.commands.AddCommand;
 import coordimate.logic.commands.AddEventCommand;
+import coordimate.logic.commands.ArchiveCommand;
+import coordimate.logic.commands.ArchiveEventCommand;
 import coordimate.logic.commands.AssignCommand;
 import coordimate.logic.commands.ClearCommand;
 import coordimate.logic.commands.Command;
@@ -77,6 +79,11 @@ public class CoordiMateParser {
             return switch (commandWord) {
                 case AddCommand.COMMAND_WORD -> new AddCommandParser().parse(arguments);
                 case AddEventCommand.COMMAND_WORD -> new AddEventCommandParser().parse(arguments);
+                case ArchiveCommand.COMMAND_WORD -> new ArchiveCommandParser(true).parse(arguments);
+                case ArchiveCommand.UNARCHIVE_COMMAND_WORD -> new ArchiveCommandParser(false).parse(arguments);
+                case ArchiveEventCommand.COMMAND_WORD -> new ArchiveEventCommandParser(true).parse(arguments);
+                case ArchiveEventCommand.UNARCHIVE_COMMAND_WORD ->
+                    new ArchiveEventCommandParser(false).parse(arguments);
                 case EditCommand.COMMAND_WORD -> new EditCommandParser().parse(arguments);
                 case EditEventCommand.COMMAND_WORD -> new EditEventCommandParser().parse(arguments);
                 case EditTagCommand.COMMAND_WORD -> new EditTagCommandParser().parse(arguments);
@@ -90,7 +97,7 @@ public class CoordiMateParser {
                 case ClearCommand.COMMAND_WORD -> new ClearCommand();
                 case CreateTagCommand.COMMAND_WORD -> new CreateTagCommandParser().parse(arguments);
                 case FilterCommand.COMMAND_WORD -> new FilterCommandParser().parse(arguments);
-                case ListCommand.COMMAND_WORD -> new ListCommand();
+                case ListCommand.COMMAND_WORD -> new ListCommandParser().parse(arguments);
                 case SearchCommand.COMMAND_WORD -> new SearchCommandParser().parse(arguments);
                 case ListTagsCommand.COMMAND_WORD -> new ListTagsCommandParser().parse(arguments);
                 case MarkAttendanceCommand.COMMAND_WORD -> new MarkAttendanceCommandParser().parse(arguments);
@@ -114,6 +121,10 @@ public class CoordiMateParser {
         return switch (commandWord) {
             case AddCommand.COMMAND_WORD -> AddCommand.MESSAGE_USAGE;
             case AddEventCommand.COMMAND_WORD -> AddEventCommand.MESSAGE_USAGE;
+            case ArchiveCommand.COMMAND_WORD -> ArchiveCommand.MESSAGE_USAGE;
+            case ArchiveCommand.UNARCHIVE_COMMAND_WORD -> ArchiveCommand.MESSAGE_UNARCHIVE_USAGE;
+            case ArchiveEventCommand.COMMAND_WORD -> ArchiveEventCommand.MESSAGE_USAGE;
+            case ArchiveEventCommand.UNARCHIVE_COMMAND_WORD -> ArchiveEventCommand.MESSAGE_UNARCHIVE_USAGE;
             case EditCommand.COMMAND_WORD -> EditCommand.MESSAGE_USAGE;
             case EditEventCommand.COMMAND_WORD -> EditEventCommand.MESSAGE_USAGE;
             case EditTagCommand.COMMAND_WORD -> EditTagCommand.MESSAGE_USAGE;

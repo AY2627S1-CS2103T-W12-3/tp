@@ -1,0 +1,92 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+
+box Logic LOGIC_COLOR_T1
+participant ":LogicManager" as LogicManager LOGIC_COLOR
+participant "c:ArchiveCommand" as Command LOGIC_COLOR
+participant "<<class>>\nMemberIdResolver" as Resolver LOGIC_COLOR
+end box
+
+box Model MODEL_COLOR_T1
+participant "model:ModelManager" as Model MODEL_COLOR
+participant "candidate:ModelManager" as Candidate MODEL_COLOR
+participant "p:Person" as Person MODEL_COLOR
+end box
+
+box Storage STORAGE_COLOR_T1
+participant ":Storage" as Storage STORAGE_COLOR
+end box
+
+[-> LogicManager : execute("archive 12")
+activate LogicManager
+
+LogicManager -> Storage : readCoordiMate()
+activate Storage
+
+Storage --> LogicManager
+deactivate Storage
+
+create Candidate
+LogicManager -> Candidate : ModelManager(data, prefs)
+activate Candidate
+
+Candidate --> LogicManager
+deactivate Candidate
+
+LogicManager -> Candidate : setShowingArchived(model.isShowingArchived())
+activate Candidate
+
+Candidate --> LogicManager
+deactivate Candidate
+
+LogicManager -> Command : execute(candidate)
+activate Command
+
+Command -> Resolver : resolve(candidate, 12)
+activate Resolver
+
+note right of Resolver
+  Searches all saved contacts,
+  not only the displayed ones.
+end note
+
+Resolver --> Command : p
+deactivate Resolver
+
+Command -> Person : withArchived(true)
+activate Person
+
+Person --> Command : archived
+deactivate Person
+
+Command -> Candidate : setPerson(p, archived)
+activate Candidate
+
+Candidate --> Command
+deactivate Candidate
+
+Command --> LogicManager : result
+deactivate Command
+
+LogicManager -> Storage : saveCoordiMate(newData)
+activate Storage
+
+Storage --> LogicManager
+deactivate Storage
+
+LogicManager -> Model : setCoordiMate(newData)
+activate Model
+
+note right of Model
+  The filtered contact list hides
+  the contact, since its archived
+  value no longer matches the view.
+end note
+
+Model --> LogicManager
+deactivate Model
+
+[<-- LogicManager : result
+deactivate LogicManager
+@enduml
