@@ -2,6 +2,7 @@ package coordimate.ui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -33,6 +34,7 @@ import javafx.geometry.Bounds;
 import javafx.geometry.Orientation;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SplitPane;
@@ -41,6 +43,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
+import javafx.stage.Stage;
 
 /**
  * Tests attendance in the selected event's details on the JavaFX application thread.
@@ -61,6 +64,7 @@ public class EventListPanelTest {
             Platform.runLater(started::countDown);
         }
         assertTrue(started.await(10, TimeUnit.SECONDS));
+        Platform.setImplicitExit(false);
     }
 
     @Test
@@ -138,6 +142,83 @@ public class EventListPanelTest {
             EventListPanel emptyPanel = new EventListPanel(FXCollections.observableArrayList());
             assertFalse(emptyPanel.selectNextCard());
             assertFalse(emptyPanel.selectPreviousCard());
+        });
+    }
+
+    @Test
+    public void tutorialTargets_selectExistingEventAndUseEmptyStates() throws Exception {
+        runOnJavaFxThread(() -> {
+            EventListPanel emptyPanel = new EventListPanel(FXCollections.observableArrayList());
+            Region emptyRoot = emptyPanel.getRoot();
+            new Scene(emptyRoot, 1000, 700);
+            emptyRoot.applyCss();
+            assertSame(getEventList(emptyRoot), emptyPanel.getTutorialEventCardTarget());
+            assertSame(emptyRoot.lookup("#selectionHint"), emptyPanel.getTutorialDetailsTarget());
+            assertSame(emptyRoot.lookup("#selectionHint"), emptyPanel.getTutorialMemberListTarget());
+
+            EventListPanel panel = new EventListPanel(FXCollections.observableArrayList(event(List.of(), Map.of())));
+            Region root = panel.getRoot();
+            new Scene(root, 1000, 700);
+            root.applyCss();
+            panel.getTutorialEventCardTarget();
+            assertEquals(0, getEventList(root).getSelectionModel().getSelectedIndex());
+            assertSame(root.lookup("#detailsScroll"), panel.getTutorialDetailsTarget());
+            assertSame(getMembers(root), panel.getTutorialMemberListTarget());
+            assertEquals(1, getMembers(root).getChildren().size());
+            Label emptyMembersHint = (Label) getMembers(root).getChildren().getFirst();
+            assertEquals("No members assigned yet. Assign contacts with assign.", emptyMembersHint.getText());
+        });
+    }
+
+    @Test
+    public void tutorialEventCardTarget_usesVisibleSelectedCard() throws Exception {
+        runOnJavaFxThread(() -> {
+            Event first = event(List.of(), Map.of());
+            Event second = new Event("Welcome Fair", DATE, DATE, List.of(), Map.of());
+            EventListPanel panel = new EventListPanel(FXCollections.observableArrayList(first, second));
+            Stage stage = new Stage();
+            stage.setScene(new Scene(panel.getRoot(), 1000, 700));
+            stage.show();
+            try {
+                Region root = panel.getRoot();
+                root.applyCss();
+                root.layout();
+                ListView<Event> list = getEventList(root);
+
+                ListCell<?> firstCard = assertInstanceOf(ListCell.class, panel.getTutorialEventCardTarget());
+                assertEquals(0, firstCard.getIndex());
+                assertEquals(first, list.getSelectionModel().getSelectedItem());
+
+                list.getSelectionModel().select(second);
+                ListCell<?> selectedCard = assertInstanceOf(ListCell.class, panel.getTutorialEventCardTarget());
+                assertEquals(1, selectedCard.getIndex());
+                assertEquals(second, list.getSelectionModel().getSelectedItem());
+            } finally {
+                stage.close();
+            }
+        });
+    }
+
+    @Test
+    public void revealTutorialMemberList_scrollsToMembersWhenPaneIsShort() throws Exception {
+        runOnJavaFxThread(() -> {
+            Event event = event(List.of(ALICE, BOB, CHARLIE), Map.of());
+            EventListPanel panel = new EventListPanel(FXCollections.observableArrayList(event));
+            Stage stage = new Stage();
+            stage.setScene(new Scene(panel.getRoot(), 900, 350));
+            stage.show();
+            try {
+                Region root = panel.getRoot();
+                root.applyCss();
+                root.layout();
+                assertSame(getMembers(root), panel.getTutorialMemberListTarget());
+                ScrollPane detailsScroll = (ScrollPane) root.lookup("#detailsScroll");
+                assertTrue(detailsScroll.getViewportBounds().getHeight() > 0);
+                panel.revealTutorialMemberList();
+                assertTrue(detailsScroll.getVvalue() > 0);
+            } finally {
+                stage.close();
+            }
         });
     }
 

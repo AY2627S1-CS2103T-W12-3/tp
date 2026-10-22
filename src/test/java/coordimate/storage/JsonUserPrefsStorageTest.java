@@ -3,6 +3,7 @@ package coordimate.storage;
 import static coordimate.testutil.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -55,6 +56,7 @@ public class JsonUserPrefsStorageTest {
         UserPrefs expected = getTypicalUserPrefs();
         UserPrefs actual = readUserPrefs("TypicalUserPref.json").get();
         assertEquals(expected, actual);
+        assertFalse(actual.hasSeenTutorial());
     }
 
     @Test
@@ -118,6 +120,12 @@ public class JsonUserPrefsStorageTest {
         jsonUserPrefsStorage.saveUserPrefs(original);
         readBack = jsonUserPrefsStorage.readUserPrefs().get();
         assertEquals(original, readBack);
+
+        original.setHasSeenTutorial(true);
+        jsonUserPrefsStorage.saveUserPrefs(original);
+        readBack = jsonUserPrefsStorage.readUserPrefs().get();
+        assertEquals(original, readBack);
+        assertTrue(readBack.hasSeenTutorial());
     }
 
     @Test

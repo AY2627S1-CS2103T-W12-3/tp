@@ -62,6 +62,16 @@ public class ModelManager implements Model {
         userPrefs.setGuiSettings(guiSettings);
     }
 
+    @Override
+    public boolean hasSeenTutorial() {
+        return userPrefs.hasSeenTutorial();
+    }
+
+    @Override
+    public void setHasSeenTutorial(boolean hasSeenTutorial) {
+        userPrefs.setHasSeenTutorial(hasSeenTutorial);
+    }
+
     //=========== CoordiMate ================================================================================
 
     @Override

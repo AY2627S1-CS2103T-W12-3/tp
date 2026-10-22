@@ -21,6 +21,7 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.geometry.Orientation;
+import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
@@ -257,6 +258,30 @@ public class PersonListPanel extends UiPart<Region> {
     void setCardListClickHandler(Runnable handler) {
         Objects.requireNonNull(handler);
         personListView.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> handler.run());
+    }
+
+    /** Returns the first displayed contact card, or the list area when there are no contacts. */
+    Node getTutorialContactCardTarget() {
+        if (personListView.getItems().isEmpty()) {
+            return contactListSection;
+        }
+        if (personListView.getSelectionModel().isEmpty()) {
+            personListView.getSelectionModel().selectFirst();
+        }
+        personListView.scrollTo(personListView.getSelectionModel().getSelectedIndex());
+        personListView.applyCss();
+        personListView.layout();
+        int selectedIndex = personListView.getSelectionModel().getSelectedIndex();
+        return personListView.lookupAll(".list-cell").stream()
+                .filter(node -> node instanceof ListCell<?> cell && !cell.isEmpty() && cell.isVisible()
+                        && cell.getIndex() == selectedIndex)
+                .findFirst()
+                .orElse(contactListSection);
+    }
+
+    /** Returns the pane containing the selected contact's details. */
+    Region getTutorialContactDetailsTarget() {
+        return contactDetailsSection;
     }
 
     /**

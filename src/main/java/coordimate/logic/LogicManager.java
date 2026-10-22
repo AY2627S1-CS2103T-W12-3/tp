@@ -284,4 +284,14 @@ public class LogicManager implements Logic {
     public void setGuiSettings(GuiSettings guiSettings) {
         model.setGuiSettings(guiSettings);
     }
+
+    @Override
+    public boolean hasSeenTutorial() {
+        return model.hasSeenTutorial();
+    }
+
+    @Override
+    public void setHasSeenTutorial(boolean hasSeenTutorial) {
+        model.setHasSeenTutorial(hasSeenTutorial);
+    }
 }

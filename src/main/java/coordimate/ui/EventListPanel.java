@@ -16,12 +16,15 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
+import javafx.geometry.Bounds;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MultipleSelectionModel;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SplitPane;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.FlowPane;
@@ -39,6 +42,9 @@ public class EventListPanel extends UiPart<Region> {
 
     @FXML
     private SplitPane eventSplitPane;
+
+    @FXML
+    private ScrollPane detailsScroll;
 
     @FXML
     private ListView<Event> eventListView;
@@ -180,6 +186,57 @@ public class EventListPanel extends UiPart<Region> {
     public void selectNewestEvent() {
         eventListView.getSelectionModel().selectLast();
         eventListView.scrollTo(eventListView.getItems().size() - 1);
+    }
+
+    /** Returns the selected event card, or the empty event list when no events exist. */
+    Node getTutorialEventCardTarget() {
+        if (eventListView.getItems().isEmpty()) {
+            return eventListView;
+        }
+        selectTutorialEventIfNeeded();
+        int selectedIndex = eventListView.getSelectionModel().getSelectedIndex();
+        eventListView.applyCss();
+        eventListView.layout();
+        return eventListView.lookupAll(".list-cell").stream()
+                .filter(node -> node instanceof ListCell<?> cell && !cell.isEmpty() && cell.isVisible()
+                        && cell.getIndex() == selectedIndex)
+                .findFirst()
+                .orElse(eventListView);
+    }
+
+    /** Returns the visible event details pane or its empty-state hint. */
+    Region getTutorialDetailsTarget() {
+        selectTutorialEventIfNeeded();
+        return eventDetails.isVisible() ? detailsScroll : selectionHint;
+    }
+
+    /** Returns only the member list, or the event details hint when no event exists. */
+    Region getTutorialMemberListTarget() {
+        selectTutorialEventIfNeeded();
+        return eventDetails.isVisible() ? members : selectionHint;
+    }
+
+    /** Scrolls the details pane until its member list starts near the top of the viewport. */
+    void revealTutorialMemberList() {
+        if (!eventDetails.isVisible()) {
+            return;
+        }
+        detailsScroll.applyCss();
+        detailsScroll.layout();
+        Bounds memberBounds = detailsScroll.getContent()
+                .sceneToLocal(members.localToScene(members.getLayoutBounds()));
+        double scrollableHeight = detailsScroll.getContent().getLayoutBounds().getHeight()
+                - detailsScroll.getViewportBounds().getHeight();
+        if (scrollableHeight > 0) {
+            double scrollOffset = Math.max(0, memberBounds.getMinY() - 12);
+            detailsScroll.setVvalue(Math.min(1, scrollOffset / scrollableHeight));
+        }
+    }
+
+    private void selectTutorialEventIfNeeded() {
+        if (!eventListView.getItems().isEmpty() && eventListView.getSelectionModel().isEmpty()) {
+            selectAndReveal(0);
+        }
     }
 
     /**

@@ -111,12 +111,14 @@ public class MainWindow extends UiPart<Stage> {
     private Rectangle2D normalWindowBounds;
     private boolean isNormalBoundsUpdateScheduled;
     private InteractionMode interactionMode = InteractionMode.COMMAND;
+    private InteractionMode interactionModeBeforeTutorial;
 
     // Independent Ui parts residing in this Ui container
     private PersonListPanel personListPanel;
     private EventListPanel eventListPanel;
     private ResultDisplay resultDisplay;
     private HelpWindow helpWindow;
+    private TutorialWindow tutorialWindow;
     private CommandBox commandBox;
     private ReminderPanel reminderPanel;
     private final Timeline reminderTimer;
@@ -126,10 +128,16 @@ public class MainWindow extends UiPart<Stage> {
     private StackPane reminderPanelPlaceholder;
 
     @FXML
+    private StackPane appRoot;
+
+    @FXML
     private StackPane commandBoxPlaceholder;
 
     @FXML
     private Label helpLabel;
+
+    @FXML
+    private Label tutorialLabel;
 
     @FXML
     private Label interactionModeLabel;
@@ -151,6 +159,9 @@ public class MainWindow extends UiPart<Stage> {
 
     @FXML
     private ListView<Person> tagMemberListView;
+
+    @FXML
+    private VBox tagDetailsPane;
 
     @FXML
     private SplitPane tagSplitPane;
@@ -221,24 +232,37 @@ public class MainWindow extends UiPart<Stage> {
 
         setAccelerators();
 
-        helpWindow = new HelpWindow();
+        tutorialWindow = new TutorialWindow();
+        appRoot.getChildren().add(tutorialWindow.getRoot());
+        tutorialWindow.setDismissHandler(this::handleTutorialDismissed);
+        tutorialWindow.setStepChangeHandler(this::showTutorialStep);
+        helpWindow = new HelpWindow(new Stage());
         helpWindow.getRoot().initOwner(primaryStage);
         Tooltip helpTooltip = new Tooltip("Open Help (" + HelpWindow.HELP_SHORTCUT + ")");
         helpTooltip.setShowDelay(Duration.millis(200));
         helpLabel.setTooltip(helpTooltip);
-        helpLabel.setAccessibleRole(AccessibleRole.BUTTON);
-        helpLabel.setOnMouseClicked(event -> handleHelp());
-        helpLabel.setOnKeyPressed(event -> {
-            if (event.getCode() == KeyCode.ENTER || event.getCode() == KeyCode.SPACE) {
-                handleHelp();
-                event.consume();
-            }
-        });
+        configureTopMenuItem(helpLabel, this::handleHelp);
+        Tooltip tutorialTooltip = new Tooltip("Open the CoordiMate tutorial");
+        tutorialTooltip.setShowDelay(Duration.millis(200));
+        tutorialLabel.setTooltip(tutorialTooltip);
+        tutorialLabel.setAccessibleText("Open the CoordiMate tutorial");
+        configureTopMenuItem(tutorialLabel, this::showTutorial);
         primaryStage.addEventHandler(WindowEvent.WINDOW_HIDDEN, event -> stop());
         primaryStage.addEventHandler(WindowEvent.WINDOW_SHOWN, event -> {
             if (reminderPanel != null) {
                 logic.refreshReminders();
                 reminderTimer.play();
+            }
+        });
+    }
+
+    private void configureTopMenuItem(Label label, Runnable action) {
+        label.setAccessibleRole(AccessibleRole.BUTTON);
+        label.setOnMouseClicked(event -> action.run());
+        label.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.ENTER || event.getCode() == KeyCode.SPACE) {
+                action.run();
+                event.consume();
             }
         });
     }
@@ -249,7 +273,18 @@ public class MainWindow extends UiPart<Stage> {
 
     private void setAccelerators() {
         KeyCombination helpShortcut = KeyCombination.valueOf("F1");
+        getRoot().addEventFilter(KeyEvent.ANY, event -> {
+            if (tutorialWindow != null && tutorialWindow.isShowing()) {
+                if (tutorialWindow.handleShortcut(event)
+                        || !tutorialWindow.isInteractiveTarget(event.getTarget())) {
+                    event.consume();
+                }
+            }
+        });
         getRoot().addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+            if (tutorialWindow != null && tutorialWindow.isShowing()) {
+                return;
+            }
             if (helpShortcut.match(event)) {
                 handleHelp();
                 event.consume();
@@ -364,7 +399,7 @@ public class MainWindow extends UiPart<Stage> {
     }
 
     private void handleKeyboardInput(KeyEvent event) {
-        if (logic.isAwaitingDeleteConfirmation()) {
+        if (event.isConsumed() || tutorialWindow.isShowing() || logic.isAwaitingDeleteConfirmation()) {
             return;
         }
 
@@ -392,7 +427,8 @@ public class MainWindow extends UiPart<Stage> {
     }
 
     private void handleCommandModeShortcutRelease(KeyEvent event) {
-        if (interactionMode == InteractionMode.NAVIGATION
+        if (!event.isConsumed() && !tutorialWindow.isShowing()
+                && interactionMode == InteractionMode.NAVIGATION
                 && event.getCode() == KeyCode.I
                 && !hasShortcutModifier(event)) {
             enterCommandMode();
@@ -609,11 +645,92 @@ public class MainWindow extends UiPart<Stage> {
      */
     @FXML
     public void handleHelp() {
+        if (tutorialWindow.isShowing()) {
+            return;
+        }
         if (!helpWindow.isShowing()) {
             helpWindow.show();
         } else {
             helpWindow.focus();
         }
+    }
+
+    /** Opens the tutorial automatically if it has not been completed before. */
+    void showTutorialOnFirstLaunch() {
+        if (!logic.hasSeenTutorial()) {
+            showTutorial();
+        }
+    }
+
+    private void showTutorial() {
+        if (tutorialWindow.isShowing()) {
+            return;
+        }
+        helpWindow.hide();
+        interactionModeBeforeTutorial = interactionMode;
+        showContacts();
+        commandBox.setInputDisabled(true);
+        commandBox.setExecutionDisabled(true);
+        tutorialWindow.show();
+    }
+
+    private void handleTutorialDismissed() {
+        logic.setHasSeenTutorial(true);
+        commandBox.setExecutionDisabled(false);
+        setInteractionMode(interactionModeBeforeTutorial);
+        if (interactionModeBeforeTutorial == InteractionMode.COMMAND) {
+            commandBox.focusInput();
+        }
+    }
+
+    private void showTutorialStep(TutorialWindow.TutorialStep step) {
+        switch (step.target()) {
+            case EVENTS_TAB, EVENT_CARD, EVENT_DETAILS, EVENT_MEMBERS -> showEvents();
+            case TAGS_TAB, TAG_LIST, TAG_DETAILS -> showTags();
+            case NONE, HELP, TUTORIAL -> { }
+            default -> showContacts();
+        }
+        if (step.target() == TutorialWindow.TutorialTarget.EVENT_MEMBERS) {
+            eventListPanel.revealTutorialMemberList();
+        }
+        if (step.target() == TutorialWindow.TutorialTarget.TAG_DETAILS
+                && tagListView.getSelectionModel().isEmpty()) {
+            tagListView.getSelectionModel().selectFirst();
+        }
+        tutorialWindow.highlight(getTutorialTarget(step.target()));
+        if (step.target() == TutorialWindow.TutorialTarget.CONTACT_CARD
+                || step.target() == TutorialWindow.TutorialTarget.EVENT_CARD
+                || step.target() == TutorialWindow.TutorialTarget.EVENT_DETAILS
+                || step.target() == TutorialWindow.TutorialTarget.EVENT_MEMBERS) {
+            Platform.runLater(() -> {
+                if (tutorialWindow.isShowing() && tutorialWindow.getCurrentStep() == step) {
+                    if (step.target() == TutorialWindow.TutorialTarget.EVENT_MEMBERS) {
+                        eventListPanel.revealTutorialMemberList();
+                    }
+                    tutorialWindow.highlight(getTutorialTarget(step.target()));
+                }
+            });
+        }
+    }
+
+    private Node getTutorialTarget(TutorialWindow.TutorialTarget target) {
+        return switch (target) {
+            case CONTACTS_TAB -> contactsView;
+            case CONTACT_COMMANDS -> contactsCommands;
+            case COMMAND_BOX -> commandBoxPlaceholder;
+            case CONTACT_CARD -> personListPanel.getTutorialContactCardTarget();
+            case CONTACT_DETAILS -> personListPanel.getTutorialContactDetailsTarget();
+            case EVENTS_TAB -> eventsView;
+            case EVENT_CARD -> eventListPanel.getTutorialEventCardTarget();
+            case EVENT_DETAILS -> eventListPanel.getTutorialDetailsTarget();
+            case EVENT_MEMBERS -> eventListPanel.getTutorialMemberListTarget();
+            case TAGS_TAB -> tagsView;
+            case TAG_LIST -> tagListView;
+            case TAG_DETAILS -> tagDetailsPane;
+            case HELP -> helpLabel;
+            case TUTORIAL -> tutorialLabel;
+            case NONE -> null;
+        };
     }
 
     void show() {
@@ -639,7 +756,6 @@ public class MainWindow extends UiPart<Stage> {
         logger.fine("Saving window with maximized state: " + isMaximized);
         logic.setGuiSettings(guiSettings);
         stop();
-        helpWindow.hide();
         primaryStage.hide();
     }
 
@@ -708,6 +824,9 @@ public class MainWindow extends UiPart<Stage> {
      */
     void stop() {
         reminderTimer.stop();
+        helpWindow.hide();
+        tutorialWindow.hide();
+        commandBox.setExecutionDisabled(false);
         if (reminderPanel != null) {
             reminderPanel.close();
         }

@@ -4,6 +4,7 @@ import static coordimate.testutil.TypicalPersons.ALICE;
 import static coordimate.testutil.TypicalPersons.BENSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -37,6 +38,7 @@ import javafx.collections.transformation.FilteredList;
 import javafx.geometry.Orientation;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SplitPane;
@@ -46,6 +48,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
+import javafx.stage.Stage;
 
 /**
  * Tests the contact list's selection and details states on the JavaFX application thread.
@@ -62,6 +65,7 @@ public class PersonListPanelTest {
             Platform.runLater(started::countDown);
         }
         assertTrue(started.await(10, TimeUnit.SECONDS));
+        Platform.setImplicitExit(false);
     }
 
     @Test
@@ -268,6 +272,33 @@ public class PersonListPanelTest {
             PersonListPanel emptyPanel = new PersonListPanel(FXCollections.observableArrayList());
             assertFalse(emptyPanel.selectNextCard());
             assertFalse(emptyPanel.selectPreviousCard());
+        });
+    }
+
+    @Test
+    public void tutorialContactCardTarget_usesVisibleSelectedCard() throws Exception {
+        runOnJavaFxThread(() -> {
+            PersonListPanel panel = new PersonListPanel(FXCollections.observableArrayList(ALICE, BENSON));
+            Stage stage = new Stage();
+            stage.setScene(new Scene(panel.getRoot(), 1000, 700));
+            stage.show();
+            try {
+                Region root = panel.getRoot();
+                root.applyCss();
+                root.layout();
+                ListView<Person> list = getList(root);
+
+                ListCell<?> firstCard = assertInstanceOf(ListCell.class, panel.getTutorialContactCardTarget());
+                assertEquals(0, firstCard.getIndex());
+                assertEquals(ALICE, list.getSelectionModel().getSelectedItem());
+
+                list.getSelectionModel().select(BENSON);
+                ListCell<?> selectedCard = assertInstanceOf(ListCell.class, panel.getTutorialContactCardTarget());
+                assertEquals(1, selectedCard.getIndex());
+                assertEquals(BENSON, list.getSelectionModel().getSelectedItem());
+            } finally {
+                stage.close();
+            }
         });
     }
 

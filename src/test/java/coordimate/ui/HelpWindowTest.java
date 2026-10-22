@@ -2,6 +2,7 @@ package coordimate.ui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.awt.GraphicsEnvironment;
@@ -43,6 +44,7 @@ public class HelpWindowTest {
             Platform.runLater(started::countDown);
         }
         assertTrue(started.await(10, TimeUnit.SECONDS));
+        Platform.setImplicitExit(false);
     }
 
     @Test
@@ -85,6 +87,7 @@ public class HelpWindowTest {
             assertEquals(HelpWindow.COMMAND_USAGES, commandTable.getItems());
             assertEquals(TableView.CONSTRAINED_RESIZE_POLICY, commandTable.getColumnResizePolicy());
             assertTrue(helpMessage.getText().contains("Fn + F1"));
+            assertNull(root.getScene().lookup("#tutorialButton"));
             assertFalse(commandTable.isEditable());
             assertEquals("Command mode (default): type commands; press Esc to navigate cards.",
                     commandModeText.getText());
