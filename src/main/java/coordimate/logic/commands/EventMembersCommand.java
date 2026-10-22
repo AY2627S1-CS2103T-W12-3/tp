@@ -55,8 +55,7 @@ public abstract class EventMembersCommand extends Command {
      * @throws CommandException If no saved event has that name.
      */
     static Event findEvent(Model model, String eventName) throws CommandException {
-        return model.getCoordiMate().getEventList().stream()
-                .filter(event -> event.getName().equalsIgnoreCase(eventName)).findFirst()
+        return model.getCoordiMate().findEvent(eventName)
                 .orElseThrow(() -> new CommandException(String.format(MESSAGE_EVENT_NOT_FOUND, eventName)));
     }
 

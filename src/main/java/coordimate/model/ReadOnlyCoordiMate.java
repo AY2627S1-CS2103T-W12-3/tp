@@ -1,5 +1,9 @@
 package coordimate.model;
 
+import static java.util.Objects.requireNonNull;
+
+import java.util.Optional;
+
 import coordimate.model.event.Event;
 import coordimate.model.person.Person;
 import coordimate.model.tag.Tag;
@@ -32,5 +36,13 @@ public interface ReadOnlyCoordiMate {
      * Returns events in insertion order, with unique names and no mutable list access.
      */
     ObservableList<Event> getEventList();
+
+    /**
+     * Returns the saved event whose name matches {@code eventName}, ignoring case, including an archived event.
+     */
+    default Optional<Event> findEvent(String eventName) {
+        requireNonNull(eventName);
+        return getEventList().stream().filter(event -> event.getName().equalsIgnoreCase(eventName)).findFirst();
+    }
 
 }

@@ -44,7 +44,8 @@ public class ArchiveEventCommand extends Command {
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
-        Event target = EventMembersCommand.findEvent(model, eventName);
+        Event target = model.getCoordiMate().findEvent(eventName)
+                .orElseThrow(() -> new CommandException(String.format(MESSAGE_EVENT_NOT_FOUND, eventName)));
         if (target.isArchived() == archive) {
             throw new CommandException(String.format(archive ? MESSAGE_ALREADY_ARCHIVED : MESSAGE_NOT_ARCHIVED,
                     target.getName()));

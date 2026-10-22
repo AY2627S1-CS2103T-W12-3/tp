@@ -15,6 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
@@ -463,4 +464,17 @@ public class CoordiMateTest {
         }
     }
 
+    @Test
+    public void findEvent_matchesNameIgnoringCaseIncludingArchived() {
+        CoordiMate data = new CoordiMate();
+        Event concert = new Event("Final Concert", new EventTime("08-08-2026"), new EventTime("08-08-2026"));
+        Event fair = new Event("Fair", new EventTime("09-10-2026"), new EventTime("10-10-2026")).withArchived(true);
+        data.addEvent(concert);
+        data.addEvent(fair);
+
+        assertEquals(Optional.of(concert), data.findEvent("final CONCERT"));
+        assertEquals(Optional.of(fair), data.findEvent("fair"));
+        assertEquals(Optional.empty(), data.findEvent("Gala"));
+        assertThrows(NullPointerException.class, () -> data.findEvent(null));
+    }
 }

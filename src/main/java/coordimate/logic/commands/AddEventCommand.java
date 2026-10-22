@@ -37,10 +37,12 @@ public class AddEventCommand extends Command {
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
         if (model.hasEvent(toAdd)) {
-            Event existing = EventMembersCommand.findEvent(model, toAdd.getName());
-            throw new CommandException(existing.isArchived()
-                    ? String.format(MESSAGE_DUPLICATE_ARCHIVED_EVENT, existing.getName())
-                    : MESSAGE_DUPLICATE_EVENT);
+            // The user cannot see an archived event, so explain why the name is taken.
+            String message = model.getCoordiMate().findEvent(toAdd.getName())
+                    .filter(Event::isArchived)
+                    .map(existing -> String.format(MESSAGE_DUPLICATE_ARCHIVED_EVENT, existing.getName()))
+                    .orElse(MESSAGE_DUPLICATE_EVENT);
+            throw new CommandException(message);
         }
         model.addEvent(toAdd);
         return new CommandResult(String.format(MESSAGE_SUCCESS,
