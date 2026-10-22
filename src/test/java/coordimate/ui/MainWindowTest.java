@@ -971,4 +971,94 @@ public class MainWindowTest {
     private static String getPrefixHelpText(TextFlow prefixHelp) {
         return ((Text) prefixHelp.getChildren().getFirst()).getText();
     }
+
+    @Test
+    public void archivedContacts_markedInTagsViewAndCommandPanelListsArchiveCommands() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            ModelManager model = new ModelManager();
+            model.addPerson(TypicalPersons.ALICE);
+            model.addPerson(TypicalPersons.BENSON);
+            model.setPerson(TypicalPersons.ALICE, TypicalPersons.ALICE.withArchived(true));
+            MainWindow window = new MainWindow(stage, new LogicManager(model, null),
+                    Path.of("data", "coordimate.json"));
+            try {
+                window.fillInnerParts();
+                window.show();
+                stage.getScene().getRoot().applyCss();
+
+                assertEquals(List.of("add", "edit", "delete", "archive", "unarchive", "search", "filter", "list"),
+                        commandNames(stage, "#contactsCommands"));
+                assertTrue(commandNames(stage, "#eventsCommands").containsAll(
+                        List.of("deleteevent", "archiveevent", "unarchiveevent")));
+
+                ToggleButton tagsView = (ToggleButton) stage.getScene().getRoot().lookup("#tagsView");
+                tagsView.fire();
+                @SuppressWarnings("unchecked")
+                ListView<String> tagList = (ListView<String>) stage.getScene().getRoot().lookup("#tagListView");
+                tagList.getSelectionModel().select("friends");
+                stage.getScene().getRoot().applyCss();
+                stage.getScene().getRoot().layout();
+
+                assertEquals(List.of("Alice Pauline (archived)", "Benson Meier"),
+                        stage.getScene().getRoot().lookupAll(".tag-member-row .event-member-name").stream()
+                                .map(node -> ((Label) node).getText()).sorted().toList());
+            } finally {
+                window.stop();
+                stage.close();
+            }
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void listArchived_emptyListsShowArchivedMessages() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            Path dataPath = temporaryFolder.resolve("archived-empty-data.json");
+            StorageManager storage = new StorageManager(new JsonCoordiMateStorage(dataPath),
+                    new JsonUserPrefsStorage(temporaryFolder.resolve("archived-empty-prefs.json")));
+            MainWindow window = new MainWindow(stage, new LogicManager(new ModelManager(), storage), dataPath);
+            try {
+                window.fillInnerParts();
+                stage.getScene().getRoot().applyCss();
+                @SuppressWarnings("unchecked")
+                ListView<Person> contacts = (ListView<Person>) stage.getScene().getRoot().lookup("#personListView");
+                @SuppressWarnings("unchecked")
+                ListView<Event> events = (ListView<Event>) stage.getScene().getRoot().lookup("#eventListView");
+                TextField input = (TextField) stage.getScene().getRoot().lookup("#commandTextField");
+                Button submit = (Button) stage.getScene().getRoot().lookup("#submitButton");
+
+                assertEquals(PersonListPanel.MESSAGE_NO_CONTACTS, placeholderText(contacts));
+                assertEquals(EventListPanel.MESSAGE_NO_EVENTS, placeholderText(events));
+
+                input.setText("list archived");
+                submit.fire();
+                assertEquals(PersonListPanel.MESSAGE_NO_ARCHIVED_CONTACTS, placeholderText(contacts));
+                assertEquals(EventListPanel.MESSAGE_NO_ARCHIVED_EVENTS, placeholderText(events));
+
+                input.setText("list");
+                submit.fire();
+                assertEquals(PersonListPanel.MESSAGE_NO_CONTACTS, placeholderText(contacts));
+                assertEquals(EventListPanel.MESSAGE_NO_EVENTS, placeholderText(events));
+            } finally {
+                window.stop();
+                stage.close();
+            }
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    private static String placeholderText(ListView<?> list) {
+        return ((Label) list.getPlaceholder()).getText();
+    }
+
+    private static List<String> commandNames(Stage stage, String commandListId) {
+        return stage.getScene().getRoot().lookup(commandListId).lookupAll(".cheat-name").stream()
+                .map(node -> ((Label) node).getText()).toList();
+    }
 }

@@ -68,15 +68,19 @@
               <HBox styleClass="cheat-row"><Label text="add" styleClass="cheat-name, cheat-blue" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="new contact" styleClass="cheat-description" /></HBox>
               <HBox styleClass="cheat-row"><Label text="edit" styleClass="cheat-name, cheat-blue" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="modify" styleClass="cheat-description" /></HBox>
               <HBox styleClass="cheat-row"><Label text="delete" styleClass="cheat-name, cheat-red" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="remove" styleClass="cheat-description" /></HBox>
+              <HBox styleClass="cheat-row"><Label text="archive" styleClass="cheat-name, cheat-teal" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="hide" styleClass="cheat-description" /></HBox>
+              <HBox styleClass="cheat-row"><Label text="unarchive" styleClass="cheat-name, cheat-teal" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="restore" styleClass="cheat-description" /></HBox>
               <HBox styleClass="cheat-row"><Label text="search" styleClass="cheat-name, cheat-yellow" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="find" styleClass="cheat-description" /></HBox>
               <HBox styleClass="cheat-row"><Label text="filter" styleClass="cheat-name, cheat-teal" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="narrow" styleClass="cheat-description" /></HBox>
-              <HBox styleClass="cheat-row"><Label text="list" styleClass="cheat-name, cheat-purple" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="show all" styleClass="cheat-description" /></HBox>
+              <HBox styleClass="cheat-row"><Label text="list" styleClass="cheat-name, cheat-purple" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="all / archived" styleClass="cheat-description" /></HBox>
             </VBox>
             <VBox fx:id="eventsCommands" spacing="6" styleClass="command-cheatsheet" visible="false" managed="false">
               <HBox alignment="CENTER_LEFT"><Label text="COMMANDS" styleClass="sidebar-caption" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="Purpose" styleClass="sidebar-caption" /></HBox>
               <HBox styleClass="cheat-row"><Label text="addevent" styleClass="cheat-name, cheat-blue" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="new event" styleClass="cheat-description" /></HBox>
               <HBox styleClass="cheat-row"><Label text="editevent" styleClass="cheat-name, cheat-blue" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="modify" styleClass="cheat-description" /></HBox>
               <HBox styleClass="cheat-row"><Label text="deleteevent" styleClass="cheat-name, cheat-red" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="remove" styleClass="cheat-description" /></HBox>
+              <HBox styleClass="cheat-row"><Label text="archiveevent" styleClass="cheat-name, cheat-teal" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="hide" styleClass="cheat-description" /></HBox>
+              <HBox styleClass="cheat-row"><Label text="unarchiveevent" styleClass="cheat-name, cheat-teal" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="restore" styleClass="cheat-description" /></HBox>
               <HBox styleClass="cheat-row"><Label text="assign" styleClass="cheat-name, cheat-yellow" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="add member" styleClass="cheat-description" /></HBox>
               <HBox styleClass="cheat-row"><Label text="unassign" styleClass="cheat-name, cheat-yellow" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="remove mem" styleClass="cheat-description" /></HBox>
               <HBox styleClass="cheat-row"><Label text="members" styleClass="cheat-name, cheat-purple" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="view details" styleClass="cheat-description" /></HBox>

@@ -274,6 +274,9 @@ public class MainWindow extends UiPart<Stage> {
 
         eventListPanel = new EventListPanel(logic.getFilteredEventList(), logic.getFilteredPersonList());
         eventListPanelPlaceholder.getChildren().add(eventListPanel.getRoot());
+        showArchivedEmptyMessages(logic.showingArchivedProperty().get());
+        logic.showingArchivedProperty().addListener((observable, wasArchived, isArchived) ->
+                showArchivedEmptyMessages(isArchived));
         TagListViewModel tagListViewModel = new TagListViewModel(logic.getTagList(), logic.getPersonList());
         tagListView.setItems(tagListViewModel.getTagNames());
         tagMemberListView.setItems(tagListViewModel.getMembers());
@@ -543,7 +546,7 @@ public class MainWindow extends UiPart<Stage> {
             Label avatar = new Label(initials(person.getName().getFullName()));
             avatar.getStyleClass().addAll("event-member-avatar", getAvatarColorClass(person));
 
-            Label name = new Label(person.getName().getFullName());
+            Label name = new Label(person.getName().getFullName() + (person.isArchived() ? " (archived)" : ""));
             name.setWrapText(true);
             name.setMinWidth(0);
             name.getStyleClass().add("event-member-name");
@@ -691,6 +694,11 @@ public class MainWindow extends UiPart<Stage> {
                 rememberNormalWindowBounds();
             }
         });
+    }
+
+    private void showArchivedEmptyMessages(boolean isShowingArchived) {
+        personListPanel.setShowingArchived(isShowingArchived);
+        eventListPanel.setShowingArchived(isShowingArchived);
     }
 
     /**

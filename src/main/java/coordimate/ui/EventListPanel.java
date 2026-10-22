@@ -34,6 +34,8 @@ import javafx.scene.layout.VBox;
  * Keeps event selection and details connected to the live model list.
  */
 public class EventListPanel extends UiPart<Region> {
+    static final String MESSAGE_NO_EVENTS = "No events yet. Create one with addevent.";
+    static final String MESSAGE_NO_ARCHIVED_EVENTS = "No archived events.";
     private static final String FXML = "EventListPanel.fxml";
     private static final DateTimeFormatter DATE_TIME_FORMAT = DateTimeFormatter.ofPattern("dd-MM-uuuu HH:mm");
 
@@ -81,6 +83,7 @@ public class EventListPanel extends UiPart<Region> {
 
     private int lastSelectedIndex = -1;
     private final ObservableList<Person> persons;
+    private final Label emptyListMessage = new Label(MESSAGE_NO_EVENTS);
 
     /**
      * Observes saved events and stacks the panes when the window is narrow.
@@ -97,7 +100,7 @@ public class EventListPanel extends UiPart<Region> {
         this.persons = getPersonSource(persons);
         eventListView.setItems(events);
         eventListView.setCellFactory(list -> new EventListCell());
-        eventListView.setPlaceholder(new Label("No events yet. Create one with addevent."));
+        eventListView.setPlaceholder(emptyListMessage);
         eventCount.textProperty().bind(Bindings.size(events).asString("Events (%d)"));
         eventListView.getSelectionModel().selectedItemProperty().addListener((observable, oldEvent, event) ->
                 showDetails(event));
@@ -223,6 +226,14 @@ public class EventListPanel extends UiPart<Region> {
                 .filter(person -> person.getName().equals(memberName))
                 .findFirst()
                 .orElse(null);
+    }
+
+    /**
+     * Shows an empty-list message suited to the archived view if {@code isShowingArchived} is true,
+     * since suggesting {@code addevent} there would be misleading.
+     */
+    public void setShowingArchived(boolean isShowingArchived) {
+        emptyListMessage.setText(isShowingArchived ? MESSAGE_NO_ARCHIVED_EVENTS : MESSAGE_NO_EVENTS);
     }
 
     @SuppressWarnings("unchecked")
