@@ -14,6 +14,7 @@ Class UserPrefs
 
 Class UniquePersonList
 Class Person
+Class MemberId
 Class Address
 Class Email
 Class Name
@@ -37,6 +38,7 @@ UserPrefs .up.|> ReadOnlyUserPrefs
 
 CoordiMate *--> "1" UniquePersonList
 UniquePersonList --> "~* all" Person
+Person *--> MemberId
 Person *--> Name
 Person *--> Phone
 Person *--> Email

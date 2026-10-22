@@ -51,6 +51,7 @@
         "storage-component": "Storage component",
         "common-classes": "Common classes",
         "implementation": "Implementation",
+        "permanent-member-ids": "Permanent member IDs",
         "saving-data-atomically": "Saving data atomically",
         "dismissing-reminders": "Dismissing reminders",
         "event-attendance": "Event attendance",
