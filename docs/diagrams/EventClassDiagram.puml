@@ -3,6 +3,9 @@
 skinparam arrowThickness 1.1
 skinparam arrowColor MODEL_COLOR
 skinparam classBackgroundColor MODEL_COLOR
+skinparam nodesep 45
+skinparam ranksep 70
+skinparam linetype polyline
 
 Package Model as ModelPackage <<Rectangle>>{
 Class CoordiMate
@@ -18,11 +21,11 @@ CoordiMate --> "~*" Event
 
 Person *--> "1" Name
 
-Event *-right-> "1" EventTime : startTime
-Event *-right-> "1" EventTime : endTime
-Event *-right-> "~*" EventTime : dismissedReminderStarts
+Event *--right--> "1" EventTime : endTime\n
+Event *--right--> "1" EventTime : startTime\n
+Event *--right--> "0..*" EventTime : dismissedReminderStarts\n
 Event --> "~*" Name : members {ordered}
-Event --> "~* attendance" AttendanceStatus
+Event --> "0..*" AttendanceStatus : attendance
 
 note bottom of AttendanceStatus
   attendance is keyed by assigned member names;
