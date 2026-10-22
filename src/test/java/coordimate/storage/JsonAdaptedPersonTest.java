@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -17,6 +18,7 @@ import coordimate.commons.exceptions.IllegalValueException;
 import coordimate.model.person.Address;
 import coordimate.model.person.Birthday;
 import coordimate.model.person.Email;
+import coordimate.model.person.LeaveDate;
 import coordimate.model.person.Name;
 import coordimate.model.person.Note;
 import coordimate.model.person.Organisation;
@@ -69,7 +71,40 @@ public class JsonAdaptedPersonTest {
         JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS,
                 VALID_TAGS);
 
-        assertEquals(BENSON, person.toModelType());
+        assertEquals(new PersonBuilder(BENSON).withoutMemberId().build(), person.toModelType());
+    }
+
+    @Test
+    public void toModelType_personOnLeave_preservesLeaveDate() throws Exception {
+        Person contact = new PersonBuilder(BENSON).withLeaveDate("30-11-2026").build();
+
+        assertEquals(contact, new JsonAdaptedPerson(contact).toModelType());
+    }
+
+    @Test
+    public void toModelType_endedLeave_keptButNotOnLeave() throws Exception {
+        JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS,
+                null, null, null, null, "01-01-2020", VALID_TAGS, null);
+        Person contact = person.toModelType();
+
+        assertEquals(new LeaveDate("01-01-2020"), contact.getLeaveDate().orElseThrow());
+        assertFalse(contact.isOnLeave(LocalDate.of(2026, 10, 20)));
+    }
+
+    @Test
+    public void toModelType_withoutLeaveDate_notOnLeave() throws Exception {
+        JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS,
+                null, null, null, null, VALID_TAGS);
+
+        assertTrue(person.toModelType().getLeaveDate().isEmpty());
+    }
+
+    @Test
+    public void toModelType_invalidLeaveDate_throwsIllegalValueException() {
+        JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS,
+                null, null, null, null, "31-11-2026", VALID_TAGS, null);
+
+        assertThrows(IllegalValueException.class, LeaveDate.MESSAGE_CONSTRAINTS, person::toModelType);
     }
 
     @Test

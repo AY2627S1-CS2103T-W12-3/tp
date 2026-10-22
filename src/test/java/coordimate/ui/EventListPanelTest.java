@@ -25,9 +25,11 @@ import coordimate.model.event.EventTime;
 import coordimate.model.person.Name;
 import coordimate.model.person.Person;
 import coordimate.testutil.PersonBuilder;
+import coordimate.testutil.TypicalPersons;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
 import javafx.geometry.Bounds;
 import javafx.geometry.Orientation;
 import javafx.scene.Scene;
@@ -66,6 +68,33 @@ public class EventListPanelTest {
     }
 
     @Test
+    public void memberIds_ignoreContactFilteringAndFollowRosterReorderingAndEdits() throws Exception {
+        runOnJavaFxThread(() -> {
+            Person alice = new PersonBuilder(TypicalPersons.ALICE).withMemberId(12)
+                    .withName(ALICE.getFullName()).build();
+            Person bob = new PersonBuilder(TypicalPersons.BENSON).withMemberId(45).withName(BOB.getFullName()).build();
+            Person charlie = new PersonBuilder(TypicalPersons.CARL).withMemberId(99)
+                    .withName(CHARLIE.getFullName()).build();
+            ObservableList<Person> persons = FXCollections.observableArrayList(alice, bob, charlie);
+            FilteredList<Person> displayed = new FilteredList<>(persons, person -> person.equals(alice));
+            ObservableList<Event> events = FXCollections.observableArrayList(
+                    event(List.of(BOB, ALICE, CHARLIE), Map.of()));
+            Region root = new EventListPanel(events, displayed).getRoot();
+            new Scene(root);
+            root.applyCss();
+            getEventList(root).getSelectionModel().selectFirst();
+            assertEquals(List.of("ID: 45", "ID: 12", "ID: 99"), memberIds(root));
+
+            displayed.setPredicate(person -> false);
+            assertEquals(List.of("ID: 45", "ID: 12", "ID: 99"), memberIds(root));
+            persons.set(0, new PersonBuilder(alice).withRole("President").build());
+            events.setAll(event(List.of(CHARLIE, ALICE, BOB), Map.of()));
+            assertEquals(List.of("ID: 99", "ID: 12", "ID: 45"), memberIds(root));
+            assertEquals("President", memberMetadata((HBox) getMembers(root).getChildren().get(1)));
+        });
+    }
+
+    @Test
     public void selectEvent_showsEveryMemberStatusAndSummary() throws Exception {
         runOnJavaFxThread(() -> {
             Event event = event(List.of(ALICE, BOB, CHARLIE),
@@ -78,6 +107,7 @@ public class EventListPanelTest {
             assertEquals("Members (3)", getLabel(root, "memberCount").getText());
             assertCounts(root, "1 Present", "1 Absent", "1 Not marked");
             assertMembers(root, "Alice Tan", "● present", "Bob Lim", "● absent", "Charlie Ng", "● unmarked");
+            assertEquals(List.of("ID: unavailable", "ID: unavailable", "ID: unavailable"), memberIds(root));
         });
     }
 
@@ -262,7 +292,7 @@ public class EventListPanelTest {
     @Test
     public void selectEvent_showsMemberListStyleWithContactRoleOrganisationAndTags() throws Exception {
         runOnJavaFxThread(() -> {
-            Person alice = new PersonBuilder().withName(ALICE.getFullName()).withRole("Treasurer")
+            Person alice = new PersonBuilder().withMemberId(12).withName(ALICE.getFullName()).withRole("Treasurer")
                     .withOrganisation("Student Union").withTags("Finance", "Publicity").build();
             Region root = new EventListPanel(FXCollections.observableArrayList(event(List.of(ALICE), Map.of())),
                     FXCollections.observableArrayList(alice)).getRoot();
@@ -271,7 +301,7 @@ public class EventListPanelTest {
             getEventList(root).getSelectionModel().selectFirst();
 
             HBox row = (HBox) getMembers(root).getChildren().getFirst();
-            assertEquals("1.", ((Label) row.getChildren().get(0)).getText());
+            assertEquals("ID: 12", ((Label) row.getChildren().get(0)).getText());
             VBox memberDetails = (VBox) row.getChildren().get(2);
             FlowPane identityLine = (FlowPane) memberDetails.getChildren().get(0);
             assertEquals("Alice Tan", ((Label) identityLine.getChildren().get(0)).getText());
@@ -286,7 +316,7 @@ public class EventListPanelTest {
     public void selectEvent_showsSavedNoteBelowMemberMetadata() throws Exception {
         runOnJavaFxThread(() -> {
             String note = "Vegetarian; requires step-free access";
-            Person alice = new PersonBuilder().withName(ALICE.getFullName()).withRole("Logistics")
+            Person alice = new PersonBuilder().withMemberId(12).withName(ALICE.getFullName()).withRole("Logistics")
                     .withOrganisation("NUS").withTags("Logistics", "Publicity").withNote(note).build();
             Event event = event(List.of(ALICE, BOB), Map.of(ALICE, AttendanceStatus.PRESENT));
             Region root = new EventListPanel(FXCollections.observableArrayList(event),
@@ -315,7 +345,7 @@ public class EventListPanelTest {
     @Test
     public void selectEvent_withoutNoteOrSavedContact_omitsNoteLine() throws Exception {
         runOnJavaFxThread(() -> {
-            Person alice = new PersonBuilder().withName(ALICE.getFullName()).withoutNote().build();
+            Person alice = new PersonBuilder().withMemberId(12).withName(ALICE.getFullName()).withoutNote().build();
             Event event = event(List.of(ALICE, BOB), Map.of(BOB, AttendanceStatus.ABSENT));
             Region root = new EventListPanel(FXCollections.observableArrayList(event),
                     FXCollections.observableArrayList(alice)).getRoot();
@@ -339,8 +369,10 @@ public class EventListPanelTest {
     @Test
     public void editContactNote_refreshesSelectedEventImmediately() throws Exception {
         runOnJavaFxThread(() -> {
-            Person alice = new PersonBuilder().withName(ALICE.getFullName()).withNote("Vegetarian").build();
-            Person bob = new PersonBuilder().withName(BOB.getFullName()).withNote("Arriving early").build();
+            Person alice = new PersonBuilder().withMemberId(12).withName(ALICE.getFullName())
+                    .withNote("Vegetarian").build();
+            Person bob = new PersonBuilder().withMemberId(45).withName(BOB.getFullName())
+                    .withNote("Arriving early").build();
             ObservableList<Person> persons = FXCollections.observableArrayList(alice, bob);
             Event selectedEvent = event(List.of(ALICE, BOB), Map.of(ALICE, AttendanceStatus.PRESENT));
             Region root = new EventListPanel(
@@ -367,8 +399,10 @@ public class EventListPanelTest {
     @Test
     public void clearContactNote_removesSelectedEventNoteLineImmediately() throws Exception {
         runOnJavaFxThread(() -> {
-            Person alice = new PersonBuilder().withName(ALICE.getFullName()).withNote("Vegetarian").build();
-            Person bob = new PersonBuilder().withName(BOB.getFullName()).withNote("Arriving early").build();
+            Person alice = new PersonBuilder().withMemberId(12).withName(ALICE.getFullName())
+                    .withNote("Vegetarian").build();
+            Person bob = new PersonBuilder().withMemberId(45).withName(BOB.getFullName())
+                    .withNote("Arriving early").build();
             ObservableList<Person> persons = FXCollections.observableArrayList(alice, bob);
             Event selectedEvent = event(List.of(ALICE, BOB), Map.of(ALICE, AttendanceStatus.ABSENT));
             Region root = new EventListPanel(FXCollections.observableArrayList(selectedEvent), persons).getRoot();
@@ -394,7 +428,7 @@ public class EventListPanelTest {
     @Test
     public void contactChanges_refreshSelectedEventMemberDetails() throws Exception {
         runOnJavaFxThread(() -> {
-            Person original = new PersonBuilder().withName(ALICE.getFullName()).withRole("Treasurer")
+            Person original = new PersonBuilder().withMemberId(12).withName(ALICE.getFullName()).withRole("Treasurer")
                     .withOrganisation("Student Union").withTags("Finance").build();
             ObservableList<Person> persons = FXCollections.observableArrayList(original);
             Event event = event(List.of(ALICE), Map.of(ALICE, AttendanceStatus.ABSENT));
@@ -407,7 +441,8 @@ public class EventListPanelTest {
             assertTrue(row.getChildren().get(3).getStyleClass().contains("attendance-absent"));
             assertEquals("Treasurer · Student Union", memberMetadata(row));
 
-            persons.setAll(new PersonBuilder().withName(ALICE.getFullName()).withRole("Logistics Lead")
+            persons.setAll(new PersonBuilder().withMemberId(12).withName(ALICE.getFullName())
+                    .withRole("Logistics Lead")
                     .withOrganisation("NUS").withTags("Logistics", "Sponsor", "UniversityStaff").build());
 
             row = (HBox) getMembers(root).getChildren().getFirst();
@@ -425,7 +460,8 @@ public class EventListPanelTest {
             assertTrue(((Label) row.getChildren().get(1)).getStyleClass().contains("event-member-avatar-teal"));
             assertEquals("Logistics Lead · NUS", memberMetadata(row));
 
-            persons.setAll(new PersonBuilder().withName(ALICE.getFullName()).withRole("Sponsor Liaison")
+            persons.setAll(new PersonBuilder().withMemberId(12).withName(ALICE.getFullName())
+                    .withRole("Sponsor Liaison")
                     .withOrganisation("Student Union").withTags("Sponsor").build());
             row = (HBox) getMembers(root).getChildren().getFirst();
             assertTrue(((Label) row.getChildren().get(1)).getStyleClass().contains("event-member-avatar-amber"));
@@ -479,7 +515,8 @@ public class EventListPanelTest {
     private static void assertLongNoteLayout(String note) {
         ObservableList<Person> persons = FXCollections.observableArrayList();
         for (Name name : List.of(ALICE, BOB, CHARLIE)) {
-            persons.add(new PersonBuilder().withName(name.getFullName()).withRole("Logistics")
+            persons.add(new PersonBuilder().withMemberId(Integer.MAX_VALUE - persons.size())
+                    .withName(name.getFullName()).withRole("Logistics")
                     .withOrganisation("NUS").withTags("Logistics", "Publicity").withNote(note).build());
         }
         Event event = event(List.of(ALICE, BOB, CHARLIE),
@@ -500,8 +537,13 @@ public class EventListPanelTest {
             for (var memberRow : getMembers(root).getChildren()) {
                 HBox row = (HBox) memberRow;
                 Label badge = (Label) row.getChildren().get(3);
+                Label memberId = (Label) row.getChildren().getFirst();
                 Label noteLabel = (Label) row.lookup(".event-member-note");
                 VBox details = (VBox) row.getChildren().get(2);
+
+                assertTrue(memberId.getWidth() + 1 >= memberId.prefWidth(-1),
+                        "Member ID should retain its full width at width " + width);
+                assertEquals(memberId.getText(), ((Text) memberId.lookup(".text")).getText());
 
                 assertEquals(badge.prefWidth(-1), badge.getWidth(), 1,
                         "Attendance badge should retain its full width at width " + width);
@@ -532,6 +574,11 @@ public class EventListPanelTest {
             assertCounts(root, "1 Present", "1 Absent", "1 Not marked");
             assertMembers(root, "Alice Tan", "● present", "Bob Lim", "● absent", "Charlie Ng", "● unmarked");
         }
+    }
+
+    private static List<String> memberIds(Region root) {
+        return getMembers(root).getChildren().stream()
+                .map(row -> ((Label) ((HBox) row).getChildren().getFirst()).getText()).toList();
     }
 
     private static Event event(List<Name> members, Map<Name, AttendanceStatus> attendance) {

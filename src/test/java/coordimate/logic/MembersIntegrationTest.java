@@ -42,14 +42,14 @@ public class MembersIntegrationTest {
     }
 
     @Test
-    public void unassign_shownEvent_contactDisappearsAndIndexesShift() throws Exception {
+    public void unassign_shownEvent_membersKeepIdsAfterRemoval() throws Exception {
         logic.execute("members evn/Final Concert");
         assertEquals(List.of(ALICE, BENSON, CARL), model.getFilteredPersonList());
 
         logic.execute("unassign evn/Final Concert c/2");
         assertEquals(List.of(ALICE, CARL), model.getFilteredPersonList());
 
-        logic.execute("unassign evn/Final Concert c/2");
+        logic.execute("unassign evn/Final Concert c/3");
         assertEquals(List.of(ALICE), model.getFilteredPersonList());
     }
 

@@ -343,9 +343,7 @@ public class TutorialWindowTest {
             applyLayout(stage);
 
             Node card = stage.getScene().lookup("#tutorialCard");
-            Bounds welcomeBounds = card.localToScene(card.getLayoutBounds());
-            assertEquals(500, welcomeBounds.getCenterX(), 1);
-            assertEquals(350, welcomeBounds.getCenterY(), 1);
+            assertCardCentered(stage, card);
             assertTrue(stage.getScene().lookup("#backdropFull").isVisible());
             Node highlight = stage.getScene().lookup("#targetHighlight");
             Region targetBlocker = (Region) stage.getScene().lookup("#targetBlocker");
@@ -381,8 +379,7 @@ public class TutorialWindowTest {
             tutorial.highlight(null);
             applyLayout(stage);
             assertFalse(highlight.isVisible());
-            assertEquals(500, card.localToScene(card.getLayoutBounds()).getCenterX(), 1);
-            assertEquals(350, card.localToScene(card.getLayoutBounds()).getCenterY(), 1);
+            assertCardCentered(stage, card);
             nextButton.fire();
             tutorial.highlight(help);
             applyLayout(stage);
@@ -393,8 +390,7 @@ public class TutorialWindowTest {
             tutorial.highlight(tutorialMenuItem);
             applyLayout(stage);
             assertTrue(highlight.isVisible());
-            assertEquals(500, card.localToScene(card.getLayoutBounds()).getCenterX(), 1);
-            assertEquals(350, card.localToScene(card.getLayoutBounds()).getCenterY(), 1);
+            assertCardCentered(stage, card);
             assertFalse(card.localToScene(card.getLayoutBounds())
                     .intersects(highlight.localToScene(highlight.getLayoutBounds())));
             assertTrue(tutorial.isInteractiveTarget(nextButton));
@@ -477,6 +473,12 @@ public class TutorialWindowTest {
         addTutorialStyles(stage);
         stage.show();
         return stage;
+    }
+
+    private static void assertCardCentered(Stage stage, Node card) {
+        Bounds bounds = card.localToScene(card.getLayoutBounds());
+        assertEquals(stage.getScene().getWidth() / 2, bounds.getCenterX(), 1);
+        assertEquals(stage.getScene().getHeight() / 2, bounds.getCenterY(), 1);
     }
 
     private static void addTutorialStyles(Stage stage) {

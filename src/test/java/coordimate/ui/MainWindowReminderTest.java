@@ -1,5 +1,6 @@
 package coordimate.ui;
 
+import static coordimate.testutil.TypicalPersons.ALICE;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -37,6 +38,7 @@ import coordimate.model.event.EventTime;
 import coordimate.storage.JsonCoordiMateStorage;
 import coordimate.storage.JsonUserPrefsStorage;
 import coordimate.storage.StorageManager;
+import coordimate.testutil.PersonBuilder;
 import javafx.animation.Animation;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
@@ -48,6 +50,8 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.image.WritableImage;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -153,6 +157,32 @@ public class MainWindowReminderTest {
                 fixture.model().addEvent(event("Another", "19-10-2026 18:00", "19-10-2026 19:00"));
                 fixture.logic().refreshReminders();
                 assertEquals(2, rows(root).getChildren().size());
+            } finally {
+                fixture.stage().close();
+            }
+            return null;
+        });
+    }
+
+    @Test
+    public void periodicCheck_leaveEndsAtMidnight_hidesBadgeWithoutCommand() throws Exception {
+        onJavaFxThread(() -> {
+            ModelManager model = new ModelManager();
+            model.addPerson(new PersonBuilder(ALICE).withoutMemberId().withLeaveDate("19-10-2026").build());
+            ControlledStorage storage = new ControlledStorage(temporaryFolder.resolve("data.json"));
+            storage.saveCoordiMate(model.getCoordiMate());
+            Fixture fixture = openWindow(model, storage, new AdjustableClock(), true, 1100, 800);
+            try {
+                Parent root = fixture.stage().getScene().getRoot();
+                assertEquals(List.of("On leave until 19-10-2026"), leaveBadges(root));
+
+                fixture.clock().advance(java.time.Duration.ofHours(8));
+                fixture.timer().getKeyFrames().getFirst().getOnFinished().handle(new ActionEvent());
+                assertEquals(List.of("On leave until 19-10-2026"), leaveBadges(root));
+
+                fixture.clock().advance(java.time.Duration.ofHours(1));
+                fixture.timer().getKeyFrames().getFirst().getOnFinished().handle(new ActionEvent());
+                assertEquals(List.of(), leaveBadges(root));
             } finally {
                 fixture.stage().close();
             }
@@ -297,6 +327,43 @@ public class MainWindowReminderTest {
                 assertEquals(List.of(), names(root));
                 assertPanelHidden(root);
                 assertSame(root.lookup("#commandTextField"), fixture.stage().getScene().getFocusOwner());
+            } finally {
+                fixture.stage().close();
+            }
+            return null;
+        });
+    }
+
+    @Test
+    public void navigationMode_releasesDismissFocusAndBlocksControlKeys() throws Exception {
+        onJavaFxThread(() -> {
+            Fixture fixture = openWindow(true);
+            try {
+                Parent root = fixture.stage().getScene().getRoot();
+                Button dismiss = (Button) root.lookup(".reminder-dismiss");
+                Label mode = (Label) root.lookup("#interactionModeLabel");
+                ToggleButton eventsView = (ToggleButton) root.lookup("#eventsView");
+                dismiss.requestFocus();
+                assertSame(dismiss, fixture.stage().getScene().getFocusOwner());
+
+                dismiss.fireEvent(keyEvent(KeyCode.ESCAPE));
+
+                assertEquals("NAVIGATION · j/k move · s switch view · i to type", mode.getText());
+                assertSame(mode, fixture.stage().getScene().getFocusOwner());
+                List<String> remindersBeforeBlockedKeys = names(root);
+                for (KeyCode blockedKey : List.of(KeyCode.ENTER, KeyCode.SPACE, KeyCode.TAB,
+                        KeyCode.UP, KeyCode.DOWN, KeyCode.LEFT, KeyCode.RIGHT)) {
+                    dismiss.fireEvent(keyEvent(blockedKey));
+                    assertEquals(remindersBeforeBlockedKeys, names(root));
+                    assertSame(mode, fixture.stage().getScene().getFocusOwner());
+                }
+
+                dismiss.fireEvent(keyEvent(KeyCode.S));
+                assertTrue(eventsView.isSelected());
+
+                dismiss.fire();
+                assertPanelHidden(root);
+                assertSame(mode, fixture.stage().getScene().getFocusOwner());
             } finally {
                 fixture.stage().close();
             }
@@ -520,7 +587,7 @@ public class MainWindowReminderTest {
                 new JsonUserPrefsStorage(temporaryFolder.resolve("prefs.json"))), clock);
         Stage stage = new Stage();
         Timeline timer = new Timeline();
-        MainWindow window = new MainWindow(stage, logic, storage.getCoordiMateFilePath(), timer);
+        MainWindow window = new MainWindow(stage, logic, storage.getCoordiMateFilePath(), timer, clock);
         stage.setWidth(width);
         stage.setHeight(height);
         if (showBeforeFilling) {
@@ -539,6 +606,11 @@ public class MainWindowReminderTest {
         return new Event(name, new EventTime(start), new EventTime(end));
     }
 
+    private static KeyEvent keyEvent(KeyCode keyCode) {
+        return new KeyEvent(KeyEvent.KEY_PRESSED, "", "", keyCode,
+                false, false, false, false);
+    }
+
     private static VBox rows(Parent root) {
         return (VBox) ((ScrollPane) root.lookup("#reminderScroll")).getContent();
     }
@@ -546,6 +618,14 @@ public class MainWindowReminderTest {
     private static List<String> names(Parent root) {
         return rows(root).getChildren().stream()
                 .map(row -> ((Label) row.lookup(".reminder-name")).getText()).toList();
+    }
+
+    private static List<String> leaveBadges(Parent root) {
+        layout(root);
+        return root.lookupAll(".leave-badge").stream()
+                .filter(node -> node.isVisible())
+                .map(node -> ((Label) node).getText())
+                .toList();
     }
 
     private static void layout(Parent root) {

@@ -2,6 +2,7 @@ package coordimate.ui;
 
 import java.awt.Point;
 import java.nio.file.Path;
+import java.time.Clock;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -37,7 +38,6 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
-import javafx.scene.control.TextInputControl;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.Tooltip;
 import javafx.scene.input.KeyCode;
@@ -47,6 +47,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
@@ -64,17 +65,17 @@ public class MainWindow extends UiPart<Stage> {
 
     private static final String FXML = "MainWindow.fxml";
     private static final String COMMAND_MODE_TEXT = "COMMAND · Esc to navigate";
-    private static final String NAVIGATION_MODE_TEXT = "NAVIGATION · j/k move · i to type";
+    private static final String NAVIGATION_MODE_TEXT = "NAVIGATION · j/k move · s switch view · i to type";
     private static final Map<String, String> COMMAND_HELP_TEXT = Map.ofEntries(
             Map.entry("add", "Format: add n/NAME p/PHONE e/EMAIL r/ROLE [b/BIRTHDAY] [a/ADDRESS]"
-                    + " [o/ORGANISATION] [t/TAG]... [m/NOTE]\n"
+                    + " [o/ORGANISATION] [lv/LEAVE_END_DATE] [t/TAG]... [m/NOTE]\n"
                     + "Example: add n/Aisha Tan p/+6591234567 e/aisha@example.com r/Logistics t/EXCO"),
-            Map.entry("edit", "Format: edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY]"
-                    + " [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [t/TAG]... [at/TAG]... [rt/TAG]...\n"
+            Map.entry("edit", "Format: edit MEMBER_ID [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY]"
+                    + " [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [lv/LEAVE_END_DATE] [t/TAG]... [at/TAG]... [rt/TAG]...\n"
                     + "Or: edit target/IDENTIFIER [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY]"
-                    + " [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [t/TAG]... [at/TAG]... [rt/TAG]...\n"
+                    + " [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [lv/LEAVE_END_DATE] [t/TAG]... [at/TAG]... [rt/TAG]...\n"
                     + "Example: edit 1 p/91234567 e/johndoe@example.com"),
-            Map.entry("delete", "Format: delete INDEX (or n/NAME, p/PHONE, or e/EMAIL)\n"
+            Map.entry("delete", "Format: delete MEMBER_ID (or n/NAME, p/PHONE, or e/EMAIL)\n"
                     + "Example: delete e/aisha@example.com"),
             Map.entry("search", "Format: search KEYWORD\nExample: search jurong west"),
             Map.entry("filter", "Format: filter FIELD/VALUE [FIELD/VALUE]...\n"
@@ -89,9 +90,9 @@ public class MainWindow extends UiPart<Stage> {
             Map.entry("deleteevent", "Format: deleteevent evn/EVENT_NAME\n"
                     + "Example: deleteevent evn/Final Concert"),
             Map.entry("dismiss", "Format: dismiss INDEX\nExample: dismiss 1"),
-            Map.entry("assign", "Format: assign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...\n"
+            Map.entry("assign", "Format: assign evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]...\n"
                     + "Example: assign evn/Final Concert c/2 3"),
-            Map.entry("unassign", "Format: unassign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...\n"
+            Map.entry("unassign", "Format: unassign evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]...\n"
                     + "Example: unassign evn/Final Concert c/2 3"),
             Map.entry("members", "Format: members evn/EVENT_NAME\nExample: members evn/Final Concert"),
             Map.entry("markattendance", "Format: markattendance evn/EVENT_NAME mem/MEMBER_NAME att/STATUS\n"
@@ -121,6 +122,7 @@ public class MainWindow extends UiPart<Stage> {
     private CommandBox commandBox;
     private ReminderPanel reminderPanel;
     private final Timeline reminderTimer;
+    private final Clock clock;
 
     @FXML
     private StackPane reminderPanelPlaceholder;
@@ -208,10 +210,10 @@ public class MainWindow extends UiPart<Stage> {
      * and the data file path to show in the status bar.
      */
     public MainWindow(Stage primaryStage, Logic logic, Path dataFilePath) {
-        this(primaryStage, logic, dataFilePath, new Timeline());
+        this(primaryStage, logic, dataFilePath, new Timeline(), Clock.systemDefaultZone());
     }
 
-    MainWindow(Stage primaryStage, Logic logic, Path dataFilePath, Timeline reminderTimer) {
+    MainWindow(Stage primaryStage, Logic logic, Path dataFilePath, Timeline reminderTimer, Clock clock) {
         super(FXML, primaryStage);
 
         // Set dependencies
@@ -219,6 +221,7 @@ public class MainWindow extends UiPart<Stage> {
         this.logic = logic;
         this.dataFilePath = dataFilePath;
         this.reminderTimer = reminderTimer;
+        this.clock = clock;
 
         // Configure the UI
         setWindowDefaultSize(logic.getGuiSettings());
@@ -293,7 +296,7 @@ public class MainWindow extends UiPart<Stage> {
      * Fills up all the placeholders of this window.
      */
     void fillInnerParts() {
-        personListPanel = new PersonListPanel(logic.getFilteredPersonList(), logic.getEventList());
+        personListPanel = new PersonListPanel(logic.getFilteredPersonList(), logic.getEventList(), clock);
         personListPanelPlaceholder.getChildren().add(personListPanel.getRoot());
 
         eventListPanel = new EventListPanel(logic.getEventList(), logic.getFilteredPersonList());
@@ -328,7 +331,7 @@ public class MainWindow extends UiPart<Stage> {
             contactsView.setSelected(tab == contactsTab);
             eventsView.setSelected(tab == eventsTab);
             tagsView.setSelected(tab == tagsTab);
-            setPrefixHelpText(tab == eventsTab ? "Prefixes: evn/Event  st/Start  et/End  c/Contact"
+            setPrefixHelpText(tab == eventsTab ? "Prefixes: evn/Event  st/Start  et/End  c/Member ID"
                     : tab == tagsTab ? "Prefixes: t/Tag"
                     : "Prefixes: n/Name  p/Phone  e/Email  r/Role  t/Tag  m/Note");
         });
@@ -340,7 +343,10 @@ public class MainWindow extends UiPart<Stage> {
         reminderPanelPlaceholder.visibleProperty().bind(reminderPanel.getRoot().visibleProperty());
         reminderPanelPlaceholder.managedProperty().bind(reminderPanel.getRoot().managedProperty());
         reminderPanelPlaceholder.getChildren().add(reminderPanel.getRoot());
-        reminderTimer.getKeyFrames().setAll(new KeyFrame(Duration.minutes(1), event -> logic.refreshReminders()));
+        reminderTimer.getKeyFrames().setAll(new KeyFrame(Duration.minutes(1), event -> {
+            logic.refreshReminders();
+            personListPanel.refreshIfDateChanged();
+        }));
         reminderTimer.setCycleCount(Animation.INDEFINITE);
         if (primaryStage.isShowing()) {
             reminderTimer.play();
@@ -351,8 +357,9 @@ public class MainWindow extends UiPart<Stage> {
 
         commandBox = new CommandBox(this::executeCommand, logic::isAwaitingDeleteConfirmation);
         commandBoxPlaceholder.getChildren().add(commandBox.getRoot());
-        getRoot().addEventFilter(KeyEvent.KEY_PRESSED, this::handleModeShortcut);
-        getRoot().addEventFilter(KeyEvent.KEY_TYPED, this::handleNavigationInput);
+        getRoot().addEventFilter(KeyEvent.KEY_PRESSED, this::handleKeyboardInput);
+        getRoot().addEventFilter(KeyEvent.KEY_RELEASED, this::handleCommandModeShortcutRelease);
+        commandBox.getRoot().addEventFilter(MouseEvent.MOUSE_PRESSED, this::handleCommandBoxClick);
         personListPanel.setCardListClickHandler(this::enterNavigationMode);
         eventListPanel.setCardListClickHandler(this::enterNavigationMode);
         tagListView.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> enterNavigationMode());
@@ -391,38 +398,53 @@ public class MainWindow extends UiPart<Stage> {
         }
     }
 
-    private void handleModeShortcut(KeyEvent event) {
-        if (event.isConsumed() || tutorialWindow.isShowing() || event.getCode() != KeyCode.ESCAPE
-                || logic.isAwaitingDeleteConfirmation()) {
+    private void handleKeyboardInput(KeyEvent event) {
+        if (event.isConsumed() || tutorialWindow.isShowing() || logic.isAwaitingDeleteConfirmation()) {
             return;
         }
-        enterNavigationMode();
+
+        if (interactionMode == InteractionMode.COMMAND) {
+            if (event.getCode() == KeyCode.ESCAPE) {
+                enterNavigationMode();
+                event.consume();
+            }
+            return;
+        }
+
+        if (hasShortcutModifier(event)) {
+            return;
+        }
+
+        switch (event.getCode()) {
+            case ESCAPE -> focusNavigationMode();
+            case I -> { } // Command mode is entered when the key is released.
+            case J -> navigateCards(true);
+            case K -> navigateCards(false);
+            case S -> switchToNextView();
+            default -> { } // Other unmodified keys are disabled in Navigation mode.
+        }
         event.consume();
     }
 
-    private void handleNavigationInput(KeyEvent event) {
-        if (tutorialWindow.isShowing() || interactionMode != InteractionMode.NAVIGATION) {
-            return;
-        }
-        if (event.isShiftDown() || event.isControlDown() || event.isAltDown() || event.isMetaDown()) {
-            return;
-        }
-
-        Node focusOwner = primaryStage.getScene().getFocusOwner();
-        if (focusOwner instanceof TextInputControl && !commandBox.isCommandInput(focusOwner)) {
-            return;
-        }
-
-        String character = event.getCharacter();
-        if ("i".equalsIgnoreCase(character)) {
+    private void handleCommandModeShortcutRelease(KeyEvent event) {
+        if (!event.isConsumed() && !tutorialWindow.isShowing()
+                && interactionMode == InteractionMode.NAVIGATION
+                && event.getCode() == KeyCode.I
+                && !hasShortcutModifier(event)) {
             enterCommandMode();
             event.consume();
-            return;
         }
-        if ("j".equalsIgnoreCase(character) || "k".equalsIgnoreCase(character)) {
-            navigateCards("j".equalsIgnoreCase(character));
+    }
+
+    private boolean hasShortcutModifier(KeyEvent event) {
+        return event.isShiftDown() || event.isControlDown() || event.isAltDown() || event.isMetaDown();
+    }
+
+    private void handleCommandBoxClick(MouseEvent event) {
+        if (interactionMode == InteractionMode.NAVIGATION) {
+            enterCommandMode();
+            event.consume();
         }
-        event.consume();
     }
 
     private void enterCommandMode() {
@@ -436,16 +458,37 @@ public class MainWindow extends UiPart<Stage> {
             return;
         }
         setInteractionMode(InteractionMode.NAVIGATION);
+        focusNavigationMode();
+    }
+
+    private void focusNavigationMode() {
+        interactionModeLabel.requestFocus();
+        Platform.runLater(() -> {
+            if (interactionMode == InteractionMode.NAVIGATION) {
+                interactionModeLabel.requestFocus();
+            }
+        });
     }
 
     private void setInteractionMode(InteractionMode mode) {
         interactionMode = mode;
         boolean isCommandMode = mode == InteractionMode.COMMAND;
         commandBox.setInputDisabled(!isCommandMode);
+        interactionModeLabel.setFocusTraversable(!isCommandMode);
         interactionModeLabel.setText(isCommandMode ? COMMAND_MODE_TEXT : NAVIGATION_MODE_TEXT);
         interactionModeLabel.setAccessibleText(isCommandMode
                 ? "Command mode. Press Escape to navigate cards."
-                : "Navigation mode. Press J or K to move between cards, or I to type a command.");
+                : "Navigation mode. Press J or K to move between cards, S to switch views, or I to type a command."
+                        + " Other unmodified keys are disabled.");
+    }
+
+    private void switchToNextView() {
+        int tabCount = views.getTabs().size();
+        if (tabCount == 0) {
+            return;
+        }
+        int selectedIndex = views.getSelectionModel().getSelectedIndex();
+        views.getSelectionModel().select((selectedIndex + 1) % tabCount);
     }
 
     private boolean navigateCards(boolean forwards) {
@@ -537,6 +580,10 @@ public class MainWindow extends UiPart<Stage> {
             identityLine.setAlignment(Pos.CENTER_LEFT);
             identityLine.getStyleClass().add("event-member-identity");
             identityLine.getChildren().add(name);
+            Label memberId = new Label("ID: " + person.getMemberId().orElseThrow());
+            memberId.setMinWidth(Region.USE_PREF_SIZE);
+            memberId.getStyleClass().add("event-member-id");
+            identityLine.getChildren().add(memberId);
             person.getTags().stream()
                     .sorted((left, right) -> String.CASE_INSENSITIVE_ORDER.compare(
                             left.getTagName(), right.getTagName()))
@@ -763,7 +810,11 @@ public class MainWindow extends UiPart<Stage> {
             resultDisplay.setWarningFeedback(e.getMessage());
         } finally {
             if (logic.getReminders().isEmpty()) {
-                commandBox.requestFocus();
+                if (interactionMode == InteractionMode.COMMAND) {
+                    commandBox.requestFocus();
+                } else {
+                    focusNavigationMode();
+                }
             }
         }
     }

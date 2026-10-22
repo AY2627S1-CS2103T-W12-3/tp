@@ -8,11 +8,15 @@ import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.IntNode;
 
 import coordimate.commons.exceptions.IllegalValueException;
 import coordimate.model.person.Address;
 import coordimate.model.person.Birthday;
 import coordimate.model.person.Email;
+import coordimate.model.person.LeaveDate;
+import coordimate.model.person.MemberId;
 import coordimate.model.person.Name;
 import coordimate.model.person.Note;
 import coordimate.model.person.Organisation;
@@ -28,6 +32,7 @@ class JsonAdaptedPerson {
 
     public static final String MISSING_FIELD_MESSAGE_FORMAT = "Person's %s field is missing!";
 
+    private final JsonNode memberId;
     private final String name;
     private final String phone;
     private final String email;
@@ -36,17 +41,21 @@ class JsonAdaptedPerson {
     private final String address;
     private final String organisation;
     private final String note;
+    private final String leaveUntil;
     private final List<JsonAdaptedTag> tags = new ArrayList<>();
 
     /**
      * Constructs a {@code JsonAdaptedPerson} with the given person details.
+     * {@code leaveUntil} is absent from files saved before leave existed, and such contacts are not on leave.
      */
     @JsonCreator
     public JsonAdaptedPerson(@JsonProperty("name") String name, @JsonProperty("phone") String phone,
             @JsonProperty("email") String email, @JsonProperty("address") String address,
             @JsonProperty("role") String role, @JsonProperty("birthday") String birthday,
             @JsonProperty("organisation") String organisation, @JsonProperty("note") String note,
-            @JsonProperty("tags") List<JsonAdaptedTag> tags) {
+            @JsonProperty("leaveUntil") String leaveUntil, @JsonProperty("tags") List<JsonAdaptedTag> tags,
+            @JsonProperty("memberId") JsonNode memberId) {
+        this.memberId = memberId;
         this.name = name;
         this.phone = phone;
         this.email = email;
@@ -55,9 +64,18 @@ class JsonAdaptedPerson {
         this.address = address;
         this.organisation = organisation;
         this.note = note;
+        this.leaveUntil = leaveUntil;
         if (tags != null) {
             this.tags.addAll(tags);
         }
+    }
+
+    /**
+     * Creates a legacy record without a member ID or leave.
+     */
+    public JsonAdaptedPerson(String name, String phone, String email, String address, String role, String birthday,
+            String organisation, String note, List<JsonAdaptedTag> tags) {
+        this(name, phone, email, address, role, birthday, organisation, note, null, tags, null);
     }
 
     /**
@@ -80,6 +98,7 @@ class JsonAdaptedPerson {
      * Converts a given {@code Person} into this class for Jackson use.
      */
     public JsonAdaptedPerson(Person source) {
+        memberId = source.getMemberId().map(id -> IntNode.valueOf(id.getValue())).orElse(null);
         name = source.getName().getFullName();
         phone = source.getPhone().getValue();
         email = source.getEmail().getValue();
@@ -88,6 +107,7 @@ class JsonAdaptedPerson {
         address = source.getAddress().map(Address::getValue).orElse(null);
         organisation = source.getOrganisation().map(Organisation::getValue).orElse(null);
         note = source.getNote().map(Note::getValue).orElse(null);
+        leaveUntil = source.getLeaveDate().map(LeaveDate::getValue).orElse(null);
         tags.addAll(source.getTags().stream()
                 .map(JsonAdaptedTag::new)
                 .collect(Collectors.toList()));
@@ -99,6 +119,13 @@ class JsonAdaptedPerson {
      * @throws IllegalValueException if there were any data constraints violated in the adapted person.
      */
     public Person toModelType() throws IllegalValueException {
+        MemberId modelMemberId = null;
+        if (memberId != null && !memberId.isNull()) {
+            if (!memberId.isIntegralNumber() || !memberId.canConvertToInt() || memberId.intValue() <= 0) {
+                throw new IllegalValueException(MemberId.MESSAGE_CONSTRAINTS);
+            }
+            modelMemberId = new MemberId(memberId.intValue());
+        }
         final List<Tag> personTags = new ArrayList<>();
         for (JsonAdaptedTag tag : tags) {
             personTags.add(tag.toModelType());
@@ -154,9 +181,15 @@ class JsonAdaptedPerson {
         }
         final Note modelNote = note == null ? null : new Note(note);
 
+        // Leave that has ended stays in the file, so past dates are valid here.
+        if (leaveUntil != null && !LeaveDate.isValidLeaveDate(leaveUntil)) {
+            throw new IllegalValueException(LeaveDate.MESSAGE_CONSTRAINTS);
+        }
+        final LeaveDate modelLeaveDate = leaveUntil == null ? null : new LeaveDate(leaveUntil);
+
         final Set<Tag> modelTags = new HashSet<>(personTags);
-        return new Person(modelName, modelPhone, modelEmail, modelRole, modelBirthday, modelAddress,
-                modelOrganisation, modelNote, modelTags);
+        return new Person(modelMemberId, modelName, modelPhone, modelEmail, modelRole, modelBirthday, modelAddress,
+                modelOrganisation, modelNote, modelLeaveDate, modelTags);
     }
 
 }

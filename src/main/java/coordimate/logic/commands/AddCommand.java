@@ -3,6 +3,7 @@ package coordimate.logic.commands;
 import static coordimate.logic.parser.CliSyntax.PREFIX_ADDRESS;
 import static coordimate.logic.parser.CliSyntax.PREFIX_BIRTHDAY;
 import static coordimate.logic.parser.CliSyntax.PREFIX_EMAIL;
+import static coordimate.logic.parser.CliSyntax.PREFIX_LEAVE;
 import static coordimate.logic.parser.CliSyntax.PREFIX_NAME;
 import static coordimate.logic.parser.CliSyntax.PREFIX_NOTE;
 import static coordimate.logic.parser.CliSyntax.PREFIX_ORGANISATION;
@@ -11,6 +12,9 @@ import static coordimate.logic.parser.CliSyntax.PREFIX_ROLE;
 import static coordimate.logic.parser.CliSyntax.PREFIX_TAG;
 import static java.util.Objects.requireNonNull;
 
+import java.util.logging.Logger;
+
+import coordimate.commons.core.LogsCenter;
 import coordimate.commons.util.ToStringBuilder;
 import coordimate.logic.Messages;
 import coordimate.logic.commands.exceptions.CommandException;
@@ -33,6 +37,7 @@ public class AddCommand extends Command {
             + "[" + PREFIX_BIRTHDAY + "BIRTHDAY] "
             + "[" + PREFIX_ADDRESS + "ADDRESS] "
             + "[" + PREFIX_ORGANISATION + "ORGANISATION] "
+            + "[" + PREFIX_LEAVE + "LEAVE_END_DATE] "
             + "[" + PREFIX_TAG + "TAG]... "
             + "[" + PREFIX_NOTE + "NOTE]\n"
             + "Example: " + COMMAND_WORD + " "
@@ -47,8 +52,11 @@ public class AddCommand extends Command {
     public static final String MESSAGE_DUPLICATE_PERSON = "A contact with this name, phone number, or email "
             + "already exists. No changes were made.";
     public static final String MESSAGE_SAVE_ERROR = "Contact could not be saved. No changes were made.";
+    public static final String MESSAGE_NO_MORE_MEMBER_IDS = "No more member IDs are available.";
     public static final String MESSAGE_LOAD_ERROR =
             Messages.MESSAGE_LOAD_ERROR;
+
+    private static final Logger logger = LogsCenter.getLogger(AddCommand.class);
 
     private final Person toAdd;
 
@@ -68,7 +76,14 @@ public class AddCommand extends Command {
             throw new CommandException(MESSAGE_DUPLICATE_PERSON);
         }
 
-        model.addPerson(toAdd);
+        try {
+            model.addPerson(toAdd);
+        } catch (IllegalStateException e) {
+            throw new CommandException(MESSAGE_NO_MORE_MEMBER_IDS, e);
+        }
+        assert model.hasPerson(toAdd) : "Added contact must be present in the model.";
+        toAdd.getLeaveDate().ifPresent(leaveDate ->
+                logger.info("Added contact " + toAdd.getName() + " on leave until " + leaveDate));
         return new CommandResult(String.format(MESSAGE_SUCCESS, toAdd.getName()));
     }
 

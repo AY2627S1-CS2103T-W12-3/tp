@@ -7,21 +7,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import coordimate.commons.core.index.Index;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.Model;
 import coordimate.model.event.AttendanceStatus;
 import coordimate.model.event.Event;
+import coordimate.model.person.MemberId;
 import coordimate.model.person.Name;
 
 /**
- * Removes contacts from the displayed contact list from the members of the event identified by its name,
+ * Removes contacts identified by permanent member IDs from the event identified by its name,
  * ignoring case. Their attendance for the event is removed too; other members keep their order and attendance.
  */
 public class UnassignCommand extends EventMembersCommand {
     public static final String COMMAND_WORD = "unassign";
     public static final String MESSAGE_USAGE = COMMAND_WORD + ": Removes contacts from an event.\n"
-            + "Parameters: evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...\n"
+            + "Parameters: evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]...\n"
             + "Example: " + COMMAND_WORD + " evn/Final Concert c/1 3";
     public static final String MESSAGE_SUCCESS = "Removed %d member(s) from %s.";
     public static final String MESSAGE_SOME_NOT_ASSIGNED = " %d contact(s) were not assigned.";
@@ -30,10 +30,10 @@ public class UnassignCommand extends EventMembersCommand {
     public static final String MESSAGE_SAVE_ERROR = "Unassignment could not be saved. No changes were made.";
 
     /**
-     * Creates a removal of the contacts at the given displayed indexes from the named event.
+     * Creates a removal of the contacts with the given permanent member IDs from the named event.
      */
-    public UnassignCommand(String eventName, List<Index> contactIndexes) {
-        super(eventName, contactIndexes);
+    public UnassignCommand(String eventName, List<MemberId> memberIds) {
+        super(eventName, memberIds);
     }
 
     @Override
