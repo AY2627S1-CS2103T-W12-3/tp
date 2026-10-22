@@ -10,30 +10,37 @@ Participant ":Storage" as storage STORAGE_COLOR
 
 user -[USER_COLOR]> ui : "delete 1"
 activate ui UI_COLOR
-
 ui -[UI_COLOR]> logic : execute("delete 1")
 activate logic LOGIC_COLOR
 
-logic -[LOGIC_COLOR]> model : deletePerson(p)
-activate model MODEL_COLOR
-
-model -[MODEL_COLOR]-> logic
-deactivate model
-
-logic -[LOGIC_COLOR]> storage : saveCoordiMate(coordiMate)
+logic -[LOGIC_COLOR]> storage : readCoordiMate()
 activate storage STORAGE_COLOR
-
-storage -[STORAGE_COLOR]> storage : Save to file
-activate storage STORAGE_COLOR_T1
-storage --[STORAGE_COLOR]> storage
-deactivate storage
-
 storage --[STORAGE_COLOR]> logic
 deactivate storage
 
-logic --[LOGIC_COLOR]> ui
-deactivate logic
+logic -[LOGIC_COLOR]> model : resolve contact p
+activate model MODEL_COLOR
+model --[MODEL_COLOR]> logic : p
+deactivate model
 
-ui--[UI_COLOR]> user
+note right of logic : Store p as pending deletion
+logic --[LOGIC_COLOR]> ui : confirmation prompt
+deactivate logic
+ui --[UI_COLOR]> user : Show contact and ask for confirmation
+deactivate ui
+
+user -[USER_COLOR]> ui : "y"
+activate ui UI_COLOR
+ui -[UI_COLOR]> logic : execute("y")
+activate logic LOGIC_COLOR
+note right of logic : Handle pending response; skip command parsing
+
+ref over logic, model, storage
+  executeAtomicCommand
+end ref
+
+logic --[LOGIC_COLOR]> ui : deletion result
+deactivate logic
+ui --[UI_COLOR]> user : Show result
 deactivate ui
 @enduml

@@ -7,6 +7,7 @@ participant ":LogicManager" as LogicManager LOGIC_COLOR
 participant ":CoordiMateParser" as CoordiMateParser LOGIC_COLOR
 participant ":DeleteCommandParser" as DeleteCommandParser LOGIC_COLOR
 participant "d:DeleteCommand" as DeleteCommand LOGIC_COLOR
+participant "c:DeleteCommand" as ConfirmedDelete LOGIC_COLOR
 participant "r:CommandResult" as CommandResult LOGIC_COLOR
 end box
 
@@ -14,65 +15,65 @@ box Model MODEL_COLOR_T1
 participant "m:Model" as Model MODEL_COLOR
 end box
 
+box Storage STORAGE_COLOR_T1
+participant ":Storage" as Storage STORAGE_COLOR
+end box
+
 [-> LogicManager : execute("delete 1")
 activate LogicManager
 
 LogicManager -> CoordiMateParser : parseCommand("delete 1")
 activate CoordiMateParser
-
 create DeleteCommandParser
 CoordiMateParser -> DeleteCommandParser
 activate DeleteCommandParser
-
 DeleteCommandParser --> CoordiMateParser
 deactivate DeleteCommandParser
-
 CoordiMateParser -> DeleteCommandParser : parse("1")
 activate DeleteCommandParser
-
 create DeleteCommand
 DeleteCommandParser -> DeleteCommand
-activate DeleteCommand
-
-DeleteCommand --> DeleteCommandParser :
-deactivate DeleteCommand
-
+DeleteCommand --> DeleteCommandParser : d
 DeleteCommandParser --> CoordiMateParser : d
 deactivate DeleteCommandParser
-'Hidden arrow to position the destroy marker below the end of the activation bar.
-DeleteCommandParser -[hidden]-> CoordiMateParser
 destroy DeleteCommandParser
-
 CoordiMateParser --> LogicManager : d
 deactivate CoordiMateParser
 
-LogicManager -> DeleteCommand : execute(m)
-activate DeleteCommand
+LogicManager -> Storage : readCoordiMate()
+activate Storage
+Storage --> LogicManager : loaded
+deactivate Storage
 
+LogicManager -> DeleteCommand : resolvePerson(m)
+activate DeleteCommand
 DeleteCommand -> Model : getCoordiMate().getPersonList()
 activate Model
-
-Model --> DeleteCommand : all contacts
+Model --> DeleteCommand : saved contacts
 deactivate Model
-
-note right of DeleteCommand : Resolve member ID 1 to contact p
-
-DeleteCommand -> Model : deletePerson(p)
-activate Model
-
-Model --> DeleteCommand
-deactivate Model
-
-create CommandResult
-DeleteCommand -> CommandResult
-activate CommandResult
-
-CommandResult --> DeleteCommand
-deactivate CommandResult
-
-DeleteCommand --> LogicManager : r
+note right of DeleteCommand : Resolve ID 1 to contact p
+DeleteCommand --> LogicManager : p
 deactivate DeleteCommand
+note right of LogicManager : pendingDelete = p; no deletion yet
 
-[<--LogicManager
+note right of LogicManager : Format confirmation prompt from p
+create CommandResult
+LogicManager -> CommandResult : new CommandResult(prompt for p, CONTACTS)
+CommandResult --> LogicManager : prompt result
+[<-- LogicManager : prompt result
+deactivate LogicManager
+
+[-> LogicManager : execute("y")
+activate LogicManager
+note right of LogicManager : Consume pending response; do not parse "y"
+create ConfirmedDelete
+LogicManager -> ConfirmedDelete : forResolvedPerson(p)
+ConfirmedDelete --> LogicManager : c
+
+ref over LogicManager, ConfirmedDelete, Model, Storage
+  executeAtomicCommand
+end ref
+
+[<-- LogicManager : deletion result
 deactivate LogicManager
 @enduml
