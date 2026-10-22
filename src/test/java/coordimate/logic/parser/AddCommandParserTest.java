@@ -4,6 +4,9 @@ import static coordimate.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static coordimate.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static coordimate.logic.parser.CommandParserTestUtil.assertParseSuccess;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
 import org.junit.jupiter.api.Test;
 
 import coordimate.logic.Messages;
@@ -11,6 +14,7 @@ import coordimate.logic.commands.AddCommand;
 import coordimate.model.person.Address;
 import coordimate.model.person.Birthday;
 import coordimate.model.person.Email;
+import coordimate.model.person.LeaveDate;
 import coordimate.model.person.Name;
 import coordimate.model.person.Note;
 import coordimate.model.person.Organisation;
@@ -54,6 +58,35 @@ public class AddCommandParserTest {
 
         assertParseSuccess(parser, REQUIRED + " t/EXCO t/exco t/Publicity", expected);
         assertParseSuccess(parser, REQUIRED + " t/ t/EXCO t/Publicity", expected);
+    }
+
+    @Test
+    public void parse_leaveDate_setsLeave() {
+        String future = LocalDate.now().plusDays(30).format(DateTimeFormatter.ofPattern("dd-MM-uuuu"));
+        AddCommand expected = new AddCommand(new PersonBuilder().withRole("Logistics").withoutAddress()
+                .withLeaveDate(future).build());
+
+        assertParseSuccess(parser, REQUIRED + " lv/" + future, expected);
+        assertParseSuccess(parser, " lv/ " + future + " " + REQUIRED, expected);
+    }
+
+    @Test
+    public void parse_emptyLeaveDate_notOnLeave() {
+        AddCommand expected = new AddCommand(new PersonBuilder().withRole("Logistics").withoutAddress().build());
+
+        assertParseSuccess(parser, REQUIRED + " lv/", expected);
+    }
+
+    @Test
+    public void parse_invalidOrRepeatedLeaveDate_failure() {
+        String future = LocalDate.now().plusDays(30).format(DateTimeFormatter.ofPattern("dd-MM-uuuu"));
+
+        assertParseFailure(parser, REQUIRED + " lv/01-01-2020", LeaveDate.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, REQUIRED + " lv/31-11-2026", LeaveDate.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, REQUIRED + " lv/next week", LeaveDate.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, REQUIRED + " lv/" + future + " lv/" + future,
+                Messages.getErrorMessageForDuplicatePrefixes(CliSyntax.PREFIX_LEAVE)
+                        + "\n" + AddCommand.MESSAGE_USAGE);
     }
 
     @Test

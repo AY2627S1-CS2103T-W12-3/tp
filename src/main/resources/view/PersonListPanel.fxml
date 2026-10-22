@@ -75,6 +75,10 @@
                   <Label text="Address" styleClass="detail-caption" />
                   <Label fx:id="address" id="address" wrapText="true" styleClass="detail-value" />
                 </VBox>
+                <VBox spacing="4" GridPane.columnIndex="0" GridPane.rowIndex="3">
+                  <Label text="On leave until" styleClass="detail-caption" />
+                  <Label fx:id="leave" id="leave" wrapText="true" styleClass="detail-value" />
+                </VBox>
               </GridPane>
             </VBox>
             <VBox spacing="10">

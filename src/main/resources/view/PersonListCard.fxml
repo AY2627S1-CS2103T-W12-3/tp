@@ -17,6 +17,7 @@
       <Label fx:id="id" minWidth="-Infinity" styleClass="card-id" />
       <Label fx:id="role" minWidth="0" wrapText="true" styleClass="card-role" HBox.hgrow="ALWAYS" />
     </HBox>
+    <Label fx:id="leave" id="leave" styleClass="leave-badge" />
     <Label fx:id="phone" wrapText="true" styleClass="cell_small_label" />
     <Label fx:id="email" wrapText="true" styleClass="cell_small_label" />
     <Label fx:id="address" wrapText="true" styleClass="cell_small_label" />

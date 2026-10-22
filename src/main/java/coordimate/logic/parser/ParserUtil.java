@@ -3,6 +3,7 @@ package coordimate.logic.parser;
 import static coordimate.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static java.util.Objects.requireNonNull;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -16,6 +17,7 @@ import coordimate.model.event.EventTime;
 import coordimate.model.person.Address;
 import coordimate.model.person.Birthday;
 import coordimate.model.person.Email;
+import coordimate.model.person.LeaveDate;
 import coordimate.model.person.MemberId;
 import coordimate.model.person.Name;
 import coordimate.model.person.Note;
@@ -164,6 +166,34 @@ public class ParserUtil {
             throw new ParseException(Birthday.MESSAGE_CONSTRAINTS);
         }
         return new Birthday(trimmedBirthday);
+    }
+
+    /**
+     * Parses a {@code String leaveDate} into a {@code LeaveDate} that is not before today.
+     * Leading and trailing whitespaces will be trimmed.
+     *
+     * @throws ParseException if the given {@code leaveDate} is invalid or in the past.
+     */
+    public static LeaveDate parseLeaveDate(String leaveDate) throws ParseException {
+        return parseLeaveDate(leaveDate, LocalDate.now());
+    }
+
+    /**
+     * Parses a {@code String leaveDate} into a {@code LeaveDate} that is not before {@code today}.
+     * Leading and trailing whitespaces will be trimmed.
+     *
+     * @throws ParseException if the given {@code leaveDate} is invalid or before {@code today}.
+     */
+    public static LeaveDate parseLeaveDate(String leaveDate, LocalDate today) throws ParseException {
+        requireNonNull(leaveDate);
+        requireNonNull(today);
+        String trimmedLeaveDate = leaveDate.trim();
+        if (!LeaveDate.isValidInputLeaveDate(trimmedLeaveDate, today)) {
+            throw new ParseException(LeaveDate.MESSAGE_CONSTRAINTS);
+        }
+        LeaveDate parsedLeaveDate = new LeaveDate(trimmedLeaveDate);
+        assert parsedLeaveDate.covers(today) : "New leave must cover today";
+        return parsedLeaveDate;
     }
 
     /**

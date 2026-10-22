@@ -4,6 +4,7 @@ import static coordimate.logic.parser.CliSyntax.PREFIX_ADDRESS;
 import static coordimate.logic.parser.CliSyntax.PREFIX_ADD_TAG;
 import static coordimate.logic.parser.CliSyntax.PREFIX_BIRTHDAY;
 import static coordimate.logic.parser.CliSyntax.PREFIX_EMAIL;
+import static coordimate.logic.parser.CliSyntax.PREFIX_LEAVE;
 import static coordimate.logic.parser.CliSyntax.PREFIX_NAME;
 import static coordimate.logic.parser.CliSyntax.PREFIX_NOTE;
 import static coordimate.logic.parser.CliSyntax.PREFIX_ORGANISATION;
@@ -22,8 +23,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import coordimate.commons.core.LogsCenter;
 import coordimate.commons.util.CollectionUtil;
 import coordimate.commons.util.ToStringBuilder;
 import coordimate.logic.Messages;
@@ -33,6 +36,7 @@ import coordimate.model.event.MemberNameConflictException;
 import coordimate.model.person.Address;
 import coordimate.model.person.Birthday;
 import coordimate.model.person.Email;
+import coordimate.model.person.LeaveDate;
 import coordimate.model.person.MemberId;
 import coordimate.model.person.Name;
 import coordimate.model.person.Note;
@@ -60,6 +64,7 @@ public class EditCommand extends Command {
             + "[" + PREFIX_ADDRESS + "ADDRESS] "
             + "[" + PREFIX_ORGANISATION + "ORGANISATION] "
             + "[" + PREFIX_NOTE + "NOTE] "
+            + "[" + PREFIX_LEAVE + "LEAVE_END_DATE] "
             + "[" + PREFIX_TAG + "TAG]... "
             + "[" + PREFIX_ADD_TAG + "TAG]... "
             + "[" + PREFIX_REMOVE_TAG + "TAG]...\n"
@@ -81,6 +86,8 @@ public class EditCommand extends Command {
     public static final String MESSAGE_NO_MATCH = Messages.MESSAGE_CONTACT_NO_MATCH;
     public static final String MESSAGE_AMBIGUOUS_MATCH = Messages.MESSAGE_CONTACT_AMBIGUOUS_MATCH;
     public static final String MESSAGE_UNKNOWN_MEMBER_ID = Messages.MESSAGE_MEMBER_ID_NOT_FOUND;
+
+    private static final Logger logger = LogsCenter.getLogger(EditCommand.class);
 
     private final MemberId memberId;
     private final String targetIdentifier;
@@ -140,6 +147,11 @@ public class EditCommand extends Command {
         }
         assert model.getCoordiMate().getPersonList().contains(editedPerson)
                 : "Edited contact must be present in the model.";
+        if (editPersonDescriptor.isLeaveDateEdited()) {
+            logger.info(editedPerson.getLeaveDate()
+                    .map(leaveDate -> "Set leave for " + editedPerson.getName() + " until " + leaveDate)
+                    .orElse("Cleared leave for " + editedPerson.getName()));
+        }
         model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
         return new CommandResult(successMessage(editedPerson));
     }
@@ -204,10 +216,12 @@ public class EditCommand extends Command {
                 ? editPersonDescriptor.getOrganisation().orElse(null) : personToEdit.getOrganisation().orElse(null);
         Note updatedNote = editPersonDescriptor.isNoteEdited()
                 ? editPersonDescriptor.getNote().orElse(null) : personToEdit.getNote().orElse(null);
+        LeaveDate updatedLeaveDate = editPersonDescriptor.isLeaveDateEdited()
+                ? editPersonDescriptor.getLeaveDate().orElse(null) : personToEdit.getLeaveDate().orElse(null);
         Set<Tag> updatedTags = createUpdatedTags(personToEdit, editPersonDescriptor, savedTags);
 
         return new Person(personToEdit.getMemberId().orElse(null), updatedName, updatedPhone, updatedEmail, updatedRole,
-                updatedBirthday, updatedAddress, updatedOrganisation, updatedNote, updatedTags);
+                updatedBirthday, updatedAddress, updatedOrganisation, updatedNote, updatedLeaveDate, updatedTags);
     }
 
     private static Set<Tag> createUpdatedTags(Person personToEdit, EditPersonDescriptor descriptor,
@@ -295,6 +309,8 @@ public class EditCommand extends Command {
         private boolean isOrganisationEdited;
         private Note note;
         private boolean isNoteEdited;
+        private LeaveDate leaveDate;
+        private boolean isLeaveDateEdited;
         private Set<Tag> tags;
         private final List<TagOperation> tagOperations = new ArrayList<>();
 
@@ -325,6 +341,9 @@ public class EditCommand extends Command {
             if (toCopy.isNoteEdited) {
                 setNote(toCopy.note);
             }
+            if (toCopy.isLeaveDateEdited) {
+                setLeaveDate(toCopy.leaveDate);
+            }
             setTags(toCopy.tags);
             tagOperations.addAll(toCopy.tagOperations);
         }
@@ -335,7 +354,7 @@ public class EditCommand extends Command {
         public boolean isAnyFieldEdited() {
             return CollectionUtil.isAnyNonNull(name, phone, email, role, tags)
                     || isBirthdayEdited || isAddressEdited || isOrganisationEdited || isNoteEdited
-                    || !tagOperations.isEmpty();
+                    || isLeaveDateEdited || !tagOperations.isEmpty();
         }
 
         public void setName(Name name) {
@@ -423,6 +442,22 @@ public class EditCommand extends Command {
         }
 
         /**
+         * Sets the new last day of leave, or clears it if {@code leaveDate} is null.
+         */
+        public void setLeaveDate(LeaveDate leaveDate) {
+            this.leaveDate = leaveDate;
+            isLeaveDateEdited = true;
+        }
+
+        public Optional<LeaveDate> getLeaveDate() {
+            return Optional.ofNullable(leaveDate);
+        }
+
+        public boolean isLeaveDateEdited() {
+            return isLeaveDateEdited;
+        }
+
+        /**
          * Sets {@code tags} to this object's {@code tags}.
          * A defensive copy of {@code tags} is used internally.
          */
@@ -472,6 +507,8 @@ public class EditCommand extends Command {
                     && Objects.equals(organisation, otherEditPersonDescriptor.organisation)
                     && isNoteEdited == otherEditPersonDescriptor.isNoteEdited
                     && Objects.equals(note, otherEditPersonDescriptor.note)
+                    && isLeaveDateEdited == otherEditPersonDescriptor.isLeaveDateEdited
+                    && Objects.equals(leaveDate, otherEditPersonDescriptor.leaveDate)
                     && Objects.equals(tags, otherEditPersonDescriptor.tags)
                     && tagOperations.equals(otherEditPersonDescriptor.tagOperations);
         }
@@ -491,6 +528,8 @@ public class EditCommand extends Command {
                     .add("organisation", organisation)
                     .add("noteEdited", isNoteEdited)
                     .add("note", note)
+                    .add("leaveDateEdited", isLeaveDateEdited)
+                    .add("leaveDate", leaveDate)
                     .add("tags", tags)
                     .add("tagOperations", tagOperations)
                     .toString();

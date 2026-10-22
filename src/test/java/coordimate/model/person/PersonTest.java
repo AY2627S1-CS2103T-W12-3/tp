@@ -14,6 +14,8 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.LocalDate;
+
 import org.junit.jupiter.api.Test;
 
 import coordimate.testutil.PersonBuilder;
@@ -160,12 +162,42 @@ public class PersonTest {
     }
 
     @Test
+    public void isOnLeave_untilAndIncludingLastDay() {
+        Person onLeave = new PersonBuilder(ALICE).withLeaveDate("30-11-2026").build();
+
+        assertThrows(NullPointerException.class, () -> onLeave.isOnLeave(null));
+        assertTrue(onLeave.isOnLeave(LocalDate.of(2026, 10, 20)));
+        assertTrue(onLeave.isOnLeave(LocalDate.of(2026, 11, 30)));
+        assertFalse(onLeave.isOnLeave(LocalDate.of(2026, 12, 1)));
+        assertFalse(ALICE.isOnLeave(LocalDate.of(2026, 10, 20)));
+    }
+
+    @Test
+    public void isOnLeave_endedLeave_keepsDateButNotOnLeave() {
+        Person endedLeave = new PersonBuilder(ALICE).withLeaveDate("01-01-2020").build();
+
+        assertFalse(endedLeave.isOnLeave(LocalDate.of(2026, 10, 20)));
+        assertEquals("01-01-2020", endedLeave.getLeaveDate().orElseThrow().getValue());
+    }
+
+    @Test
+    public void equals_differentLeaveDate_returnsFalse() {
+        Person onLeave = new PersonBuilder(ALICE).withLeaveDate("30-11-2026").build();
+
+        assertFalse(ALICE.equals(onLeave));
+        assertFalse(onLeave.equals(new PersonBuilder(ALICE).withLeaveDate("01-12-2026").build()));
+        assertTrue(onLeave.equals(new PersonBuilder(ALICE).withLeaveDate("30-11-2026").build()));
+        assertEquals(onLeave.hashCode(), new PersonBuilder(ALICE).withLeaveDate("30-11-2026").build().hashCode());
+    }
+
+    @Test
     public void toStringMethod() {
         String expected = Person.class.getCanonicalName() + "{memberId=" + ALICE.getMemberId().orElseThrow()
                 + ", name=" + ALICE.getName()
                 + ", phone=" + ALICE.getPhone()
                 + ", email=" + ALICE.getEmail() + ", role=" + ALICE.getRole() + ", birthday=null, address="
-                + ALICE.getAddress().orElseThrow() + ", organisation=null, note=null, tags=" + ALICE.getTags() + "}";
+                + ALICE.getAddress().orElseThrow() + ", organisation=null, note=null, leaveDate=null, tags="
+                + ALICE.getTags() + "}";
         assertEquals(expected, ALICE.toString());
     }
 }
