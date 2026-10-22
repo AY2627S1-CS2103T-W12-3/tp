@@ -6,35 +6,36 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
-import coordimate.commons.core.index.Index;
 import coordimate.logic.commands.ArchiveCommand;
 import coordimate.logic.parser.exceptions.ParseException;
+import coordimate.model.person.MemberId;
 
 public class ArchiveCommandParserTest {
     private final ArchiveCommandParser archiveParser = new ArchiveCommandParser(true);
     private final ArchiveCommandParser unarchiveParser = new ArchiveCommandParser(false);
 
     @Test
-    public void parse_validIndex_success() throws Exception {
-        assertEquals(new ArchiveCommand(Index.fromOneBased(2), true),
+    public void parse_validMemberId_success() throws Exception {
+        assertEquals(new ArchiveCommand(new MemberId(2), true),
                 CommandParserTestUtil.createParser().parseCommand("archive 2"));
-        assertEquals(new ArchiveCommand(Index.fromOneBased(1), false),
-                CommandParserTestUtil.createParser().parseCommand("unarchive 1"));
-        assertEquals(new ArchiveCommand(Index.fromOneBased(3), true), archiveParser.parse(" \t3 "));
+        assertEquals(new ArchiveCommand(new MemberId(12), false),
+                CommandParserTestUtil.createParser().parseCommand("unarchive 12"));
+        assertEquals(new ArchiveCommand(new MemberId(3), true), archiveParser.parse(" \t3 "));
     }
 
     @Test
-    public void parse_missingIndex_rejectedWithUsage() {
+    public void parse_missingMemberId_rejectedWithUsage() {
         assertError(archiveParser, " ", String.format(MESSAGE_INVALID_COMMAND_FORMAT, ArchiveCommand.MESSAGE_USAGE));
         assertError(unarchiveParser, "",
                 String.format(MESSAGE_INVALID_COMMAND_FORMAT, ArchiveCommand.MESSAGE_UNARCHIVE_USAGE));
     }
 
     @Test
-    public void parse_invalidIndex_rejected() {
+    public void parse_invalidMemberId_rejected() {
         for (String input : new String[] {"0", "-1", "1.5", "abc", "1 2", "2147483648"}) {
-            assertError(archiveParser, input, ParserUtil.MESSAGE_INVALID_INDEX);
-            assertError(unarchiveParser, input, ParserUtil.MESSAGE_INVALID_INDEX);
+            assertError(archiveParser, input, String.format(ArchiveCommandParser.MESSAGE_INVALID_MEMBER_ID, "archive"));
+            assertError(unarchiveParser, input,
+                    String.format(ArchiveCommandParser.MESSAGE_INVALID_MEMBER_ID, "unarchive"));
         }
     }
 

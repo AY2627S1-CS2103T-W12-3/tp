@@ -312,16 +312,21 @@ public class LogicManagerTest {
     }
 
     @Test
-    public void execute_unarchiveInArchivedView_usesArchivedIndexes() throws Exception {
+    public void execute_unarchiveByMemberId_worksFromEitherView() throws Exception {
         model.addPerson(ALICE);
         model.addPerson(BENSON);
+        logic.execute("archive 1");
         logic.execute("archive 2");
-        model.setShowingArchived(true);
 
-        assertEquals("Unarchived contact: " + BENSON.getName() + ".",
+        assertEquals("Unarchived contact: " + ALICE.getName() + ".",
                 logic.execute("unarchive 1").getFeedbackToUser());
+        assertEquals(List.of(ALICE), logic.getFilteredPersonList());
+
+        logic.execute("list archived");
+        assertEquals("Unarchived contact: " + BENSON.getName() + ".",
+                logic.execute("unarchive 2").getFeedbackToUser());
         assertEquals(List.of(), logic.getFilteredPersonList());
-        model.setShowingArchived(false);
+        logic.execute("list");
         assertEquals(List.of(ALICE, BENSON), logic.getFilteredPersonList());
     }
 

@@ -83,8 +83,8 @@ public class MainWindow extends UiPart<Stage> {
             Map.entry("filter", "Format: filter FIELD/VALUE [FIELD/VALUE]...\n"
                     + "Example: filter tag/friend organisation/NUS"),
             Map.entry("list", "Format: list [archived]\nExample: list archived"),
-            Map.entry("archive", "Format: archive INDEX\nExample: archive 2"),
-            Map.entry("unarchive", "Format: unarchive INDEX (from list archived)\nExample: unarchive 1"),
+            Map.entry("archive", "Format: archive MEMBER_ID\nExample: archive 2"),
+            Map.entry("unarchive", "Format: unarchive MEMBER_ID\nExample: unarchive 2"),
             Map.entry("addevent", "Format: addevent evn/EVENT_NAME st/START_TIME et/END_TIME\n"
                     + "Example: addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00"),
             Map.entry("editevent", "Format: editevent evn/EVENT_NAME [nevn/NEW_EVENT_NAME]"

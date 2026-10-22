@@ -58,7 +58,7 @@ public class HelpWindow extends UiPart<Stage> {
                             + "[t/TAG]... [m/NOTE]"),
             commandUsage(AddEventCommand.COMMAND_WORD, "evn/EVENT_NAME st/START_TIME et/END_TIME"),
             commandUsage(CreateTagCommand.COMMAND_WORD, "t/TAG"),
-            commandUsage(ArchiveCommand.COMMAND_WORD, "INDEX"),
+            commandUsage(ArchiveCommand.COMMAND_WORD, "MEMBER_ID"),
             commandUsage(ArchiveEventCommand.COMMAND_WORD, "evn/EVENT_NAME"),
             commandUsage(AssignCommand.COMMAND_WORD,
                     "evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]..."),
@@ -86,7 +86,7 @@ public class HelpWindow extends UiPart<Stage> {
             commandUsage(SearchCommand.COMMAND_WORD, "KEYWORD"),
             commandUsage(UnassignCommand.COMMAND_WORD,
                     "evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]..."),
-            commandUsage(ArchiveCommand.UNARCHIVE_COMMAND_WORD, "INDEX"),
+            commandUsage(ArchiveCommand.UNARCHIVE_COMMAND_WORD, "MEMBER_ID"),
             commandUsage(ArchiveEventCommand.UNARCHIVE_COMMAND_WORD, "evn/EVENT_NAME"));
 
     private static final Logger logger = LogsCenter.getLogger(HelpWindow.class);

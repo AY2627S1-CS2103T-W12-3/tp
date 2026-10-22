@@ -13,12 +13,14 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import coordimate.commons.core.index.Index;
+import coordimate.logic.Messages;
 import coordimate.logic.commands.EditCommand.EditPersonDescriptor;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.ModelManager;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
+import coordimate.model.person.ContactMatchesKeywordPredicate;
+import coordimate.model.person.MemberId;
 import coordimate.model.person.Person;
 import coordimate.model.person.Phone;
 import coordimate.model.tag.Tag;
@@ -44,13 +46,26 @@ public class ArchiveCommandTest {
     }
 
     @Test
-    public void execute_unarchiveInArchivedView_restoresContact() throws Exception {
+    public void execute_contactHiddenByFilter_archivedById() throws Exception {
+        model.updateFilteredPersonList(new ContactMatchesKeywordPredicate("Alice"));
+
+        archive(3).execute(model);
+
+        assertEquals(List.of(ALICE), model.getFilteredPersonList());
+        assertTrue(model.getCoordiMate().getPersonList().get(2).isArchived());
+    }
+
+    @Test
+    public void execute_unarchive_worksFromEitherView() throws Exception {
         archive(1).execute(model);
-        model.setShowingArchived(true);
-        assertEquals(List.of(ALICE.withArchived(true)), model.getFilteredPersonList());
+        archive(2).execute(model);
 
         assertEquals("Unarchived contact: " + ALICE.getName() + ".",
                 unarchive(1).execute(model).getFeedbackToUser());
+        assertEquals(List.of(ALICE, CARL), model.getFilteredPersonList());
+
+        model.setShowingArchived(true);
+        unarchive(2).execute(model);
         assertEquals(List.of(), model.getFilteredPersonList());
         model.setShowingArchived(false);
         assertEquals(List.of(ALICE, BENSON, CARL), model.getFilteredPersonList());
@@ -62,21 +77,18 @@ public class ArchiveCommandTest {
                 assertThrows(CommandException.class, () -> unarchive(1).execute(model)).getMessage());
 
         archive(1).execute(model);
-        model.setShowingArchived(true);
         assertEquals(String.format(ArchiveCommand.MESSAGE_ALREADY_ARCHIVED, ALICE.getName()),
                 assertThrows(CommandException.class, () -> archive(1).execute(model)).getMessage());
         assertEquals(List.of(ALICE.withArchived(true), BENSON, CARL), model.getCoordiMate().getPersonList());
     }
 
     @Test
-    public void execute_indexOutsideDisplayedList_rejected() throws Exception {
-        assertEquals(String.format(ArchiveCommand.MESSAGE_INVALID_INDEX, 4),
-                assertThrows(CommandException.class, () -> archive(4).execute(model)).getMessage());
-
-        archive(1).execute(model);
-        assertEquals(String.format(ArchiveCommand.MESSAGE_INVALID_INDEX, 3),
-                assertThrows(CommandException.class, () -> archive(3).execute(model)).getMessage());
-        assertEquals(List.of(BENSON, CARL), model.getFilteredPersonList());
+    public void execute_unknownMemberId_rejected() {
+        for (ArchiveCommand command : List.of(archive(99), unarchive(99))) {
+            assertEquals(String.format(Messages.MESSAGE_MEMBER_ID_NOT_FOUND, 99),
+                    assertThrows(CommandException.class, () -> command.execute(model)).getMessage());
+        }
+        assertEquals(List.of(ALICE, BENSON, CARL), model.getCoordiMate().getPersonList());
     }
 
     @Test
@@ -87,11 +99,9 @@ public class ArchiveCommandTest {
         archive(1).execute(model);
         assertEquals(List.of(concert), model.getCoordiMate().getEventList());
 
-        model.setShowingArchived(true);
         EditPersonDescriptor descriptor = new EditPersonDescriptor();
         descriptor.setPhone(new Phone("91234567"));
-        new EditCommand(model.getCoordiMate().getPersonList().getFirst().getMemberId().orElseThrow(), descriptor)
-                .execute(model);
+        new EditCommand(new MemberId(1), descriptor).execute(model);
         Person edited = model.getCoordiMate().getPersonList().getFirst();
         assertEquals(new Phone("91234567"), edited.getPhone());
         assertTrue(edited.isArchived());
@@ -102,6 +112,24 @@ public class ArchiveCommandTest {
         assertTrue(model.getCoordiMate().getPersonList().getFirst().isArchived());
         model.deleteTag(new Tag("Buddies"));
         assertTrue(model.getCoordiMate().getPersonList().getFirst().isArchived());
+    }
+
+    @Test
+    public void execute_assignArchivedContact_rejectedButUnassignAllowed() throws Exception {
+        Event concert = new Event("Concert", new EventTime("08-08-2026"), new EventTime("08-08-2026"),
+                List.of(ALICE.getName()));
+        model.addEvent(concert);
+        archive(2).execute(model);
+
+        assertEquals(String.format(AssignCommand.MESSAGE_CONTACT_ARCHIVED, BENSON.getName(), 2),
+                assertThrows(CommandException.class, () ->
+                        new AssignCommand("Concert", List.of(new MemberId(3), new MemberId(2))).execute(model))
+                        .getMessage());
+        assertEquals(List.of(concert), model.getCoordiMate().getEventList());
+
+        archive(1).execute(model);
+        new UnassignCommand("Concert", List.of(new MemberId(1))).execute(model);
+        assertEquals(List.of(), model.getCoordiMate().getEventList().getFirst().getMembers());
     }
 
     @Test
@@ -118,11 +146,11 @@ public class ArchiveCommandTest {
         assertThrows(NullPointerException.class, () -> new ArchiveCommand(null, true));
     }
 
-    private static ArchiveCommand archive(int oneBasedIndex) {
-        return new ArchiveCommand(Index.fromOneBased(oneBasedIndex), true);
+    private static ArchiveCommand archive(int memberId) {
+        return new ArchiveCommand(new MemberId(memberId), true);
     }
 
-    private static ArchiveCommand unarchive(int oneBasedIndex) {
-        return new ArchiveCommand(Index.fromOneBased(oneBasedIndex), false);
+    private static ArchiveCommand unarchive(int memberId) {
+        return new ArchiveCommand(new MemberId(memberId), false);
     }
 }

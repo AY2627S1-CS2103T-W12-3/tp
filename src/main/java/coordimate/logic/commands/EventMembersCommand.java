@@ -13,6 +13,7 @@ import coordimate.model.Model;
 import coordimate.model.event.Event;
 import coordimate.model.person.MemberId;
 import coordimate.model.person.Name;
+import coordimate.model.person.Person;
 
 /**
  * Changes the members of the event identified by its name, ignoring case, using permanent member IDs.
@@ -67,8 +68,22 @@ public abstract class EventMembersCommand extends Command {
      */
     protected Set<Name> resolveContacts(Model model) throws CommandException {
         Set<Name> selected = new LinkedHashSet<>();
+        for (Person person : resolvePersons(model)) {
+            selected.add(person.getName());
+        }
+        return selected;
+    }
+
+    /**
+     * Resolves IDs to saved contacts in command order, counting repeated contacts once.
+     * Every ID is checked before any contact is returned.
+     *
+     * @throws CommandException If a member ID does not exist.
+     */
+    protected Set<Person> resolvePersons(Model model) throws CommandException {
+        Set<Person> selected = new LinkedHashSet<>();
         for (MemberId memberId : memberIds) {
-            selected.add(MemberIdResolver.resolve(model, memberId).getName());
+            selected.add(MemberIdResolver.resolve(model, memberId));
         }
         return selected;
     }

@@ -6,9 +6,11 @@ import coordimate.logic.commands.ArchiveCommand;
 import coordimate.logic.parser.exceptions.ParseException;
 
 /**
- * Parses a single 1-based contact index for archiving or unarchiving.
+ * Parses a single permanent member ID for archiving or unarchiving.
  */
 public class ArchiveCommandParser implements Parser<ArchiveCommand> {
+    public static final String MESSAGE_INVALID_MEMBER_ID = "Invalid member ID. Example: %s 2";
+
     private final boolean archive;
 
     /**
@@ -25,6 +27,11 @@ public class ArchiveCommandParser implements Parser<ArchiveCommand> {
             throw ParserUtil.createInvalidFormatException(archive
                     ? ArchiveCommand.MESSAGE_USAGE : ArchiveCommand.MESSAGE_UNARCHIVE_USAGE);
         }
-        return new ArchiveCommand(ParserUtil.parseIndex(args), archive);
+        try {
+            return new ArchiveCommand(ParserUtil.parseMemberId(args), archive);
+        } catch (ParseException pe) {
+            throw new ParseException(String.format(MESSAGE_INVALID_MEMBER_ID,
+                    archive ? ArchiveCommand.COMMAND_WORD : ArchiveCommand.UNARCHIVE_COMMAND_WORD), pe);
+        }
     }
 }

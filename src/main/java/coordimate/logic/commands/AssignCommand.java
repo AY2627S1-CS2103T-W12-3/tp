@@ -3,6 +3,7 @@ package coordimate.logic.commands;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -11,6 +12,7 @@ import coordimate.model.Model;
 import coordimate.model.event.Event;
 import coordimate.model.person.MemberId;
 import coordimate.model.person.Name;
+import coordimate.model.person.Person;
 
 /**
  * Assigns contacts identified by permanent member IDs to the event identified by its name, ignoring case.
@@ -25,6 +27,8 @@ public class AssignCommand extends EventMembersCommand {
     public static final String MESSAGE_ALL_ALREADY_ASSIGNED =
             "All specified contacts are already assigned to %s. No changes were made.";
     public static final String MESSAGE_SAVE_ERROR = "Assignment could not be saved. No changes were made.";
+    public static final String MESSAGE_CONTACT_ARCHIVED = "%1$s is archived, so it cannot be assigned. "
+            + "No changes were made. Unarchive it first with: unarchive %2$d";
 
     /**
      * Creates an assignment of the contacts with the given permanent member IDs to the named event.
@@ -37,7 +41,15 @@ public class AssignCommand extends EventMembersCommand {
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
         Event target = findEvent(model);
-        Set<Name> selected = resolveContacts(model);
+        Set<Person> contacts = resolvePersons(model);
+        for (Person contact : contacts) {
+            if (contact.isArchived()) {
+                throw new CommandException(String.format(MESSAGE_CONTACT_ARCHIVED, contact.getName(),
+                        contact.getMemberId().orElseThrow().getValue()));
+            }
+        }
+        Set<Name> selected = new LinkedHashSet<>();
+        contacts.forEach(contact -> selected.add(contact.getName()));
 
         List<Name> newMembers = selected.stream().filter(name -> !target.hasMember(name)).toList();
         if (newMembers.isEmpty()) {
