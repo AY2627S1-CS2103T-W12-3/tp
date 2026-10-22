@@ -251,7 +251,9 @@ public class TutorialWindow extends UiPart<StackPane> {
         if (!isShowing() || event.getEventType() != KeyEvent.KEY_PRESSED) {
             return false;
         }
-        if (event.getCode() == KeyCode.TAB) {
+        // Ctrl+Tab is handled with Tab because JavaFX also moves focus on Ctrl+Tab.
+        // Alt+Tab and Meta+Tab do not move focus, so they are left alone.
+        if (event.getCode() == KeyCode.TAB && !event.isAltDown() && !event.isMetaDown()) {
             moveFocusWithinCard(!event.isShiftDown());
             return true;
         }
@@ -279,8 +281,7 @@ public class TutorialWindow extends UiPart<StackPane> {
         List<Button> buttons = Stream.of(closeButton, backButton, nextButton)
                 .filter(button -> !button.isDisabled())
                 .toList();
-        Scene scene = getRoot().getScene();
-        int focusedIndex = scene == null ? -1 : buttons.indexOf(scene.getFocusOwner());
+        int focusedIndex = buttons.indexOf(getFocusOwner());
         int targetIndex;
         if (focusedIndex < 0) {
             targetIndex = isForward ? 0 : buttons.size() - 1;
@@ -288,6 +289,12 @@ public class TutorialWindow extends UiPart<StackPane> {
             targetIndex = Math.floorMod(focusedIndex + (isForward ? 1 : -1), buttons.size());
         }
         buttons.get(targetIndex).requestFocus();
+    }
+
+    /** Returns the node that has keyboard focus in the tutorial's scene, or null if it has no scene. */
+    private Node getFocusOwner() {
+        Scene scene = getRoot().getScene();
+        return scene == null ? null : scene.getFocusOwner();
     }
 
     private void dismiss() {
@@ -305,6 +312,10 @@ public class TutorialWindow extends UiPart<StackPane> {
         description.getStyleClass().add("tutorial-body-text");
         stepDescription.getChildren().setAll(description);
         stepDescription.setAccessibleText(step.description());
+        if (stepIndex == 0 && getFocusOwner() == backButton) {
+            // A disabled button cannot keep focus, so keep it in the card instead of leaving it to JavaFX.
+            nextButton.requestFocus();
+        }
         backButton.setDisable(stepIndex == 0);
         boolean isLastStep = stepIndex == STEPS.size() - 1;
         nextButton.setText(isLastStep ? "Finish →" : "Next →");

@@ -244,9 +244,57 @@ public class TutorialWindowTest {
             assertTrue(tutorial.handleShortcut(shiftTabEvent()));
             assertEquals(nextButton, scene.getFocusOwner());
 
+            // Ctrl+Tab moves focus like Tab; Alt+Tab and Meta+Tab are left alone.
+            assertTrue(tutorial.handleShortcut(new KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.TAB,
+                    false, true, false, false)));
+            assertEquals(closeButton, scene.getFocusOwner());
+            assertFalse(tutorial.handleShortcut(new KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.TAB,
+                    false, false, true, false)));
+            assertFalse(tutorial.handleShortcut(new KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.TAB,
+                    false, false, false, true)));
+            assertEquals(closeButton, scene.getFocusOwner());
+
             tutorial.hide();
             assertFalse(tutorial.handleShortcut(keyEvent(KeyCode.TAB)));
             stage.close();
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void returningToFirstStep_movesFocusFromBackToNext() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            TutorialWindow tutorial = new TutorialWindow();
+            Stage stage = createStage(tutorial, 900, 650);
+            tutorial.show();
+            applyLayout(stage);
+            Scene scene = stage.getScene();
+            Button backButton = (Button) scene.lookup("#backButton");
+            Button nextButton = (Button) scene.lookup("#nextButton");
+
+            nextButton.fire();
+            backButton.requestFocus();
+            assertTrue(tutorial.handleShortcut(keyEvent(KeyCode.LEFT)));
+            assertTrue(backButton.isDisabled());
+            assertEquals(nextButton, scene.getFocusOwner());
+
+            tutorial.hide();
+            stage.close();
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void tabKey_withoutScene_isStillHandled() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            TutorialWindow tutorial = new TutorialWindow();
+            tutorial.show();
+            assertTrue(tutorial.handleShortcut(keyEvent(KeyCode.TAB)));
+            tutorial.hide();
             return null;
         });
         Platform.runLater(task);

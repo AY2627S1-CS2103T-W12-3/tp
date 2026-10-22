@@ -238,6 +238,10 @@ public class MainWindow extends UiPart<Stage> {
         tutorialWindow.setStepChangeHandler(this::showTutorialStep);
         helpWindow = new HelpWindow(new Stage());
         helpWindow.getRoot().initOwner(primaryStage);
+        helpWindow.setTutorialShortcutHandler(() -> {
+            showTutorial();
+            primaryStage.requestFocus();
+        });
         Tooltip helpTooltip = new Tooltip("Open Help (" + HelpWindow.HELP_SHORTCUT + ")");
         helpTooltip.setShowDelay(Duration.millis(200));
         helpLabel.setTooltip(helpTooltip);

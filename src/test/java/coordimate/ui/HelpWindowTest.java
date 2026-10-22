@@ -10,16 +10,20 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import javafx.application.Platform;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
@@ -60,6 +64,31 @@ public class HelpWindowTest {
                 .findFirst()
                 .orElseThrow()
                 .format());
+    }
+
+    @Test
+    public void tutorialShortcut_runsHandlerOnlyForF2() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            HelpWindow helpWindow = new HelpWindow(new Stage());
+            Node root = helpWindow.getRoot().getScene().getRoot();
+            AtomicInteger runs = new AtomicInteger();
+
+            KeyEvent beforeHandlerSet = new KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.F2,
+                    false, false, false, false);
+            javafx.event.Event.fireEvent(root, beforeHandlerSet);
+
+            helpWindow.setTutorialShortcutHandler(runs::incrementAndGet);
+            javafx.event.Event.fireEvent(root, new KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.A,
+                    false, false, false, false));
+            assertEquals(0, runs.get());
+            javafx.event.Event.fireEvent(root, new KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.F2,
+                    false, false, false, false));
+            assertEquals(1, runs.get());
+            helpWindow.hide();
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test

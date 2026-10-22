@@ -187,7 +187,12 @@ public class MainWindowTest {
             helpStage.hide();
             javafx.event.Event.fireEvent(stage.getScene().getRoot(), keyEvent(KeyCode.F1));
             assertTrue(helpStage.isShowing());
-            helpStage.hide();
+
+            // F2 pressed while the Help window is in front opens the tutorial on the main window.
+            javafx.event.Event.fireEvent(helpStage.getScene().getRoot(), keyEvent(KeyCode.F2));
+            assertFalse(helpStage.isShowing());
+            assertTrue(stage.getScene().lookup("#tutorialOverlay").isVisible());
+            window.stop();
             stage.close();
             return null;
         });

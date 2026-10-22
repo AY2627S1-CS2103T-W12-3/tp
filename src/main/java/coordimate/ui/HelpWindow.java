@@ -1,6 +1,7 @@
 package coordimate.ui;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.Logger;
 
 import coordimate.commons.core.LogsCenter;
@@ -37,6 +38,8 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.KeyCombination;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Region;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
@@ -87,6 +90,9 @@ public class HelpWindow extends UiPart<Stage> {
 
     private static final Logger logger = LogsCenter.getLogger(HelpWindow.class);
     private static final String FXML = "HelpWindow.fxml";
+    private static final KeyCombination TUTORIAL_KEY = KeyCombination.valueOf("F2");
+
+    private Runnable tutorialShortcutHandler = () -> { };
 
     @FXML
     private Button copyButton;
@@ -113,6 +119,12 @@ public class HelpWindow extends UiPart<Stage> {
      */
     public HelpWindow(Stage root) {
         super(FXML, root);
+        root.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+            if (TUTORIAL_KEY.match(event)) {
+                tutorialShortcutHandler.run();
+                event.consume();
+            }
+        });
         helpMessage.setText(HELP_MESSAGE);
         copyButton.setMinWidth(Region.USE_PREF_SIZE);
         closeButton.setMinWidth(Region.USE_PREF_SIZE);
@@ -128,6 +140,11 @@ public class HelpWindow extends UiPart<Stage> {
      */
     public HelpWindow() {
         this(new Stage());
+    }
+
+    /** Sets the action to run when the tutorial shortcut is pressed while the help window is in front. */
+    public void setTutorialShortcutHandler(Runnable handler) {
+        tutorialShortcutHandler = Objects.requireNonNull(handler);
     }
 
     /**
