@@ -720,11 +720,12 @@ returns a copy from `withArchived(boolean)`:
 
 * `Event#withArchived` builds the copy through the full constructor. Every other `Event` copy method, such as
   `withAttendance` and `withDetails`, passes the flag on.
-* `Person#withArchived` uses a private copy constructor, so the public constructors are unchanged. Code that rebuilds
-  a contact through a public constructor carries the flag over explicitly: `EditCommand#execute`, the tag updates in
-  `CoordiMate#setTag` and `CoordiMate#deleteTag`, and `Person#withMemberId`. The last matters when loading a data
-  file saved before member IDs existed: `CoordiMate#addPerson` gives each contact an ID, and the contact must stay
-  archived.
+* `Person` takes `archived` as the last parameter of its full constructor, the one that also takes a member ID.
+  Every copy of an existing contact uses that constructor, so the compiler makes each copy pass the flag on:
+  `Person#withArchived`, `Person#withMemberId`, `EditCommand#createEditedPerson`, and the tag updates in
+  `CoordiMate#setTag` and `CoordiMate#deleteTag`. The shorter constructors create new contacts, which are never
+  archived. `withMemberId` matters when loading a data file saved before member IDs existed: `CoordiMate#addPerson`
+  gives each contact an ID, and the contact must stay archived.
 
 Archiving changes nothing else: an archived contact keeps its name in event member lists, and an archived event
 keeps its members and attendance.
@@ -761,6 +762,8 @@ that commands which read the displayed list see the same contacts on the copy as
 **Effects on other features.**
 
 * `ReminderService#refreshReminders` skips archived events, so archiving an event removes its reminder at once.
+* `ReadOnlyCoordiMate#findEvent(String)` returns the saved event with a given name, ignoring case and including
+  archived events. `ArchiveEventCommand`, `AddEventCommand`, and `EventMembersCommand` use it.
 * The instance method `EventMembersCommand#findEvent`, used by `assign` and `unassign`, rejects an archived event.
   `MembersCommand`, `MarkAttendanceCommand`, `EditEventCommand`, and `DeleteEventCommand` search the full event list,
   so they still work on archived events.
@@ -776,10 +779,10 @@ that commands which read the displayed list see the same contacts on the copy as
   because `AddCommand` looks up the new contact in the displayed list of the model copy to select it.
 
 **Storage.** [`JsonAdaptedEvent`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/storage/JsonAdaptedEvent.java)
-reads `archived` as a `Boolean` creator parameter, and
+and
 [`JsonAdaptedPerson`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/storage/JsonAdaptedPerson.java)
-has an `archived` field that Jackson sets after construction. A missing or `null` value is read as `false`, so data
-files saved before archiving existed still load.
+both read `archived` as a `Boolean` creator parameter. A missing or `null` value is read as `false`, so data files
+saved before archiving existed still load.
 
 #### Design considerations
 
