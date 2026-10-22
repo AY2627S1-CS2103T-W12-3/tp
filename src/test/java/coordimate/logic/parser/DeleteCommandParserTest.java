@@ -3,12 +3,12 @@ package coordimate.logic.parser;
 import static coordimate.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static coordimate.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static coordimate.logic.parser.CommandParserTestUtil.assertParseSuccess;
-import static coordimate.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 
 import org.junit.jupiter.api.Test;
 
 import coordimate.logic.commands.DeleteCommand;
 import coordimate.logic.commands.DeleteCommand.IdentifierType;
+import coordimate.model.person.MemberId;
 
 public class DeleteCommandParserTest {
     private final DeleteCommandParser parser = new DeleteCommandParser();
@@ -16,7 +16,7 @@ public class DeleteCommandParserTest {
 
     @Test
     public void parse_eachIdentifier_success() {
-        assertParseSuccess(parser, "1", new DeleteCommand(INDEX_FIRST_PERSON));
+        assertParseSuccess(parser, "1", new DeleteCommand(new MemberId(1)));
         assertParseSuccess(parser, " n/Alice Pauline ", new DeleteCommand(IdentifierType.NAME, "Alice Pauline"));
         assertParseSuccess(parser, " p/(9435) 1253 ", new DeleteCommand(IdentifierType.PHONE, "(9435) 1253"));
         assertParseSuccess(parser, " e/ALICE@EXAMPLE.COM ",
@@ -33,10 +33,10 @@ public class DeleteCommandParserTest {
 
     @Test
     public void parse_invalidIndex_failure() {
-        assertParseFailure(parser, "0", DeleteCommandParser.MESSAGE_INVALID_INDEX);
-        assertParseFailure(parser, "-1", DeleteCommandParser.MESSAGE_INVALID_INDEX);
-        assertParseFailure(parser, "1 extra", DeleteCommandParser.MESSAGE_INVALID_INDEX);
-        assertParseFailure(parser, "999999999999999999999", DeleteCommandParser.MESSAGE_INVALID_INDEX);
+        assertParseFailure(parser, "0", DeleteCommandParser.MESSAGE_INVALID_MEMBER_ID);
+        assertParseFailure(parser, "-1", DeleteCommandParser.MESSAGE_INVALID_MEMBER_ID);
+        assertParseFailure(parser, "1 extra", DeleteCommandParser.MESSAGE_INVALID_MEMBER_ID);
+        assertParseFailure(parser, "999999999999999999999", DeleteCommandParser.MESSAGE_INVALID_MEMBER_ID);
     }
 
     @Test

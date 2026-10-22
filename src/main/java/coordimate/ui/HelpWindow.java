@@ -56,15 +56,15 @@ public class HelpWindow extends UiPart<Stage> {
             commandUsage(AddEventCommand.COMMAND_WORD, "evn/EVENT_NAME st/START_TIME et/END_TIME"),
             commandUsage(CreateTagCommand.COMMAND_WORD, "t/TAG"),
             commandUsage(AssignCommand.COMMAND_WORD,
-                    "evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]..."),
+                    "evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]..."),
             commandUsage(ClearCommand.COMMAND_WORD, ""),
             commandUsage(DeleteCommand.COMMAND_WORD,
-                    "INDEX | delete n/NAME | delete p/PHONE | delete e/EMAIL"),
+                    "MEMBER_ID | delete n/NAME | delete p/PHONE | delete e/EMAIL"),
             commandUsage(DeleteEventCommand.COMMAND_WORD, "evn/EVENT_NAME"),
             commandUsage(DeleteTagCommand.COMMAND_WORD, "t/TAG"),
             commandUsage(DismissCommand.COMMAND_WORD, "INDEX"),
             commandUsage(EditCommand.COMMAND_WORD,
-                    "(INDEX | target/IDENTIFIER) [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] "
+                    "(MEMBER_ID | target/IDENTIFIER) [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] "
                             + "[a/ADDRESS] [o/ORGANISATION] [m/NOTE] [t/TAG]... [at/TAG]... [rt/TAG]..."),
             commandUsage(EditEventCommand.COMMAND_WORD,
                     "evn/EVENT_NAME [nevn/NEW_EVENT_NAME] [st/NEW_START_TIME] [et/NEW_END_TIME]"),
@@ -79,7 +79,7 @@ public class HelpWindow extends UiPart<Stage> {
             commandUsage(MembersCommand.COMMAND_WORD, "evn/EVENT_NAME"),
             commandUsage(SearchCommand.COMMAND_WORD, "KEYWORD"),
             commandUsage(UnassignCommand.COMMAND_WORD,
-                    "evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]..."));
+                    "evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]..."));
 
     private static final Logger logger = LogsCenter.getLogger(HelpWindow.class);
     private static final String FXML = "HelpWindow.fxml";

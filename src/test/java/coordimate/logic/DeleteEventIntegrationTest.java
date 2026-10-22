@@ -20,6 +20,7 @@ import coordimate.model.ModelManager;
 import coordimate.model.ReadOnlyCoordiMate;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
+import coordimate.model.person.MemberId;
 import coordimate.storage.JsonCoordiMateStorage;
 import coordimate.storage.JsonUserPrefsStorage;
 import coordimate.storage.StorageManager;
@@ -42,7 +43,7 @@ public class DeleteEventIntegrationTest {
         assertEquals("Deleted Event Final Concert.", result.getFeedbackToUser());
         assertEquals(CommandResult.View.EVENTS, result.getViewToShow());
         assertEquals(List.of(fair), model.getCoordiMate().getEventList());
-        assertEquals(List.of(AMY), model.getCoordiMate().getPersonList());
+        assertEquals(List.of(AMY.withMemberId(new MemberId(1))), model.getCoordiMate().getPersonList());
         assertEquals(model.getCoordiMate(), storage.readCoordiMate().orElseThrow());
         ModelManager reloaded = new ModelManager(storage.readCoordiMate().orElseThrow(), model.getUserPrefs());
         assertEquals("Deleted Event Student Life Fair.", newLogic(reloaded, storage)

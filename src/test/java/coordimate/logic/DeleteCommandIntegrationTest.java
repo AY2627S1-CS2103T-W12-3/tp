@@ -98,12 +98,12 @@ public class DeleteCommandIntegrationTest {
     }
 
     @Test
-    public void execute_filteredIndex_usesDisplayedContact() throws Exception {
+    public void execute_filteredList_usesPermanentId() throws Exception {
         ModelManager model = modelWithEvent();
         model.updateFilteredPersonList(person -> person.equals(BENSON));
         Logic logic = newLogic(model, new JsonCoordiMateStorage(temporaryFolder.resolve("filtered.json")));
 
-        assertEquals(DeleteCommand.confirmationPrompt(BENSON), logic.execute("delete 1").getFeedbackToUser());
+        assertEquals(DeleteCommand.confirmationPrompt(BENSON), logic.execute("delete 2").getFeedbackToUser());
         logic.execute("y");
 
         assertEquals(List.of(ALICE), model.getCoordiMate().getPersonList());

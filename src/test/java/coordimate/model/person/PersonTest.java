@@ -10,6 +10,8 @@ import static coordimate.testutil.TypicalPersons.ALICE;
 import static coordimate.testutil.TypicalPersons.BOB;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
@@ -17,6 +19,34 @@ import org.junit.jupiter.api.Test;
 import coordimate.testutil.PersonBuilder;
 
 public class PersonTest {
+
+    @Test
+    public void withMemberId_assignsIdWithoutChangingDraft() {
+        Person draft = new PersonBuilder(ALICE).withoutMemberId().build();
+        Person member = draft.withMemberId(new MemberId(12));
+        assertTrue(draft.getMemberId().isEmpty());
+        assertEquals(new MemberId(12), member.getMemberId().orElseThrow());
+        assertTrue(draft.isSamePerson(member));
+        assertNotEquals(draft, member);
+        assertThrows(NullPointerException.class, () -> draft.withMemberId(null));
+    }
+
+    @Test
+    public void withMemberId_existingId_cannotBeChanged() {
+        Person member = new PersonBuilder(ALICE).withMemberId(12).build();
+        assertSame(member, member.withMemberId(new MemberId(12)));
+        assertThrows(IllegalArgumentException.class, () -> member.withMemberId(new MemberId(13)));
+    }
+
+    @Test
+    public void equalsAndHashCode_includeMemberId() {
+        Person member = new PersonBuilder(ALICE).withMemberId(12).build();
+        Person copy = new PersonBuilder(member).build();
+        assertEquals(member, copy);
+        assertEquals(member.hashCode(), copy.hashCode());
+        assertNotEquals(member, new PersonBuilder(member).withMemberId(13).build());
+        assertTrue(member.isSamePerson(new PersonBuilder(member).withMemberId(13).build()));
+    }
 
     @Test
     public void asObservableList_modifyList_throwsUnsupportedOperationException() {
@@ -131,7 +161,9 @@ public class PersonTest {
 
     @Test
     public void toStringMethod() {
-        String expected = Person.class.getCanonicalName() + "{name=" + ALICE.getName() + ", phone=" + ALICE.getPhone()
+        String expected = Person.class.getCanonicalName() + "{memberId=" + ALICE.getMemberId().orElseThrow()
+                + ", name=" + ALICE.getName()
+                + ", phone=" + ALICE.getPhone()
                 + ", email=" + ALICE.getEmail() + ", role=" + ALICE.getRole() + ", birthday=null, address="
                 + ALICE.getAddress().orElseThrow() + ", organisation=null, note=null, tags=" + ALICE.getTags() + "}";
         assertEquals(expected, ALICE.toString());

@@ -17,7 +17,6 @@ import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
-import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
 import javafx.geometry.Orientation;
 import javafx.scene.control.Label;
@@ -65,7 +64,7 @@ public class PersonListPanel extends UiPart<Region> {
     private Label selectedName;
 
     @FXML
-    private Label selectedIndex;
+    private Label selectedMemberId;
 
     @FXML
     private Label selectedAvatar;
@@ -121,12 +120,12 @@ public class PersonListPanel extends UiPart<Region> {
         super(FXML);
         this.events = events;
         persons.addListener((ListChangeListener<Person>) change -> {
-            if (selectedPerson != null) {
-                Person previouslySelected = selectedPerson;
-                Person replacement = findReplacement(change, previouslySelected);
-                long versionAtChange = focusRequestVersion;
-                Platform.runLater(() -> restoreSelection(persons, previouslySelected, replacement, versionAtChange));
-            }
+          if (selectedPerson != null) {
+            Person previouslySelected = selectedPerson;
+            long versionAtChange = focusRequestVersion;
+            Platform.runLater(() ->
+                restoreSelection(persons, previouslySelected, versionAtChange));
+          }
         });
         events.addListener((ListChangeListener<Event>) change -> showDetails(selectedPerson));
         personListView.setItems(persons);
@@ -149,37 +148,17 @@ public class PersonListPanel extends UiPart<Region> {
     /**
      * Reconciles selection after the list view has processed a change to its items.
      */
-    private Person findReplacement(ListChangeListener.Change<? extends Person> change, Person previouslySelected) {
-        while (change.next()) {
-            if (change.wasReplaced() && change.getRemovedSize() == change.getAddedSize()) {
-                int offset = change.getRemoved().indexOf(previouslySelected);
-                if (offset >= 0 && offset < change.getAddedSize()) {
-                    return change.getAddedSubList().get(offset);
-                }
-            }
-        }
-        return null;
-    }
+    private void restoreSelection(ObservableList<Person> persons,
+            Person previouslySelected, long versionAtChange) {
+      if (versionAtChange != focusRequestVersion) {
+        return;
+      }
 
-    private void restoreSelection(ObservableList<Person> persons, Person previouslySelected, Person replacement,
-            long versionAtChange) {
-        if (versionAtChange != focusRequestVersion) {
-            return;
-        }
-        if (persons.contains(previouslySelected)) {
-            personListView.getSelectionModel().select(previouslySelected);
-            selectedIndex.setText("Index: " + (persons.indexOf(previouslySelected) + 1));
-        } else if (replacement != null && !isStillInSource(persons, previouslySelected)
-                && persons.contains(replacement)) {
-            personListView.getSelectionModel().select(replacement);
-        } else {
-            personListView.getSelectionModel().clearSelection();
-        }
-    }
-
-    private boolean isStillInSource(ObservableList<Person> persons, Person previouslySelected) {
-        return persons instanceof FilteredList<?> filteredPersons
-                && filteredPersons.getSource().contains(previouslySelected);
+      Person current = persons.stream()
+            .filter(person -> person.getMemberId().equals(previouslySelected.getMemberId()))
+            .findFirst()
+            .orElse(null);
+      personListView.getSelectionModel().select(current);
     }
 
     /**
@@ -261,11 +240,12 @@ public class PersonListPanel extends UiPart<Region> {
         selectionHint.setVisible(!isSelected);
         selectionHint.setManaged(!isSelected);
         if (!isSelected) {
+            selectedMemberId.setText("");
             return;
         }
 
         selectedName.setText(person.getName().getFullName());
-        selectedIndex.setText("Index: " + (personListView.getItems().indexOf(person) + 1));
+        selectedMemberId.setText("ID: " + person.getMemberId().orElseThrow());
         selectedAvatar.setText(initials(person.getName().getFullName()));
         String roleText = person.getRole().getValue();
         selectedSubtitle.setText(person.getOrganisation()
@@ -350,7 +330,7 @@ public class PersonListPanel extends UiPart<Region> {
                 setGraphic(null);
                 setText(null);
             } else {
-                Region card = new PersonCard(person, getIndex() + 1).getRoot();
+                Region card = new PersonCard(person).getRoot();
                 card.prefWidthProperty().bind(widthProperty().subtract(12));
                 setGraphic(card);
             }

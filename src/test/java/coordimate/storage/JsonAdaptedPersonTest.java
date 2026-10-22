@@ -69,7 +69,7 @@ public class JsonAdaptedPersonTest {
         JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS,
                 VALID_TAGS);
 
-        assertEquals(BENSON, person.toModelType());
+        assertEquals(new PersonBuilder(BENSON).withoutMemberId().build(), person.toModelType());
     }
 
     @Test

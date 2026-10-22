@@ -47,6 +47,7 @@ public class AddCommand extends Command {
     public static final String MESSAGE_DUPLICATE_PERSON = "A contact with this name, phone number, or email "
             + "already exists. No changes were made.";
     public static final String MESSAGE_SAVE_ERROR = "Contact could not be saved. No changes were made.";
+    public static final String MESSAGE_NO_MORE_MEMBER_IDS = "No more member IDs are available.";
     public static final String MESSAGE_LOAD_ERROR =
             Messages.MESSAGE_LOAD_ERROR;
 
@@ -68,7 +69,11 @@ public class AddCommand extends Command {
             throw new CommandException(MESSAGE_DUPLICATE_PERSON);
         }
 
-        model.addPerson(toAdd);
+        try {
+            model.addPerson(toAdd);
+        } catch (IllegalStateException e) {
+            throw new CommandException(MESSAGE_NO_MORE_MEMBER_IDS, e);
+        }
         assert model.hasPerson(toAdd) : "Added contact must be present in the model.";
         return CommandResult.withContactToFocus(String.format(MESSAGE_SUCCESS, toAdd.getName()),
                 CommandResult.View.CONTACTS, toAdd);

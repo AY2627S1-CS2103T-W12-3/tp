@@ -11,8 +11,14 @@ import javafx.collections.ObservableList;
 public interface ReadOnlyCoordiMate {
 
     /**
+     * Returns the next ID to allocate, or {@code Integer.MAX_VALUE + 1L} when IDs are exhausted.
+     * Deleted members' IDs remain below this value.
+     */
+    long getNextMemberId();
+
+    /**
      * Returns an unmodifiable view of the persons list.
-     * This list will not contain any duplicate persons.
+     * Every stored person has a unique member ID. This list will not contain duplicate persons.
      */
     ObservableList<Person> getPersonList();
 
