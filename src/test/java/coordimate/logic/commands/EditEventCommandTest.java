@@ -34,9 +34,10 @@ public class EditEventCommandTest {
             EventTime end = (fields & 4) == 0 ? null : new EventTime("08-08-2026 19:00");
             Event expected = new Event(name == null ? concert.getName() : name,
                     start == null ? concert.getStartTime() : start, end == null ? concert.getEndTime() : end);
+            CommandResult result = new EditEventCommand("Final Concert", name, start, end).execute(model);
             assertEquals(String.format(EditEventCommand.MESSAGE_SUCCESS,
-                    expected.getName(), expected.getStartTime(), expected.getEndTime()),
-                    new EditEventCommand("Final Concert", name, start, end).execute(model).getFeedbackToUser());
+                    expected.getName(), expected.getStartTime(), expected.getEndTime()), result.getFeedbackToUser());
+            assertEquals(CommandResult.View.EVENTS, result.getViewToShow());
             assertEquals(List.of(expected, fair), model.getCoordiMate().getEventList());
         }
     }

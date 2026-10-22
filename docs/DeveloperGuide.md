@@ -101,8 +101,10 @@ The `UI` component,
 
 * executes user commands using the `Logic` component.
 * listens for changes to `Model` data so that the UI can be updated with the modified data. The Contacts view
-  displays the filtered contact list beside a details pane, follows a selected contact when an edit replaces that
-  list entry, and clears the selection when the contact leaves the list. The details pane displays all saved contact
+  displays the filtered contact list beside a details pane, follows a selected contact by permanent member ID
+  across edits and reordering, and clears the selection when that ID leaves the displayed list.
+  Contact cards, contact details, event rosters, and tag member lists display `ID: <number>` from the saved contact,
+  independently of the current contact filter. The details pane displays all saved contact
   fields, showing a placeholder for unset optional fields and no tag chips for an empty tag set.
   It also derives assigned-event rows from the live event list. The Events view resolves each assigned
   member to contact role, organisation, and tags, and refreshes when contact data changes. Contact and
@@ -111,9 +113,13 @@ The `UI` component,
   format and an example; rows also support keyboard activation. Selecting a tag shows all saved contacts
   assigned to it, independent of the current contact filter, and refreshes names, roles, organisations, and tags
   when contact data changes.
+  A window-level key filter owns Navigation-mode input: `J` and `K` move within the active view, `S` cycles views,
+  and `I` returns to Command mode. Other unmodified keys are consumed before focused controls can act on them.
+  Entering Navigation mode transfers focus to the mode indicator, preventing controls such as reminder dismissal
+  buttons from retaining keyboard activation.
 * keeps a reference to the `Logic` component, because the `UI` relies on the `Logic` to execute commands.
-  The `switch` command returns a view selection request that `MainWindow` applies through the same view controls
-  used by the sidebar. `LogicManager` executes this navigation command without reading or saving contact data.
+  Commands such as `members` and the tag commands can return a view selection request that `MainWindow` applies
+  through the same view controls used by the sidebar.
 * depends on some classes in the `Model` component because it displays `Person` objects from the model.
 
 ### Logic component
@@ -184,6 +190,8 @@ Command error messages follow these conventions:
 The `Model` component,
 
 * stores CoordiMate data, including all `Person` objects (which are contained in a `UniquePersonList` object).
+* assigns each saved `Person` an immutable `MemberId`. `CoordiMate` maintains the next ID to allocate, and
+  `UniquePersonList` rejects duplicate IDs. Replacing or editing a contact preserves its ID.
 * stores a case-insensitively unique global tag list. Every tag assigned to a contact is also registered in this list;
   adding, editing, or replacing contacts registers any missing tags while preserving existing unused tags.
 * stores all `Event` objects. Each `Event` records its assigned members as an ordered list of contact `Name`s. `CoordiMate` keeps these lists in sync with the contacts: deleting a contact removes their name from every event, and renaming a contact updates it.
@@ -232,18 +240,77 @@ Classes used by multiple components are in the `coordimate.commons` package.
 
 This section describes some noteworthy details on how certain features are implemented.
 
+### Permanent member IDs
+
+Each saved contact has a unique `MemberId` in the range `1` to `2147483647`. The displayed label is
+`ID: <number>`; search results, filters, and list order never determine its value.
+
+#### Allocation and editing
+
+`Person` holds an immutable ID. A new contact can be an unassigned draft until `CoordiMate#addPerson` accepts it.
+`CoordiMate` allocates from its `long nextMemberId` counter, advances the counter after successful additions,
+and preserves imported IDs. `UniquePersonList` rejects duplicate assigned IDs and prevents replacements from
+changing a contact's ID. Bulk replacement reserves all supplied IDs before assigning any missing ones.
+Copies and resets preserve both IDs and allocation state, including when the highest ID has been deleted.
+Deleting contacts does not recycle IDs. `clear` creates a new empty dataset and resets allocation to `1`.
+The counter value `2147483648` represents exhaustion; further automatic allocation is rejected.
+`AddCommand` translates the allocation failure into a `CommandException` with the message
+`No more member IDs are available.` so the UI displays normal command feedback. Contacts, tags, the
+allocation counter, and the saved file remain unchanged.
+
+#### Command targeting
+
+`ParserUtil#parseMemberId` parses a positive integer without converting it to a list position.
+`MemberIdResolver` searches `Model#getCoordiMate().getPersonList()`, including contacts hidden by the active
+view. `edit` and `delete` resolve one ID; `assign` and `unassign` resolve every ID before changing an event.
+An unknown ID reports `No contact exists with member ID: <number>. Use an existing member ID.` without
+changing data or falling back to a position. Event membership and attendance still use contact names internally;
+the commands translate IDs to those names after resolution.
+
+Deletion confirmation retains the resolved contact. On confirmation, the command resolves its ID again and
+rejects the deletion if that contact was removed or edited. Reordering or filtering cannot redirect it.
+
+#### Storage and migration
+
+`JsonAdaptedPerson` writes a numeric `memberId`, and `JsonSerializableCoordiMate` writes a numeric
+`nextMemberId`. Loading first parses all contacts and finds the highest supplied ID. It then validates the
+saved counter, or derives one greater than the highest ID when no counter exists. Contacts with missing or
+null IDs receive consecutive IDs in file order starting from that counter. An entirely legacy file therefore
+receives IDs starting at `1`; mixed files preserve all existing IDs before allocating new ones.
+
+Loading does not rewrite the file. The next successful save records migrated IDs and the counter, so future
+launches retain IDs and do not reuse deleted ones. Duplicate IDs, non-integral or out-of-range values, a counter
+not greater than every saved ID, and exhausted allocation for a contact without an ID reject the file through
+the normal storage-loading error path. Numeric strings are not accepted as IDs or counters.
+
+#### Design considerations and verification
+
+A saved counter avoids reusing an ID after deleting the highest-numbered contact. Deriving the next ID from
+the current list on every launch would lose that history. Full-list lookup keeps command behavior independent
+of the UI and is adequate for the expected contact count.
+
+`MemberIdPersistenceTest` covers saved counters, legacy and mixed-file migration, invalid data, and exhaustion.
+`PermanentMemberIdCommandsTest` covers targeting across searches, tag filters, event-member views, empty
+results, reordering, and restarts. It also runs a legacy migration through editing, event assignment and
+unassignment, deletion, saving, and restart, then checks that a deleted ID cannot target another contact.
+UI tests verify the same labels and selection behavior in Contacts, Events, and Tags.
+
 ### Saving data atomically
 
-A command that changes data either takes effect in full, both in the app and in the data file, or not at all.
+Commands that edit contacts, event details, tags, or attendance either take effect in full, both in the app
+and in the data file, or not at all.
 This keeps the displayed data and the saved data identical even when the data file cannot be read or written,
 and meets the requirement that saved data is not lost if the app terminates unexpectedly.
+Reminder dismissal uses a separate save path with a session-only fallback, described in
+[Dismissing reminders](#dismissing-reminders).
 
 #### Implementation
 
 Two mechanisms work together.
 
 **1. Commands run on a copy of the model.** [`LogicManager#execute`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/logic/LogicManager.java)
-passes every command that changes data to `LogicManager#executeAtomicCommand`. These are `AddCommand`, `EditCommand`,
+passes commands that edit contacts, event details, tags, or attendance to `LogicManager#executeAtomicCommand`.
+These are `AddCommand`, `EditCommand`,
 `DeleteCommand`, `ClearCommand`, `AddEventCommand`, `EditEventCommand`, `DeleteEventCommand`, `AssignCommand`,
 `UnassignCommand`, `MarkAttendanceCommand`, and the tag commands that extend `MutatingTagCommand`.
 
@@ -252,9 +319,9 @@ passes every command that changes data to `LogicManager#executeAtomicCommand`. T
 1. It calls `Storage#readCoordiMate()` to check that the existing data file can still be loaded. If it cannot,
    the command is rejected with a load error and the file is left untouched, so that the user can repair it.
    A missing data file is not an error.
-1. It creates a second `ModelManager`, the _candidate_, from a copy of the live model's data. The candidate's
-   filtered contact list is set to show the same contacts as the live displayed list, so that a contact index
-   typed by the user refers to the same contact in both models.
+1. It creates a second `ModelManager`, the _candidate_, from a copy of the live model's data, including member
+   IDs and allocation state. Its filtered contact list initially shows the same contacts as the live view.
+   Commands resolve member IDs against the complete saved contact list in either model.
 1. It executes the command on the candidate. If the command fails, the candidate is discarded.
 1. It saves the candidate's data with `Storage#saveCoordiMate`. If saving fails, the command is rejected with a
    save error such as `Event could not be saved. No changes were made.` and the candidate is discarded.
@@ -293,11 +360,14 @@ consequences that developers should be aware of:
 * If the data file is invalid, such a command replaces it with the data currently in the app.
 * If the data file cannot be written, such a command reports a save error even though it changed no data.
 
-`switch` is a UI navigation command and an exception to this save path. `SwitchCommandParser` accepts only
-`contacts`, `events`, or `tags` after the command word. `LogicManager` returns its `CommandResult` without
-reading or saving the data file; `MainWindow` selects the requested tab and updates the sidebar through its
-existing tab selection listener. `CommandResult.View` carries one requested view, or `NONE` when a command does
-not request a view change. Invalid view names are rejected before the UI changes.
+`CommandResult.View` carries one requested view, or `NONE` when a command does not request a view change.
+`MainWindow` applies a requested view through the same view controls used by the sidebar.
+
+Commands that produce contact, event, or tag results request the corresponding `CommandResult.View`, which
+`MainWindow` applies after successful execution. A failed command does not return a view request, so the current
+tab remains selected. Contact deletion requests Contacts when its confirmation prompt is displayed. `assign` and
+`unassign` deliberately return `View.NONE`; the current tab remains selected while its observable contact or event
+details refresh.
 
 #### Design considerations
 
@@ -305,9 +375,10 @@ not request a view change. Invalid view names are rejected before the UI changes
 
 * **Alternative 1 (current choice):** Execute the command on a copy of the model, save the copy, then replace the
   live model's data.
-  * Pros: Works for every command without command-specific code. The UI never shows a change that was not saved.
+  * Pros: Works for the editing commands listed above without command-specific rollback code. The UI never shows
+    an edit that was not saved.
   * Cons: Copies all data for each command, which is acceptable for the expected 250 contacts. Each new command
-    that changes data must be added to the list in `LogicManager#execute`.
+    using this save path must be added to the list in `LogicManager#execute`.
 
 * **Alternative 2:** Execute the command on the live model, and restore a snapshot if saving fails.
   * Pros: No copy is needed when saving succeeds.
@@ -316,6 +387,36 @@ not request a view change. Invalid view names are rejected before the UI changes
 * **Alternative 3:** Have each command undo its own change if saving fails.
   * Pros: Uses the least memory.
   * Cons: Every command needs correct undo logic, which is easy to get wrong.
+
+### Dismissing reminders
+
+`LogicManager` creates a shared `ReminderService` and supplies it to `CoordiMateParser`, which passes it to
+`DismissCommandParser` and `DismissCommand`. The CLI command and the panel's **Dismiss** button therefore use
+the same dismissal history and storage behavior.
+
+1. `DismissCommandParser` uses `ParserUtil#parseIndex` to accept one positive, 1-based index. Missing input
+   produces a format error; invalid integers and extra arguments are rejected before execution.
+1. `DismissCommand#execute` obtains the refreshed reminder list from `ReminderService#getReminders` and checks
+   the index against its size. `UpcomingEventFinder` orders this list by start time and then by event name,
+   ignoring case; date-only starts count as midnight for sorting. `ReminderPanel` renders the same list with
+   1-based indexes and regenerates the rows whenever it changes. An out-of-range index, including an empty
+   list, produces a command error without reading or writing storage.
+1. The command passes the selected `Event` to `ReminderService#dismissReminder`. The service creates a copy
+   with updated dismissal history, checks that the existing data can be loaded, and saves the candidate
+   before updating the live event. Event details, members, attendance, and the contact filter are preserved.
+1. On success, the command returns `Reminder dismissed: EVENT_NAME.` without requesting a view change.
+   If reading or saving fails, the service keeps the dismissal in its session map, refreshes the list, and
+   throws `ReminderDismissalException`. The command logs the failure and returns `CommandResult.warning`.
+   `MainWindow` checks `CommandResult#isWarning` and uses `ResultDisplay#setWarningFeedback` to show the
+   existing **Not saved** status. The persisted history is unchanged, so the reminder may return after restart.
+
+`LogicManager` returns the dismissal result directly, bypassing both `executeAtomicCommand` and the generic
+post-command save. `ReminderService` already performs the save; a second save would be redundant and could
+replace the warning with an unrelated error. The normal final reminder refresh still runs after execution.
+
+`ReminderLogicIntegrationTest` covers ordering, edits, persistence, event data, and read/write failures using
+a controlled clock and temporary JSON files. `MainWindowReminderTest` covers immediate panel updates,
+renumbering, feedback, selected tabs, and command focus.
 
 ### Event attendance
 
@@ -516,6 +617,94 @@ already sees the new events.
 * **Alternative 3:** By a generated contact ID.
   * Pros: Renaming a contact would not affect events.
   * Cons: Needs a new ID field and a change to the data file format, and makes the data file harder to edit by hand.
+
+### Marking contacts as on leave
+
+A contact can be marked as on leave until a given date. The status ends by itself once that date has passed.
+
+#### Implementation
+
+[`LeaveDate`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/person/LeaveDate.java)
+holds the **last day** of a contact's leave, in `dd-MM-yyyy` format. `Person` stores it as an optional field, like
+birthday and note, and exposes:
+
+* `Person#getLeaveDate()`, which returns the saved date, even if it has passed.
+* `Person#isOnLeave(LocalDate today)`, which returns true if a date is saved and `today` is not after it.
+
+`LeaveDate` has two validity rules, in the same way that `Phone` separates saved values from newly entered ones:
+
+* `LeaveDate#isValidLeaveDate` accepts any real date, including past dates, so that leave which has ended can still
+  be loaded from the data file.
+* `LeaveDate#isValidInputLeaveDate` also requires the date not to be before today. `ParserUtil#parseLeaveDate`
+  applies this rule to dates entered with `lv/`, so new leave cannot already have ended.
+
+The `lv/` prefix is handled like the other optional contact fields:
+
+1. `AddCommandParser` sets the leave date if `lv/` has a value, and leaves it unset if `lv/` is empty or omitted.
+1. `EditCommandParser` records the new date in `EditPersonDescriptor#setLeaveDate`. An empty `lv/` records
+   `null`, which clears the leave. `EditPersonDescriptor#isLeaveDateEdited` distinguishes clearing from omitting.
+1. `EditCommand#createEditedPerson` keeps the existing leave date unless it was edited.
+
+**How leave ends.** Nothing is changed when a leave date passes. Instead, the UI asks each contact whether it is
+on leave on the current date:
+
+* `PersonCard` shows an **On leave until** badge only if `Person#isOnLeave(today)` is true.
+* `PersonListPanel` shows the date in the details pane in the same case, and `— (not on leave)` otherwise.
+
+`PersonListPanel` reads `today` from a `Clock`, which tests replace to control the date. A window left open past
+midnight still needs redrawing, so `MainWindow`'s existing one-minute reminder timer also calls
+`PersonListPanel#refreshIfDateChanged()`. If the date differs from the one last shown, the panel refreshes its list
+cells, which rebuilds each `PersonCard`, and redraws the selected contact's details. Otherwise it does nothing, so
+the list is redrawn at most once a day.
+
+The ended date stays in the contact and in the data file until the user replaces or clears it. Code that copies a
+contact, such as `CoordiMate#setTag` and `CoordiMate#removeTag`, passes the leave date on, so it is never dropped.
+
+In the data file, [`JsonAdaptedPerson`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/storage/JsonAdaptedPerson.java)
+stores the date in a `leaveUntil` field. Files saved before this feature have no such field, and their contacts
+load as not on leave.
+
+**Assertions and logging.** `ParserUtil#parseLeaveDate` asserts that the parsed leave covers today, which checks
+that the input rule was applied. `AddCommand` and `EditCommand` log at `INFO` level when a contact's leave is set or
+cleared.
+
+#### Design considerations
+
+**Aspect: How leave ends once its date has passed**
+
+* **Alternative 1 (current choice):** Keep the date, and check it against the current date whenever a contact is
+  displayed.
+  * Pros: No data needs changing when leave ends, so no save is needed at launch or at midnight. The behaviour is
+    easy to test by passing a fixed date to `Person#isOnLeave`.
+  * Cons: Ended dates remain in the data file. A window left open past midnight must be redrawn, which needs the
+    date check described below.
+
+* **Alternative 2:** Remove ended leave dates from the data, for example at launch.
+  * Pros: The data file only contains leave that is still active.
+  * Cons: Requires saving at launch, which no other feature does, and still needs a check for leave that ends while
+    the app is open.
+
+**Aspect: How an open window notices that the date has changed**
+
+* **Alternative 1 (current choice):** Check the date on each tick of the existing one-minute reminder timer.
+  * Pros: Adds no new timer. Still works if the computer sleeps through midnight or its clock or time zone changes,
+    because each tick compares the current date with the date last shown.
+  * Cons: The badge can stay visible for up to a minute after midnight.
+
+* **Alternative 2:** Schedule a timer for the next midnight, then reschedule it each day.
+  * Pros: Updates exactly at midnight.
+  * Cons: A second timer to start and stop with the window. A timer scheduled before a sleep, or a clock or time
+    zone change, can fire at the wrong time.
+
+**Aspect: How leave is entered**
+
+* **Alternative 1 (current choice):** An optional `lv/` field in `add` and `edit`.
+  * Pros: Consistent with the other optional contact fields, including clearing with an empty prefix.
+  * Cons: Users must know that leave is set through `edit`.
+
+* **Alternative 2:** A separate command, such as `leave MEMBER_ID until/DATE`.
+  * Pros: Easier to discover.
+  * Cons: Duplicates the contact lookup and validation already in `edit`, and adds a second way to change a contact.
 
 ### Archiving contacts and events
 
@@ -773,10 +962,10 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **Main success scenario (MSS)**
 
-1. EXCO member requests to delete a contact, identifying the contact by its displayed index, exact name, phone number, or email address.
+1. EXCO member requests to delete a contact, identifying the contact by its permanent member ID, exact name, phone number, or email address.
 2. CoordiMate displays the matching contact and requests confirmation.
 3. EXCO member confirms the deletion.
-4. Coordimate  model without the selected contact, their assignments in any event roster, or their
+4. CoordiMate saves a model without the selected contact, their assignments in any event roster, or their
    associated attendance records, then updates the live model and confirms the deletion. Events and other contacts
    remain unchanged.
 
@@ -784,7 +973,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **Extensions**
 
-* 1a. The EXCO member provides no identifier, more than one identifier, an unknown field, or an invalid index.
+* 1a. The EXCO member provides no identifier, more than one identifier, an unknown field, or an invalid member ID.
 
   * 1a1. CoordiMate informs the EXCO member of the error.
   * 1a2. EXCO member provides one valid identifier.
@@ -799,7 +988,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 * 1c. More than one contact matches the provided name.
 
-  * 1c1. CoordiMate requests a phone number, email address, or displayed index to identify the contact.
+  * 1c1. CoordiMate requests a phone number, email address, or member ID to identify the contact.
   * 1c2. EXCO member provides one of the requested identifiers.
 
     Use case resumes from step 2.
@@ -843,7 +1032,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **MSS**
 
-1. The Exco member assigns one or more contacts to an event using the `assign` command, specifying the event name and the displayed indexes of the contacts.
+1. The Exco member assigns one or more contacts to an event using the `assign` command, specifying the event name and the permanent member IDs of the contacts.
 2. CoordiMate verifies the event and contacts, then associates the contacts with the event.
 3. CoordiMate confirms how many members were assigned.
 
@@ -851,15 +1040,15 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **Extensions**
 
-* 1a. No saved event has the given name, or a contact index is invalid.
+* 1a. No saved event has the given name, or a member ID is invalid or unknown.
   * 1a1. CoordiMate displays the relevant error and assigns no contacts.
-  * 1a2. The Exco member corrects the event name or index and retries step 1.
+  * 1a2. The Exco member corrects the event name or member ID and retries step 1.
 
-* 1b. No contact indexes are provided.
+* 1b. No member IDs are provided.
   * 1b1. CoordiMate reports that at least one contact must be specified.
-  * 1b2. The Exco member provides one or more contact indexes and retries step 1.
+  * 1b2. The Exco member provides one or more member IDs and retries step 1.
 
-* 2a. A contact is already assigned, or the same contact index appears more than once.
+* 2a. A contact is already assigned, or the same member ID appears more than once.
   * 2a1. CoordiMate avoids creating duplicate assignments and reports the number of newly assigned members.
 
 * 2b. Every specified contact is already assigned.
@@ -878,7 +1067,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **MSS**
 
-1. The Exco member removes one or more members from an event using the `unassign` command, specifying the event name and the displayed indexes of the contacts.
+1. The Exco member removes one or more members from an event using the `unassign` command, specifying the event name and the permanent member IDs of the contacts.
 2. CoordiMate verifies the event and contacts, then removes the contacts from the event's members, together with their attendance records for that event.
 3. CoordiMate confirms how many members were removed.
 
@@ -886,15 +1075,15 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **Extensions**
 
-* 1a. No saved event has the given name, or a contact index is invalid.
+* 1a. No saved event has the given name, or a member ID is invalid or unknown.
   * 1a1. CoordiMate displays the relevant error and removes no members.
-  * 1a2. The Exco member corrects the event name or index and retries step 1.
+  * 1a2. The Exco member corrects the event name or member ID and retries step 1.
 
-* 1b. No contact indexes are provided.
+* 1b. No member IDs are provided.
   * 1b1. CoordiMate reports that at least one contact must be specified.
-  * 1b2. The Exco member provides one or more contact indexes and retries step 1.
+  * 1b2. The Exco member provides one or more member IDs and retries step 1.
 
-* 2a. A specified contact is not assigned to the event, or the same contact index appears more than once.
+* 2a. A specified contact is not assigned to the event, or the same member ID appears more than once.
   * 2a1. CoordiMate skips those contacts and reports the number of members removed.
 
 * 2b. None of the specified contacts are assigned to the event.
@@ -1009,7 +1198,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 * **Contact**: A person saved in CoordiMate, with details such as name, phone number, email address and role.
 * **Custom tag**: A tag created by the user, to categorise contacts in ways not covered by the default tags.
 * **Default tag**: A tag that is available without the user creating it: `EXCO`, `Sponsor`, `UniversityStaff` and `Logistics`.
-* **Displayed index**: The number shown beside a contact in the currently displayed list, used to identify that contact in commands.
+* **Member ID**: A unique, permanent positive integer assigned to a contact, displayed as `ID: <number>`, and used to identify them in commands across searches, filters, and restarts.
 * **Duplicate contact**: A contact with the same name (ignoring case and surrounding spaces), normalised phone number, or email address as another saved contact.
 * **Event**: An activity organised by the CCA, such as a concert or fair, with a unique name, a start date/time and an end date/time.
 * **Event lead**: An EXCO member who is in charge of organising a particular event.
@@ -1111,18 +1300,18 @@ testers are expected to do more *exploratory* testing.
 
 1. Deleting a contact while all contacts are being shown
 
-   1. Prerequisites: List all contacts using the `list` command, with multiple contacts in the list.
+   1. Prerequisites: Restore the sample contacts and run `list`. Alex Yeoh has member ID `1`.
 
    1. Test case: `delete 1`, then `n`<br>
-      Expected: The first contact's name, phone, email, and role are shown, followed by `Confirm deletion? [y/N]`. After `n`, the status message shows `Deletion cancelled. No changes were made.` and no contact is deleted.
+      Expected: `ID: 1` and Alex Yeoh's name, phone, email, and role are shown, followed by `Confirm deletion? [y/N]`. After `n`, the status message shows `Deletion cancelled. No changes were made.` and no contact is deleted.
 
    1. Test case: `delete 1`, then `y`<br>
-      Expected: The first contact is deleted from the list. The status message shows `Contact deleted successfully: ` followed by the contact's name.
+      Expected: Alex Yeoh (member ID `1`) is deleted. Other contacts keep their IDs. The status message shows `Contact deleted successfully: ` followed by the contact's name.
 
    1. Test case: `delete 0`<br>
-      Expected: No confirmation is requested and no contact is deleted. The status message shows `Invalid contact index. Example: delete 3`
+      Expected: No confirmation is requested and no contact is deleted. The status message shows `Invalid member ID. Example: delete 12` followed by the usage.
 
-   1. Other incorrect delete commands to try: `delete`, `delete x`, `delete 99` (where the list has fewer than 99 contacts)<br>
+   1. Other incorrect delete commands to try: `delete`, `delete x`, `delete 99` (where member ID `99` does not exist)<br>
       Expected: No confirmation is requested and no contact is deleted. The status message shows error details.
 
 ### Searching contacts
@@ -1250,17 +1439,77 @@ testers are expected to do more *exploratory* testing.
    1. Other incorrect deleteevent commands to try: `deleteevent`, `deleteevent evn/`<br>
       Expected: No event is deleted. The status message shows error details.
 
+### Dismissing a reminder
+
+1. Selecting by reminder order and saving the dismissal
+
+   1. Prerequisites: Use test data with no active reminders. Replace `TOMORROW` below with tomorrow's date in
+      `dd-MM-yyyy` format, using the computer's local time zone. Create `Zulu Reminder` first with
+      `addevent evn/Zulu Reminder st/TOMORROW et/TOMORROW`, then create `alpha Reminder` with the same dates.
+      The panel should show `alpha Reminder` at index 1 and `Zulu Reminder` at index 2.
+
+   1. Test case: Select the **Tags** view, then enter `dismiss 1`.<br>
+      Expected: `alpha Reminder` disappears, `Zulu Reminder` becomes index 1, and feedback shows
+      `Reminder dismissed: alpha Reminder.` with **OK** status. The **Tags** tab stays selected and the
+      command input keeps focus. Both events remain in the **Events** view with unchanged details.
+
+   1. Test case: Close and reopen the app while the test events still qualify for reminders.<br>
+      Expected: Only `Zulu Reminder` appears in the panel, at index 1. `alpha Reminder` remains saved.
+
+   1. Test case: `dismiss 2`<br>
+      Expected: No reminder is dismissed. Feedback shows
+      `No reminder exists at index 2. Use an index from the Upcoming events panel.` followed by usage.
+
+   1. Test case: `dismiss 1`, then `dismiss 1` again.<br>
+      Expected: The first command dismisses `Zulu Reminder` and hides the empty panel. The second command
+      reports that no reminder exists at index 1. Both events remain saved.
+
+1. Rejecting invalid input
+
+   1. Prerequisites: At least one reminder is shown.
+
+   1. Test cases: `dismiss`, `dismiss 0`, `dismiss -1`, `dismiss abc`, `dismiss 1.5`, `dismiss 1 2`,
+      `dismiss 2147483648`<br>
+      Expected: No reminders or saved events change. Feedback shows **Rejected** and an explanation with
+      `dismiss` usage. A missing index gives `Invalid command format.`; the other inputs give
+      `Index must be a positive integer. Example: 1`.
+
+1. Handling a failed save
+
+   1. Prerequisites: An active reminder exists. Record its index and use the failed-save setup in
+      [Saving data](#saving-data) to prevent writes to the test data file.
+
+   1. Test case: `dismiss INDEX`, replacing `INDEX` with the recorded reminder index.<br>
+      Expected: The reminder disappears. Feedback shows
+      `Reminder dismissal could not be saved and may reappear after restarting.` with **Not saved** status.
+      Event details and the saved data file remain unchanged.
+
+   1. Test case: Restore write permissions, then close and reopen the app while the event still qualifies.<br>
+      Expected: The reminder appears again because its dismissal was only retained for the previous session.
+
+1. Handling a failed read
+
+   1. Prerequisites: An active reminder exists and its index is recorded. Keep a copy of the test data file.
+      While the app remains open, make the JSON invalid by removing its first `{` and save the file.
+
+   1. Test case: `dismiss INDEX`, replacing `INDEX` with the recorded reminder index.<br>
+      Expected: The reminder disappears for the session, the **Not saved** warning appears, and the invalid
+      data file is not overwritten. The event in memory retains its saved details.
+
+   1. Test case: Close the app, restore the copy of the data file, and reopen it while the event still qualifies.<br>
+      Expected: The reminder appears again.
+
 ### Assigning members to an event
 
 1. Assigning contacts while all persons are being shown
 
-   1. Prerequisites: List all persons using the `list` command, with at least 3 persons in the list. Create an event using `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`. Select it in the **Events** tab.
+   1. Prerequisites: Restore the sample contacts and run `list`; Alex Yeoh, Bernice Yu, and Charlotte Oliveiro have IDs `1`, `2`, and `3`. Create an event using `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`. Select it in the **Events** tab.
 
    1. Test case: `assign evn/Final Concert c/1 2`<br>
-      Expected: The status message shows `Assigned 2 member(s) to Final Concert.` The event's details list the 1st and 2nd persons under **Members (2)**.
+      Expected: The status message shows `Assigned 2 member(s) to Final Concert.` The event's details list Alex Yeoh (`ID: 1`) and Bernice Yu (`ID: 2`) under **Members (2)**.
 
    1. Test case: `assign evn/final concert c/2 3`<br>
-      Expected: Only the 3rd person is added. The status message also shows `1 contact(s) were already assigned.`
+      Expected: Only Charlotte Oliveiro (`ID: 3`) is added. The status message also shows `1 contact(s) were already assigned.`
 
    1. Test case: `assign evn/Final Concert c/1`<br>
       Expected: No change. The status message shows that all specified contacts are already assigned.
@@ -1268,15 +1517,18 @@ testers are expected to do more *exploratory* testing.
    1. Test case: `assign evn/Gala c/1`<br>
       Expected: No change. The status message shows `Event Gala does not exist.`
 
-   1. Other incorrect assign commands to try: `assign evn/Final Concert c/0`, `assign evn/Final Concert c/x` (where x is larger than the list size), `assign evn/Final Concert c/1 c/2`, `assign evn/Final Concert`<br>
+   1. Other incorrect assign commands to try: `assign evn/Final Concert c/0`, `assign evn/Final Concert c/99` (where member ID `99` does not exist), `assign evn/Final Concert c/1 c/2`, `assign evn/Final Concert`<br>
       Expected: No change. The status message shows error details.
 
 1. Assigning contacts from a filtered list
 
-   1. Prerequisites: The `Final Concert` event exists. Use `search` so that the displayed list starts with a person who is not first in the full list.
+   1. Prerequisites: The sample contacts are loaded. Create an empty event using `addevent evn/Filtered Fair st/08-08-2026 et/08-08-2026`. Run `search Charlotte`, showing only `ID: 3`.
 
-   1. Test case: `assign evn/Final Concert c/1`<br>
-      Expected: The 1st person in the filtered list, not the full list, is added to the event's members.
+   1. Test case: `assign evn/Filtered Fair c/3`<br>
+      Expected: Charlotte Oliveiro is assigned with `ID: 3` unchanged, even though she is the first result.
+
+   1. Test case: `assign evn/Filtered Fair c/1`<br>
+      Expected: Alex Yeoh (`ID: 1`) is assigned despite being hidden by the search. Charlotte stays assigned.
 
 1. Keeping members in sync with contacts
 
@@ -1292,10 +1544,10 @@ testers are expected to do more *exploratory* testing.
 
 1. Removing members while all persons are being shown
 
-   1. Prerequisites: List all persons using the `list` command, with at least 4 persons in the list. Create an event using `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`, then run `assign evn/Final Concert c/1 2 3`. Select the event in the **Events** tab.
+   1. Prerequisites: Restore the sample contacts (IDs `1` to `6`) and run `list`. Create an event using `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`, then run `assign evn/Final Concert c/1 2 3`. Select the event in the **Events** tab.
 
    1. Test case: `unassign evn/final concert c/2 4`<br>
-      Expected: The status message shows `Removed 1 member(s) from Final Concert. 1 contact(s) were not assigned.` The event's details list the 1st and 3rd persons under **Members (2)**, in that order.
+      Expected: The status message shows `Removed 1 member(s) from Final Concert. 1 contact(s) were not assigned.` The event's details list member IDs `1` and `3` under **Members (2)**, in that order.
 
    1. Test case: `unassign evn/Final Concert c/4`<br>
       Expected: No change. The status message shows that none of the specified contacts are assigned.
@@ -1303,24 +1555,24 @@ testers are expected to do more *exploratory* testing.
    1. Test case: `unassign evn/Gala c/1`<br>
       Expected: No change. The status message shows `Event Gala does not exist.`
 
-   1. Other incorrect unassign commands to try: `unassign evn/Final Concert c/0`, `unassign evn/Final Concert c/1 x` (where x is larger than the list size), `unassign evn/Final Concert c/1 c/3`, `unassign evn/Final Concert`<br>
+   1. Other incorrect unassign commands to try: `unassign evn/Final Concert c/0`, `unassign evn/Final Concert c/1 99` (where member ID `99` does not exist), `unassign evn/Final Concert c/1 c/3`, `unassign evn/Final Concert`<br>
       Expected: No change. The status message shows error details.
 
 1. Removing members from a filtered list
 
-   1. Prerequisites: The `Final Concert` event has the 1st and 3rd persons as members. Use `search` so that the displayed list shows only the 3rd person.
+   1. Prerequisites: The `Final Concert` event has member IDs `1` and `3` assigned. Run `search Charlotte`, showing only `ID: 3`.
 
-   1. Test case: `unassign evn/Final Concert c/1`<br>
-      Expected: The 3rd person of the full list, shown 1st in the filtered list, is removed. The 1st person of the full list remains a member.
+   1. Test case: `unassign evn/Final Concert c/3`<br>
+      Expected: Charlotte Oliveiro (`ID: 3`) is removed. Alex Yeoh (`ID: 1`) remains assigned.
 
 ### Viewing members of an event
 
 1. Viewing the members of an event
 
-   1. Prerequisites: List all persons using the `list` command, with at least 3 persons in the list. Create an event using `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`, then run `assign evn/Final Concert c/3 1`. Switch to the **Events** view.
+   1. Prerequisites: Restore the sample contacts (IDs `1` to `6`) and run `list`. Create an event using `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`, then run `assign evn/Final Concert c/3 1`. Switch to the **Events** view.
 
    1. Test case: `members evn/final concert`<br>
-      Expected: CoordiMate switches to the **Contacts** view and shows only the 1st and 3rd persons, numbered 1 and 2. The status message shows `Listed 2 member(s) of Final Concert. Use list to show all contacts.`
+      Expected: CoordiMate switches to the **Contacts** view and shows Alex Yeoh (`ID: 1`) and Charlotte Oliveiro (`ID: 3`), in contact list order. The status message shows `Listed 2 member(s) of Final Concert. Use list to show all contacts.`
 
    1. Test case: `members evn/Gala`<br>
       Expected: The contact list is unchanged. The status message shows `Event Gala does not exist.`
@@ -1333,7 +1585,7 @@ testers are expected to do more *exploratory* testing.
    1. Prerequisites: The members of `Final Concert` are shown, as above.
 
    1. Test case: `unassign evn/Final Concert c/1`<br>
-      Expected: The removed person disappears from the list straight away, and the remaining member is numbered 1.
+      Expected: Alex Yeoh disappears from the list straight away. Charlotte Oliveiro keeps `ID: 3` as the only result.
 
    1. Test case: `editevent evn/Final Concert nevn/Grand Concert`<br>
       Expected: The list still shows the event's members.
@@ -1370,7 +1622,7 @@ testers are expected to do more *exploratory* testing.
    1. Prerequisites: Continue from the previous test, with `Alex Yeoh` marked absent. List all contacts using `list`.
 
    1. Test case: `assign evn/Final Concert c/3`<br>
-      Expected: The 3rd contact is added as **Not marked**. `Alex Yeoh` is still **Absent**.
+      Expected: Charlotte Oliveiro (`ID: 3`) is added as **Not marked**. `Alex Yeoh` is still **Absent**.
 
    1. Test case: `editevent evn/Final Concert et/08-08-2026 20:00`<br>
       Expected: The end time changes. `Alex Yeoh` is still **Absent**.
@@ -1383,6 +1635,51 @@ testers are expected to do more *exploratory* testing.
 
    1. Test case: Mark any member's attendance, then close and relaunch the app.<br>
       Expected: The attendance is retained.
+
+### Marking a contact as on leave
+
+<box type="info" seamless>
+
+**Note:** In these tests, `FUTURE_DATE` is any date after today in `dd-MM-yyyy` format, `TODAY` is today's date,
+and `PAST_DATE` is any date before today, such as `01-01-2020`.
+</box>
+
+1. Setting and clearing leave
+
+   1. Prerequisites: The sample contacts are loaded and listed using `list`.
+
+   1. Test case: `edit 1 lv/FUTURE_DATE`<br>
+      Expected: The card of the contact with member ID `1` shows **On leave until FUTURE_DATE**. Selecting the contact shows `FUTURE_DATE` under **On leave until**.
+
+   1. Test case: `edit 1 lv/TODAY`<br>
+      Expected: The contact is still shown as on leave, now until today.
+
+   1. Test case: `edit 1 lv/`<br>
+      Expected: The badge disappears and the details pane shows `— (not on leave)`.
+
+   1. Test case: `add n/Ben Ong p/91112222 e/ben@example.com r/Publicity lv/FUTURE_DATE`<br>
+      Expected: The new contact is added and shown as on leave.
+
+   1. Test case: `edit 1 lv/PAST_DATE`<br>
+      Expected: No change. The status message shows `Invalid leave end date. Use a real date in dd-MM-yyyy format that is not in the past. Example: lv/30-11-2026`
+
+   1. Other incorrect commands to try: `edit 1 lv/31-11-2030`, `edit 1 lv/next week`, `edit 1 lv/FUTURE_DATE lv/FUTURE_DATE`<br>
+      Expected: No change. The status message shows error details.
+
+1. Leave ending by itself
+
+   1. Prerequisites: Run `edit 1 lv/FUTURE_DATE`, then close the app.
+
+   1. Test case: In `data/coordimate.json`, change that contact's `leaveUntil` value to `PAST_DATE`, save, then launch the app.<br>
+      Expected: The app loads the data. The contact is not shown as on leave, and the details pane shows `— (not on leave)`. The `leaveUntil` value is still in the data file.
+
+   1. Test case: Close the app, change `leaveUntil` to `31-02-2030`, save, then launch the app.<br>
+      Expected: The file is treated as invalid, so the app starts with no contacts and no events. Restore the file afterwards.
+
+   1. Test case: Run `edit 1 lv/TODAY` and select that contact. Leave the app open past midnight, or set your
+      computer's date to the next day.<br>
+      Expected: Within a minute, without running a command, the badge disappears and the details pane shows
+      `— (not on leave)`.
 
 ### Managing tags
 
@@ -1406,10 +1703,10 @@ testers are expected to do more *exploratory* testing.
       Expected: The tag is renamed. The status message shows `Publicity successfully renamed to Media.`
 
    1. Test case: `edit 1 at/Media`, then `edittag media t/Press`<br>
-      Expected: The 1st contact's details show the tag `Press`.
+      Expected: The details of member ID `1` show the tag `Press`.
 
    1. Test case: `deletetag t/press`<br>
-      Expected: The tag is removed from the Tags view and from the 1st contact. The status message shows `Press successfully deleted.`
+      Expected: The tag is removed from the Tags view and from member ID `1`. The status message shows `Press successfully deleted.`
 
    1. Test case: `deletetag t/Nope`<br>
       Expected: No tag is deleted. The status message shows `No such tag exists: Nope.`
@@ -1483,6 +1780,37 @@ want to keep.
    1. Test case: Run `list`, then check the `data` folder.<br>
       Expected: `data/coordimate.json` has been created again.
 
+1. Migrating legacy member IDs and keeping command targets across restarts
+
+   1. Prerequisites: Restore the sample contacts, run `list`, and close the app. In `data/coordimate.json`,
+      remove every contact's `memberId` property and the top-level `nextMemberId` property, keeping valid JSON.
+
+   1. Test case: Relaunch the app.<br>
+      Expected: The six contacts receive distinct IDs `1` to `6` in file order. Cards and selected-contact details
+      show the same `ID: <number>`. Loading alone has not changed the file.
+
+   1. Test case: Run `search Charlotte`, then `edit 3 r/Treasurer`, then `filter tag/neighbours`.<br>
+      Expected: Charlotte keeps `ID: 3` and shows the new role, including as the only result. The successful save
+      records all member IDs and `nextMemberId: 7` in the file.
+
+   1. Test case: Run `addevent evn/ID Check st/08-08-2026 et/08-08-2026`, `assign evn/ID Check c/3 1`, then
+      `unassign evn/ID Check c/1`.<br>
+      Expected: Charlotte stays assigned with `ID: 3`. Alex (`ID: 1`) is assigned and removed despite being hidden
+      by the tag filter. The event roster and the neighbours tag's member list show Charlotte with `ID: 3`.
+
+   1. Test case: Run `delete 2`, then `y`, followed by `delete 6`, then `y`. Close and relaunch the app.<br>
+      Expected: Bernice and Roy are absent. Charlotte still has `ID: 3`; remaining contacts keep their IDs.
+
+   1. Test case: Run `add n/ID Test p/91234567 e/idtest@example.com r/Member`, then `members evn/ID Check`.<br>
+      Expected: The new contact has `ID: 7`, so neither deleted ID is reused. Charlotte is the only event member,
+      still showing `ID: 3`.
+
+   1. Test case: Run `list`, then try `edit 2 r/President`, `delete 2`, `assign evn/ID Check c/7 2`, and
+      `unassign evn/ID Check c/3 2`.<br>
+      Expected: Each command reports `No contact exists with member ID: 2. Use an existing member ID.` followed
+      by usage. No confirmation is requested, no contact changes, neither batch partially changes membership,
+      and the data file is unchanged. In particular, Charlotte remains the second saved contact with `ID: 3`.
+
 1. Dealing with a corrupted data file
 
    1. Prerequisites: The app is closed and `data/coordimate.json` contains at least one contact. Keep a copy of the file.
@@ -1491,7 +1819,7 @@ want to keep.
       Expected: The app starts with no contacts and no events.
 
    1. Test case: Without closing the app, run `addevent evn/Test st/01-01-2027 et/01-01-2027`.<br>
-      Expected: No event is added. The status message shows `Contact data could not be loaded. Please check the local data file.` The data file is unchanged.
+      Expected: No event is added. The status message shows `Saved data could not be loaded. Check the local data file.` The data file is unchanged.
 
    1. Test case: Close the app, put the `{` back, save, then launch the app.<br>
       Expected: The original contacts and events are shown again.

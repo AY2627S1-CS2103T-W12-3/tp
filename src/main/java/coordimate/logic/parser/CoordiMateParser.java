@@ -1,6 +1,7 @@
 package coordimate.logic.parser;
 
 import static coordimate.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
+import static java.util.Objects.requireNonNull;
 
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -19,6 +20,7 @@ import coordimate.logic.commands.CreateTagCommand;
 import coordimate.logic.commands.DeleteCommand;
 import coordimate.logic.commands.DeleteEventCommand;
 import coordimate.logic.commands.DeleteTagCommand;
+import coordimate.logic.commands.DismissCommand;
 import coordimate.logic.commands.EditCommand;
 import coordimate.logic.commands.EditEventCommand;
 import coordimate.logic.commands.EditTagCommand;
@@ -30,9 +32,9 @@ import coordimate.logic.commands.ListTagsCommand;
 import coordimate.logic.commands.MarkAttendanceCommand;
 import coordimate.logic.commands.MembersCommand;
 import coordimate.logic.commands.SearchCommand;
-import coordimate.logic.commands.SwitchCommand;
 import coordimate.logic.commands.UnassignCommand;
 import coordimate.logic.parser.exceptions.ParseException;
+import coordimate.logic.reminder.ReminderService;
 
 /**
  * Parses user input.
@@ -44,6 +46,12 @@ public class CoordiMateParser {
      */
     private static final Pattern BASIC_COMMAND_FORMAT = Pattern.compile("(?<commandWord>\\S+)(?<arguments>.*)");
     private static final Logger logger = LogsCenter.getLogger(CoordiMateParser.class);
+    private final ReminderService reminderService;
+
+    /** Supplies the shared reminder service to commands that dismiss reminders. */
+    public CoordiMateParser(ReminderService reminderService) {
+        this.reminderService = requireNonNull(reminderService);
+    }
 
     /**
      * Parses user input into command for execution.
@@ -84,12 +92,12 @@ public class CoordiMateParser {
                 case DeleteCommand.COMMAND_WORD -> new DeleteCommandParser().parse(arguments);
                 case DeleteEventCommand.COMMAND_WORD -> new DeleteEventCommandParser().parse(arguments);
                 case DeleteTagCommand.COMMAND_WORD -> new DeleteTagCommandParser().parse(arguments);
+                case DismissCommand.COMMAND_WORD -> new DismissCommandParser(reminderService).parse(arguments);
                 case ClearCommand.COMMAND_WORD -> new ClearCommand();
                 case CreateTagCommand.COMMAND_WORD -> new CreateTagCommandParser().parse(arguments);
                 case FilterCommand.COMMAND_WORD -> new FilterCommandParser().parse(arguments);
                 case ListCommand.COMMAND_WORD -> new ListCommandParser().parse(arguments);
                 case SearchCommand.COMMAND_WORD -> new SearchCommandParser().parse(arguments);
-                case SwitchCommand.COMMAND_WORD -> new SwitchCommandParser().parse(arguments);
                 case ListTagsCommand.COMMAND_WORD -> new ListTagsCommandParser().parse(arguments);
                 case MarkAttendanceCommand.COMMAND_WORD -> new MarkAttendanceCommandParser().parse(arguments);
                 case ExitCommand.COMMAND_WORD -> new ExitCommand();
@@ -124,12 +132,12 @@ public class CoordiMateParser {
             case DeleteCommand.COMMAND_WORD -> DeleteCommand.MESSAGE_USAGE;
             case DeleteEventCommand.COMMAND_WORD -> DeleteEventCommand.MESSAGE_USAGE;
             case DeleteTagCommand.COMMAND_WORD -> DeleteTagCommand.MESSAGE_USAGE;
+            case DismissCommand.COMMAND_WORD -> DismissCommand.MESSAGE_USAGE;
             case ClearCommand.COMMAND_WORD -> ClearCommand.MESSAGE_USAGE;
             case CreateTagCommand.COMMAND_WORD -> CreateTagCommand.MESSAGE_USAGE;
             case FilterCommand.COMMAND_WORD -> FilterCommand.MESSAGE_USAGE;
             case ListCommand.COMMAND_WORD -> ListCommand.MESSAGE_USAGE;
             case SearchCommand.COMMAND_WORD -> SearchCommand.MESSAGE_USAGE;
-            case SwitchCommand.COMMAND_WORD -> SwitchCommand.MESSAGE_USAGE;
             case ListTagsCommand.COMMAND_WORD -> ListTagsCommand.MESSAGE_USAGE;
             case MarkAttendanceCommand.COMMAND_WORD -> MarkAttendanceCommand.MESSAGE_USAGE;
             case ExitCommand.COMMAND_WORD -> ExitCommand.MESSAGE_USAGE;

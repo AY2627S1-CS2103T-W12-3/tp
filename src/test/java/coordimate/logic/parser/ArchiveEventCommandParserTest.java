@@ -19,9 +19,9 @@ public class ArchiveEventCommandParserTest {
     @Test
     public void parse_examples_success() throws Exception {
         assertEquals(new ArchiveEventCommand("Final Concert", true),
-                new CoordiMateParser().parseCommand("archiveevent evn/Final Concert"));
+                CommandParserTestUtil.createParser().parseCommand("archiveevent evn/Final Concert"));
         assertEquals(new ArchiveEventCommand("Final Concert", false),
-                new CoordiMateParser().parseCommand("unarchiveevent evn/Final Concert"));
+                CommandParserTestUtil.createParser().parseCommand("unarchiveevent evn/Final Concert"));
         assertEquals(new ArchiveEventCommand("Student  Life Fair", true),
                 archiveParser.parse("  evn/ Student  Life Fair  "));
     }

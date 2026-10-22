@@ -7,14 +7,17 @@
 
 <HBox id="cardPane" fx:id="cardPane" spacing="12" xmlns="http://javafx.com/javafx/17"
       xmlns:fx="http://javafx.com/fxml/1">
-  <Label fx:id="id" styleClass="card-index" />
   <VBox spacing="7" HBox.hgrow="ALWAYS" minWidth="0">
     <HBox alignment="CENTER_LEFT" spacing="8">
       <Label fx:id="name" wrapText="true" styleClass="cell_big_label" HBox.hgrow="ALWAYS" maxWidth="Infinity" />
       <FlowPane fx:id="tags" alignment="CENTER_RIGHT" hgap="5" vgap="4"
                 prefWrapLength="130" maxWidth="150" />
     </HBox>
-    <Label fx:id="role" wrapText="true" styleClass="card-role" />
+    <HBox alignment="CENTER_LEFT" spacing="10">
+      <Label fx:id="id" minWidth="-Infinity" styleClass="card-id" />
+      <Label fx:id="role" minWidth="0" wrapText="true" styleClass="card-role" HBox.hgrow="ALWAYS" />
+    </HBox>
+    <Label fx:id="leave" id="leave" styleClass="leave-badge" />
     <Label fx:id="phone" wrapText="true" styleClass="cell_small_label" />
     <Label fx:id="email" wrapText="true" styleClass="cell_small_label" />
     <Label fx:id="address" wrapText="true" styleClass="cell_small_label" />

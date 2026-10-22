@@ -5,6 +5,7 @@ import static coordimate.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.time.Clock;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import coordimate.commons.core.GuiSettings;
@@ -20,11 +21,11 @@ import coordimate.logic.commands.Command;
 import coordimate.logic.commands.CommandResult;
 import coordimate.logic.commands.DeleteCommand;
 import coordimate.logic.commands.DeleteEventCommand;
+import coordimate.logic.commands.DismissCommand;
 import coordimate.logic.commands.EditCommand;
 import coordimate.logic.commands.EditEventCommand;
 import coordimate.logic.commands.MarkAttendanceCommand;
 import coordimate.logic.commands.MutatingTagCommand;
-import coordimate.logic.commands.SwitchCommand;
 import coordimate.logic.commands.UnassignCommand;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.logic.parser.CoordiMateParser;
@@ -74,8 +75,8 @@ public class LogicManager implements Logic {
     public LogicManager(Model model, Storage storage, Clock clock) {
         this.model = model;
         this.storage = storage;
-        coordiMateParser = new CoordiMateParser();
         reminderService = new ReminderService(model, storage, clock);
+        coordiMateParser = new CoordiMateParser(reminderService);
     }
 
     @Override
@@ -104,18 +105,19 @@ public class LogicManager implements Logic {
         }
 
         Command command = coordiMateParser.parseCommand(commandText);
-        if (command instanceof SwitchCommand) {
+        if (command instanceof DismissCommand) {
             return command.execute(model);
         }
         if (command instanceof DeleteCommand deleteCommand) {
             try {
                 storage.readCoordiMate();
             } catch (DataLoadingException e) {
+                logContactOperationFailure(deleteCommand, "load contact data", e);
                 throw new CommandException(DeleteCommand.MESSAGE_LOAD_ERROR, e);
             }
             Person target = deleteCommand.resolvePerson(model);
             pendingDelete = target;
-            return new CommandResult(DeleteCommand.confirmationPrompt(target));
+            return new CommandResult(DeleteCommand.confirmationPrompt(target), CommandResult.View.CONTACTS);
         }
 
         if (command instanceof AddCommand || command instanceof EditCommand || command instanceof ClearCommand
@@ -142,13 +144,14 @@ public class LogicManager implements Logic {
 
     /**
      * Executes a command on a copy of the model and commits it only after storage succeeds.
-     * The copy shows the same contacts as the displayed list, so contact indexes refer to the same contacts.
+     * The copy preserves member IDs and the active view while commands resolve IDs across all saved contacts.
      * Rejects the command if existing data cannot be loaded or the new data cannot be saved.
      */
     private CommandResult executeAtomicCommand(Command command) throws CommandException {
         try {
             storage.readCoordiMate();
         } catch (DataLoadingException e) {
+            logContactOperationFailure(command, "load contact data", e);
             String message = switch (command) {
                 case AddCommand _ -> AddCommand.MESSAGE_LOAD_ERROR;
                 case EditCommand _ -> EditCommand.MESSAGE_LOAD_ERROR;
@@ -166,6 +169,7 @@ public class LogicManager implements Logic {
         try {
             storage.saveCoordiMate(candidate.getCoordiMate());
         } catch (IOException e) {
+            logContactOperationFailure(command, "save contact data", e);
             String message = switch (command) {
                 case AddCommand _ -> AddCommand.MESSAGE_SAVE_ERROR;
                 case EditCommand _ -> EditCommand.MESSAGE_SAVE_ERROR;
@@ -193,7 +197,31 @@ public class LogicManager implements Logic {
             model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
         }
         keepMembersViewAfterRename(command);
+        logContactOperationSuccess(command);
         return result;
+    }
+
+    private void logContactOperationSuccess(Command command) {
+        String action = getContactOperation(command);
+        if (action != null) {
+            logger.info("Contact " + action + " completed successfully.");
+        }
+    }
+
+    private void logContactOperationFailure(Command command, String operation, Exception exception) {
+        String action = getContactOperation(command);
+        if (action != null) {
+            logger.log(Level.WARNING, "Failed to " + operation + " during contact " + action + ".", exception);
+        }
+    }
+
+    private static String getContactOperation(Command command) {
+        return switch (command) {
+            case AddCommand _ -> "addition";
+            case EditCommand _ -> "edit";
+            case DeleteCommand _ -> "deletion";
+            default -> null;
+        };
     }
 
     /**

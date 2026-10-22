@@ -30,6 +30,8 @@ import org.junit.jupiter.api.io.TempDir;
 
 import coordimate.commons.exceptions.DataLoadingException;
 import coordimate.logic.commands.ArchiveEventCommand;
+import coordimate.logic.commands.CommandResult;
+import coordimate.logic.commands.DismissCommand;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.logic.parser.exceptions.ParseException;
 import coordimate.logic.reminder.ReminderDismissalException;
@@ -70,6 +72,205 @@ public class ReminderLogicIntegrationTest {
         storage.writes = 0;
         clock = new MutableClock(ZonedDateTime.parse("2026-10-19T15:00:00+08:00").toInstant());
         logic = newLogic(model);
+    }
+
+    @Test
+    public void executeDismiss_validIndex_savesOnceAndUpdatesExistingReminderList() throws Exception {
+        Event earlier = event("Earlier", "19-10-2026 18:00");
+        model.addEvent(earlier);
+        ObservableList<Event> view = logic.getReminders();
+        assertEquals(List.of(earlier, concert), view);
+
+        CommandResult result = logic.execute("dismiss 2");
+
+        assertEquals("Reminder dismissed: Concert.", result.getFeedbackToUser());
+        assertFalse(result.isWarning());
+        assertEquals(List.of(earlier), view);
+        assertEquals(1, storage.reads);
+        assertEquals(1, storage.writes);
+        assertTrue(savedEvent().isReminderDismissed());
+    }
+
+    @Test
+    public void executeDismiss_outOfRangeOrEmptyPanel_rejectedWithoutStorageAccess() throws Exception {
+        String message = Messages.withUsage(String.format(DismissCommand.MESSAGE_INVALID_INDEX, 2),
+                DismissCommand.MESSAGE_USAGE);
+        assertEquals(message, assertThrows(CommandException.class, () -> logic.execute("dismiss 2")).getMessage());
+        assertEquals(List.of(concert), logic.getReminders());
+        assertEquals(0, storage.reads);
+        assertEquals(0, storage.writes);
+
+        model.deleteEvent(concert);
+        logic.refreshReminders();
+        message = Messages.withUsage(String.format(DismissCommand.MESSAGE_INVALID_INDEX, 1),
+                DismissCommand.MESSAGE_USAGE);
+        assertEquals(message, assertThrows(CommandException.class, () -> logic.execute("dismiss 1")).getMessage());
+        assertEquals(0, storage.reads);
+        assertEquals(0, storage.writes);
+    }
+
+    @Test
+    public void executeDismiss_shownReminderStartedBeforeRefresh_rejectedWithoutDismissingAnother()
+            throws Exception {
+        Event earlier = event("Earlier", "19-10-2026 18:00");
+        model.addEvent(earlier);
+        ObservableList<Event> view = logic.getReminders();
+        assertEquals(List.of(earlier, concert), view);
+
+        clock.advance(Duration.ofHours(3).plusSeconds(20));
+        String message = Messages.withUsage(String.format(DismissCommand.MESSAGE_REMINDER_ENDED, 1),
+                DismissCommand.MESSAGE_USAGE);
+        assertEquals(message, assertThrows(CommandException.class, () -> logic.execute("dismiss 1")).getMessage());
+
+        assertEquals(List.of(concert), view);
+        assertEquals(0, storage.reads);
+        assertEquals(0, storage.writes);
+        assertFalse(savedEvent().isReminderDismissed());
+    }
+
+    @Test
+    public void executeDismiss_reminderAddedBeforeRefresh_dismissesShownReminder() throws Exception {
+        Event dateOnly = event("Tomorrow", "21-10-2026");
+        model.addEvent(dateOnly);
+        clock.advance(Duration.ofHours(8).plusMinutes(59));
+        ObservableList<Event> view = logic.getReminders();
+        assertEquals(List.of(concert), view);
+
+        clock.advance(Duration.ofMinutes(1));
+        assertEquals("Reminder dismissed: Concert.", logic.execute("dismiss 1").getFeedbackToUser());
+
+        assertEquals(List.of(dateOnly), view);
+        assertTrue(savedEvent().isReminderDismissed());
+    }
+
+    @Test
+    public void executeDismiss_saveFailure_returnsWarningAndHidesReminderForSession() throws Exception {
+        storage.failSave = true;
+        byte[] before = Files.readAllBytes(storage.getCoordiMateFilePath());
+
+        CommandResult result = logic.execute("dismiss 1");
+
+        assertTrue(result.isWarning());
+        assertEquals(ReminderDismissalException.MESSAGE, result.getFeedbackToUser());
+        assertEquals(List.of(), logic.getReminders());
+        assertEquals(1, storage.reads);
+        assertEquals(1, storage.writes);
+        assertFalse(model.getCoordiMate().getEventList().getFirst().isReminderDismissed());
+        assertArrayEquals(before, Files.readAllBytes(storage.getCoordiMateFilePath()));
+
+        storage.failSave = false;
+        logic.execute("list");
+        assertEquals(List.of(), logic.getReminders());
+        assertFalse(savedEvent().isReminderDismissed());
+        restartFromSavedData();
+        assertEquals(List.of(concert), logic.getReminders());
+    }
+
+    @Test
+    public void executeDismiss_tiedStarts_usesPanelOrderAndRenumbersAfterDismissal() throws Exception {
+        Event zulu = event("Zulu", "20-10-2026");
+        Event alpha = event("alpha", "20-10-2026");
+        Event earlier = event("Tonight", "19-10-2026 18:00");
+        model.addEvent(zulu);
+        model.addEvent(alpha);
+        model.addEvent(earlier);
+        ObservableList<Event> view = logic.getReminders();
+        assertEquals(List.of(earlier, alpha, zulu, concert), view);
+
+        assertEquals("Reminder dismissed: alpha.", logic.execute("dismiss 2").getFeedbackToUser());
+        assertEquals(List.of(earlier, zulu, concert), view);
+        assertEquals("Reminder dismissed: Zulu.", logic.execute("dismiss 2").getFeedbackToUser());
+        assertEquals(List.of(earlier, concert), view);
+        assertEquals(List.of(concert, zulu.withReminderDismissed(), alpha.withReminderDismissed(), earlier),
+                model.getCoordiMate().getEventList());
+    }
+
+    @Test
+    public void executeDismiss_editedStart_usesUpdatedPanelOrder() throws Exception {
+        Event earlier = event("Tonight", "19-10-2026 18:00");
+        model.addEvent(earlier);
+        ObservableList<Event> view = logic.getReminders();
+        assertEquals(List.of(earlier, concert), view);
+
+        logic.execute("editevent evn/Concert st/19-10-2026 17:00");
+        Event revised = model.getCoordiMate().getEventList().getFirst();
+        assertEquals(List.of(revised, earlier), view);
+        assertEquals("Reminder dismissed: Concert.", logic.execute("dismiss 1").getFeedbackToUser());
+        assertEquals(List.of(earlier), view);
+        assertEquals(revised.withReminderDismissed(), savedEvent());
+    }
+
+    @Test
+    public void executeDismiss_restart_preservesEventDataAndCurrentContactView() throws Exception {
+        logic.execute("members evn/Concert");
+        var predicate = model.getFilteredPersonPredicate();
+        ObservableList<coordimate.model.person.Person> contacts = logic.getFilteredPersonList();
+        assertEquals(List.of(ALICE), contacts);
+
+        CommandResult result = logic.execute("dismiss 1");
+
+        assertEquals(CommandResult.View.NONE, result.getViewToShow());
+        assertSame(predicate, model.getFilteredPersonPredicate());
+        assertSame(contacts, logic.getFilteredPersonList());
+        assertEquals(List.of(ALICE), contacts);
+        assertEquals(concert.withReminderDismissed(), savedEvent());
+        assertEquals(List.of(ALICE, BENSON), model.getCoordiMate().getPersonList());
+        byte[] saved = Files.readAllBytes(storage.getCoordiMateFilePath());
+
+        restartFromSavedData();
+
+        assertEquals(List.of(), logic.getReminders());
+        assertEquals(List.of(concert.withReminderDismissed()), logic.getEventList());
+        assertEquals(List.of(ALICE, BENSON), logic.getPersonList());
+        assertArrayEquals(saved, Files.readAllBytes(storage.getCoordiMateFilePath()));
+    }
+
+    @Test
+    public void executeDismiss_dateOnlyStart_persistsWithoutAddingTime() throws Exception {
+        logic.execute("editevent evn/Concert st/20-10-2026");
+        Event dateOnly = logic.getReminders().getFirst();
+
+        logic.execute("dismiss 1");
+        restartFromSavedData();
+
+        assertEquals(List.of(), logic.getReminders());
+        assertEquals(dateOnly.withReminderDismissed(), savedEvent());
+        assertTrue(savedEvent().getStartTime().getDateTime().isEmpty());
+    }
+
+    @Test
+    public void executeDismiss_readFailure_warnsWithoutOverwritingInvalidFile() throws Exception {
+        byte[] valid = Files.readAllBytes(storage.getCoordiMateFilePath());
+        Files.writeString(storage.getCoordiMateFilePath(), "{invalid json");
+        byte[] invalid = Files.readAllBytes(storage.getCoordiMateFilePath());
+
+        CommandResult result = logic.execute("dismiss 1");
+
+        assertTrue(result.isWarning());
+        assertEquals(ReminderDismissalException.MESSAGE, result.getFeedbackToUser());
+        assertEquals(List.of(), logic.getReminders());
+        assertEquals(List.of(concert), logic.getEventList());
+        assertEquals(1, storage.reads);
+        assertEquals(0, storage.writes);
+        assertArrayEquals(invalid, Files.readAllBytes(storage.getCoordiMateFilePath()));
+
+        Files.write(storage.getCoordiMateFilePath(), valid);
+        restartFromSavedData();
+        assertEquals(List.of(concert), logic.getReminders());
+    }
+
+    @Test
+    public void executeDismiss_invalidSyntax_preservesModelAndFileWithoutStorageAccess() throws Exception {
+        byte[] before = Files.readAllBytes(storage.getCoordiMateFilePath());
+        for (String command : List.of("dismiss", "dismiss 0", "dismiss -1", "dismiss 1.5", "dismiss abc",
+                "dismiss 1 2", "dismiss 2147483648")) {
+            assertThrows(ParseException.class, () -> logic.execute(command));
+            assertEquals(List.of(concert), logic.getReminders());
+            assertEquals(List.of(concert), logic.getEventList());
+            assertArrayEquals(before, Files.readAllBytes(storage.getCoordiMateFilePath()));
+        }
+        assertEquals(0, storage.reads);
+        assertEquals(0, storage.writes);
     }
 
     @Test

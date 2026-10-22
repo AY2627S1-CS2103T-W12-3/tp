@@ -37,6 +37,7 @@ import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.MenuBar;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TextField;
@@ -52,6 +53,7 @@ import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
+import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 
 /**
@@ -127,7 +129,64 @@ public class MainWindowTest {
     }
 
     @Test
-    public void cardNavigation_routesJAndKToActiveView() throws Exception {
+    public void topMenuHelpItem_opensOwnedHelpWindowAndShowsShortcutTooltip() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            MainWindow window = new MainWindow(stage, new LogicManager(new ModelManager(), null),
+                    Path.of("data", "coordimate.json"));
+            window.fillInnerParts();
+
+            Label helpLabel = (Label) stage.getScene().getRoot().lookup("#helpLabel");
+            HBox topMenuRow = (HBox) stage.getScene().getRoot().lookup("#topMenuRow");
+            MenuBar menuBar = (MenuBar) stage.getScene().getRoot().lookup("#menuBar");
+            assertEquals("Help", helpLabel.getText());
+            assertEquals("Open Help (Fn + F1)", helpLabel.getTooltip().getText());
+            assertEquals(200, helpLabel.getTooltip().getShowDelay().toMillis());
+            assertEquals(List.of("File"), menuBar.getMenus().stream().map(menu -> menu.getText()).toList());
+            assertSame(topMenuRow, menuBar.getParent());
+            assertSame(topMenuRow, helpLabel.getParent());
+            assertEquals(List.of(menuBar, helpLabel), topMenuRow.getChildren());
+
+            window.show();
+            javafx.event.Event.fireEvent(helpLabel, mouseClickEvent());
+            Stage helpStage = Window.getWindows().stream()
+                    .filter(Stage.class::isInstance)
+                    .map(Stage.class::cast)
+                    .filter(candidate -> "Help".equals(candidate.getTitle()))
+                    .filter(candidate -> candidate.getOwner() == stage)
+                    .findFirst()
+                    .orElseThrow();
+            assertTrue(helpStage.isShowing());
+            assertSame(stage, helpStage.getOwner());
+
+            KeyEvent enterEvent = keyEvent(KeyCode.ENTER);
+            helpLabel.getOnKeyPressed().handle(enterEvent);
+            assertTrue(enterEvent.isConsumed());
+            assertTrue(helpStage.isShowing());
+
+            KeyEvent otherKeyEvent = keyEvent(KeyCode.A);
+            helpLabel.getOnKeyPressed().handle(otherKeyEvent);
+            assertFalse(otherKeyEvent.isConsumed());
+
+            helpStage.hide();
+            KeyEvent spaceEvent = keyEvent(KeyCode.SPACE);
+            helpLabel.getOnKeyPressed().handle(spaceEvent);
+            assertTrue(spaceEvent.isConsumed());
+            assertTrue(helpStage.isShowing());
+
+            helpStage.hide();
+            javafx.event.Event.fireEvent(stage.getScene().getRoot(), keyEvent(KeyCode.F1));
+            assertTrue(helpStage.isShowing());
+            helpStage.hide();
+            stage.close();
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void cardNavigation_routesShortcutsToActiveView() throws Exception {
         FutureTask<Void> task = new FutureTask<>(() -> {
             Stage stage = new Stage();
             MainWindow window = null;
@@ -163,62 +222,95 @@ public class MainWindowTest {
                 assertEquals("COMMAND · Esc to navigate", mode.getText());
                 assertFalse(input.isDisabled());
                 assertFalse(submit.isDisabled());
-                assertTrue(keyReachesTarget(input, typedKeyEvent("j")));
+                assertTrue(keyReachesTarget(input, keyEvent(KeyCode.J)));
                 input.clear();
                 assertFalse(keyReachesTarget(input, keyEvent(KeyCode.ESCAPE)));
-                assertEquals("NAVIGATION · j/k move · i to type", mode.getText());
+                assertEquals("NAVIGATION · j/k move · s switch view · i to type", mode.getText());
+                assertFalse(keyReachesTarget(mode, keyEvent(KeyCode.ESCAPE)));
                 assertTrue(input.isDisabled());
                 assertTrue(submit.isDisabled());
-                assertFalse(keyReachesTarget(input, typedKeyEvent("j")));
+                assertFalse(keyReachesTarget(input, keyEvent(KeyCode.J)));
                 assertEquals(firstContact, contacts.getSelectionModel().getSelectedItem());
                 assertTrue(input.getText().isEmpty());
-                assertFalse(keyReachesTarget(input, typedKeyEvent("j")));
+                assertFalse(keyReachesTarget(input, keyEvent(KeyCode.J)));
                 assertEquals(secondContact, contacts.getSelectionModel().getSelectedItem());
                 assertTrue(input.getText().isEmpty());
-                assertFalse(keyReachesTarget(input, typedKeyEvent("k")));
+                assertFalse(keyReachesTarget(input, keyEvent(KeyCode.K)));
                 assertEquals(firstContact, contacts.getSelectionModel().getSelectedItem());
-                assertFalse(keyReachesTarget(input, typedKeyEvent("k")));
+                assertFalse(keyReachesTarget(input, keyEvent(KeyCode.K)));
                 assertEquals(firstContact, contacts.getSelectionModel().getSelectedItem());
 
                 eventsView.fire();
-                assertFalse(keyReachesTarget(input, typedKeyEvent("j")));
+                assertFalse(keyReachesTarget(input, keyEvent(KeyCode.J)));
                 assertEquals(firstEvent, events.getSelectionModel().getSelectedItem());
-                assertFalse(keyReachesTarget(input, typedKeyEvent("j")));
+                assertFalse(keyReachesTarget(input, keyEvent(KeyCode.J)));
                 assertEquals(secondEvent, events.getSelectionModel().getSelectedItem());
-                assertFalse(keyReachesTarget(input, typedKeyEvent("k")));
+                assertFalse(keyReachesTarget(input, keyEvent(KeyCode.K)));
                 assertEquals(firstEvent, events.getSelectionModel().getSelectedItem());
 
                 tagsView.fire();
-                assertFalse(keyReachesTarget(input, typedKeyEvent("k")));
+                assertFalse(keyReachesTarget(input, keyEvent(KeyCode.K)));
                 assertEquals(tags.getItems().size() - 1, tags.getSelectionModel().getSelectedIndex());
-                assertFalse(keyReachesTarget(input, typedKeyEvent("j")));
+                assertFalse(keyReachesTarget(input, keyEvent(KeyCode.J)));
                 assertEquals(tags.getItems().size() - 1, tags.getSelectionModel().getSelectedIndex());
-                assertFalse(keyReachesTarget(input, typedKeyEvent("k")));
+                assertFalse(keyReachesTarget(input, keyEvent(KeyCode.K)));
                 assertEquals(tags.getItems().size() - 2, tags.getSelectionModel().getSelectedIndex());
                 tags.getSelectionModel().clearSelection();
-                assertFalse(keyReachesTarget(input, typedKeyEvent("j")));
+                assertFalse(keyReachesTarget(input, keyEvent(KeyCode.J)));
                 assertEquals(0, tags.getSelectionModel().getSelectedIndex());
 
                 contactsView.fire();
                 assertEquals(firstContact, contacts.getSelectionModel().getSelectedItem());
-                assertFalse(keyReachesTarget(contactsView, typedKeyEvent("j")));
+                assertFalse(keyReachesTarget(contactsView, keyEvent(KeyCode.J)));
+                assertEquals(secondContact, contacts.getSelectionModel().getSelectedItem());
+                assertFalse(keyReachesTarget(mode, keyEvent(KeyCode.S)));
+                assertTrue(eventsView.isSelected());
+                assertEquals(firstEvent, events.getSelectionModel().getSelectedItem());
+                assertFalse(keyReachesTarget(mode, keyEvent(KeyCode.S)));
+                assertTrue(tagsView.isSelected());
+                assertEquals(0, tags.getSelectionModel().getSelectedIndex());
+                assertFalse(keyReachesTarget(mode, keyEvent(KeyCode.S)));
+                assertTrue(contactsView.isSelected());
                 assertEquals(secondContact, contacts.getSelectionModel().getSelectedItem());
 
+                input.setText("list");
                 fireMousePress(input);
-                assertEquals("NAVIGATION · j/k move · i to type", mode.getText());
-                assertFalse(keyReachesTarget(contactsView, typedKeyEvent("i")));
+                assertEquals("COMMAND · Esc to navigate", mode.getText());
+                assertEquals("list", input.getText());
+                assertFalse(input.isDisabled());
+                assertFalse(submit.isDisabled());
+                assertFalse(keyReachesTarget(input, keyEvent(KeyCode.ESCAPE)));
+                assertFalse(keyReachesTarget(contactsView, keyEvent(KeyCode.I)));
+                assertEquals("NAVIGATION · j/k move · s switch view · i to type", mode.getText());
+                assertTrue(input.isDisabled());
+                assertTrue(submit.isDisabled());
+                assertTrue(keyReachesTarget(mode, keyReleasedEvent(KeyCode.A)));
+                assertEquals("NAVIGATION · j/k move · s switch view · i to type", mode.getText());
+                assertFalse(keyReachesTarget(mode, keyReleasedEvent(KeyCode.I)));
                 assertEquals("COMMAND · Esc to navigate", mode.getText());
                 assertFalse(input.isDisabled());
                 assertFalse(submit.isDisabled());
+                assertTrue(keyReachesTarget(input, keyReleasedEvent(KeyCode.I)));
+                fireMousePress(input);
+                assertEquals("COMMAND · Esc to navigate", mode.getText());
+                input.clear();
+                assertFalse(keyReachesTarget(input, keyEvent(KeyCode.ESCAPE)));
+                assertTrue(keyReachesTarget(mode, keyReleasedEvent(KeyCode.I, true, false, false, false)));
+                assertEquals("NAVIGATION · j/k move · s switch view · i to type", mode.getText());
+                assertFalse(keyReachesTarget(mode, keyEvent(KeyCode.I)));
+                fireMousePress(input);
+                assertEquals("COMMAND · Esc to navigate", mode.getText());
+                assertTrue(keyReachesTarget(input, typedKeyEvent("i")));
                 fireMousePress(contacts);
-                assertEquals("NAVIGATION · j/k move · i to type", mode.getText());
+                assertEquals("NAVIGATION · j/k move · s switch view · i to type", mode.getText());
                 fireMousePress(input);
-                assertEquals("NAVIGATION · j/k move · i to type", mode.getText());
+                assertEquals("COMMAND · Esc to navigate", mode.getText());
                 fireMousePress(events);
-                assertEquals("NAVIGATION · j/k move · i to type", mode.getText());
+                assertEquals("NAVIGATION · j/k move · s switch view · i to type", mode.getText());
                 fireMousePress(input);
+                assertEquals("COMMAND · Esc to navigate", mode.getText());
                 fireMousePress(tags);
-                assertEquals("NAVIGATION · j/k move · i to type", mode.getText());
+                assertEquals("NAVIGATION · j/k move · s switch view · i to type", mode.getText());
             } finally {
                 if (window != null) {
                     window.stop();
@@ -232,7 +324,7 @@ public class MainWindowTest {
     }
 
     @Test
-    public void cardNavigation_ignoresUnsafeInputContexts() throws Exception {
+    public void cardNavigation_consumesUnsupportedKeysAndLeavesModifiedShortcutsAlone() throws Exception {
         FutureTask<Void> task = new FutureTask<>(() -> {
             Stage stage = new Stage();
             MainWindow window = null;
@@ -250,15 +342,17 @@ public class MainWindowTest {
                 Label mode = (Label) stage.getScene().getRoot().lookup("#interactionModeLabel");
 
                 input.setText("list");
-                assertTrue(keyReachesTarget(input, typedKeyEvent("j")));
+                assertTrue(keyReachesTarget(input, keyEvent(KeyCode.J)));
                 assertEquals(-1, contacts.getSelectionModel().getSelectedIndex());
                 input.setText("list");
                 assertFalse(keyReachesTarget(input, keyEvent(KeyCode.ESCAPE)));
-                assertEquals("NAVIGATION · j/k move · i to type", mode.getText());
-                assertFalse(keyReachesTarget(input, typedKeyEvent("j")));
+                assertEquals("NAVIGATION · j/k move · s switch view · i to type", mode.getText());
+                assertFalse(keyReachesTarget(input, keyEvent(KeyCode.J)));
                 assertEquals(contact, contacts.getSelectionModel().getSelectedItem());
                 assertEquals("list", input.getText());
-                assertFalse(keyReachesTarget(input, typedKeyEvent("i")));
+                assertFalse(keyReachesTarget(input, keyEvent(KeyCode.I)));
+                assertEquals("NAVIGATION · j/k move · s switch view · i to type", mode.getText());
+                assertFalse(keyReachesTarget(mode, keyReleasedEvent(KeyCode.I)));
                 assertEquals("COMMAND · Esc to navigate", mode.getText());
                 assertEquals("list", input.getText());
                 input.clear();
@@ -266,22 +360,14 @@ public class MainWindowTest {
 
                 assertFalse(keyReachesTarget(input, keyEvent(KeyCode.ESCAPE)));
 
-                assertFalse(keyReachesTarget(input, typedKeyEvent("a")));
+                assertFalse(keyReachesTarget(input, keyEvent(KeyCode.A)));
                 assertTrue(input.getText().isEmpty());
-                assertFalse(keyReachesTarget(input, typedKeyEvent("j", true, false, false, false)));
-                input.clear();
-                assertFalse(keyReachesTarget(input, typedKeyEvent("j", false, true, false, false)));
-                input.clear();
-                assertFalse(keyReachesTarget(input, typedKeyEvent("j", false, false, true, false)));
-                input.clear();
-                assertFalse(keyReachesTarget(input, typedKeyEvent("j", false, false, false, true)));
-                input.clear();
+                assertTrue(keyReachesTarget(mode, keyEvent(KeyCode.J, true, false, false, false)));
+                assertTrue(keyReachesTarget(mode, keyEvent(KeyCode.J, false, true, false, false)));
+                assertTrue(keyReachesTarget(mode, keyEvent(KeyCode.J, false, false, true, false)));
+                assertTrue(keyReachesTarget(mode, keyEvent(KeyCode.J, false, false, false, true)));
                 assertEquals(-1, contacts.getSelectionModel().getSelectedIndex());
 
-                input.requestFocus();
-                assertSame(input, stage.getScene().getFocusOwner());
-                assertFalse(keyReachesTarget(input, typedKeyEvent("j")));
-                assertEquals(contact, contacts.getSelectionModel().getSelectedItem());
                 contacts.getSelectionModel().clearSelection();
 
                 TextField otherInput = new TextField();
@@ -290,18 +376,24 @@ public class MainWindowTest {
                 commandPlaceholder.getChildren().add(otherInput);
                 otherInput.requestFocus();
                 assertSame(otherInput, stage.getScene().getFocusOwner());
-                assertTrue(keyReachesTarget(otherInput, typedKeyEvent("j")));
-                assertEquals(-1, contacts.getSelectionModel().getSelectedIndex());
+                assertFalse(keyReachesTarget(otherInput, keyEvent(KeyCode.J)));
+                assertEquals(contact, contacts.getSelectionModel().getSelectedItem());
 
                 contacts.requestFocus();
-                assertFalse(keyReachesTarget(contacts, typedKeyEvent("i")));
+                assertFalse(keyReachesTarget(contacts, keyEvent(KeyCode.I)));
+                assertEquals("NAVIGATION · j/k move · s switch view · i to type", mode.getText());
+                assertFalse(keyReachesTarget(mode, keyReleasedEvent(KeyCode.I)));
                 assertEquals("COMMAND · Esc to navigate", mode.getText());
 
                 TabPane views = (TabPane) stage.getScene().getRoot().lookup("#views");
+                contacts.getSelectionModel().clearSelection();
                 views.getSelectionModel().clearSelection();
                 assertFalse(keyReachesTarget(input, keyEvent(KeyCode.ESCAPE)));
-                assertFalse(keyReachesTarget(input, typedKeyEvent("j")));
+                assertFalse(keyReachesTarget(input, keyEvent(KeyCode.J)));
                 assertEquals(-1, contacts.getSelectionModel().getSelectedIndex());
+                views.getTabs().clear();
+                assertFalse(keyReachesTarget(mode, keyEvent(KeyCode.S)));
+                assertTrue(views.getTabs().isEmpty());
             } finally {
                 if (window != null) {
                     window.stop();
@@ -332,11 +424,11 @@ public class MainWindowTest {
                 ToggleButton tagsView = (ToggleButton) stage.getScene().getRoot().lookup("#tagsView");
 
                 assertFalse(keyReachesTarget(input, keyEvent(KeyCode.ESCAPE)));
-                assertFalse(keyReachesTarget(input, typedKeyEvent("j")));
+                assertFalse(keyReachesTarget(input, keyEvent(KeyCode.J)));
                 eventsView.fire();
-                assertFalse(keyReachesTarget(input, typedKeyEvent("k")));
+                assertFalse(keyReachesTarget(input, keyEvent(KeyCode.K)));
                 tagsView.fire();
-                assertFalse(keyReachesTarget(input, typedKeyEvent("j")));
+                assertFalse(keyReachesTarget(input, keyEvent(KeyCode.J)));
             } finally {
                 if (window != null) {
                     window.stop();
@@ -374,7 +466,7 @@ public class MainWindowTest {
                 assertTrue(input.getText().isEmpty());
                 assertTrue(keyReachesTarget(input, keyEvent(KeyCode.ESCAPE)));
                 assertTrue(keyReachesTarget(input, keyEvent(KeyCode.A)));
-                assertTrue(keyReachesTarget(input, typedKeyEvent("j")));
+                assertTrue(keyReachesTarget(input, keyEvent(KeyCode.J)));
                 @SuppressWarnings("unchecked")
                 ListView<Person> contacts = (ListView<Person>) stage.getScene().getRoot().lookup("#personListView");
                 Label mode = (Label) stage.getScene().getRoot().lookup("#interactionModeLabel");
@@ -394,58 +486,7 @@ public class MainWindowTest {
     }
 
     @Test
-    public void switchCommand_selectsViewAndRejectsInvalidView() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
-            Stage stage = new Stage();
-            MainWindow window = new MainWindow(stage, new LogicManager(new ModelManager(), null),
-                    Path.of("data", "coordimate.json"));
-            window.fillInnerParts();
-            stage.getScene().getRoot().applyCss();
-
-            TabPane views = (TabPane) stage.getScene().getRoot().lookup("#views");
-            TextField input = (TextField) stage.getScene().getRoot().lookup("#commandTextField");
-            Button submit = (Button) stage.getScene().getRoot().lookup("#submitButton");
-            Label feedback = (Label) stage.getScene().getRoot().lookup("#resultDisplay");
-            ToggleButton contacts = (ToggleButton) stage.getScene().getRoot().lookup("#contactsView");
-            ToggleButton events = (ToggleButton) stage.getScene().getRoot().lookup("#eventsView");
-            ToggleButton tags = (ToggleButton) stage.getScene().getRoot().lookup("#tagsView");
-
-            input.setText("switch events");
-            submit.fire();
-            assertTrue(events.isSelected());
-            assertTrue(views.getSelectionModel().getSelectedItem().getText().startsWith("Events"));
-            assertEquals("Switched to Events view.", feedback.getText());
-
-            input.setText("switch tags");
-            submit.fire();
-            assertTrue(tags.isSelected());
-            assertEquals("Tags", views.getSelectionModel().getSelectedItem().getText());
-
-            input.setText("switch contacts");
-            submit.fire();
-            assertTrue(contacts.isSelected());
-            assertTrue(views.getSelectionModel().getSelectedItem().getText().startsWith("Contacts"));
-
-            input.setText("switch contacts");
-            submit.fire();
-            assertTrue(contacts.isSelected());
-            assertEquals("Switched to Contacts view.", feedback.getText());
-
-            input.setText("switch missing");
-            submit.fire();
-            assertTrue(contacts.isSelected());
-            assertEquals("switch missing", input.getText());
-            assertTrue(feedback.getText().startsWith("Invalid command format."));
-
-            stage.close();
-            return null;
-        });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
-    }
-
-    @Test
-    public void listCommand_keepsSelectedView() throws Exception {
+    public void listCommand_opensContactsView() throws Exception {
         FutureTask<Void> task = new FutureTask<>(() -> {
             Stage stage = new Stage();
             try {
@@ -455,7 +496,7 @@ public class MainWindowTest {
                 MainWindow window = new MainWindow(stage, new LogicManager(new ModelManager(), storage),
                         temporaryFolder.resolve("data.json"));
                 try {
-                    assertListCommandKeepsSelectedView(window, stage);
+                    assertListCommandOpensContactsView(window, stage);
                 } finally {
                     window.stop();
                 }
@@ -468,11 +509,13 @@ public class MainWindowTest {
         task.get(10, TimeUnit.SECONDS);
     }
 
-    private static void assertListCommandKeepsSelectedView(MainWindow window, Stage stage) {
+    private static void assertListCommandOpensContactsView(MainWindow window, Stage stage) {
         window.fillInnerParts();
         stage.getScene().getRoot().applyCss();
 
         ToggleButton events = (ToggleButton) stage.getScene().getRoot().lookup("#eventsView");
+        ToggleButton contacts = (ToggleButton) stage.getScene().getRoot().lookup("#contactsView");
+        TabPane views = (TabPane) stage.getScene().getRoot().lookup("#views");
         TextField input = (TextField) stage.getScene().getRoot().lookup("#commandTextField");
         Button submit = (Button) stage.getScene().getRoot().lookup("#submitButton");
         Label feedback = (Label) stage.getScene().getRoot().lookup("#resultDisplay");
@@ -481,14 +524,14 @@ public class MainWindowTest {
         input.setText("list");
         submit.fire();
 
-        assertTrue(events.isSelected());
+        assertTrue(contacts.isSelected());
+        assertFalse(events.isSelected());
+        assertTrue(views.getSelectionModel().getSelectedItem().getText().startsWith("Contacts"));
         assertEquals("Listed all contacts.", feedback.getText());
-        assertEquals("Events (0)", events.getText());
 
-        ToggleButton contacts = (ToggleButton) stage.getScene().getRoot().lookup("#contactsView");
         input.setText("list archived");
         submit.fire();
-        assertTrue(events.isSelected());
+        assertTrue(contacts.isSelected());
         assertEquals("Archived events (0)", events.getText());
         assertEquals("Archived contacts (0)", contacts.getText());
 
@@ -496,6 +539,164 @@ public class MainWindowTest {
         submit.fire();
         assertEquals("Events (0)", events.getText());
         assertEquals("Contacts (0)", contacts.getText());
+
+        events.fire();
+        input.setText("search");
+        submit.fire();
+        assertTrue(events.isSelected());
+        assertTrue(feedback.getText().startsWith("Invalid command format."));
+    }
+
+    @Test
+    public void assignmentCommands_keepCurrentView() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            ModelManager model = new ModelManager();
+            model.addPerson(TypicalPersons.ALICE);
+            EventTime date = new EventTime("08-08-2026");
+            model.addEvent(new Event("Orientation", date, date));
+
+            Path dataPath = temporaryFolder.resolve("assignment-data.json");
+            StorageManager storage = new StorageManager(new JsonCoordiMateStorage(dataPath),
+                    new JsonUserPrefsStorage(temporaryFolder.resolve("assignment-prefs.json")));
+            storage.saveCoordiMate(model.getCoordiMate());
+
+            MainWindow window = new MainWindow(stage, new LogicManager(model, storage), dataPath);
+            try {
+                window.fillInnerParts();
+                stage.getScene().getRoot().applyCss();
+
+                ToggleButton contacts = (ToggleButton) stage.getScene().getRoot().lookup("#contactsView");
+                ToggleButton events = (ToggleButton) stage.getScene().getRoot().lookup("#eventsView");
+                TextField input = (TextField) stage.getScene().getRoot().lookup("#commandTextField");
+                Button submit = (Button) stage.getScene().getRoot().lookup("#submitButton");
+
+                if (!contacts.isSelected()) {
+                    contacts.fire();
+                }
+                input.setText("assign evn/Orientation c/1");
+                submit.fire();
+                assertTrue(contacts.isSelected());
+
+                events.fire();
+                input.setText("unassign evn/Orientation c/1");
+                submit.fire();
+                assertTrue(events.isSelected());
+            } finally {
+                window.stop();
+                stage.close();
+            }
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void deleteCommand_opensContactsForConfirmation() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            ModelManager model = new ModelManager();
+            model.addPerson(TypicalPersons.ALICE);
+
+            Path dataPath = temporaryFolder.resolve("delete-routing-data.json");
+            StorageManager storage = new StorageManager(new JsonCoordiMateStorage(dataPath),
+                    new JsonUserPrefsStorage(temporaryFolder.resolve("delete-routing-prefs.json")));
+            storage.saveCoordiMate(model.getCoordiMate());
+
+            MainWindow window = new MainWindow(stage, new LogicManager(model, storage), dataPath);
+            try {
+                window.fillInnerParts();
+                stage.getScene().getRoot().applyCss();
+
+                ToggleButton contacts = (ToggleButton) stage.getScene().getRoot().lookup("#contactsView");
+                ToggleButton events = (ToggleButton) stage.getScene().getRoot().lookup("#eventsView");
+                TextField input = (TextField) stage.getScene().getRoot().lookup("#commandTextField");
+                Button submit = (Button) stage.getScene().getRoot().lookup("#submitButton");
+                Label feedback = (Label) stage.getScene().getRoot().lookup("#resultDisplay");
+
+                events.fire();
+                input.setText("delete 1");
+                submit.fire();
+                assertTrue(contacts.isSelected());
+                assertTrue(feedback.getText().contains("Confirm deletion? [y/N]"));
+
+                input.setText("n");
+                submit.fire();
+                assertTrue(contacts.isSelected());
+                assertEquals("Deletion cancelled. No changes were made.", feedback.getText());
+            } finally {
+                window.stop();
+                stage.close();
+            }
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void contactCommands_switchToContactsAndFocusAffectedContact() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            MainWindow window = null;
+            try {
+                ModelManager model = new ModelManager();
+                model.addPerson(TypicalPersons.ALICE);
+                model.addPerson(TypicalPersons.BENSON);
+                Path dataPath = temporaryFolder.resolve("contact-focus-data.json");
+                StorageManager storage = new StorageManager(new JsonCoordiMateStorage(dataPath),
+                        new JsonUserPrefsStorage(temporaryFolder.resolve("contact-focus-prefs.json")));
+                storage.saveCoordiMate(model.getCoordiMate());
+                LogicManager logic = new LogicManager(model, storage);
+                window = new MainWindow(stage, logic, dataPath);
+                window.fillInnerParts();
+                stage.getScene().getRoot().applyCss();
+
+                ToggleButton contactsView = (ToggleButton) stage.getScene().getRoot().lookup("#contactsView");
+                ToggleButton eventsView = (ToggleButton) stage.getScene().getRoot().lookup("#eventsView");
+                TextField input = (TextField) stage.getScene().getRoot().lookup("#commandTextField");
+                Button submit = (Button) stage.getScene().getRoot().lookup("#submitButton");
+                @SuppressWarnings("unchecked")
+                ListView<Person> contacts = (ListView<Person>) stage.getScene().getRoot().lookup("#personListView");
+                Label selectedName = (Label) window.getPersonListPanel().getRoot().lookup("#selectedName");
+
+                eventsView.fire();
+                input.setText("add n/Charlie Clark p/98765430 e/charlie@example.com r/Member");
+                submit.fire();
+                assertTrue(contactsView.isSelected());
+                assertEquals("Charlie Clark", selectedName.getText());
+                Label selectedEmail = (Label) window.getPersonListPanel().getRoot().lookup("#email");
+                assertEquals("charlie@example.com", selectedEmail.getText());
+
+                eventsView.fire();
+                input.setText("edit target/charlie@example.com n/Charles Clark");
+                submit.fire();
+                assertTrue(contactsView.isSelected());
+                assertEquals("Charles Clark", selectedName.getText());
+                assertEquals("Charles Clark", contacts.getSelectionModel().getSelectedItem().getName().getFullName());
+
+                eventsView.fire();
+                input.setText("delete e/charlie@example.com");
+                submit.fire();
+                assertTrue(logic.isAwaitingDeleteConfirmation());
+                assertEquals("Charles Clark", selectedName.getText());
+
+                input.setText("y");
+                submit.fire();
+                assertFalse(logic.isAwaitingDeleteConfirmation());
+                assertEquals("Benson Meier", selectedName.getText());
+                assertEquals(TypicalPersons.BENSON, contacts.getSelectionModel().getSelectedItem());
+            } finally {
+                if (window != null) {
+                    window.stop();
+                }
+                stage.close();
+            }
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
@@ -651,10 +852,14 @@ public class MainWindowTest {
             stage.getScene().getRoot().layout();
 
             assertEquals(3, stage.getScene().getRoot().lookupAll(".event-member-name").size());
-            assertEquals(1, stage.getScene().getRoot().lookupAll(".event-member-tag-teal").size());
-            assertEquals(1, stage.getScene().getRoot().lookupAll(".event-member-tag-amber").size());
-            assertEquals(2, stage.getScene().getRoot().lookupAll(".event-member-tag-purple").size());
-            assertEquals(3, stage.getScene().getRoot().lookupAll(".event-member-tag-blue").size());
+            assertEquals(List.of("ID: 1", "ID: 2", "ID: 3"),
+                    stage.getScene().getRoot().lookupAll(".tag-member-row .event-member-id").stream()
+                            .map(node -> ((Label) node).getText()).sorted().toList());
+            assertEquals(1, stage.getScene().getRoot().lookupAll(".tag-chip-teal").size());
+            assertEquals(1, stage.getScene().getRoot().lookupAll(".tag-chip-amber").size());
+            assertEquals(1, stage.getScene().getRoot().lookupAll(".tag-chip-purple").size());
+            assertEquals(3, stage.getScene().getRoot().lookupAll(".tag-chip-red").size());
+            assertEquals(1, stage.getScene().getRoot().lookupAll(".tag-chip-blue").size());
             assertEquals(1, stage.getScene().getRoot().lookupAll(".event-member-avatar-teal").size());
             assertEquals(1, stage.getScene().getRoot().lookupAll(".event-member-avatar-amber").size());
             assertEquals(1, stage.getScene().getRoot().lookupAll(".event-member-avatar-purple").size());
@@ -693,7 +898,7 @@ public class MainWindowTest {
             TextField commandInput = (TextField) stage.getScene().getRoot().lookup(".text-field");
             Label mode = (Label) stage.getScene().getRoot().lookup("#interactionModeLabel");
             assertFalse(keyReachesTarget(commandInput, keyEvent(KeyCode.ESCAPE)));
-            assertEquals("NAVIGATION · j/k move · i to type", mode.getText());
+            assertEquals("NAVIGATION · j/k move · s switch view · i to type", mode.getText());
 
             KeyEvent enter = keyEvent(KeyCode.ENTER);
             addRow.getOnKeyPressed().handle(enter);
@@ -726,14 +931,19 @@ public class MainWindowTest {
                 shiftDown, controlDown, altDown, metaDown);
     }
 
-    private static KeyEvent typedKeyEvent(String character) {
-        return typedKeyEvent(character, false, false, false, false);
+    private static KeyEvent keyReleasedEvent(KeyCode keyCode) {
+        return keyReleasedEvent(keyCode, false, false, false, false);
     }
 
-    private static KeyEvent typedKeyEvent(String character, boolean shiftDown, boolean controlDown,
-                                          boolean altDown, boolean metaDown) {
-        return new KeyEvent(KeyEvent.KEY_TYPED, character, character, KeyCode.UNDEFINED,
+    private static KeyEvent keyReleasedEvent(KeyCode keyCode, boolean shiftDown, boolean controlDown,
+                                             boolean altDown, boolean metaDown) {
+        return new KeyEvent(KeyEvent.KEY_RELEASED, "", "", keyCode,
                 shiftDown, controlDown, altDown, metaDown);
+    }
+
+    private static KeyEvent typedKeyEvent(String character) {
+        return new KeyEvent(KeyEvent.KEY_TYPED, character, character, KeyCode.UNDEFINED,
+                false, false, false, false);
     }
 
     private static boolean keyReachesTarget(Node target, KeyEvent event) {
@@ -750,6 +960,12 @@ public class MainWindowTest {
                 false, false, false, false, true, false, false, true, false, false,
                 new PickResult(target, 0, 0));
         target.fireEvent(event.copyFor(target, target));
+    }
+
+    private static MouseEvent mouseClickEvent() {
+        return new MouseEvent(MouseEvent.MOUSE_CLICKED,
+                0, 0, 0, 0, MouseButton.PRIMARY, 1,
+                false, false, false, false, false, false, false, false, false, false, null);
     }
 
     private static String getPrefixHelpText(TextFlow prefixHelp) {

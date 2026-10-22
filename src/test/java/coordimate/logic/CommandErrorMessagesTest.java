@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 
 import coordimate.logic.commands.exceptions.CommandException;
+import coordimate.logic.parser.CommandParserTestUtil;
 import coordimate.logic.parser.CoordiMateParser;
 import coordimate.logic.parser.exceptions.ParseException;
 import coordimate.model.ModelManager;
@@ -15,7 +16,7 @@ import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
 
 public class CommandErrorMessagesTest {
-    private final CoordiMateParser parser = new CoordiMateParser();
+    private final CoordiMateParser parser = CommandParserTestUtil.createParser();
 
     @Test
     public void parse_invalidInput_hasExplanationAndExample() {
@@ -24,6 +25,7 @@ public class CommandErrorMessagesTest {
             "", "unknown", "add", "edit", "delete", "search", "search \"\"", "filter", "filter unknown/value",
             "filter tag/", "filter event/\"Concert tag/friend", "addtag", "deletetag", "edittag", "listtags extra",
             "addevent", "editevent", "deleteevent", "assign", "unassign", "members", "markattendance",
+            "dismiss", "dismiss 0", "dismiss 1 2",
             contact + " x/value", "edit 1 x/value", "delete x/value", "addtag x/value", "deletetag x/value",
             "edittag Publicity x/value", "addevent x/value", "editevent x/value", "deleteevent x/value",
             "assign x/value", "unassign x/value", "members x/value", "markattendance x/value",
@@ -80,8 +82,8 @@ public class CommandErrorMessagesTest {
             {"editevent evn/Fair et/", "End time", "et/17-09-2026 18:30"},
             {"addevent evn/Fair st/ et/17-09-2026", "Start time", "st/17-09-2026 16:30"},
             {"addevent evn/Fair st/17-09-2026 et/", "End time", "et/17-09-2026 18:30"},
-            {"assign evn/Fair c/", "Contact indexes", "c/1 3 5"},
-            {"unassign evn/Fair c/", "Contact indexes", "c/1 3 5"},
+            {"assign evn/Fair c/", "Member IDs", "c/1 3 5"},
+            {"unassign evn/Fair c/", "Member IDs", "c/1 3 5"},
             {"markattendance evn/Fair mem/ att/present", "Member name", "mem/Aisha Tan"},
             {"markattendance evn/Fair mem/Alice att/", "Attendance status", "att/present"},
             {"filter tag/", "Filter value", "tag/Publicity"},
@@ -168,8 +170,7 @@ public class CommandErrorMessagesTest {
         for (String input : inputs) {
             CommandException error = assertThrows(CommandException.class, () ->
                     parser.parseCommand(input).execute(model), input);
-            assertEquals("No contact exists at index 1. Use an index from the current contact list.",
-                    error.getMessage(), input);
+            assertEquals("No contact exists with member ID: 1. Use an existing member ID.", error.getMessage(), input);
         }
     }
 

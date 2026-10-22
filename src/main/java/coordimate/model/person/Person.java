@@ -1,7 +1,9 @@
 package coordimate.model.person;
 
 import static coordimate.commons.util.CollectionUtil.requireAllNonNull;
+import static java.util.Objects.requireNonNull;
 
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
@@ -17,6 +19,8 @@ import coordimate.model.tag.Tag;
  */
 public class Person {
 
+    private final MemberId memberId;
+
     // Contact details used for duplicate checks
     private final Phone phone;
     private final Email email;
@@ -28,6 +32,7 @@ public class Person {
     private final Address address;
     private final Organisation organisation;
     private final Note note;
+    private final LeaveDate leaveDate;
     private final Set<Tag> tags = new HashSet<>();
     private final boolean archived;
 
@@ -46,11 +51,28 @@ public class Person {
     }
 
     /**
-     * Creates a person with optional birthday, organization, and note details.
+     * Creates a person with optional birthday, organization, and note details, who is not on leave.
      */
     public Person(Name name, Phone phone, Email email, Role role, Birthday birthday, Address address,
             Organisation organisation, Note note, Set<Tag> tags) {
+        this(name, phone, email, role, birthday, address, organisation, note, null, tags);
+    }
+
+    /**
+     * Creates a person with optional birthday, organization, note, and leave end date details, but no ID.
+     */
+    public Person(Name name, Phone phone, Email email, Role role, Birthday birthday, Address address,
+            Organisation organisation, Note note, LeaveDate leaveDate, Set<Tag> tags) {
+        this(null, name, phone, email, role, birthday, address, organisation, note, leaveDate, tags);
+    }
+
+    /**
+     * Creates a person with the given ID, or no ID for a contact not yet accepted by the model.
+     */
+    public Person(MemberId memberId, Name name, Phone phone, Email email, Role role, Birthday birthday, Address address,
+            Organisation organisation, Note note, LeaveDate leaveDate, Set<Tag> tags) {
         requireAllNonNull(name, phone, email, role, tags);
+        this.memberId = memberId;
         this.name = name;
         this.phone = phone;
         this.email = email;
@@ -59,6 +81,7 @@ public class Person {
         this.address = address;
         this.organisation = organisation;
         this.note = note;
+        this.leaveDate = leaveDate;
         this.tags.addAll(tags);
         this.archived = false;
     }
@@ -67,6 +90,7 @@ public class Person {
      * Creates a copy of {@code source} with the given archive status.
      */
     private Person(Person source, boolean archived) {
+        this.memberId = source.memberId;
         this.name = source.name;
         this.phone = source.phone;
         this.email = source.email;
@@ -75,8 +99,31 @@ public class Person {
         this.address = source.address;
         this.organisation = source.organisation;
         this.note = source.note;
+        this.leaveDate = source.leaveDate;
         this.tags.addAll(source.tags);
         this.archived = archived;
+    }
+
+    /**
+     * Returns the permanent ID, which is absent until the model accepts a new contact.
+     */
+    public Optional<MemberId> getMemberId() {
+        return Optional.ofNullable(memberId);
+    }
+
+    /**
+     * Returns an identified copy of a new contact, rejecting changes to an existing ID.
+     */
+    public Person withMemberId(MemberId id) {
+        requireNonNull(id);
+        if (memberId != null) {
+            if (!memberId.equals(id)) {
+                throw new IllegalArgumentException("A member's ID cannot be changed.");
+            }
+            return this;
+        }
+        return new Person(id, name, phone, email, role, birthday, address, organisation, note, leaveDate, tags)
+                .withArchived(archived);
     }
 
     public Name getName() {
@@ -109,6 +156,22 @@ public class Person {
 
     public Optional<Note> getNote() {
         return Optional.ofNullable(note);
+    }
+
+    /**
+     * Returns the saved last day of leave, including a date that has already passed.
+     */
+    public Optional<LeaveDate> getLeaveDate() {
+        return Optional.ofNullable(leaveDate);
+    }
+
+    /**
+     * Returns true if the contact is on leave on {@code today}, that is, a leave end date is saved and
+     * {@code today} is not after it.
+     */
+    public boolean isOnLeave(LocalDate today) {
+        requireNonNull(today);
+        return leaveDate != null && leaveDate.covers(today);
     }
 
     /**
@@ -164,7 +227,8 @@ public class Person {
             return false;
         }
 
-        return name.equals(otherPerson.name)
+        return Objects.equals(memberId, otherPerson.memberId)
+                && name.equals(otherPerson.name)
                 && phone.equals(otherPerson.phone)
                 && email.equals(otherPerson.email)
                 && role.equals(otherPerson.role)
@@ -172,6 +236,7 @@ public class Person {
                 && Objects.equals(address, otherPerson.address)
                 && Objects.equals(organisation, otherPerson.organisation)
                 && Objects.equals(note, otherPerson.note)
+                && Objects.equals(leaveDate, otherPerson.leaveDate)
                 && tags.equals(otherPerson.tags)
                 && archived == otherPerson.archived;
     }
@@ -179,12 +244,14 @@ public class Person {
     @Override
     public int hashCode() {
         // use this method for custom fields hashing instead of implementing your own
-        return Objects.hash(name, phone, email, role, birthday, address, organisation, note, tags, archived);
+        return Objects.hash(memberId, name, phone, email, role, birthday, address, organisation, note, leaveDate,
+                tags, archived);
     }
 
     @Override
     public String toString() {
         return new ToStringBuilder(this)
+                .add("memberId", memberId)
                 .add("name", name)
                 .add("phone", phone)
                 .add("email", email)
@@ -193,6 +260,7 @@ public class Person {
                 .add("address", address)
                 .add("organisation", organisation)
                 .add("note", note)
+                .add("leaveDate", leaveDate)
                 .add("tags", tags)
                 .add("archived", archived)
                 .toString();

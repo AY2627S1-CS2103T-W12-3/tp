@@ -1,5 +1,7 @@
 package coordimate.ui;
 
+import java.time.Clock;
+import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -17,7 +19,6 @@ import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
-import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
 import javafx.geometry.Orientation;
 import javafx.scene.control.Label;
@@ -39,6 +40,7 @@ public class PersonListPanel extends UiPart<Region> {
     private static final String FXML = "PersonListPanel.fxml";
     private static final double SPLIT_PANE_DIVIDER_WIDTH = 2;
     private static final String NOT_SPECIFIED = "— (not specified)";
+    private static final String NOT_ON_LEAVE = "— (not on leave)";
 
     @FXML
     private SplitPane contactSplitPane;
@@ -65,7 +67,7 @@ public class PersonListPanel extends UiPart<Region> {
     private Label selectedName;
 
     @FXML
-    private Label selectedIndex;
+    private Label selectedMemberId;
 
     @FXML
     private Label selectedAvatar;
@@ -92,6 +94,9 @@ public class PersonListPanel extends UiPart<Region> {
     private Label organisation;
 
     @FXML
+    private Label leave;
+
+    @FXML
     private Label note;
 
     @FXML
@@ -105,6 +110,9 @@ public class PersonListPanel extends UiPart<Region> {
 
     private Person selectedPerson;
     private final ObservableList<Event> events;
+    private final Clock clock;
+    private LocalDate shownDate;
+    private long focusRequestVersion;
 
     /**
      * Creates a {@code PersonListPanel} with the given {@code ObservableList}.
@@ -117,13 +125,22 @@ public class PersonListPanel extends UiPart<Region> {
      * Shows contacts and their assignments from the live event list.
      */
     public PersonListPanel(ObservableList<Person> persons, ObservableList<Event> events) {
+        this(persons, events, Clock.systemDefaultZone());
+    }
+
+    /**
+     * Shows contacts and their assignments, using {@code clock} to decide whether a contact is on leave.
+     */
+    PersonListPanel(ObservableList<Person> persons, ObservableList<Event> events, Clock clock) {
         super(FXML);
         this.events = events;
+        this.clock = Objects.requireNonNull(clock);
+        shownDate = LocalDate.now(clock);
         persons.addListener((ListChangeListener<Person>) change -> {
             if (selectedPerson != null) {
                 Person previouslySelected = selectedPerson;
-                Person replacement = findReplacement(change, previouslySelected);
-                Platform.runLater(() -> restoreSelection(persons, previouslySelected, replacement));
+                long versionAtChange = focusRequestVersion;
+                Platform.runLater(() -> restoreSelection(persons, previouslySelected, versionAtChange));
             }
         });
         events.addListener((ListChangeListener<Event>) change -> showDetails(selectedPerson));
@@ -147,33 +164,17 @@ public class PersonListPanel extends UiPart<Region> {
     /**
      * Reconciles selection after the list view has processed a change to its items.
      */
-    private Person findReplacement(ListChangeListener.Change<? extends Person> change, Person previouslySelected) {
-        while (change.next()) {
-            if (change.wasReplaced() && change.getRemovedSize() == change.getAddedSize()) {
-                int offset = change.getRemoved().indexOf(previouslySelected);
-                if (offset >= 0 && offset < change.getAddedSize()) {
-                    return change.getAddedSubList().get(offset);
-                }
-            }
+    private void restoreSelection(ObservableList<Person> persons,
+            Person previouslySelected, long versionAtChange) {
+        if (versionAtChange != focusRequestVersion) {
+            return;
         }
-        return null;
-    }
 
-    private void restoreSelection(ObservableList<Person> persons, Person previouslySelected, Person replacement) {
-        if (persons.contains(previouslySelected)) {
-            personListView.getSelectionModel().select(previouslySelected);
-            selectedIndex.setText("Index: " + (persons.indexOf(previouslySelected) + 1));
-        } else if (replacement != null && !isStillInSource(persons, previouslySelected)
-                && persons.contains(replacement)) {
-            personListView.getSelectionModel().select(replacement);
-        } else {
-            personListView.getSelectionModel().clearSelection();
-        }
-    }
-
-    private boolean isStillInSource(ObservableList<Person> persons, Person previouslySelected) {
-        return persons instanceof FilteredList<?> filteredPersons
-                && filteredPersons.getSource().contains(previouslySelected);
+        Person current = persons.stream()
+                .filter(person -> person.getMemberId().equals(previouslySelected.getMemberId()))
+                .findFirst()
+                .orElse(null);
+        personListView.getSelectionModel().select(current);
     }
 
     /**
@@ -217,6 +218,41 @@ public class PersonListPanel extends UiPart<Region> {
         personListView.scrollTo(targetIndex);
     }
 
+    /** Selects a displayed contact and reveals it in the list. */
+    boolean selectContact(Person contact) {
+        Objects.requireNonNull(contact);
+        return selectContactAt(personListView.getItems().indexOf(contact));
+    }
+
+    /** Selects the row at the supplied displayed index, clamping to the last row after a deletion. */
+    boolean selectContactAt(int targetIndex) {
+        if (targetIndex < 0) {
+            return false;
+        }
+        focusRequestVersion++;
+        int itemCount = personListView.getItems().size();
+        if (itemCount == 0) {
+            personListView.getSelectionModel().clearSelection();
+            return false;
+        }
+        selectAndReveal(Math.min(targetIndex, itemCount - 1));
+        return true;
+    }
+
+    /**
+     * Redraws the contact cards and selected contact's details if the date has changed since they were last
+     * shown, so that leave which has just ended is no longer displayed.
+     */
+    void refreshIfDateChanged() {
+        LocalDate today = LocalDate.now(clock);
+        if (today.equals(shownDate)) {
+            return;
+        }
+        shownDate = today;
+        personListView.refresh();
+        showDetails(selectedPerson);
+    }
+
     /** Runs the given action whenever the displayed contact list is clicked. */
     void setCardListClickHandler(Runnable handler) {
         Objects.requireNonNull(handler);
@@ -234,11 +270,12 @@ public class PersonListPanel extends UiPart<Region> {
         selectionHint.setVisible(!isSelected);
         selectionHint.setManaged(!isSelected);
         if (!isSelected) {
+            selectedMemberId.setText("");
             return;
         }
 
         selectedName.setText(person.getName().getFullName());
-        selectedIndex.setText("Index: " + (personListView.getItems().indexOf(person) + 1));
+        selectedMemberId.setText("ID: " + person.getMemberId().orElseThrow());
         selectedAvatar.setText(initials(person.getName().getFullName()));
         String roleText = person.getRole().getValue();
         selectedSubtitle.setText(person.getOrganisation()
@@ -250,10 +287,12 @@ public class PersonListPanel extends UiPart<Region> {
         address.setText(person.getAddress().map(Address::getValue).orElse(NOT_SPECIFIED));
         organisation.setText(person.getOrganisation().map(Organisation::getValue).orElse(NOT_SPECIFIED));
         note.setText(person.getNote().map(Note::getValue).orElse(NOT_SPECIFIED));
+        leave.setText(person.isOnLeave(LocalDate.now(clock))
+                ? person.getLeaveDate().orElseThrow().getValue() : NOT_ON_LEAVE);
         detailTags.getChildren().clear();
         person.getTags().stream()
                 .sorted(Comparator.comparing(tag -> tag.getTagName()))
-                .forEach(tag -> detailTags.getChildren().add(new Label(tag.getTagName())));
+                .forEach(tag -> detailTags.getChildren().add(TagStyle.createTagLabel(tag.getTagName())));
         showAssignedEvents(person);
     }
 
@@ -324,7 +363,7 @@ public class PersonListPanel extends UiPart<Region> {
                 setGraphic(null);
                 setText(null);
             } else {
-                Region card = new PersonCard(person, getIndex() + 1).getRoot();
+                Region card = new PersonCard(person, LocalDate.now(clock)).getRoot();
                 card.prefWidthProperty().bind(widthProperty().subtract(12));
                 setGraphic(card);
             }

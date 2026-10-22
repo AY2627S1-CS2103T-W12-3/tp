@@ -101,7 +101,7 @@ public interface Model {
     void deletePerson(Person target);
 
     /**
-     * Adds the given person.
+     * Adds the given person and shows all active contacts, so that the new contact is visible.
      * {@code person} must not already exist in the CoordiMate.
      */
     void addPerson(Person person);

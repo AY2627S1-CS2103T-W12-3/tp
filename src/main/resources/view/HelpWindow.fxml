@@ -11,6 +11,8 @@
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Text?>
+<?import javafx.scene.text.TextFlow?>
 <?import javafx.stage.Stage?>
 
 <fx:root minHeight="450.0" minWidth="680.0" resizable="true" title="Help" type="javafx.stage.Stage"
@@ -29,20 +31,29 @@
           <Label alignment="CENTER" maxWidth="Infinity" styleClass="help-heading"
                  text="Command quick reference" />
           <VBox fx:id="keyboardHelp" spacing="3.0" styleClass="keyboard-help"
-                accessibleText="Command mode is the default. Press Escape to enter Navigation mode. In Navigation mode, press J for the next card, K for the previous card, or I to focus the command box. Clicking the command box enters Command mode; clicking a card list enters Navigation mode.">
+                accessibleText="Command mode is the default. Press Escape to enter Navigation mode. In Navigation mode, press J for the next card, K for the previous card, S to switch views, or I to focus the command box. Other unmodified keys are disabled. Clicking the command box enters Command mode; clicking a card list enters Navigation mode.">
             <children>
               <Label styleClass="keyboard-help-heading" text="Keyboard navigation" />
-              <Label fx:id="commandModeHelp" maxWidth="Infinity" styleClass="keyboard-help-text"
-                     text="Command mode (default): type commands; press Esc to navigate cards."
-                     wrapText="true" />
-              <Label fx:id="navigationModeHelp" maxWidth="Infinity" styleClass="keyboard-help-text"
-                     text="Navigation mode: press j for next, k for previous, or i to focus the command box. Click the command box or a card list to switch modes."
-                     wrapText="true" />
+              <TextFlow fx:id="commandModeHelp">
+                <children>
+                  <Text styleClass="keyboard-help-text"
+                        text="Command mode (default): type commands; press Esc to navigate cards." />
+                </children>
+              </TextFlow>
+              <TextFlow fx:id="navigationModeHelp">
+                <children>
+                  <Text styleClass="keyboard-help-text"
+                        text="Navigation mode: press j for next, k for previous, s to switch views, or i to focus the command box. Other unmodified keys are disabled. Click the command box or a card list to switch modes." />
+                </children>
+              </TextFlow>
             </children>
           </VBox>
-          <Label fx:id="syntaxNote" styleClass="syntax-note"
-                 text="Note: [ ] marks optional parameters; (A | B) means choose one. For edit, provide at least one field or tag operation. For editevent, provide at least one field."
-                 wrapText="true" />
+          <TextFlow fx:id="syntaxNote">
+            <children>
+              <Text styleClass="syntax-note"
+                    text="Note: [ ] marks optional parameters; (A | B) means choose one. For edit, provide at least one field or tag operation. For editevent, provide at least one field." />
+            </children>
+          </TextFlow>
           <TableView fx:id="commandTable" accessibleText="Available commands and their usage formats."
                      editable="false" VBox.vgrow="ALWAYS">
             <columns>

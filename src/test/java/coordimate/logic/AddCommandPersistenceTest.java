@@ -1,5 +1,6 @@
 package coordimate.logic;
 
+import static coordimate.testutil.TypicalPersons.ALICE;
 import static coordimate.testutil.TypicalPersons.AMY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -15,10 +16,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import coordimate.logic.commands.AddCommand;
+import coordimate.logic.commands.CommandResult;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.CoordiMate;
 import coordimate.model.ModelManager;
 import coordimate.model.ReadOnlyCoordiMate;
+import coordimate.model.UserPrefs;
 import coordimate.model.tag.Tag;
 import coordimate.storage.JsonCoordiMateStorage;
 import coordimate.storage.JsonUserPrefsStorage;
@@ -38,8 +41,11 @@ public class AddCommandPersistenceTest {
         model.updateFilteredPersonList(person -> false);
         JsonCoordiMateStorage storage = new JsonCoordiMateStorage(temporaryFolder.resolve("data.json"));
 
-        assertEquals("Contact saved successfully: New Contact",
-                newLogic(model, storage).execute(COMMAND + " t/Publicity t/EXCO").getFeedbackToUser());
+        CommandResult result = newLogic(model, storage).execute(COMMAND + " t/Publicity t/EXCO");
+
+        assertEquals("Contact saved successfully: New Contact", result.getFeedbackToUser());
+        assertEquals(model.getCoordiMate().getPersonList().getLast(), result.getContactToFocus().orElseThrow());
+        assertTrue(result.getContactIndexToFocus().isEmpty());
 
         assertEquals(model.getCoordiMate(), storage.readCoordiMate().orElseThrow());
         assertEquals(2, model.getFilteredPersonList().size());
@@ -48,6 +54,30 @@ public class AddCommandPersistenceTest {
         assertTrue(storage.readCoordiMate().orElseThrow().getTagList().contains(new Tag("Publicity")));
         assertEquals("New Contact", storage.readCoordiMate().orElseThrow().getPersonList().getLast().getName()
                 .getFullName());
+    }
+
+    @Test
+    public void execute_memberIdsExhausted_modelAndFileUnchanged() throws Exception {
+        Path path = temporaryFolder.resolve("exhausted.json");
+        CoordiMate data = new CoordiMate(Integer.MAX_VALUE + 1L);
+        data.addPerson(ALICE);
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path);
+        storage.saveCoordiMate(data);
+        String beforeFile = Files.readString(path);
+        ModelManager model = new ModelManager(storage.readCoordiMate().orElseThrow(), new UserPrefs());
+        model.updateFilteredPersonList(person -> false);
+        CoordiMate beforeModel = new CoordiMate(model.getCoordiMate());
+
+        Logic logic = newLogic(model, storage);
+        CommandException exception = assertThrows(CommandException.class, () ->
+                logic.execute(COMMAND + " t/Publicity"));
+
+        assertEquals(Messages.withUsage("No more member IDs are available.",
+                AddCommand.MESSAGE_USAGE), exception.getMessage());
+        assertTrue(exception.getCause() instanceof IllegalStateException);
+        assertEquals(beforeModel, model.getCoordiMate());
+        assertTrue(model.getFilteredPersonList().isEmpty());
+        assertEquals(beforeFile, Files.readString(path));
     }
 
     @Test

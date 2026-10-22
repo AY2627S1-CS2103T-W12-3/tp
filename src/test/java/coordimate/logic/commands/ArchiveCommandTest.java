@@ -90,7 +90,8 @@ public class ArchiveCommandTest {
         model.setShowingArchived(true);
         EditPersonDescriptor descriptor = new EditPersonDescriptor();
         descriptor.setPhone(new Phone("91234567"));
-        new EditCommand(Index.fromOneBased(1), descriptor).execute(model);
+        new EditCommand(model.getCoordiMate().getPersonList().getFirst().getMemberId().orElseThrow(), descriptor)
+                .execute(model);
         Person edited = model.getCoordiMate().getPersonList().getFirst();
         assertEquals(new Phone("91234567"), edited.getPhone());
         assertTrue(edited.isArchived());

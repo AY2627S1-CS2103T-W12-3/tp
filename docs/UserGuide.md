@@ -31,30 +31,40 @@
    a secondary screen or changing the display resolution, CoordiMate adjusts the window to remain fully visible.<br>
 
    The left sidebar switches between Contacts, Events, and Tags and shows commands for the selected view.
-   You can also use `switch contacts`, `switch events`, or `switch tags` in the command box.
    Click a command name to put only the command word in the input and show its format and an example below the input.
    Complete the command by typing its arguments after the command word.
    The main workspace shows a list beside its details, and the command box, feedback, and prefix hints stay at the bottom.
+   After a successful command, CoordiMate opens the view for its result: contact commands open Contacts, event
+   commands open Events, and tag commands open Tags. `assign` and `unassign` keep the current view and refresh its
+   related contact or event details. Failed commands keep the current view. A valid `delete` request opens Contacts
+   when its confirmation prompt appears; Contacts remains open whether deletion is confirmed or cancelled. Successful
+   `add` and `edit` commands select and reveal the affected contact. Confirmed deletion selects the contact now at the
+   removed contact's position, or the previous contact if the removed contact was last. If the deleted contact was
+   outside the displayed list, the current selection is retained.
 
 1. Type a command in the command box and press Enter to execute it. For example, type **`help`** and press Enter to open the help window.<br>
    Press <kbd>Up</kbd> to recall earlier commands and <kbd>Down</kbd> to move toward the command you were typing.<br>
    To browse cards without reaching for the mouse, press <kbd>Esc</kbd> to enter Navigation mode, use
-   <kbd>J</kbd>/<kbd>K</kbd> to move through the active view, then press <kbd>I</kbd> to return to Command mode.<br>
+   <kbd>J</kbd>/<kbd>K</kbd> to move through the active view, <kbd>S</kbd> to switch views, then press <kbd>I</kbd>
+   to return to Command mode.<br>
    Some example commands you can try:
 
    * `list` : Lists all contacts.
 
    * `add n/John Doe p/98765432 e/johnd@example.com r/Member` : Adds a contact named `John Doe` to CoordiMate.
 
-   * `delete 3` : Asks to delete the 3rd contact shown in the current list. Type `y` and press Enter to confirm.
+   * `delete 3` : Asks to delete the contact with member ID `3`. Type `y` and press Enter to confirm.
 
    * `clear` : Deletes all contacts, events, and custom tags.
 
    * `exit` : Exits the app.
 
    In the Contacts view, select a contact from the displayed list to see their phone number, email address,
-   role, birthday, address, organisation, tags, note, and assigned events in the details pane. The number beside a contact is
-   its index in the currently displayed list. If a list change hides the selected contact, the details pane clears.
+   role, birthday, address, organisation, tags, note, and assigned events in the details pane. Contact cards and details,
+   event rosters, and tag member lists show the contact's permanent identifier as `ID: <number>`.
+   For example, `ID: 12` remains `ID: 12` when a search makes that contact the first result.
+   Use that same ID in `edit`, `delete`, `assign`, and `unassign`. Editing or reordering a contact keeps their ID;
+   if a list change hides or removes the selected contact, the details pane clears.
    Unset optional fields show `— (not specified)`; a contact with no tags shows no tag chips.
 
 1. Refer to the [Features](#features) section below for details of each command.
@@ -67,13 +77,16 @@ Every command error is followed by the relevant command's description, `Paramete
 Error messages shown below omit that usage text.
 Conditions in the error tables assume the rest of the command is valid. If a command has several errors,
 the first one encountered during validation is reported. Placeholders such as `{PREFIX}` and `{EVENT_NAME}`
-are replaced with the actual parameter prefix, name, index, or other details.
+are replaced with the actual parameter prefix, name, member ID, or other details.
 
 | Condition | Error message |
 |---|---|
 | The input is empty or contains only whitespace. | `Invalid command format.` |
 | The command word is unknown or uses the wrong capitalization. | `Unknown command. Use help to see the available commands. Example: help` |
 | Existing data cannot be loaded before a command changes saved data. | `Saved data could not be loaded. Check the local data file.` |
+
+For `dismiss`, data-loading and saving failures instead produce the session-only warning described in
+[Dismissing a reminder](#dismissing-a-reminder-dismiss).
 
 <box type="info" seamless>
 
@@ -109,6 +122,7 @@ A command that breaks a constraint is rejected and makes no changes.
 | `EMAIL` | `e/` | `local-part@domain`. The local part uses letters, digits, and `_`, `%`, `+`, `-`, `.`; it cannot start or end with a period or contain two periods in a row. The domain is made of labels separated by periods; each label uses letters, digits, and hyphens and cannot start or end with a hyphen. The last label has at least 2 letters. Unique among contacts, ignoring case. |
 | `ROLE` | `r/` | 1 to 50 characters. Letters, digits, spaces, hyphens, and `/` only, with at least one letter or digit. |
 | `BIRTHDAY` | `b/` | A real date in `dd-MM-yyyy` format that is not in the future, e.g. `18-06-2004`. |
+| `LEAVE_END_DATE` | `lv/` | A real date in `dd-MM-yyyy` format that is not in the past, e.g. `30-11-2026`. Today's date is allowed. |
 | `ADDRESS` | `a/` | 1 to 200 characters. Any printable characters. |
 | `ORGANISATION` | `o/` | 1 to 80 characters. Letters, digits, spaces, hyphens, and `&` only, with at least one letter or digit. |
 | `NOTE` | `m/` | 1 to 500 characters. Any printable characters. |
@@ -116,7 +130,7 @@ A command that breaks a constraint is rejected and makes no changes.
 | `EVENT_NAME`, `NEW_EVENT_NAME` | `evn/`, `nevn/` | At least one non-space character. Any characters are allowed, subject to the note below. Event names are unique, ignoring case. |
 | `START_TIME`, `END_TIME` | `st/`, `et/` | A real date in `dd-MM-yyyy` format, optionally followed by a 24-hour time in `HH:mm` format, e.g. `17-09-2026` or `17-09-2026 16:30`. The start must not be after the end. |
 | `STATUS` | `att/` | `present` or `absent`, ignoring case. |
-| `INDEX`, `CONTACT_INDEX` | `c/` for `CONTACT_INDEX` | A positive integer (1, 2, 3, ...) that appears in the displayed contact list. |
+| `MEMBER_ID` | `c/` for `assign` and `unassign`; none for `edit` and `delete` | A permanent positive integer from 1 to 2147483647 identifying a saved contact, independent of the displayed list. |
 | `KEYWORD` | none | At least one non-space character. |
 
 <box type="info" seamless>
@@ -144,10 +158,16 @@ Use the following keys to browse Contacts, Events, or Tags without the mouse:
 | <kbd>Esc</kbd> | Enter **Navigation mode** from Command mode. |
 | <kbd>J</kbd> | Select the next card in the active view. If nothing is selected, select the first card. |
 | <kbd>K</kbd> | Select the previous card in the active view. If nothing is selected, select the last card. |
+| <kbd>S</kbd> | Switch to the next view, wrapping from Tags back to Contacts. |
 | <kbd>I</kbd> | Return to **Command mode** and focus the command box. |
 
 Navigation stops at the first or last card rather than wrapping around. On an empty list, <kbd>J</kbd> and <kbd>K</kbd>
-do nothing. The shortcuts apply to whichever of the Contacts, Events, or Tags views is active.
+do nothing. The shortcuts apply to whichever of the Contacts, Events, or Tags views is active. Each view keeps its
+selection when you switch away and back.
+
+Other unmodified keys, including <kbd>Enter</kbd>, <kbd>Space</kbd>, <kbd>Tab</kbd>, and the arrow keys, are disabled
+in Navigation mode. Pressing <kbd>Esc</kbd> moves keyboard focus away from controls such as a reminder's
+**Dismiss** button, so those controls cannot be activated accidentally. Mouse controls remain available.
 
 You can chain navigation and command entry without clicking. For example, press <kbd>Esc</kbd>, <kbd>J</kbd>,
 <kbd>J</kbd>, <kbd>I</kbd>, then type a command. Any unfinished command remains in the command box while you navigate.
@@ -175,24 +195,10 @@ available command and its usage format.
 The [User Guide website](https://ay2627s1-cs2103t-w12-3.github.io/tp/) and **Copy URL** button remain at the bottom of
 the window for access to detailed instructions.
 Select **Close** or press <kbd>Esc</kbd> to dismiss the Help window without exiting CoordiMate.
-Selecting **Help** in the menu bar opens this window directly. <kbd>F1</kbd> remains available as a keyboard shortcut.
-In the command formats, parameters enclosed in square brackets `[ ]` are optional.
+Selecting **Help** in the top bar opens this window directly. Press <kbd>Fn</kbd> + <kbd>F1</kbd> to open it with the
+keyboard. In the command formats, parameters enclosed in square brackets `[ ]` are optional.
 
 Format: `help`
-
-
-### Switching views: `switch`
-
-Switches to the Contacts, Events, or Tags view without changing saved data. Switching to the current view also succeeds.
-The view name must be lowercase. A missing or unrecognised view name is rejected without changing the selected view.
-
-Formats: `switch contacts` | `switch events` | `switch tags`
-
-Example: `switch events`
-
-| Condition | Error message |
-|---|---|
-| The view name is missing, unknown, or followed by extra text. | `Invalid command format.` |
 
 
 ### Adding a contact: `add`
@@ -206,7 +212,7 @@ For any duplicate, CoordiMate reports `A contact with this name, phone number, o
 and makes no changes.
 If the local contact data cannot be loaded or saved, CoordiMate reports an error and leaves the contact list unchanged.
 
-Format: `add n/NAME p/PHONE e/EMAIL r/ROLE [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [t/TAG]... [m/NOTE]`
+Format: `add n/NAME p/PHONE e/EMAIL r/ROLE [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [lv/LEAVE_END_DATE] [t/TAG]... [m/NOTE]`
 
 Name, phone, email, and role are required. Each field accepts the following values; surrounding spaces are ignored:
 
@@ -217,6 +223,7 @@ Name, phone, email, and role are required. Each field accepts the following valu
 | `EMAIL` | `local-part@domain`, at most 254 characters, with a local part of at most 64 characters. |
 | `ROLE` | 1 to 50 characters: letters, digits, spaces, hyphens, and slashes (`/`), with at least one letter or digit. |
 | `BIRTHDAY` | A real date in `dd-MM-yyyy` format that is not in the future. |
+| `LEAVE_END_DATE` | A real date in `dd-MM-yyyy` format that is not in the past. |
 | `ADDRESS` | 1 to 200 printable characters. |
 | `ORGANISATION` | 1 to 80 characters: letters, digits, spaces, and `-` `&` `.` `,` `'` `(` `)` `/`, with at least one letter or digit, e.g. `St. John's Ambulance`. |
 | `NOTE` | 1 to 500 printable characters. |
@@ -225,12 +232,13 @@ Name, phone, email, and role are required. Each field accepts the following valu
 "Printable" excludes line breaks and other control characters. A value that breaks these rules is rejected with a
 message stating the field's constraints, such as
 `Invalid organisation. Use 1 to 80 characters: letters, digits, spaces, and - & . , ' ( ) /, with at least one letter or digit. Example: o/NUS Student Affairs`.
-Address, organisation, and note are optional. An empty `b/`, `a/`, `o/`, or `m/` leaves that field unset,
+Birthday, address, organisation, leave end date, and note are optional. An empty `b/`, `a/`, `o/`, `lv/`, or
+`m/` leaves that field unset,
 as does omitting it. Non-tag fields may appear only once; `t/TAG` may repeat. An empty `t/` clears the
 tags collected so far. A valid new tag is saved as a custom tag. Successful feedback is
 `Contact saved successfully: NAME`.
-Select the saved contact in the list to view all its details. Unset optional values are shown as
-`— (not specified)` in the details pane, but remain unset in storage.
+After a successful `add`, CoordiMate selects and reveals the new contact so its details are shown. Unset optional
+values are shown as `— (not specified)` in the details pane, but remain unset in storage.
 
 <box type="tip" seamless>
 
@@ -240,6 +248,8 @@ Select the saved contact in the list to view all its details. Unset optional val
 Examples:
 * `add n/Aisha Tan p/+6591234567 e/aisha@example.com r/Logistics t/EXCO m/Handles venue bookings`
 * `add n/Mr Lim p/90801110 e/lim@example.com o/NUS Student Affairs r/University Staff t/UniversityStaff`
+* `add n/Ben Ong p/91112222 e/ben@example.com r/Publicity lv/30-11-2026` adds a contact who is on leave until
+  30 November 2026. See [Marking a contact as on leave](#marking-a-contact-as-on-leave).
 
 | Condition | Error message |
 |---|---|
@@ -255,6 +265,7 @@ Examples:
 | The email violates its constraints. | `Invalid email. Use local-part@domain, at most 254 characters, with a local part of at most 64 characters. Example: e/aish@example.com` |
 | The role violates its constraints. | `Invalid role. Use 1 to 50 characters: letters, digits, spaces, hyphens, and slashes, with at least one letter or digit. Example: r/Logistics Lead` |
 | A non-empty birthday is invalid, incorrectly formatted, or in the future. | `Invalid birthday. Use a real date in dd-MM-yyyy format that is not in the future. Example: b/18-06-2004` |
+| A non-empty leave end date is invalid, incorrectly formatted, or in the past. | `Invalid leave end date. Use a real date in dd-MM-yyyy format that is not in the past. Example: lv/30-11-2026` |
 | A non-empty address exceeds 200 characters or contains a control character. | `Invalid address. Use 1 to 200 printable characters. Example: a/21 Kent Ridge Road, #03-12` |
 | A non-empty organisation violates its constraints. | `Invalid organisation. Use 1 to 80 characters: letters, digits, spaces, and - & . , ' ( ) /, with at least one letter or digit. Example: o/NUS Student Affairs` |
 | A non-empty note exceeds 500 characters or contains a control character. | `Invalid note. Use 1 to 500 printable characters. Example: m/Handles venue bookings` |
@@ -396,8 +407,9 @@ The event and existing data file remain unchanged.
 ### Automatic event reminders
 
 CoordiMate shows reminders in the **Upcoming events** panel below the menu bar and above the workspace.
-The panel remains visible across the **Contacts**, **Events**, and **Tags** views. No command or parameters
-are needed. Reminders appear only while CoordiMate is running.
+The panel appears when reminders are available and stays visible across the **Contacts**, **Events**, and
+**Tags** views. It hides when no reminders remain. No command is needed to receive reminders, which appear
+only while CoordiMate is running.
 
 CoordiMate checks saved events on startup and once per minute while the window is open. It also refreshes
 reminders after commands, including event edits and deletions. A reminder becoming eligible or expiring
@@ -413,10 +425,10 @@ Reminder timing follows your computer's local time zone:
   the event's start date**. For example, a start of `20-10-2026` qualifies from midnight at the beginning
   of `19-10-2026` until midnight at the beginning of `21-10-2026`, excluding that final midnight.
 
-Each reminder displays the saved event name, start, and end. For example:
+Each reminder displays its index and the saved event name, start, and end. For example:
 
 ```text
-Upcoming event: Final Concert
+1. Upcoming event: Final Concert
 Starts: 20-10-2026 15:00
 Ends: 20-10-2026 18:00
 ```
@@ -425,8 +437,10 @@ This timed event qualifies from `19-10-2026 15:00` through `20-10-2026 15:00`, i
 Several reminders appear in ascending order of start time, with ties ordered by name, ignoring case.
 For ordering, a date-only start counts as the beginning of its date; the reminder still displays the
 saved date without adding a time. Each event has at most one active reminder.
+Indexes start at **1** and follow this order. They update whenever the reminder list changes.
 
-Click **Dismiss** beside a reminder to hide it. CoordiMate saves the dismissal immediately, so it stays
+Click **Dismiss** beside a reminder or use [`dismiss INDEX`](#dismissing-a-reminder-dismiss) to hide it.
+CoordiMate saves the dismissal immediately, so it stays
 dismissed after restarting. Renaming the event, editing only its end, or supplying the same start value
 keeps the dismissal. Changing its start date or time resets the dismissal, including when switching
 between a timed and date-only start or reverting to a previously dismissed start. The revised reminder
@@ -445,26 +459,61 @@ return after restarting.
 If the saved data file is invalid, CoordiMate starts with an empty dataset and shows no event reminders.
 See [Editing the data file](#editing-the-data-file) for details of data-loading errors.
 
+### Dismissing a reminder: `dismiss`
+
+Dismisses one reminder using its current index in the **Upcoming events** panel and saves the dismissal.
+The event, its members, and its attendance records remain available. The current tab and contact filter
+stay selected.
+
+Format: `dismiss INDEX`
+
+* `INDEX` is required and must be a positive integer starting at **1**.
+* Use the index shown beside the reminder in the **Upcoming events** panel. The contact and event lists
+  have their own ordering.
+* Remaining reminders are renumbered after dismissal. Use their current indexes for subsequent commands.
+
+Examples:
+
+* `dismiss 1` dismisses the first reminder in the panel.
+* `dismiss 2` dismisses the second reminder, if at least two reminders are shown.
+
+Success: `Reminder dismissed: {EVENT_NAME}.` The reminder disappears immediately and stays dismissed after
+restarting. Changing the event's start resets its dismissal as described in
+[Automatic event reminders](#automatic-event-reminders).
+
+| Condition | Error message |
+|---|---|
+| The index is missing. | `Invalid command format.` |
+| The index is zero, negative, non-integer, greater than 2147483647, or followed by extra arguments. | `Index must be a positive integer. Example: 1` |
+| No reminder has that index, including when the panel is empty. | `No reminder exists at index {INDEX}. Use an index from the Upcoming events panel.` |
+| The reminder at that index is no longer upcoming (for example, its event has started) because the panel had not yet updated. | `Reminder {INDEX} is no longer upcoming, so it was not dismissed. Check the updated Upcoming events panel.` |
+
+Invalid input dismisses no reminder. If loading or saving the data file fails, the reminder is hidden for
+the current session and feedback shows `Reminder dismissal could not be saved and may reappear after restarting.`
+with a **Not saved** status. The saved dismissal history remains unchanged, so the reminder may return after
+restarting. This is the same behavior as the **Dismiss** button.
+
 ### Assigning members to an event: `assign`
 
 Assigns one or more contacts to an existing event as members and saves the change.
 
-Format: `assign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...`
+Format: `assign evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]...`
 
 * `EVENT_NAME` must match a saved event name, ignoring case. Leading and trailing whitespace is removed.
-* `CONTACT_INDEX` refers to the index number shown in the displayed contact list. If the list is filtered (e.g. after `search`), the index refers to the filtered list. Use `list` to show everyone again. Separate several indexes with spaces. Each index **must be a positive integer starting at 1**.
+* `MEMBER_ID` is a contact's permanent numeric ID, from `1` to `2147483647`. Separate several IDs with spaces.
+  IDs resolve across all saved contacts, including those hidden by searches, filters, or an empty results list.
 * Each parameter may appear only once.
-* All indexes are checked before any change is made. If any index is invalid, no contacts are assigned.
-* Contacts who are already assigned to the event are skipped, and an index repeated in the same command is counted once.
+* All IDs are checked before any change is made. If any ID is invalid or does not exist, no contacts are assigned.
+* Contacts who are already assigned to the event are skipped, and an ID repeated in the same command is counted once.
 * New members are added after the existing members, in the order given.
 
 Selecting the event in the **Events** tab shows its members under **Members**.
 
 Examples:
 
-* `assign evn/Final Concert c/2` assigns the 2nd contact in the displayed list to `Final Concert`.
-* `assign evn/student life fair c/1 4 5` assigns the 1st, 4th and 5th contacts to `Student Life Fair`.
-* `search Bernice` followed by `assign evn/Final Concert c/1` assigns the 1st contact in the results of the `search` command.
+* `assign evn/Final Concert c/2` assigns the contact with member ID `2` to `Final Concert`.
+* `assign evn/student life fair c/1 4 5` assigns the contacts with member IDs `1`, `4`, and `5` to `Student Life Fair`.
+* If Bernice has member ID `12`, `search Bernice` followed by `assign evn/Final Concert c/12` assigns Bernice regardless of her position in the results.
 
 Success: `Assigned 2 member(s) to Final Concert.`
 
@@ -474,13 +523,13 @@ If some contacts were already assigned: `Assigned 1 member(s) to Final Concert. 
 |---|---|
 | No saved event has the supplied name, ignoring case. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
 | The event is archived. | `Event {EVENT_NAME} is archived, so its members cannot be changed. Unarchive it first with: unarchiveevent evn/{EVENT_NAME}` |
-| An index is larger than the displayed contact list. | `No contact exists at index {CONTACT_INDEX}. Use an index from the current contact list.` |
-| An index is not written as digits representing a value from 1 to 2147483647. | `Contact indexes must be positive integers separated by spaces. Example: c/1 3 5` |
+| A member ID does not exist. | `No contact exists with member ID: {MEMBER_ID}. Use an existing member ID.` |
+| A member ID is not written as digits representing a value from 1 to 2147483647. | `Member IDs must be positive integers separated by spaces. Example: c/1 3 5` |
 | Every specified contact is already assigned. | `All specified contacts are already assigned to {EVENT_NAME}. No changes were made.` |
 | The event name is empty. | `Event name must not be empty. Example: evn/Final Concert` |
 | The event name is longer than 100 characters. | `Event name must not exceed 100 characters. Example: evn/Final Concert` |
 | The event name contains a line break or other control character. | `Invalid event name. Use letters, digits, spaces, or punctuation. Example: evn/Final-Concert` |
-| `c/` has no indexes. | `Contact indexes must not be empty. Example: c/1 3 5` |
+| `c/` has no member IDs. | `Member IDs must not be empty. Example: c/1 3 5` |
 | `evn/` or `c/` is missing, or there is text before the first parameter. | `Invalid command format.` |
 | A parameter is repeated. | `Parameter {PREFIX} may only be specified once.` |
 | An unknown parameter is used. | `Unknown parameter: {PREFIX}.` |
@@ -492,21 +541,22 @@ No contacts are assigned and the existing data file remains unchanged.
 
 Removes one or more members from an existing event and saves the change. The contacts themselves are not deleted.
 
-Format: `unassign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...`
+Format: `unassign evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]...`
 
 * `EVENT_NAME` must match a saved event name, ignoring case. Leading and trailing whitespace is removed.
-* `CONTACT_INDEX` refers to the index number shown in the displayed contact list, as in `assign`. If the list is filtered (e.g. after `search`), the index refers to the filtered list. Use `list` to show everyone again. Separate several indexes with spaces. Each index **must be a positive integer starting at 1**.
+* `MEMBER_ID` is a contact's permanent numeric ID, from `1` to `2147483647`. Separate several IDs with spaces.
+  IDs resolve across all saved contacts, including those hidden by searches, filters, or an empty results list.
 * Each parameter may appear only once.
-* All indexes are checked before any change is made. If any index is invalid, no members are removed.
-* Contacts who are not assigned to the event are skipped, and an index repeated in the same command is counted once.
+* All IDs are checked before any change is made. If any ID is invalid or does not exist, no members are removed.
+* Contacts who are not assigned to the event are skipped, and an ID repeated in the same command is counted once.
 * The remaining members keep their order.
 * A removed member's attendance record for the event, if any, is also removed. Other members' attendance is kept.
 
 Examples:
 
-* `unassign evn/Final Concert c/2` removes the 2nd contact in the displayed list from `Final Concert`.
-* `unassign evn/student life fair c/1 3` removes the 1st and 3rd contacts from `Student Life Fair`.
-* `search Bernice` followed by `unassign evn/Final Concert c/1` removes the 1st contact in the results of the `search` command.
+* `unassign evn/Final Concert c/2` removes the contact with member ID `2` from `Final Concert`.
+* `unassign evn/student life fair c/1 3` removes the contacts with member IDs `1` and `3` from `Student Life Fair`.
+* If Bernice has member ID `12`, `search Bernice` followed by `unassign evn/Final Concert c/12` removes Bernice regardless of her position in the results.
 
 Success: `Removed 2 member(s) from Final Concert.`
 
@@ -516,13 +566,13 @@ If some contacts were not assigned: `Removed 1 member(s) from Final Concert. 1 c
 |---|---|
 | No saved event has the supplied name, ignoring case. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
 | The event is archived. | `Event {EVENT_NAME} is archived, so its members cannot be changed. Unarchive it first with: unarchiveevent evn/{EVENT_NAME}` |
-| An index is larger than the displayed contact list. | `No contact exists at index {CONTACT_INDEX}. Use an index from the current contact list.` |
-| An index is not written as digits representing a value from 1 to 2147483647. | `Contact indexes must be positive integers separated by spaces. Example: c/1 3 5` |
+| A member ID does not exist. | `No contact exists with member ID: {MEMBER_ID}. Use an existing member ID.` |
+| A member ID is not written as digits representing a value from 1 to 2147483647. | `Member IDs must be positive integers separated by spaces. Example: c/1 3 5` |
 | None of the specified contacts are assigned. | `None of the specified contacts are assigned to {EVENT_NAME}. No changes were made.` |
 | The event name is empty. | `Event name must not be empty. Example: evn/Final Concert` |
 | The event name is longer than 100 characters. | `Event name must not exceed 100 characters. Example: evn/Final Concert` |
 | The event name contains a line break or other control character. | `Invalid event name. Use letters, digits, spaces, or punctuation. Example: evn/Final-Concert` |
-| `c/` has no indexes. | `Contact indexes must not be empty. Example: c/1 3 5` |
+| `c/` has no member IDs. | `Member IDs must not be empty. Example: c/1 3 5` |
 | `evn/` or `c/` is missing, or there is text before the first parameter. | `Invalid command format.` |
 | A parameter is repeated. | `Parameter {PREFIX} may only be specified once.` |
 | An unknown parameter is used. | `Unknown parameter: {PREFIX}.` |
@@ -538,7 +588,7 @@ Format: `members evn/EVENT_NAME`
 
 * `EVENT_NAME` must match a saved event name, ignoring case. Leading and trailing whitespace is removed.
 * CoordiMate switches to the **Contacts** view and lists the event's members in contact list order.
-* The members' index numbers can be used directly in other commands, such as `unassign`, `edit` and `delete`.
+* Use the members' permanent IDs in `assign`, `unassign`, `edit`, and `delete`, independently of the displayed list.
 * The list stays up to date while it is shown: members removed with `unassign` disappear from it, and renaming the event with `editevent` keeps showing its members. If the event is deleted, the list becomes empty.
 * `add` and `edit` show all contacts again afterwards, so that you can see the contact you changed.
 * Use `list` to show all contacts again.
@@ -549,7 +599,7 @@ Examples:
 
 * `members evn/Final Concert` shows the members of `Final Concert`.
 * `members evn/student life fair` shows the members of `Student Life Fair`.
-* `members evn/Final Concert` followed by `unassign evn/Final Concert c/2` removes the 2nd member shown.
+* `members evn/Final Concert` followed by `unassign evn/Final Concert c/2` removes the contact with member ID `2`, even if they are not the second result.
 
 Success: `Listed 2 member(s) of Final Concert. Use list to show all contacts.`
 
@@ -742,16 +792,17 @@ Unlike `list`, `listtags` does not ignore extra text: `listtags 123` is rejected
 
 Edits an existing contact in CoordiMate.
 
-Format: `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [t/TAG]... [at/TAG]... [rt/TAG]...`
+Format: `edit MEMBER_ID [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [lv/LEAVE_END_DATE] [t/TAG]... [at/TAG]... [rt/TAG]...`
 
-Or: `edit target/IDENTIFIER [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [t/TAG]... [at/TAG]... [rt/TAG]...`
+Or: `edit target/IDENTIFIER [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [lv/LEAVE_END_DATE] [t/TAG]... [at/TAG]... [rt/TAG]...`
 
-* Edits the contact at the specified `INDEX`. The index refers to the index number shown in the displayed contact list. The index **must be a positive integer starting at 1**.
-* Alternatively, `target/IDENTIFIER` finds an exact saved name, phone number, or email address across all contacts, including those hidden by the current search or filter. Names and emails ignore letter case; phone numbers ignore spaces, hyphens, and brackets. Supply either an index or `target/`, not both.
-* If several contacts match an identifier, the command lists each match's name, phone, and email. An index appears only for a match in the current displayed list. Retry with a unique phone or email, or a displayed index.
-* If no contact matches `target/`, or the index is outside the displayed list, the command reports an error.
+* Edits the contact with the specified permanent `MEMBER_ID`, including contacts hidden by a search or filter.
+  For example, `edit 12 r/President` always targets member ID `12`, even when that contact is the first search result.
+* Alternatively, `target/IDENTIFIER` finds an exact saved name, phone number, or email address across all contacts, including those hidden by the current search or filter. Names and emails ignore letter case; phone numbers ignore spaces, hyphens, and brackets. Supply either a member ID or `target/`, not both.
+* If several contacts match an identifier, the command lists each match's member ID, name, phone, and email, including hidden matches. Retry with a member ID, unique phone number, or email address.
+* If no contact matches `target/`, or the member ID does not exist, the command reports an error without changing any contact.
 * Provide at least one field or tag operation. Omitted fields retain their existing values.
-* Name, phone, email, and role cannot be cleared. Use `b/`, `a/`, `o/`, or `m/` with no value to clear that optional field.
+* Name, phone, email, and role cannot be cleared. Use `b/`, `a/`, `o/`, `lv/`, or `m/` with no value to clear that optional field.
 * Birthday uses `dd-MM-yyyy` and cannot be in the future. Edited values follow the same validation rules as `add`.
 * Older saved digit-only phone numbers with at least 3 digits remain usable. An edit without `p/` keeps the existing
   number; a supplied `p/` value must follow the current 7–15-digit rule.
@@ -778,26 +829,27 @@ Role: President
 ```
 
 Examples:
-*  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of the 1st contact to be `91234567` and `johndoe@example.com` respectively.
-*  `edit 2 n/Betsy Crower t/` Edits the name of the 2nd contact to be `Betsy Crower` and clears all existing tags.
+*  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of member ID `1` to be `91234567` and `johndoe@example.com` respectively.
+*  `edit 2 n/Betsy Crower t/` Edits the name of member ID `2` to be `Betsy Crower` and clears all existing tags.
 *  `edit 3 r/Logistics Lead m/Handles venue bookings` Updates a role and note.
 *  `edit 3 b/ a/ o/ m/` Clears the optional birthday, address, organisation, and note.
 *  `edit target/alice@example.com r/Vice-President` Updates a contact even if the current list is filtered.
 *  `edit 3 at/Sponsor rt/Logistics` Adds Sponsor, then removes Logistics without changing other tags.
+*  `edit 2 lv/30-11-2026` Marks the contact with member ID `2` as on leave until 30 November 2026, and `edit 2 lv/` ends their leave.
 
 Edited contact fields use the same validation error messages as [`add`](#adding-a-contact-add).
-Empty optional fields (`b/`, `a/`, `o/`, `m/`, and `t/`) clear those values and are accepted.
+Empty optional fields (`b/`, `a/`, `o/`, `lv/`, `m/`, and `t/`) clear those values and are accepted.
 Additional errors are listed below.
 
 | Condition | Error message |
 |---|---|
 | No arguments are supplied. | `Invalid command format.` |
-| `target/` is omitted and the index is missing, is not a positive integer, or exceeds the supported integer range. | `Invalid contact index. Example: edit 2 r/President` |
-| A positive index is larger than the displayed contact list. | `No contact exists at index {INDEX}. Use an index from the current contact list.` |
-| Text or an index appears before `target/`. | `Specify exactly one contact identifier.` |
+| `target/` is omitted and the member ID is missing, is not a positive integer, or exceeds the supported integer range. | `Invalid member ID. Example: edit 12 r/President` |
+| The member ID does not exist. | `No contact exists with member ID: {MEMBER_ID}. Use an existing member ID.` |
+| Text or a member ID appears before `target/`. | `Specify exactly one contact identifier.` |
 | `target/` is empty or contains only whitespace. | `Contact identifier must not be empty. Example: target/aisha@example.com` |
 | No saved contact matches `target/`. | `No contact matches that identifier. Use an exact saved name, phone number, or email address.` |
-| Several contacts match `target/`. | `Multiple contacts match that identifier:`<br>matching contact details<br>`Use a displayed index, phone number, or email address to identify the contact.` |
+| Several contacts match `target/`. | `Multiple contacts match that identifier:`<br>matching contact details with `ID: <number>`<br>`Use a member ID, phone number, or email address to identify the contact.` |
 | A valid identifier is supplied without any fields or tag operations to edit. | `Provide at least one field or tag operation to edit.` |
 | A parameter other than `t/`, `at/`, or `rt/` is repeated. | `Parameter {PREFIX} may only be specified once.` |
 | An unknown parameter is used. | `Unknown parameter: {PREFIX}.` |
@@ -810,6 +862,34 @@ Additional errors are listed below.
 | An `rt/` tag exceeds 30 characters. | `Tag name must not exceed 30 characters. Example: rt/Publicity` |
 | The updated name, phone number, or email conflicts with another saved contact. | `This update conflicts with another saved contact. No changes were made.` |
 | Renaming the contact would duplicate a member name in an event. | `Cannot rename this contact because an event already has a member with that name. No changes were made.` |
+
+### Marking a contact as on leave
+
+Records that a contact is temporarily unavailable until a given date, so you do not need to remember to clear it
+afterwards. Leave is an optional contact field, set with `lv/` in [`add`](#adding-a-contact-add) or
+[`edit`](#editing-a-contact-edit).
+
+Format: `edit MEMBER_ID lv/LEAVE_END_DATE` or `edit target/IDENTIFIER lv/LEAVE_END_DATE`
+
+* `LEAVE_END_DATE` is the **last day** of leave, in `dd-MM-yyyy` format. It must be today or a later date.
+* The contact is on leave up to and including that date. While on leave, their card in the contact list shows
+  **On leave until LEAVE_END_DATE**, and the details pane shows the date under **On leave until**.
+* From the day after, the contact is no longer shown as on leave. You do not need to run any command: if CoordiMate
+  is open at midnight, the badge and the details pane update within a minute.
+* The ended leave date stays in the data file but has no effect. The details pane shows `— (not on leave)`.
+* Setting a new date replaces the previous one. `edit MEMBER_ID lv/` with no date ends the leave immediately.
+* Leave does not affect events: a contact on leave can still be assigned to events and have attendance marked.
+
+Examples:
+
+* `edit 2 lv/30-11-2026` marks the contact with member ID `2` as on leave until 30 November 2026.
+* `edit target/aisha@example.com lv/15-12-2026` changes Aisha's leave to end on 15 December 2026.
+* `edit 2 lv/` ends the leave of the contact with member ID `2`.
+
+| Condition | Error message |
+|---|---|
+| The date is invalid, incorrectly formatted, or in the past. | `Invalid leave end date. Use a real date in dd-MM-yyyy format that is not in the past. Example: lv/30-11-2026` |
+| `lv/` is repeated. | `Parameter lv/ may only be specified once.` |
 
 ### Searching contacts: `search`
 
@@ -824,7 +904,7 @@ Format: `search KEYWORD`
 * Surrounding quotation marks are optional: `search "Jurong West"` and `search Jurong West` give the same results.
 * Leading and trailing spaces are ignored. An empty keyword is rejected.
 * Search checks all saved contacts, including those hidden by the current search or filter.
-* Results replace the displayed contact list. Use their displayed indexes in subsequent commands, or `list` to show everyone.
+* Results replace the displayed contact list. Permanent member IDs remain unchanged; `edit`, `delete`, `assign`, and `unassign` accept those IDs even for hidden contacts. Use `list` to show everyone.
 * If nothing matches, the displayed list is empty and a no-matches message is shown.
 
 Examples:
@@ -859,7 +939,7 @@ Format: `filter FIELD/VALUE [FIELD/VALUE]...`
   * `organisation/VALUE` lists contacts whose organisation is that value. At least one contact must have it.
 * When several filters are given, a contact must match **all** of them.
 * Filter checks all saved contacts, including those hidden by the current search or filter.
-* Results replace the displayed contact list. Use their displayed indexes in subsequent commands, or `list` to show everyone.
+* Results replace the displayed contact list. Permanent member IDs remain unchanged; `edit`, `delete`, `assign`, and `unassign` accept those IDs even for hidden contacts. Use `list` to show everyone.
 * If a value does not exist, the command is rejected and the displayed list stays as it was.
 
 **Quotation marks**
@@ -900,13 +980,14 @@ If every value exists but no contact matches all the filters, the displayed list
 
 Finds a saved contact and asks for confirmation before deleting it.
 
-Formats: `delete INDEX` · `delete n/NAME` · `delete p/PHONE` · `delete e/EMAIL`
+Formats: `delete MEMBER_ID` · `delete n/NAME` · `delete p/PHONE` · `delete e/EMAIL`
 
-* Supply exactly one identifier. `INDEX` is a positive integer in the currently displayed contact list.
+* Supply exactly one identifier. `MEMBER_ID` is the contact's permanent numeric ID and searches all saved contacts,
+  independently of the currently displayed list, including empty search or filter results.
 * Name matching is exact apart from letter case and surrounding spaces. Phone matching ignores spaces, hyphens, and
   brackets. Email matching ignores letter case and surrounding spaces. These identifiers search all saved contacts,
   including those hidden by a search or filter.
-* CoordiMate shows the contact's name, phone, email, and role, followed by `Confirm deletion? [y/N]`. Type exactly `y`
+* CoordiMate shows the contact's `ID: <number>`, name, phone, email, and role, followed by `Confirm deletion? [y/N]`. Type exactly `y`
   or `Y` to delete. `n`, `N`, Enter, or any other input cancels. A cancelling input is **not** run as a command; enter it
   again if that was your intention.
 * A confirmed deletion removes the contact from all event member lists, including past events. The events and other
@@ -915,8 +996,8 @@ Formats: `delete INDEX` · `delete n/NAME` · `delete p/PHONE` · `delete e/EMAI
   contact and events unchanged and reports a contact load or save error.
 
 Examples:
-* `list` followed by `delete 2`, then `y`, deletes the 2nd displayed contact.
-* `search Betsy` followed by `delete 1`, then `Y`, deletes the 1st contact in the results.
+* `list` followed by `delete 2`, then `y`, deletes the contact with member ID `2`.
+* If Betsy's member ID is `12`, `search Betsy` followed by `delete 12`, then `Y`, deletes Betsy regardless of her position in the results.
 * `delete e/aisha@example.com`, then `y`, deletes that saved contact even if a filter hides it.
 
 On confirmation, feedback is `Contact deleted successfully: NAME.` Missing, invalid, unknown, repeated, and
@@ -925,16 +1006,17 @@ non-matching identifiers are rejected without opening a confirmation prompt.
 | Condition | Error message |
 |---|---|
 | No identifier is supplied. | `Invalid command format.` |
-| An unprefixed identifier is not a positive integer or exceeds the supported integer range. | `Invalid contact index. Example: delete 3` |
-| A positive index is larger than the displayed contact list. | `No contact exists at index {INDEX}. Use an index from the current contact list.` |
-| Different prefixed identifiers are combined, or text or an index appears before a prefixed identifier. | `Specify exactly one contact identifier. Example: delete n/Aisha Tan` |
+| An unprefixed identifier is not a positive integer or exceeds the supported integer range. | `Invalid member ID. Example: delete 12` |
+| The member ID does not exist. | `No contact exists with member ID: {MEMBER_ID}. Use an existing member ID.` |
+| Different prefixed identifiers are combined, or text or a member ID appears before a prefixed identifier. | `Specify exactly one contact identifier. Example: delete n/Aisha Tan` |
 | `n/` is empty or contains only whitespace. | `Contact identifier must not be empty. Example: n/Aisha Tan` |
 | `p/` is empty or contains only whitespace. | `Contact identifier must not be empty. Example: p/+6591234567` |
 | `e/` is empty or contains only whitespace. | `Contact identifier must not be empty. Example: e/aish@example.com` |
 | A parameter is repeated. | `Parameter {PREFIX} may only be specified once.` |
 | An unknown parameter is used. | `Unknown parameter: {PREFIX}.` |
 | No saved contact matches the identifier. | `No contact matches that identifier. Use an exact saved name, phone number, or email address.` |
-| Several contacts match the identifier. | `Multiple contacts match that identifier:`<br>matching contact details<br>`Use a displayed index, phone number, or email address to identify the contact.` |
+| Several contacts match the identifier. | `Multiple contacts match that identifier:`<br>matching contact details with `ID: <number>`<br>`Use a member ID, phone number, or email address to identify the contact.` |
+| The contact changes after the confirmation prompt. | `Contact ID: {MEMBER_ID} has changed since deletion was requested. Run delete again.` |
 
 Cancelling reports `Deletion cancelled. No changes were made.`
 If saving a confirmed deletion fails, the command reports `Contact could not be saved. No changes were made.`
@@ -1030,15 +1112,21 @@ Format: `exit`
 
 ### Saving the data
 
+Saved member IDs stay tied to the same contacts across restarts. Older files receive unique IDs for contacts
+that lack them when loaded; the next successful save records those IDs.
+
+IDs are assigned automatically and cannot be changed through commands. Deleting a contact leaves a gap;
+adding another contact does not reuse the deleted ID. Editing contacts, searching, filtering, and changing
+list order keep existing IDs. The `clear` command starts an empty dataset, with IDs starting from `1` again.
+
 CoordiMate automatically saves data after commands that change it. You do not need to save manually.
 
 A command that changes your data is saved to the data file **before** the change appears in the app. If the data
 cannot be saved, the command is rejected with an error such as `Event could not be saved. No changes were made.`
 and both the app and the data file stay as they were, so what you see always matches what is saved.
 
-Most commands that do not change saved data also attempt to save after running. The `switch` command only
-changes the selected view and does not read or save the data file. For other commands, a save failure reports
-one of the following messages; a command may already have changed the displayed view when this happens.
+Commands that do not change saved data also attempt to save after running. A save failure reports one of the
+following messages; a command may already have changed the displayed view when this happens.
 
 | Condition | Error message |
 |---|---|
@@ -1054,8 +1142,11 @@ CoordiMate data is saved automatically as a JSON file `[JAR file location]/data/
 <box type="warning" seamless>
 
 **Caution:**
-If your changes make the data file invalid, CoordiMate starts with an empty dataset at the next run. While the file is invalid, commands that change data (such as `add`, `addevent`, and `clear`) are rejected with `Saved data could not be loaded. Check the local data file.` and leave the file untouched, so that you can close the app and fix it. Commands such as `list`, `search`, and `filter` save the data currently in the app, which **replaces the invalid file**. The `switch` command does not access the data file. We therefore recommend backing up the file before editing it.<br>
+If your changes make the data file invalid, CoordiMate starts with an empty dataset at the next run. While the file is invalid, commands that change data (such as `add`, `addevent`, and `clear`) are rejected with `Saved data could not be loaded. Check the local data file.` and leave the file untouched, so that you can close the app and fix it. Commands such as `list`, `search`, and `filter` save the data currently in the app, which **replaces the invalid file**. We therefore recommend backing up the file before editing it.<br>
 Each name in an event's `members` list must exactly match the name of a saved contact, or the data file is invalid.<br>
+Each contact's `memberId` must be a unique integer from `1` to `2147483647`. Keep existing IDs unchanged.
+Keep the top-level `nextMemberId` field: it must exceed every saved ID, must not be reduced after deleting contacts,
+and cannot exceed `2147483648`.<br>
 Each contact and event has an `archived` value of `true` or `false`. A missing value is read as `false`.<br>
 If a contact uses a tag that is missing from the top-level `tags` list, CoordiMate adds it to the global tag list when
 the file is loaded. Existing top-level tags, including unused tags, retain their saved order and capitalization.<br>
@@ -1073,7 +1164,7 @@ Furthermore, certain edits can cause CoordiMate to behave in unexpected ways (e.
 
 ## Known issues
 
-1. **If you minimize the Help Window** and then run the `help` command (or use the `Help` menu, or the keyboard shortcut `F1`) again, the original Help Window will remain minimized, and no new Help Window will appear. The remedy is to manually restore the minimized Help Window.
+1. **If you minimize the Help Window** and then run the `help` command (or use the `Help` menu, or press `Fn` + `F1`) again, the original Help Window will remain minimized, and no new Help Window will appear. The remedy is to manually restore the minimized Help Window.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -1081,9 +1172,9 @@ Furthermore, certain edits can cause CoordiMate to behave in unexpected ways (e.
 
 Action | Format, Examples
 -------|------------------
-**Add contact** | `add n/NAME p/PHONE e/EMAIL r/ROLE [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [t/TAG]... [m/NOTE]`<br> e.g., `add n/James Ho p/22224444 e/jamesho@example.com r/Member t/EXCO`
-**Edit contact** | `edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [t/TAG]... [at/TAG]... [rt/TAG]...`<br> or `edit target/IDENTIFIER [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [t/TAG]... [at/TAG]... [rt/TAG]...`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
-**Delete contact** | `delete INDEX` or `delete n/NAME`, `delete p/PHONE`, `delete e/EMAIL`; confirm with `y`<br> e.g., `delete 3`
+**Add contact** | `add n/NAME p/PHONE e/EMAIL r/ROLE [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [lv/LEAVE_END_DATE] [t/TAG]... [m/NOTE]`<br> e.g., `add n/James Ho p/22224444 e/jamesho@example.com r/Member t/EXCO`
+**Edit contact** | `edit MEMBER_ID [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [lv/LEAVE_END_DATE] [t/TAG]... [at/TAG]... [rt/TAG]...`<br> or `edit target/IDENTIFIER [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [lv/LEAVE_END_DATE] [t/TAG]... [at/TAG]... [rt/TAG]...`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
+**Delete contact** | `delete MEMBER_ID` or `delete n/NAME`, `delete p/PHONE`, `delete e/EMAIL`; confirm with `y`<br> e.g., `delete 3`
 **List contacts and events** | `list [archived]`<br> e.g., `list`, `list archived`
 **Archive contact** | `archive INDEX`<br> e.g., `archive 2`
 **Unarchive contact** | `unarchive INDEX` (index from `list archived`)<br> e.g., `unarchive 1`
@@ -1094,15 +1185,15 @@ Action | Format, Examples
 **Delete event** | `deleteevent evn/EVENT_NAME`<br> e.g., `deleteevent evn/Final Concert`
 **Archive event** | `archiveevent evn/EVENT_NAME`<br> e.g., `archiveevent evn/Final Concert`
 **Unarchive event** | `unarchiveevent evn/EVENT_NAME`<br> e.g., `unarchiveevent evn/Final Concert`
-**Assign** | `assign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...`<br> e.g., `assign evn/Final Concert c/1 4 5`
-**Unassign** | `unassign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...`<br> e.g., `unassign evn/Final Concert c/2 3`
+**Dismiss reminder** | `dismiss INDEX` (index from the **Upcoming events** panel)<br> e.g., `dismiss 1`
+**Assign** | `assign evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]...`<br> e.g., `assign evn/Final Concert c/1 4 5`
+**Unassign** | `unassign evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]...`<br> e.g., `unassign evn/Final Concert c/2 3`
 **Members** | `members evn/EVENT_NAME`<br> e.g., `members evn/Final Concert`
 **Mark attendance** | `markattendance evn/EVENT_NAME mem/MEMBER_NAME att/STATUS`<br> e.g., `markattendance evn/Final Concert mem/Alex Yeoh att/present`
 **Add tag** | `addtag t/TAG`<br> e.g., `addtag t/Publicity`
 **Edit tag** | `edittag OLD_TAG t/NEW_TAG`<br> e.g., `edittag Media t/Publicity`
 **Delete tag** | `deletetag t/TAG`<br> e.g., `deletetag t/Publicity`
 **List tags** | `listtags`
-**Switch views** | `switch contacts` \| `switch events` \| `switch tags`<br> e.g., `switch events`
 **Clear** | `clear`
 **Help** | `help`
 **Exit** | `exit`

@@ -43,7 +43,8 @@ public class ListCommand extends Command {
         requireNonNull(model);
         model.setShowingArchived(showArchived);
         model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
-        return new CommandResult(showArchived ? MESSAGE_ARCHIVED_SUCCESS : MESSAGE_SUCCESS);
+        return new CommandResult(showArchived ? MESSAGE_ARCHIVED_SUCCESS : MESSAGE_SUCCESS,
+                CommandResult.View.CONTACTS);
     }
 
     @Override

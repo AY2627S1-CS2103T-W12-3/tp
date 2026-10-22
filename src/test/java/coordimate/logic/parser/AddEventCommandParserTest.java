@@ -19,7 +19,7 @@ public class AddEventCommandParserTest {
         AddEventCommand concert = new AddEventCommand(new Event("Final Concert",
                 new EventTime("08-08-2026 15:00"), new EventTime("08-08-2026 18:00")));
         assertEquals(concert, parser.parse(" evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00"));
-        assertEquals(concert, new CoordiMateParser().parseCommand(
+        assertEquals(concert, CommandParserTestUtil.createParser().parseCommand(
                 "addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00"));
         AddEventCommand fair = new AddEventCommand(new Event("Student Life Fair",
                 new EventTime("09-10-2026"), new EventTime("10-10-2026")));

@@ -5,7 +5,6 @@ import static java.util.Objects.requireNonNull;
 import java.util.List;
 
 import coordimate.commons.core.index.Index;
-import coordimate.logic.Messages;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.Model;
 import coordimate.model.person.Person;
@@ -29,7 +28,8 @@ public class ArchiveCommand extends Command {
     public static final String MESSAGE_UNARCHIVE_SUCCESS = "Unarchived contact: %s.";
     public static final String MESSAGE_ALREADY_ARCHIVED = "%s is already archived. No changes were made.";
     public static final String MESSAGE_NOT_ARCHIVED = "%s is not archived. No changes were made.";
-    public static final String MESSAGE_INVALID_INDEX = Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX;
+    public static final String MESSAGE_INVALID_INDEX =
+            "No contact exists at index %1$d. Use an index from the current contact list.";
     public static final String MESSAGE_SAVE_ERROR = "Contact archive status could not be saved. "
             + "No changes were made.";
 

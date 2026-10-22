@@ -14,13 +14,13 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import coordimate.commons.core.index.Index;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.ModelManager;
 import coordimate.model.UserPrefs;
 import coordimate.model.event.AttendanceStatus;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
+import coordimate.model.person.MemberId;
 
 public class ArchiveEventCommandTest {
     private final Event concert = new Event("Final Concert", new EventTime("08-08-2026 15:00"),
@@ -88,9 +88,9 @@ public class ArchiveEventCommandTest {
         String message = String.format(EventMembersCommand.MESSAGE_EVENT_ARCHIVED, "Final Concert");
 
         assertEquals(message, assertThrows(CommandException.class, () ->
-                new AssignCommand("final concert", List.of(Index.fromOneBased(2))).execute(model)).getMessage());
+                new AssignCommand("final concert", List.of(new MemberId(2))).execute(model)).getMessage());
         assertEquals(message, assertThrows(CommandException.class, () ->
-                new UnassignCommand("Final Concert", List.of(Index.fromOneBased(1))).execute(model)).getMessage());
+                new UnassignCommand("Final Concert", List.of(new MemberId(1))).execute(model)).getMessage());
         assertEquals(concert.withArchived(true), model.getCoordiMate().getEventList().getFirst());
 
         new MarkAttendanceCommand("Final Concert", ALICE.getName(), AttendanceStatus.ABSENT).execute(model);

@@ -6,22 +6,24 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import coordimate.commons.core.index.Index;
 import coordimate.commons.util.ToStringBuilder;
 import coordimate.logic.Messages;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.Model;
+import coordimate.model.person.MemberId;
 import coordimate.model.person.Person;
 
-/** Deletes a contact identified by its displayed index or an exact saved detail. */
+/** Deletes a contact identified by its permanent member ID or an exact saved detail. */
 public class DeleteCommand extends Command {
 
     public static final String COMMAND_WORD = "delete";
     public static final String MESSAGE_USAGE = COMMAND_WORD + ": Deletes a contact.\n"
-            + "Parameters: INDEX | n/NAME | p/PHONE | e/EMAIL\n"
+            + "Parameters: MEMBER_ID | n/NAME | p/PHONE | e/EMAIL\n"
             + "Example: " + COMMAND_WORD + " n/Aisha Tan";
     public static final String MESSAGE_DELETE_PERSON_SUCCESS = "Contact deleted successfully: %s.";
-    public static final String MESSAGE_INVALID_INDEX = Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX;
+    public static final String MESSAGE_UNKNOWN_MEMBER_ID = Messages.MESSAGE_MEMBER_ID_NOT_FOUND;
+    public static final String MESSAGE_TARGET_CHANGED =
+            "Contact ID: %d has changed since deletion was requested. Run delete again.";
     public static final String MESSAGE_NO_MATCH = Messages.MESSAGE_CONTACT_NO_MATCH;
     public static final String MESSAGE_AMBIGUOUS_MATCH = Messages.MESSAGE_CONTACT_AMBIGUOUS_MATCH;
     public static final String MESSAGE_SAVE_ERROR = "Contact could not be saved. No changes were made.";
@@ -33,14 +35,14 @@ public class DeleteCommand extends Command {
         NAME, PHONE, EMAIL
     }
 
-    private final Index targetIndex;
+    private final MemberId memberId;
     private final IdentifierType identifierType;
     private final String identifier;
     private final Person resolvedTarget;
 
-    /** Creates an index-based deletion request. */
-    public DeleteCommand(Index targetIndex) {
-        this.targetIndex = requireNonNull(targetIndex);
+    /** Creates a deletion request using a permanent member ID. */
+    public DeleteCommand(MemberId memberId) {
+        this.memberId = requireNonNull(memberId);
         identifierType = null;
         identifier = null;
         resolvedTarget = null;
@@ -53,13 +55,13 @@ public class DeleteCommand extends Command {
         if (this.identifier.isEmpty()) {
             throw new IllegalArgumentException("Contact identifier must not be empty.");
         }
-        targetIndex = null;
+        memberId = null;
         resolvedTarget = null;
     }
 
     private DeleteCommand(Person resolvedTarget) {
         this.resolvedTarget = requireNonNull(resolvedTarget);
-        targetIndex = null;
+        memberId = null;
         identifierType = null;
         identifier = null;
     }
@@ -73,27 +75,28 @@ public class DeleteCommand extends Command {
     public Person resolvePerson(Model model) throws CommandException {
         requireNonNull(model);
         if (resolvedTarget != null) {
-            return model.getCoordiMate().getPersonList().stream().filter(resolvedTarget::equals).findFirst()
-                    .orElseThrow(() -> new CommandException(MESSAGE_NO_MATCH));
-        }
-        if (targetIndex != null) {
-            List<Person> displayed = model.getFilteredPersonList();
-            if (targetIndex.getZeroBased() >= displayed.size()) {
-                throw new CommandException(String.format(MESSAGE_INVALID_INDEX, targetIndex.getOneBased()));
+            MemberId confirmedId = resolvedTarget.getMemberId().orElseThrow();
+            Person current = MemberIdResolver.resolve(model, confirmedId);
+            if (!current.equals(resolvedTarget)) {
+                throw new CommandException(String.format(MESSAGE_TARGET_CHANGED, confirmedId.getValue()));
             }
-            return displayed.get(targetIndex.getZeroBased());
+            return current;
         }
-        return resolveMatches(model.getCoordiMate().getPersonList(), model.getFilteredPersonList());
+        if (memberId != null) {
+            return MemberIdResolver.resolve(model, memberId);
+        }
+        return resolveMatches(model.getCoordiMate().getPersonList());
     }
 
-    Person resolveMatches(List<Person> saved, List<Person> displayed) throws CommandException {
+    Person resolveMatches(List<Person> saved) throws CommandException {
+        requireNonNull(saved);
         List<Person> matches = saved.stream()
                 .filter(this::matchesIdentifier).toList();
         if (matches.isEmpty()) {
             throw new CommandException(MESSAGE_NO_MATCH);
         }
         if (matches.size() > 1) {
-            String details = matches.stream().map(person -> formatMatch(person, displayed))
+            String details = matches.stream().map(Messages::formatContactMatch)
                     .collect(Collectors.joining("\n"));
             throw new CommandException(String.format(MESSAGE_AMBIGUOUS_MATCH, details));
         }
@@ -112,16 +115,10 @@ public class DeleteCommand extends Command {
         return phone.replace(" ", "").replace("-", "").replace("(", "").replace(")", "");
     }
 
-    private static String formatMatch(Person person, List<Person> displayed) {
-        String details = "- " + person.getName() + " | Phone: " + person.getPhone()
-                + " | Email: " + person.getEmail();
-        int index = displayed.indexOf(person);
-        return index < 0 ? details : details + " | Current-list index: " + (index + 1);
-    }
-
     /** Formats the contact details and the confirmation prompt. */
     public static String confirmationPrompt(Person person) {
-        return "Contact found:\nName: " + person.getName()
+        requireNonNull(person);
+        return "Contact found:\nID: " + person.getMemberId().orElseThrow() + "\nName: " + person.getName()
                 + "\nPhone: " + person.getPhone()
                 + "\nEmail: " + person.getEmail()
                 + "\nRole: " + person.getRole()
@@ -130,15 +127,22 @@ public class DeleteCommand extends Command {
 
     @Override
     public CommandResult execute(Model model) throws CommandException {
+        requireNonNull(model);
         Person personToDelete = resolvePerson(model);
+        int deletedContactIndex = model.getFilteredPersonList().indexOf(personToDelete);
         model.deletePerson(personToDelete);
-        return new CommandResult(String.format(MESSAGE_DELETE_PERSON_SUCCESS, personToDelete.getName()));
+        assert !model.getCoordiMate().getPersonList().contains(personToDelete)
+                : "Deleted contact must not remain in the model.";
+        String feedback = String.format(MESSAGE_DELETE_PERSON_SUCCESS, personToDelete.getName());
+        return deletedContactIndex < 0
+                ? new CommandResult(feedback, CommandResult.View.CONTACTS)
+                : CommandResult.withContactIndexToFocus(feedback, CommandResult.View.CONTACTS, deletedContactIndex);
     }
 
     @Override
     public boolean equals(Object other) {
         return other instanceof DeleteCommand command
-                && Objects.equals(targetIndex, command.targetIndex)
+                && Objects.equals(memberId, command.memberId)
                 && identifierType == command.identifierType
                 && Objects.equals(identifier, command.identifier)
                 && Objects.equals(resolvedTarget, command.resolvedTarget);
@@ -146,13 +150,13 @@ public class DeleteCommand extends Command {
 
     @Override
     public int hashCode() {
-        return Objects.hash(targetIndex, identifierType, identifier, resolvedTarget);
+        return Objects.hash(memberId, identifierType, identifier, resolvedTarget);
     }
 
     @Override
     public String toString() {
         return new ToStringBuilder(this)
-                .add("targetIndex", targetIndex)
+                .add("memberId", memberId)
                 .add("identifierType", identifierType)
                 .add("identifier", identifier)
                 .add("resolvedTarget", resolvedTarget)

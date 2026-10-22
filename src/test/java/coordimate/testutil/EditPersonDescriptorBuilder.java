@@ -8,6 +8,7 @@ import coordimate.logic.commands.EditCommand.EditPersonDescriptor;
 import coordimate.model.person.Address;
 import coordimate.model.person.Birthday;
 import coordimate.model.person.Email;
+import coordimate.model.person.LeaveDate;
 import coordimate.model.person.Name;
 import coordimate.model.person.Note;
 import coordimate.model.person.Organisation;
@@ -44,6 +45,7 @@ public class EditPersonDescriptorBuilder {
         person.getAddress().ifPresent(descriptor::setAddress);
         person.getOrganisation().ifPresent(descriptor::setOrganisation);
         person.getNote().ifPresent(descriptor::setNote);
+        person.getLeaveDate().ifPresent(descriptor::setLeaveDate);
         descriptor.setTags(person.getTags());
     }
 
@@ -124,6 +126,18 @@ public class EditPersonDescriptorBuilder {
     /** Marks the note for clearing. */
     public EditPersonDescriptorBuilder withoutNote() {
         descriptor.setNote(null);
+        return this;
+    }
+
+    /** Sets the last day of leave to edit. */
+    public EditPersonDescriptorBuilder withLeaveDate(String leaveDate) {
+        descriptor.setLeaveDate(new LeaveDate(leaveDate));
+        return this;
+    }
+
+    /** Marks the leave for clearing. */
+    public EditPersonDescriptorBuilder withoutLeaveDate() {
+        descriptor.setLeaveDate(null);
         return this;
     }
 

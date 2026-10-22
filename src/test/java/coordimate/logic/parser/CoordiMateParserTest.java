@@ -17,10 +17,10 @@ import coordimate.logic.Messages;
 import coordimate.logic.commands.AddCommand;
 import coordimate.logic.commands.AssignCommand;
 import coordimate.logic.commands.ClearCommand;
-import coordimate.logic.commands.CommandResult;
 import coordimate.logic.commands.CreateTagCommand;
 import coordimate.logic.commands.DeleteCommand;
 import coordimate.logic.commands.DeleteTagCommand;
+import coordimate.logic.commands.DismissCommand;
 import coordimate.logic.commands.EditCommand;
 import coordimate.logic.commands.EditCommand.EditPersonDescriptor;
 import coordimate.logic.commands.EditTagCommand;
@@ -32,14 +32,15 @@ import coordimate.logic.commands.ListTagsCommand;
 import coordimate.logic.commands.MarkAttendanceCommand;
 import coordimate.logic.commands.MembersCommand;
 import coordimate.logic.commands.SearchCommand;
-import coordimate.logic.commands.SwitchCommand;
 import coordimate.logic.commands.UnassignCommand;
 import coordimate.logic.parser.exceptions.ParseException;
+import coordimate.logic.reminder.ReminderService;
 import coordimate.model.ModelManager;
 import coordimate.model.event.AttendanceStatus;
 import coordimate.model.person.ContactMatchesKeywordPredicate;
 import coordimate.model.person.FilterCriterion;
 import coordimate.model.person.FilterField;
+import coordimate.model.person.MemberId;
 import coordimate.model.person.Name;
 import coordimate.model.person.Person;
 import coordimate.model.tag.Tag;
@@ -49,7 +50,17 @@ import coordimate.testutil.PersonUtil;
 
 public class CoordiMateParserTest {
 
-    private final CoordiMateParser parser = new CoordiMateParser();
+    private final CoordiMateParser parser = CommandParserTestUtil.createParser();
+
+    @Test
+    public void parseCommand_dismiss() throws Exception {
+        ReminderService reminders = new ReminderService(new ModelManager(), null, java.time.Clock.systemDefaultZone());
+        assertEquals(new DismissCommand(Index.fromOneBased(2), reminders), parser.parseCommand("dismiss 2"));
+        assertEquals(DismissCommand.MESSAGE_USAGE, CoordiMateParser.getUsage("dismiss"));
+        String message = withUsage(ParserUtil.MESSAGE_INVALID_INDEX, DismissCommand.MESSAGE_USAGE);
+        assertThrows(ParseException.class, message, () ->
+                parser.parseCommand("dismiss 0"));
+    }
 
     @Test
     public void parseCommand_add() throws Exception {
@@ -62,7 +73,7 @@ public class CoordiMateParserTest {
     public void parseCommand_assign() throws Exception {
         AssignCommand command = (AssignCommand) parser.parseCommand(
                 AssignCommand.COMMAND_WORD + " evn/Final Concert c/1 3");
-        assertEquals(new AssignCommand("Final Concert", List.of(INDEX_FIRST_PERSON, Index.fromOneBased(3))),
+        assertEquals(new AssignCommand("Final Concert", List.of(new MemberId(1), new MemberId(3))),
                 command);
     }
 
@@ -70,7 +81,7 @@ public class CoordiMateParserTest {
     public void parseCommand_unassign() throws Exception {
         UnassignCommand command = (UnassignCommand) parser.parseCommand(
                 UnassignCommand.COMMAND_WORD + " evn/Final Concert c/1 3");
-        assertEquals(new UnassignCommand("Final Concert", List.of(INDEX_FIRST_PERSON, Index.fromOneBased(3))),
+        assertEquals(new UnassignCommand("Final Concert", List.of(new MemberId(1), new MemberId(3))),
                 command);
     }
 
@@ -102,7 +113,7 @@ public class CoordiMateParserTest {
     public void parseCommand_delete() throws Exception {
         DeleteCommand command = (DeleteCommand) parser.parseCommand(
                 DeleteCommand.COMMAND_WORD + " " + INDEX_FIRST_PERSON.getOneBased());
-        assertEquals(new DeleteCommand(INDEX_FIRST_PERSON), command);
+        assertEquals(new DeleteCommand(new MemberId(1)), command);
     }
 
     @Test
@@ -117,7 +128,7 @@ public class CoordiMateParserTest {
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder(person).build();
         EditCommand command = (EditCommand) parser.parseCommand(EditCommand.COMMAND_WORD + " "
                 + INDEX_FIRST_PERSON.getOneBased() + " " + PersonUtil.getEditPersonDescriptorDetails(descriptor));
-        assertEquals(new EditCommand(INDEX_FIRST_PERSON, descriptor), command);
+        assertEquals(new EditCommand(new MemberId(1), descriptor), command);
     }
 
     @Test
@@ -154,6 +165,8 @@ public class CoordiMateParserTest {
                 parser.parseCommand("find"));
         assertThrows(ParseException.class, withUsage(MESSAGE_UNKNOWN_COMMAND, HelpCommand.MESSAGE_USAGE), () ->
                 parser.parseCommand("find Alice"));
+        assertThrows(ParseException.class, withUsage(MESSAGE_UNKNOWN_COMMAND, HelpCommand.MESSAGE_USAGE), () ->
+                parser.parseCommand("switch events"));
     }
 
     @Test
@@ -186,28 +199,6 @@ public class CoordiMateParserTest {
         SearchCommand command = (SearchCommand) parser.parseCommand(
                 SearchCommand.COMMAND_WORD + " Alice");
         assertEquals(new SearchCommand(new ContactMatchesKeywordPredicate("Alice"), "Alice"), command);
-    }
-
-    @Test
-    public void parseCommand_switch() throws Exception {
-        ModelManager model = new ModelManager();
-        assertEquals(new CommandResult("Switched to Contacts view.", CommandResult.View.CONTACTS),
-                parser.parseCommand("switch contacts").execute(model));
-        assertEquals(new CommandResult("Switched to Events view.", CommandResult.View.EVENTS),
-                parser.parseCommand("switch events").execute(model));
-        assertEquals(new CommandResult("Switched to Tags view.", CommandResult.View.TAGS),
-                parser.parseCommand("switch tags").execute(model));
-        assertEquals(new CommandResult("Switched to Events view.", CommandResult.View.EVENTS),
-                parser.parseCommand(" switch   events  ").execute(model));
-    }
-
-    @Test
-    public void parseCommand_switchInvalidView_throwsParseException() {
-        String expected = String.format(MESSAGE_INVALID_COMMAND_FORMAT, SwitchCommand.MESSAGE_USAGE);
-        assertThrows(ParseException.class, expected, () -> parser.parseCommand("switch"));
-        assertThrows(ParseException.class, expected, () -> parser.parseCommand("switch calendar"));
-        assertThrows(ParseException.class, expected, () -> parser.parseCommand("switch Events"));
-        assertThrows(ParseException.class, expected, () -> parser.parseCommand("switch events extra"));
     }
 
     @Test

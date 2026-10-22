@@ -8,35 +8,34 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import coordimate.commons.core.index.Index;
-import coordimate.commons.util.StringUtil;
 import coordimate.logic.Messages;
 import coordimate.logic.parser.exceptions.ParseException;
+import coordimate.model.person.MemberId;
 
 /**
- * Parses the {@code evn/EVENT_NAME [c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...]} arguments shared by the commands
+ * Parses the {@code evn/EVENT_NAME [c/MEMBER_ID [MORE_MEMBER_IDS]...]} arguments shared by the commands
  * that view or change an event's members, rejecting unknown or repeated parameters.
  */
 final class EventContactsParser {
     static final String MESSAGE_REPEATED_PARAMETER =
             Messages.MESSAGE_REPEATED_PARAMETER;
-    static final String MESSAGE_INVALID_CONTACT_INDEXES =
-            "Contact indexes must be positive integers separated by spaces. Example: c/1 3 5";
+    static final String MESSAGE_INVALID_MEMBER_IDS =
+            "Member IDs must be positive integers separated by spaces. Example: c/1 3 5";
 
     /**
-     * The event name and contact indexes given to a command.
+     * The event name and permanent member IDs given to a command.
      */
-    record Parsed(String eventName, List<Index> contactIndexes) {}
+    record Parsed(String eventName, List<MemberId> memberIds) {}
 
     private EventContactsParser() {}
 
     /**
-     * Parses {@code evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...} into an event name and the contact
-     * indexes in the order given.
+     * Parses {@code evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]...} into an event name and member IDs
+     * in command order.
      *
      * @param usage The command's usage text, shown when {@code evn/} or {@code c/} is missing.
      * @param unknownParameterMessage The error shown when an unknown parameter is used.
-     * @param noContactsMessage The error shown when {@code c/} has no indexes.
+     * @param noContactsMessage The error shown when {@code c/} has no member IDs.
      * @throws ParseException If the arguments do not follow the expected format.
      */
     static Parsed parse(String args, String usage, String unknownParameterMessage, String noContactsMessage)
@@ -44,7 +43,7 @@ final class EventContactsParser {
         ArgumentMultimap argMultimap = tokenize(args, usage, unknownParameterMessage,
                 PREFIX_EVENT_NAME, PREFIX_CONTACT);
         return new Parsed(readEventName(argMultimap),
-                parseContactIndexes(argMultimap.getValue(PREFIX_CONTACT).get(), noContactsMessage));
+                parseMemberIds(argMultimap.getValue(PREFIX_CONTACT).get(), noContactsMessage));
     }
 
     /**
@@ -86,18 +85,19 @@ final class EventContactsParser {
         return ParserUtil.parseEventName(argMultimap.getValue(PREFIX_EVENT_NAME).get());
     }
 
-    private static List<Index> parseContactIndexes(String value, String noContactsMessage) throws ParseException {
+    private static List<MemberId> parseMemberIds(String value, String noContactsMessage) throws ParseException {
         String trimmedValue = value.strip();
         if (trimmedValue.isEmpty()) {
             throw new ParseException(noContactsMessage);
         }
-        List<Index> indexes = new ArrayList<>();
+        List<MemberId> memberIds = new ArrayList<>();
         for (String token : trimmedValue.split("\\s+")) {
-            if (!StringUtil.isNonZeroUnsignedInteger(token)) {
-                throw new ParseException(MESSAGE_INVALID_CONTACT_INDEXES);
+            try {
+                memberIds.add(ParserUtil.parseMemberId(token));
+            } catch (ParseException e) {
+                throw new ParseException(MESSAGE_INVALID_MEMBER_IDS, e);
             }
-            indexes.add(Index.fromOneBased(Integer.parseInt(token)));
         }
-        return indexes;
+        return memberIds;
     }
 }

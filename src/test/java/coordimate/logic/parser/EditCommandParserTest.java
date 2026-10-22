@@ -25,13 +25,12 @@ import static coordimate.logic.commands.CommandTestUtil.VALID_TAG_HUSBAND;
 import static coordimate.logic.parser.CliSyntax.PREFIX_TAG;
 import static coordimate.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static coordimate.logic.parser.CommandParserTestUtil.assertParseSuccess;
-import static coordimate.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
-import static coordimate.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
-import static coordimate.testutil.TypicalIndexes.INDEX_THIRD_PERSON;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 import org.junit.jupiter.api.Test;
 
-import coordimate.commons.core.index.Index;
 import coordimate.logic.commands.EditCommand;
 import coordimate.logic.commands.EditCommand.EditPersonDescriptor;
 import coordimate.logic.commands.EditCommand.TagOperation;
@@ -39,6 +38,8 @@ import coordimate.logic.commands.EditCommand.TagOperationType;
 import coordimate.model.person.Address;
 import coordimate.model.person.Birthday;
 import coordimate.model.person.Email;
+import coordimate.model.person.LeaveDate;
+import coordimate.model.person.MemberId;
 import coordimate.model.person.Name;
 import coordimate.model.person.Note;
 import coordimate.model.person.Organisation;
@@ -55,26 +56,26 @@ public class EditCommandParserTest {
 
     @Test
     public void parse_missingParts_failure() {
-        // no index specified
-        assertParseFailure(parser, VALID_NAME_AMY, EditCommandParser.MESSAGE_INVALID_INDEX);
+        // no member ID specified
+        assertParseFailure(parser, VALID_NAME_AMY, EditCommandParser.MESSAGE_INVALID_MEMBER_ID);
 
         // no field specified
         assertParseFailure(parser, "1", EditCommand.MESSAGE_NOT_EDITED);
 
-        // no index and no field specified
+        // no member ID and no field specified
         assertParseFailure(parser, "", String.format(MESSAGE_INVALID_COMMAND_FORMAT, EditCommand.MESSAGE_USAGE));
     }
 
     @Test
     public void parse_invalidPreamble_failure() {
-        // negative index
-        assertParseFailure(parser, "-5" + NAME_DESC_AMY, EditCommandParser.MESSAGE_INVALID_INDEX);
+        // negative member ID
+        assertParseFailure(parser, "-5" + NAME_DESC_AMY, EditCommandParser.MESSAGE_INVALID_MEMBER_ID);
 
-        // zero index
-        assertParseFailure(parser, "0" + NAME_DESC_AMY, EditCommandParser.MESSAGE_INVALID_INDEX);
+        // zero member ID
+        assertParseFailure(parser, "0" + NAME_DESC_AMY, EditCommandParser.MESSAGE_INVALID_MEMBER_ID);
 
         // invalid arguments being parsed as preamble
-        assertParseFailure(parser, "1 some random string", EditCommandParser.MESSAGE_INVALID_INDEX);
+        assertParseFailure(parser, "1 some random string", EditCommandParser.MESSAGE_INVALID_MEMBER_ID);
 
         // invalid prefix being parsed as preamble
         assertParseFailure(parser, "1 i/ string", String.format(EditCommandParser.MESSAGE_UNKNOWN_PARAMETER, "i/"));
@@ -129,32 +130,32 @@ public class EditCommandParserTest {
     public void parse_phoneAtCurrentLengthBoundaries_success() {
         for (String phone : new String[] {"1234567", "123456789012345"}) {
             EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withPhone(phone).build();
-            assertParseSuccess(parser, "1 p/" + phone, new EditCommand(INDEX_FIRST_PERSON, descriptor));
+            assertParseSuccess(parser, "1 p/" + phone, new EditCommand(new MemberId(1), descriptor));
         }
     }
 
     @Test
     public void parse_allFieldsSpecified_success() {
-        Index targetIndex = INDEX_SECOND_PERSON;
-        String userInput = targetIndex.getOneBased() + PHONE_DESC_BOB + TAG_DESC_HUSBAND
+        MemberId memberId = new MemberId(2);
+        String userInput = memberId.getValue() + PHONE_DESC_BOB + TAG_DESC_HUSBAND
                 + EMAIL_DESC_AMY + ADDRESS_DESC_AMY + NAME_DESC_AMY + TAG_DESC_FRIEND;
 
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withName(VALID_NAME_AMY)
                 .withPhone(VALID_PHONE_BOB).withEmail(VALID_EMAIL_AMY).withAddress(VALID_ADDRESS_AMY)
                 .withTags(VALID_TAG_HUSBAND, VALID_TAG_FRIEND).build();
-        EditCommand expectedCommand = new EditCommand(targetIndex, descriptor);
+        EditCommand expectedCommand = new EditCommand(memberId, descriptor);
 
         assertParseSuccess(parser, userInput, expectedCommand);
     }
 
     @Test
     public void parse_someFieldsSpecified_success() {
-        Index targetIndex = INDEX_FIRST_PERSON;
-        String userInput = targetIndex.getOneBased() + PHONE_DESC_BOB + EMAIL_DESC_AMY;
+        MemberId memberId = new MemberId(1);
+        String userInput = memberId.getValue() + PHONE_DESC_BOB + EMAIL_DESC_AMY;
 
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withPhone(VALID_PHONE_BOB)
                 .withEmail(VALID_EMAIL_AMY).build();
-        EditCommand expectedCommand = new EditCommand(targetIndex, descriptor);
+        EditCommand expectedCommand = new EditCommand(memberId, descriptor);
 
         assertParseSuccess(parser, userInput, expectedCommand);
     }
@@ -167,7 +168,7 @@ public class EditCommandParserTest {
 
         assertParseSuccess(parser,
                 "1 r/Logistics Lead b/18-06-2004 o/NUS Student Affairs m/Handles venue bookings",
-                new EditCommand(INDEX_FIRST_PERSON, descriptor));
+                new EditCommand(new MemberId(1), descriptor));
     }
 
     @Test
@@ -175,7 +176,7 @@ public class EditCommandParserTest {
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder()
                 .withoutBirthday().withoutAddress().withoutOrganisation().withoutNote().build();
 
-        assertParseSuccess(parser, "1 b/ a/ o/ m/", new EditCommand(INDEX_FIRST_PERSON, descriptor));
+        assertParseSuccess(parser, "1 b/ a/ o/ m/", new EditCommand(new MemberId(1), descriptor));
     }
 
     @Test
@@ -184,6 +185,24 @@ public class EditCommandParserTest {
         assertParseFailure(parser, "1 p/", "Phone number must not be empty. Example: p/+6591234567");
         assertParseFailure(parser, "1 e/", "Email must not be empty. Example: e/aish@example.com");
         assertParseFailure(parser, "1 r/", "Role must not be empty. Example: r/Logistics Lead");
+    }
+
+    @Test
+    public void parse_leaveDate_success() {
+        String future = LocalDate.now().plusDays(30).format(DateTimeFormatter.ofPattern("dd-MM-uuuu"));
+        EditPersonDescriptor setLeave = new EditPersonDescriptorBuilder().withLeaveDate(future).build();
+        EditPersonDescriptor clearLeave = new EditPersonDescriptorBuilder().withoutLeaveDate().build();
+
+        assertParseSuccess(parser, "1 lv/" + future, new EditCommand(new MemberId(1), setLeave));
+        assertParseSuccess(parser, "1 lv/", new EditCommand(new MemberId(1), clearLeave));
+        assertParseSuccess(parser, "target/alice@example.com lv/", new EditCommand("alice@example.com", clearLeave));
+    }
+
+    @Test
+    public void parse_invalidOrRepeatedLeaveDate_failure() {
+        assertParseFailure(parser, "1 lv/01-01-2020", LeaveDate.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, "1 lv/31-11-2026", LeaveDate.MESSAGE_CONSTRAINTS);
+        assertParseFailure(parser, "1 lv/ lv/", String.format(EditCommandParser.MESSAGE_REPEATED_PARAMETER, "lv/"));
     }
 
     @Test
@@ -228,34 +247,34 @@ public class EditCommandParserTest {
     @Test
     public void parse_oneFieldSpecified_success() {
         // name
-        Index targetIndex = INDEX_THIRD_PERSON;
-        String userInput = targetIndex.getOneBased() + NAME_DESC_AMY;
+        MemberId memberId = new MemberId(3);
+        String userInput = memberId.getValue() + NAME_DESC_AMY;
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withName(VALID_NAME_AMY).build();
-        EditCommand expectedCommand = new EditCommand(targetIndex, descriptor);
+        EditCommand expectedCommand = new EditCommand(memberId, descriptor);
         assertParseSuccess(parser, userInput, expectedCommand);
 
         // phone
-        userInput = targetIndex.getOneBased() + PHONE_DESC_AMY;
+        userInput = memberId.getValue() + PHONE_DESC_AMY;
         descriptor = new EditPersonDescriptorBuilder().withPhone(VALID_PHONE_AMY).build();
-        expectedCommand = new EditCommand(targetIndex, descriptor);
+        expectedCommand = new EditCommand(memberId, descriptor);
         assertParseSuccess(parser, userInput, expectedCommand);
 
         // email
-        userInput = targetIndex.getOneBased() + EMAIL_DESC_AMY;
+        userInput = memberId.getValue() + EMAIL_DESC_AMY;
         descriptor = new EditPersonDescriptorBuilder().withEmail(VALID_EMAIL_AMY).build();
-        expectedCommand = new EditCommand(targetIndex, descriptor);
+        expectedCommand = new EditCommand(memberId, descriptor);
         assertParseSuccess(parser, userInput, expectedCommand);
 
         // address
-        userInput = targetIndex.getOneBased() + ADDRESS_DESC_AMY;
+        userInput = memberId.getValue() + ADDRESS_DESC_AMY;
         descriptor = new EditPersonDescriptorBuilder().withAddress(VALID_ADDRESS_AMY).build();
-        expectedCommand = new EditCommand(targetIndex, descriptor);
+        expectedCommand = new EditCommand(memberId, descriptor);
         assertParseSuccess(parser, userInput, expectedCommand);
 
         // tags
-        userInput = targetIndex.getOneBased() + TAG_DESC_FRIEND;
+        userInput = memberId.getValue() + TAG_DESC_FRIEND;
         descriptor = new EditPersonDescriptorBuilder().withTags(VALID_TAG_FRIEND).build();
-        expectedCommand = new EditCommand(targetIndex, descriptor);
+        expectedCommand = new EditCommand(memberId, descriptor);
         assertParseSuccess(parser, userInput, expectedCommand);
     }
 
@@ -265,25 +284,25 @@ public class EditCommandParserTest {
         // AddCommandParserTest#parse_repeatedNonTagValue_failure()
 
         // valid followed by invalid
-        Index targetIndex = INDEX_FIRST_PERSON;
-        String userInput = targetIndex.getOneBased() + INVALID_PHONE_DESC + PHONE_DESC_BOB;
+        MemberId memberId = new MemberId(1);
+        String userInput = memberId.getValue() + INVALID_PHONE_DESC + PHONE_DESC_BOB;
 
         assertParseFailure(parser, userInput, String.format(EditCommandParser.MESSAGE_REPEATED_PARAMETER, "p/"));
 
         // invalid followed by valid
-        userInput = targetIndex.getOneBased() + PHONE_DESC_BOB + INVALID_PHONE_DESC;
+        userInput = memberId.getValue() + PHONE_DESC_BOB + INVALID_PHONE_DESC;
 
         assertParseFailure(parser, userInput, String.format(EditCommandParser.MESSAGE_REPEATED_PARAMETER, "p/"));
 
         // multiple valid fields repeated
-        userInput = targetIndex.getOneBased() + PHONE_DESC_AMY + ADDRESS_DESC_AMY + EMAIL_DESC_AMY
+        userInput = memberId.getValue() + PHONE_DESC_AMY + ADDRESS_DESC_AMY + EMAIL_DESC_AMY
                 + TAG_DESC_FRIEND + PHONE_DESC_AMY + ADDRESS_DESC_AMY + EMAIL_DESC_AMY + TAG_DESC_FRIEND
                 + PHONE_DESC_BOB + ADDRESS_DESC_BOB + EMAIL_DESC_BOB + TAG_DESC_HUSBAND;
 
         assertParseFailure(parser, userInput, String.format(EditCommandParser.MESSAGE_REPEATED_PARAMETER, "p/"));
 
         // multiple invalid values
-        userInput = targetIndex.getOneBased() + INVALID_PHONE_DESC + INVALID_ADDRESS_DESC + INVALID_EMAIL_DESC
+        userInput = memberId.getValue() + INVALID_PHONE_DESC + INVALID_ADDRESS_DESC + INVALID_EMAIL_DESC
                 + INVALID_PHONE_DESC + INVALID_ADDRESS_DESC + INVALID_EMAIL_DESC;
 
         assertParseFailure(parser, userInput, String.format(EditCommandParser.MESSAGE_REPEATED_PARAMETER, "p/"));
@@ -291,11 +310,11 @@ public class EditCommandParserTest {
 
     @Test
     public void parse_resetTags_success() {
-        Index targetIndex = INDEX_THIRD_PERSON;
-        String userInput = targetIndex.getOneBased() + TAG_EMPTY;
+        MemberId memberId = new MemberId(3);
+        String userInput = memberId.getValue() + TAG_EMPTY;
 
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withTags().build();
-        EditCommand expectedCommand = new EditCommand(targetIndex, descriptor);
+        EditCommand expectedCommand = new EditCommand(memberId, descriptor);
 
         assertParseSuccess(parser, userInput, expectedCommand);
     }
@@ -303,16 +322,16 @@ public class EditCommandParserTest {
     @Test
     public void parse_replacementTags_emptyValueClearsPrecedingTags() {
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withTags().build();
-        assertParseSuccess(parser, "1 t/Friend t/Husband t/", new EditCommand(INDEX_FIRST_PERSON, descriptor));
+        assertParseSuccess(parser, "1 t/Friend t/Husband t/", new EditCommand(new MemberId(1), descriptor));
 
         descriptor = new EditPersonDescriptorBuilder().withTags("Husband").build();
-        assertParseSuccess(parser, "1 t/Friend t/ t/Husband", new EditCommand(INDEX_FIRST_PERSON, descriptor));
+        assertParseSuccess(parser, "1 t/Friend t/ t/Husband", new EditCommand(new MemberId(1), descriptor));
     }
 
     @Test
     public void parse_replacementTags_caseInsensitiveDuplicatesIgnored() {
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withTags("Friend").build();
-        assertParseSuccess(parser, "1 t/Friend t/friend", new EditCommand(INDEX_FIRST_PERSON, descriptor));
+        assertParseSuccess(parser, "1 t/Friend t/friend", new EditCommand(new MemberId(1), descriptor));
     }
 
     @Test
@@ -323,7 +342,7 @@ public class EditCommandParserTest {
         descriptor.addTagOperation(new TagOperation(TagOperationType.ADD, new Tag("EXCO")));
 
         assertParseSuccess(parser, "1 at/Sponsor rt/Logistics at/EXCO",
-                new EditCommand(INDEX_FIRST_PERSON, descriptor));
+                new EditCommand(new MemberId(1), descriptor));
     }
 
     @Test

@@ -151,6 +151,8 @@ public class ModelManager implements Model {
     @Override
     public void addPerson(Person person) {
         coordiMate.addPerson(person);
+        // A new contact is active, so return to the active view to show it.
+        setShowingArchived(false);
         updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
     }
 

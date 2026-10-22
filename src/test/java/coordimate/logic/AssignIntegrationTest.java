@@ -45,18 +45,18 @@ public class AssignIntegrationTest {
     }
 
     @Test
-    public void execute_filteredContactList_assignsDisplayedContact() throws Exception {
+    public void execute_filteredContactList_assignsPermanentId() throws Exception {
         ModelManager model = new ModelManager(getTypicalCoordiMate(), new UserPrefs());
         JsonCoordiMateStorage storage = new JsonCoordiMateStorage(temporaryFolder.resolve("data.json"));
         Logic logic = newLogic(model, storage);
         logic.execute(ADD);
         model.updateFilteredPersonList(person -> person.equals(CARL));
-        logic.execute("assign evn/Final Concert c/1");
+        logic.execute("assign evn/Final Concert c/3");
         assertEquals(List.of(CARL.getName()), model.getCoordiMate().getEventList().getFirst().getMembers());
         assertEquals(List.of(CARL), model.getFilteredPersonList());
-        assertEquals(Messages.withUsage(String.format(AssignCommand.MESSAGE_CONTACT_NOT_FOUND,
-                2), AssignCommand.MESSAGE_USAGE),
-                assertThrows(CommandException.class, () -> logic.execute("assign evn/Final Concert c/2"))
+        assertEquals(Messages.withUsage(String.format(AssignCommand.MESSAGE_UNKNOWN_MEMBER_ID,
+                99), AssignCommand.MESSAGE_USAGE),
+                assertThrows(CommandException.class, () -> logic.execute("assign evn/Final Concert c/99"))
                         .getMessage());
     }
 

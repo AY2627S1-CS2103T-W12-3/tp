@@ -34,7 +34,6 @@ import coordimate.logic.commands.EditTagCommand;
 import coordimate.logic.commands.ListCommand;
 import coordimate.logic.commands.MarkAttendanceCommand;
 import coordimate.logic.commands.MutatingTagCommand;
-import coordimate.logic.commands.SwitchCommand;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.logic.parser.CoordiMateParser;
 import coordimate.logic.parser.exceptions.ParseException;
@@ -75,23 +74,13 @@ public class LogicManagerTest {
     @Test
     public void execute_commandExecutionError_throwsCommandException() {
         String deleteCommand = "delete 9";
-        assertCommandException(deleteCommand, String.format(DeleteCommand.MESSAGE_INVALID_INDEX, 9));
+        assertCommandException(deleteCommand, String.format(DeleteCommand.MESSAGE_UNKNOWN_MEMBER_ID, 9));
     }
 
     @Test
     public void execute_validCommand_success() throws Exception {
         String listCommand = ListCommand.COMMAND_WORD;
         assertCommandSuccess(listCommand, ListCommand.MESSAGE_SUCCESS, model);
-    }
-
-    @Test
-    public void execute_switchView_doesNotRequireStorage() throws Exception {
-        logic = new LogicManager(model, null);
-
-        CommandResult result = logic.execute("switch events");
-
-        assertEquals(String.format(SwitchCommand.MESSAGE_SUCCESS, "Events"), result.getFeedbackToUser());
-        assertEquals(CommandResult.View.EVENTS, result.getViewToShow());
     }
 
     @Test
@@ -180,8 +169,8 @@ public class LogicManagerTest {
     @Test
     public void execute_commandErrors_includeUsageExactlyOnce() {
         String[][] cases = {
-            {"delete 9", "No contact exists at index 9. Use an index from the current contact list."},
-            {"edit 9 r/Lead", "No contact exists at index 9. Use an index from the current contact list."},
+            {"delete 9", "No contact exists with member ID: 9. Use an existing member ID."},
+            {"edit 9 r/Lead", "No contact exists with member ID: 9. Use an existing member ID."},
             {"assign evn/Missing c/1", "Event Missing does not exist. Use a saved event name."},
             {"unassign evn/Missing c/1", "Event Missing does not exist. Use a saved event name."},
             {"members evn/Missing", "Event Missing does not exist. Use a saved event name."},

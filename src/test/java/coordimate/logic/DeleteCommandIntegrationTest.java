@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import coordimate.commons.exceptions.DataLoadingException;
+import coordimate.logic.commands.CommandResult;
 import coordimate.logic.commands.DeleteCommand;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.CoordiMate;
@@ -43,13 +44,18 @@ public class DeleteCommandIntegrationTest {
         CoordiMate beforeModel = new CoordiMate(model.getCoordiMate());
         Logic logic = newLogic(model, storage);
 
-        assertEquals(DeleteCommand.confirmationPrompt(ALICE),
-                logic.execute("delete n/alice pauline").getFeedbackToUser());
+        CommandResult confirmation = logic.execute("delete n/alice pauline");
+        assertEquals(DeleteCommand.confirmationPrompt(ALICE), confirmation.getFeedbackToUser());
+        assertEquals(CommandResult.View.CONTACTS, confirmation.getViewToShow());
         assertTrue(logic.isAwaitingDeleteConfirmation());
         assertEquals(beforeModel, model.getCoordiMate());
         assertEquals(beforeFile, Files.readString(path));
 
-        assertEquals("Contact deleted successfully: Alice Pauline.", logic.execute("y").getFeedbackToUser());
+        CommandResult deletion = logic.execute("y");
+        assertEquals("Contact deleted successfully: Alice Pauline.", deletion.getFeedbackToUser());
+        assertEquals(CommandResult.View.CONTACTS, deletion.getViewToShow());
+        assertEquals(0, deletion.getContactIndexToFocus().orElseThrow());
+        assertTrue(deletion.getContactToFocus().isEmpty());
         assertFalse(logic.isAwaitingDeleteConfirmation());
         assertEquals(List.of(BENSON), model.getCoordiMate().getPersonList());
         assertEquals(List.of(BENSON.getName()), model.getCoordiMate().getEventList().getFirst().getMembers());
@@ -79,7 +85,9 @@ public class DeleteCommandIntegrationTest {
             Logic logic = newLogic(model, storage);
 
             logic.execute("delete 1");
-            assertEquals(LogicManager.MESSAGE_DELETE_CANCELLED, logic.execute(input).getFeedbackToUser());
+            CommandResult cancellation = logic.execute(input);
+            assertEquals(LogicManager.MESSAGE_DELETE_CANCELLED, cancellation.getFeedbackToUser());
+            assertEquals(CommandResult.View.NONE, cancellation.getViewToShow());
             assertFalse(logic.isAwaitingDeleteConfirmation());
             assertEquals(beforeModel, model.getCoordiMate());
             assertEquals(beforeFile, Files.readString(path));
@@ -90,12 +98,12 @@ public class DeleteCommandIntegrationTest {
     }
 
     @Test
-    public void execute_filteredIndex_usesDisplayedContact() throws Exception {
+    public void execute_filteredList_usesPermanentId() throws Exception {
         ModelManager model = modelWithEvent();
         model.updateFilteredPersonList(person -> person.equals(BENSON));
         Logic logic = newLogic(model, new JsonCoordiMateStorage(temporaryFolder.resolve("filtered.json")));
 
-        assertEquals(DeleteCommand.confirmationPrompt(BENSON), logic.execute("delete 1").getFeedbackToUser());
+        assertEquals(DeleteCommand.confirmationPrompt(BENSON), logic.execute("delete 2").getFeedbackToUser());
         logic.execute("y");
 
         assertEquals(List.of(ALICE), model.getCoordiMate().getPersonList());

@@ -212,9 +212,8 @@ public class EventListPanel extends UiPart<Region> {
             members.getChildren().add(createEmptyMembersHint());
             return;
         }
-        for (int index = 0; index < event.getMembers().size(); index++) {
-            Name member = event.getMembers().get(index);
-            members.getChildren().add(createMemberRow(index + 1, member,
+        for (Name member : event.getMembers()) {
+            members.getChildren().add(createMemberRow(member,
                     event.getAttendance(member).orElse(null), findPerson(member)));
         }
     }
@@ -251,9 +250,10 @@ public class EventListPanel extends UiPart<Region> {
         return hint;
     }
 
-    private HBox createMemberRow(int number, Name member, AttendanceStatus status, Person person) {
-        Label index = new Label(number + ".");
-        index.getStyleClass().add("event-member-index");
+    private HBox createMemberRow(Name member, AttendanceStatus status, Person person) {
+        Label memberId = new Label(person == null ? "ID: unavailable" : "ID: " + person.getMemberId().orElseThrow());
+        memberId.setMinWidth(Region.USE_PREF_SIZE);
+        memberId.getStyleClass().add("event-member-id");
 
         Label avatar = new Label(initials(member.getFullName()));
         avatar.getStyleClass().add("event-member-avatar");
@@ -274,7 +274,7 @@ public class EventListPanel extends UiPart<Region> {
                     .sorted((left, right) -> String.CASE_INSENSITIVE_ORDER.compare(
                             left.getTagName(), right.getTagName()))
                     .map(Tag::getTagName)
-                    .map(this::createMemberTag)
+                    .map(TagStyle::createTagLabel)
                     .forEach(identityLine.getChildren()::add);
         }
 
@@ -297,25 +297,9 @@ public class EventListPanel extends UiPart<Region> {
         memberDetails.setMinWidth(0);
         HBox.setHgrow(memberDetails, Priority.ALWAYS);
 
-        HBox row = new HBox(12, index, avatar, memberDetails, createStatusBadge(status));
+        HBox row = new HBox(12, memberId, avatar, memberDetails, createStatusBadge(status));
         row.getStyleClass().add("attendance-member-row");
         return row;
-    }
-
-    private Label createMemberTag(String tagName) {
-        Label tag = new Label(tagName);
-        tag.getStyleClass().add("event-member-tag");
-        tag.getStyleClass().add(getTagColorClass(tagName));
-        return tag;
-    }
-
-    private String getTagColorClass(String tagName) {
-        return switch (tagName.toLowerCase(Locale.ROOT)) {
-            case "logistics" -> "event-member-tag-teal";
-            case "sponsor" -> "event-member-tag-amber";
-            case "publicity", "universitystaff" -> "event-member-tag-purple";
-            default -> "event-member-tag-blue";
-        };
     }
 
     private String getAvatarColorClass(Person person) {

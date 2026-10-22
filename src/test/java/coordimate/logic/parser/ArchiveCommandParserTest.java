@@ -17,9 +17,9 @@ public class ArchiveCommandParserTest {
     @Test
     public void parse_validIndex_success() throws Exception {
         assertEquals(new ArchiveCommand(Index.fromOneBased(2), true),
-                new CoordiMateParser().parseCommand("archive 2"));
+                CommandParserTestUtil.createParser().parseCommand("archive 2"));
         assertEquals(new ArchiveCommand(Index.fromOneBased(1), false),
-                new CoordiMateParser().parseCommand("unarchive 1"));
+                CommandParserTestUtil.createParser().parseCommand("unarchive 1"));
         assertEquals(new ArchiveCommand(Index.fromOneBased(3), true), archiveParser.parse(" \t3 "));
     }
 
