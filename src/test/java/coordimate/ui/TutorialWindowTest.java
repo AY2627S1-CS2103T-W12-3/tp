@@ -196,9 +196,65 @@ public class TutorialWindowTest {
         task.get(10, TimeUnit.SECONDS);
     }
 
+    @Test
+    public void tabKey_keepsFocusWithinCardButtons() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            TutorialWindow tutorial = new TutorialWindow();
+            Stage stage = createStage(tutorial, 900, 650);
+            Button outsideButton = new Button("Outside");
+            StackPane sceneRoot = (StackPane) stage.getScene().getRoot();
+            sceneRoot.getChildren().add(0, outsideButton);
+            tutorial.show();
+            applyLayout(stage);
+
+            Scene scene = stage.getScene();
+            Button closeButton = (Button) scene.lookup("#closeButton");
+            Button backButton = (Button) scene.lookup("#backButton");
+            Button nextButton = (Button) scene.lookup("#nextButton");
+            AtomicBoolean buttonReceivedTab = new AtomicBoolean();
+            nextButton.addEventHandler(KeyEvent.KEY_PRESSED, event -> buttonReceivedTab.set(true));
+
+            // Back is disabled on the first step, so Tab cycles between Close and Next only.
+            nextButton.requestFocus();
+            nextButton.fireEvent(keyEvent(KeyCode.TAB));
+            assertFalse(buttonReceivedTab.get());
+            assertEquals(closeButton, scene.getFocusOwner());
+            closeButton.fireEvent(keyEvent(KeyCode.TAB));
+            assertEquals(nextButton, scene.getFocusOwner());
+            nextButton.fireEvent(shiftTabEvent());
+            assertEquals(closeButton, scene.getFocusOwner());
+
+            nextButton.fire();
+            closeButton.fireEvent(keyEvent(KeyCode.TAB));
+            assertEquals(backButton, scene.getFocusOwner());
+            closeButton.requestFocus();
+            closeButton.fireEvent(shiftTabEvent());
+            assertEquals(nextButton, scene.getFocusOwner());
+
+            outsideButton.requestFocus();
+            assertTrue(tutorial.handleShortcut(keyEvent(KeyCode.TAB)));
+            assertEquals(closeButton, scene.getFocusOwner());
+            outsideButton.requestFocus();
+            assertTrue(tutorial.handleShortcut(shiftTabEvent()));
+            assertEquals(nextButton, scene.getFocusOwner());
+
+            tutorial.hide();
+            assertFalse(tutorial.handleShortcut(keyEvent(KeyCode.TAB)));
+            stage.close();
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
     private static KeyEvent keyEvent(KeyCode code) {
         return new KeyEvent(KeyEvent.KEY_PRESSED, "", "", code,
                 false, false, false, false);
+    }
+
+    private static KeyEvent shiftTabEvent() {
+        return new KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.TAB,
+                true, false, false, false);
     }
 
     private static MouseEvent mouseClickEvent() {

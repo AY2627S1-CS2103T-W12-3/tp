@@ -2,6 +2,7 @@ package coordimate.ui;
 
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -129,6 +130,9 @@ public class TutorialWindow extends UiPart<StackPane> {
     private TextFlow stepDescription;
 
     @FXML
+    private Button closeButton;
+
+    @FXML
     private Button backButton;
 
     @FXML
@@ -240,8 +244,14 @@ public class TutorialWindow extends UiPart<StackPane> {
 
     /** Handles tutorial shortcuts before keys can reach the application beneath the overlay. */
     boolean handleShortcut(KeyEvent event) {
-        if (!isShowing() || event.getEventType() != KeyEvent.KEY_PRESSED
-                || event.isAltDown() || event.isControlDown() || event.isMetaDown()) {
+        if (!isShowing() || event.getEventType() != KeyEvent.KEY_PRESSED) {
+            return false;
+        }
+        if (event.getCode() == KeyCode.TAB) {
+            moveFocusWithinCard(!event.isShiftDown());
+            return true;
+        }
+        if (event.isAltDown() || event.isControlDown() || event.isMetaDown()) {
             return false;
         }
         KeyCode code = event.getCode();
@@ -255,6 +265,25 @@ public class TutorialWindow extends UiPart<StackPane> {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Moves focus to the next or previous enabled card button, wrapping around so that focus never leaves the card.
+     * If focus is outside the card, moves it to the first or last button.
+     */
+    private void moveFocusWithinCard(boolean isForward) {
+        List<Button> buttons = Stream.of(closeButton, backButton, nextButton)
+                .filter(button -> !button.isDisabled())
+                .toList();
+        Scene scene = getRoot().getScene();
+        int focusedIndex = scene == null ? -1 : buttons.indexOf(scene.getFocusOwner());
+        int targetIndex;
+        if (focusedIndex < 0) {
+            targetIndex = isForward ? 0 : buttons.size() - 1;
+        } else {
+            targetIndex = Math.floorMod(focusedIndex + (isForward ? 1 : -1), buttons.size());
+        }
+        buttons.get(targetIndex).requestFocus();
     }
 
     private void dismiss() {
