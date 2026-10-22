@@ -8,7 +8,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.awt.GraphicsEnvironment;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
@@ -206,6 +210,33 @@ public class PersonListPanelTest {
                 assertFalse(cardLeave.isVisible());
                 assertFalse(cardLeave.isManaged());
             }
+        });
+    }
+
+    @Test
+    public void refreshIfDateChanged_leaveEnded_updatesCardAndDetails() throws Exception {
+        MutableClock clock = new MutableClock(LocalDate.of(2026, 11, 30));
+        runOnJavaFxThread(() -> {
+            Person contact = new PersonBuilder(ALICE).withLeaveDate("30-11-2026").build();
+            PersonListPanel panel = new PersonListPanel(FXCollections.observableArrayList(contact),
+                    FXCollections.observableArrayList(), clock);
+            Region root = panel.getRoot();
+            new Scene(root, 1100, 700);
+            root.applyCss();
+            getList(root).getSelectionModel().select(contact);
+
+            assertEquals(List.of("On leave until 30-11-2026"), visibleLeaveBadges(root));
+            assertEquals("30-11-2026", getDetailsLeave(root).getText());
+
+            panel.refreshIfDateChanged();
+            assertEquals(List.of("On leave until 30-11-2026"), visibleLeaveBadges(root));
+
+            clock.setDate(LocalDate.of(2026, 12, 1));
+            panel.refreshIfDateChanged();
+
+            assertEquals(List.of(), visibleLeaveBadges(root));
+            assertEquals("— (not on leave)", getDetailsLeave(root).getText());
+            assertEquals(contact, getList(root).getSelectionModel().getSelectedItem());
         });
     }
 
@@ -484,6 +515,21 @@ public class PersonListPanelTest {
         return (Label) root.lookup("#" + id);
     }
 
+    private static List<String> visibleLeaveBadges(Region root) {
+        root.applyCss();
+        root.layout();
+        return root.lookupAll(".leave-badge").stream()
+                .filter(node -> node.isVisible())
+                .map(node -> ((Label) node).getText())
+                .toList();
+    }
+
+    private static Label getDetailsLeave(Region root) {
+        return (Label) root.lookupAll("#leave").stream()
+                .filter(node -> node.getStyleClass().contains("detail-value"))
+                .findFirst().orElseThrow();
+    }
+
     private static void assertTagColor(FlowPane tagPane, String tagName, String colorClass) {
         assertTrue(tagPane.getChildren().stream()
                 .filter(Label.class::isInstance)
@@ -516,4 +562,32 @@ public class PersonListPanelTest {
 
     private record PanelFixture(ObservableList<Person> persons, FilteredList<Person> displayedPersons,
                                 Region root, ListView<Person> list) {}
+
+    /** A clock whose date can be changed during a test. */
+    private static class MutableClock extends Clock {
+        private Instant current;
+
+        MutableClock(LocalDate date) {
+            setDate(date);
+        }
+
+        void setDate(LocalDate date) {
+            current = date.atStartOfDay(ZoneOffset.UTC).toInstant();
+        }
+
+        @Override
+        public ZoneId getZone() {
+            return ZoneOffset.UTC;
+        }
+
+        @Override
+        public Clock withZone(ZoneId zone) {
+            return Clock.fixed(current, zone);
+        }
+
+        @Override
+        public Instant instant() {
+            return current;
+        }
+    }
 }

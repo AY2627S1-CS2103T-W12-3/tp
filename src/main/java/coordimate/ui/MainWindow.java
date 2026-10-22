@@ -2,6 +2,7 @@ package coordimate.ui;
 
 import java.awt.Point;
 import java.nio.file.Path;
+import java.time.Clock;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -119,6 +120,7 @@ public class MainWindow extends UiPart<Stage> {
     private CommandBox commandBox;
     private ReminderPanel reminderPanel;
     private final Timeline reminderTimer;
+    private final Clock clock;
 
     @FXML
     private StackPane reminderPanelPlaceholder;
@@ -197,10 +199,10 @@ public class MainWindow extends UiPart<Stage> {
      * and the data file path to show in the status bar.
      */
     public MainWindow(Stage primaryStage, Logic logic, Path dataFilePath) {
-        this(primaryStage, logic, dataFilePath, new Timeline());
+        this(primaryStage, logic, dataFilePath, new Timeline(), Clock.systemDefaultZone());
     }
 
-    MainWindow(Stage primaryStage, Logic logic, Path dataFilePath, Timeline reminderTimer) {
+    MainWindow(Stage primaryStage, Logic logic, Path dataFilePath, Timeline reminderTimer, Clock clock) {
         super(FXML, primaryStage);
 
         // Set dependencies
@@ -208,6 +210,7 @@ public class MainWindow extends UiPart<Stage> {
         this.logic = logic;
         this.dataFilePath = dataFilePath;
         this.reminderTimer = reminderTimer;
+        this.clock = clock;
 
         // Configure the UI
         setWindowDefaultSize(logic.getGuiSettings());
@@ -258,7 +261,7 @@ public class MainWindow extends UiPart<Stage> {
      * Fills up all the placeholders of this window.
      */
     void fillInnerParts() {
-        personListPanel = new PersonListPanel(logic.getFilteredPersonList(), logic.getEventList());
+        personListPanel = new PersonListPanel(logic.getFilteredPersonList(), logic.getEventList(), clock);
         personListPanelPlaceholder.getChildren().add(personListPanel.getRoot());
 
         eventListPanel = new EventListPanel(logic.getEventList(), logic.getFilteredPersonList());
@@ -305,7 +308,10 @@ public class MainWindow extends UiPart<Stage> {
         reminderPanelPlaceholder.visibleProperty().bind(reminderPanel.getRoot().visibleProperty());
         reminderPanelPlaceholder.managedProperty().bind(reminderPanel.getRoot().managedProperty());
         reminderPanelPlaceholder.getChildren().add(reminderPanel.getRoot());
-        reminderTimer.getKeyFrames().setAll(new KeyFrame(Duration.minutes(1), event -> logic.refreshReminders()));
+        reminderTimer.getKeyFrames().setAll(new KeyFrame(Duration.minutes(1), event -> {
+            logic.refreshReminders();
+            personListPanel.refreshIfDateChanged();
+        }));
         reminderTimer.setCycleCount(Animation.INDEFINITE);
         if (primaryStage.isShowing()) {
             reminderTimer.play();

@@ -641,8 +641,14 @@ The `lv/` prefix is handled like the other optional contact fields:
 **How leave ends.** Nothing is changed when a leave date passes. Instead, the UI asks each contact whether it is
 on leave on the current date:
 
-* `PersonCard` shows an **On leave until** badge only if `Person#isOnLeave(LocalDate.now())` is true.
+* `PersonCard` shows an **On leave until** badge only if `Person#isOnLeave(today)` is true.
 * `PersonListPanel` shows the date in the details pane in the same case, and `— (not on leave)` otherwise.
+
+`PersonListPanel` reads `today` from a `Clock`, which tests replace to control the date. A window left open past
+midnight still needs redrawing, so `MainWindow`'s existing one-minute reminder timer also calls
+`PersonListPanel#refreshIfDateChanged()`. If the date differs from the one last shown, the panel refreshes its list
+cells, which rebuilds each `PersonCard`, and redraws the selected contact's details. Otherwise it does nothing, so
+the list is redrawn at most once a day.
 
 The ended date stays in the contact and in the data file until the user replaces or clears it. Code that copies a
 contact, such as `CoordiMate#setTag` and `CoordiMate#removeTag`, passes the leave date on, so it is never dropped.
@@ -663,13 +669,25 @@ cleared.
   displayed.
   * Pros: No data needs changing when leave ends, so no save is needed at launch or at midnight. The behaviour is
     easy to test by passing a fixed date to `Person#isOnLeave`.
-  * Cons: Ended dates remain in the data file. A window left open past midnight updates only when the contact is
-    next displayed.
+  * Cons: Ended dates remain in the data file. A window left open past midnight must be redrawn, which needs the
+    date check described below.
 
 * **Alternative 2:** Remove ended leave dates from the data, for example at launch.
   * Pros: The data file only contains leave that is still active.
   * Cons: Requires saving at launch, which no other feature does, and still needs a check for leave that ends while
     the app is open.
+
+**Aspect: How an open window notices that the date has changed**
+
+* **Alternative 1 (current choice):** Check the date on each tick of the existing one-minute reminder timer.
+  * Pros: Adds no new timer. Still works if the computer sleeps through midnight or its clock or time zone changes,
+    because each tick compares the current date with the date last shown.
+  * Cons: The badge can stay visible for up to a minute after midnight.
+
+* **Alternative 2:** Schedule a timer for the next midnight, then reschedule it each day.
+  * Pros: Updates exactly at midnight.
+  * Cons: A second timer to start and stop with the window. A timer scheduled before a sleep, or a clock or time
+    zone change, can fire at the wrong time.
 
 **Aspect: How leave is entered**
 
@@ -1565,6 +1583,11 @@ and `PAST_DATE` is any date before today, such as `01-01-2020`.
 
    1. Test case: Close the app, change `leaveUntil` to `31-02-2030`, save, then launch the app.<br>
       Expected: The file is treated as invalid, so the app starts with no contacts and no events. Restore the file afterwards.
+
+   1. Test case: Run `edit 1 lv/TODAY` and select that contact. Leave the app open past midnight, or set your
+      computer's date to the next day.<br>
+      Expected: Within a minute, without running a command, the badge disappears and the details pane shows
+      `— (not on leave)`.
 
 ### Managing tags
 

@@ -845,8 +845,8 @@ Format: `edit MEMBER_ID lv/LEAVE_END_DATE` or `edit target/IDENTIFIER lv/LEAVE_E
 * `LEAVE_END_DATE` is the **last day** of leave, in `dd-MM-yyyy` format. It must be today or a later date.
 * The contact is on leave up to and including that date. While on leave, their card in the contact list shows
   **On leave until LEAVE_END_DATE**, and the details pane shows the date under **On leave until**.
-* From the day after, the contact is no longer shown as on leave. You do not need to run any command; the status
-  updates the next time the contact is displayed, for example after relaunching CoordiMate.
+* From the day after, the contact is no longer shown as on leave. You do not need to run any command: if CoordiMate
+  is open at midnight, the badge and the details pane update within a minute.
 * The ended leave date stays in the data file but has no effect. The details pane shows `— (not on leave)`.
 * Setting a new date replaces the previous one. `edit MEMBER_ID lv/` with no date ends the leave immediately.
 * Leave does not affect events: a contact on leave can still be assigned to events and have attendance marked.

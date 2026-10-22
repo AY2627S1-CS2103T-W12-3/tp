@@ -1,5 +1,6 @@
 package coordimate.ui;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
@@ -109,6 +110,8 @@ public class PersonListPanel extends UiPart<Region> {
 
     private Person selectedPerson;
     private final ObservableList<Event> events;
+    private final Clock clock;
+    private LocalDate shownDate;
 
     /**
      * Creates a {@code PersonListPanel} with the given {@code ObservableList}.
@@ -121,8 +124,17 @@ public class PersonListPanel extends UiPart<Region> {
      * Shows contacts and their assignments from the live event list.
      */
     public PersonListPanel(ObservableList<Person> persons, ObservableList<Event> events) {
+        this(persons, events, Clock.systemDefaultZone());
+    }
+
+    /**
+     * Shows contacts and their assignments, using {@code clock} to decide whether a contact is on leave.
+     */
+    PersonListPanel(ObservableList<Person> persons, ObservableList<Event> events, Clock clock) {
         super(FXML);
         this.events = events;
+        this.clock = Objects.requireNonNull(clock);
+        shownDate = LocalDate.now(clock);
         persons.addListener((ListChangeListener<Person>) change -> {
             if (selectedPerson != null) {
                 Person previouslySelected = selectedPerson;
@@ -198,6 +210,20 @@ public class PersonListPanel extends UiPart<Region> {
         personListView.scrollTo(targetIndex);
     }
 
+    /**
+     * Redraws the contact cards and selected contact's details if the date has changed since they were last
+     * shown, so that leave which has just ended is no longer displayed.
+     */
+    void refreshIfDateChanged() {
+        LocalDate today = LocalDate.now(clock);
+        if (today.equals(shownDate)) {
+            return;
+        }
+        shownDate = today;
+        personListView.refresh();
+        showDetails(selectedPerson);
+    }
+
     /** Runs the given action whenever the displayed contact list is clicked. */
     void setCardListClickHandler(Runnable handler) {
         Objects.requireNonNull(handler);
@@ -232,7 +258,7 @@ public class PersonListPanel extends UiPart<Region> {
         address.setText(person.getAddress().map(Address::getValue).orElse(NOT_SPECIFIED));
         organisation.setText(person.getOrganisation().map(Organisation::getValue).orElse(NOT_SPECIFIED));
         note.setText(person.getNote().map(Note::getValue).orElse(NOT_SPECIFIED));
-        leave.setText(person.isOnLeave(LocalDate.now())
+        leave.setText(person.isOnLeave(LocalDate.now(clock))
                 ? person.getLeaveDate().orElseThrow().getValue() : NOT_ON_LEAVE);
         detailTags.getChildren().clear();
         person.getTags().stream()
@@ -307,7 +333,7 @@ public class PersonListPanel extends UiPart<Region> {
                 setGraphic(null);
                 setText(null);
             } else {
-                Region card = new PersonCard(person).getRoot();
+                Region card = new PersonCard(person, LocalDate.now(clock)).getRoot();
                 card.prefWidthProperty().bind(widthProperty().subtract(12));
                 setGraphic(card);
             }
