@@ -37,7 +37,6 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
-import javafx.scene.control.TextInputControl;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.Tooltip;
 import javafx.scene.input.KeyCode;
@@ -64,7 +63,7 @@ public class MainWindow extends UiPart<Stage> {
 
     private static final String FXML = "MainWindow.fxml";
     private static final String COMMAND_MODE_TEXT = "COMMAND · Esc to navigate";
-    private static final String NAVIGATION_MODE_TEXT = "NAVIGATION · j/k move · i to type";
+    private static final String NAVIGATION_MODE_TEXT = "NAVIGATION · j/k move · s switch view · i to type";
     private static final Map<String, String> COMMAND_HELP_TEXT = Map.ofEntries(
             Map.entry("add", "Format: add n/NAME p/PHONE e/EMAIL r/ROLE [b/BIRTHDAY] [a/ADDRESS]"
                     + " [o/ORGANISATION] [t/TAG]... [m/NOTE]\n"
@@ -316,8 +315,9 @@ public class MainWindow extends UiPart<Stage> {
 
         commandBox = new CommandBox(this::executeCommand, logic::isAwaitingDeleteConfirmation);
         commandBoxPlaceholder.getChildren().add(commandBox.getRoot());
-        getRoot().addEventFilter(KeyEvent.KEY_PRESSED, this::handleModeShortcut);
-        getRoot().addEventFilter(KeyEvent.KEY_TYPED, this::handleNavigationInput);
+        getRoot().addEventFilter(KeyEvent.KEY_PRESSED, this::handleKeyboardInput);
+        getRoot().addEventFilter(KeyEvent.KEY_RELEASED, this::handleCommandModeShortcutRelease);
+        commandBox.getRoot().addEventFilter(MouseEvent.MOUSE_PRESSED, this::handleCommandBoxClick);
         personListPanel.setCardListClickHandler(this::enterNavigationMode);
         eventListPanel.setCardListClickHandler(this::enterNavigationMode);
         tagListView.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> enterNavigationMode());
@@ -356,37 +356,52 @@ public class MainWindow extends UiPart<Stage> {
         }
     }
 
-    private void handleModeShortcut(KeyEvent event) {
-        if (event.getCode() != KeyCode.ESCAPE || logic.isAwaitingDeleteConfirmation()) {
+    private void handleKeyboardInput(KeyEvent event) {
+        if (logic.isAwaitingDeleteConfirmation()) {
             return;
         }
-        enterNavigationMode();
+
+        if (interactionMode == InteractionMode.COMMAND) {
+            if (event.getCode() == KeyCode.ESCAPE) {
+                enterNavigationMode();
+                event.consume();
+            }
+            return;
+        }
+
+        if (hasShortcutModifier(event)) {
+            return;
+        }
+
+        switch (event.getCode()) {
+            case ESCAPE -> focusNavigationMode();
+            case I -> { } // Command mode is entered when the key is released.
+            case J -> navigateCards(true);
+            case K -> navigateCards(false);
+            case S -> switchToNextView();
+            default -> { } // Other unmodified keys are disabled in Navigation mode.
+        }
         event.consume();
     }
 
-    private void handleNavigationInput(KeyEvent event) {
-        if (interactionMode != InteractionMode.NAVIGATION) {
-            return;
-        }
-        if (event.isShiftDown() || event.isControlDown() || event.isAltDown() || event.isMetaDown()) {
-            return;
-        }
-
-        Node focusOwner = primaryStage.getScene().getFocusOwner();
-        if (focusOwner instanceof TextInputControl && !commandBox.isCommandInput(focusOwner)) {
-            return;
-        }
-
-        String character = event.getCharacter();
-        if ("i".equalsIgnoreCase(character)) {
+    private void handleCommandModeShortcutRelease(KeyEvent event) {
+        if (interactionMode == InteractionMode.NAVIGATION
+                && event.getCode() == KeyCode.I
+                && !hasShortcutModifier(event)) {
             enterCommandMode();
             event.consume();
-            return;
         }
-        if ("j".equalsIgnoreCase(character) || "k".equalsIgnoreCase(character)) {
-            navigateCards("j".equalsIgnoreCase(character));
+    }
+
+    private boolean hasShortcutModifier(KeyEvent event) {
+        return event.isShiftDown() || event.isControlDown() || event.isAltDown() || event.isMetaDown();
+    }
+
+    private void handleCommandBoxClick(MouseEvent event) {
+        if (interactionMode == InteractionMode.NAVIGATION) {
+            enterCommandMode();
+            event.consume();
         }
-        event.consume();
     }
 
     private void enterCommandMode() {
@@ -400,16 +415,37 @@ public class MainWindow extends UiPart<Stage> {
             return;
         }
         setInteractionMode(InteractionMode.NAVIGATION);
+        focusNavigationMode();
+    }
+
+    private void focusNavigationMode() {
+        interactionModeLabel.requestFocus();
+        Platform.runLater(() -> {
+            if (interactionMode == InteractionMode.NAVIGATION) {
+                interactionModeLabel.requestFocus();
+            }
+        });
     }
 
     private void setInteractionMode(InteractionMode mode) {
         interactionMode = mode;
         boolean isCommandMode = mode == InteractionMode.COMMAND;
         commandBox.setInputDisabled(!isCommandMode);
+        interactionModeLabel.setFocusTraversable(!isCommandMode);
         interactionModeLabel.setText(isCommandMode ? COMMAND_MODE_TEXT : NAVIGATION_MODE_TEXT);
         interactionModeLabel.setAccessibleText(isCommandMode
                 ? "Command mode. Press Escape to navigate cards."
-                : "Navigation mode. Press J or K to move between cards, or I to type a command.");
+                : "Navigation mode. Press J or K to move between cards, S to switch views, or I to type a command."
+                        + " Other unmodified keys are disabled.");
+    }
+
+    private void switchToNextView() {
+        int tabCount = views.getTabs().size();
+        if (tabCount == 0) {
+            return;
+        }
+        int selectedIndex = views.getSelectionModel().getSelectedIndex();
+        views.getSelectionModel().select((selectedIndex + 1) % tabCount);
     }
 
     private boolean navigateCards(boolean forwards) {
@@ -647,7 +683,11 @@ public class MainWindow extends UiPart<Stage> {
             resultDisplay.setWarningFeedback(e.getMessage());
         } finally {
             if (logic.getReminders().isEmpty()) {
-                commandBox.requestFocus();
+                if (interactionMode == InteractionMode.COMMAND) {
+                    commandBox.requestFocus();
+                } else {
+                    focusNavigationMode();
+                }
             }
         }
     }
