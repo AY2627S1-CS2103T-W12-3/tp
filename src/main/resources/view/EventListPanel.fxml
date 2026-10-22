@@ -18,7 +18,8 @@
     <ListView fx:id="eventListView" VBox.vgrow="ALWAYS" minWidth="0" minHeight="0"
               accessibleText="Events. Select an event to view its details." styleClass="event-list" />
   </VBox>
-  <ScrollPane fitToWidth="true" minWidth="460" minHeight="0" styleClass="event-details-scroll">
+  <ScrollPane fx:id="detailsScroll" fitToWidth="true" minWidth="460" minHeight="0"
+              styleClass="event-details-scroll">
     <VBox spacing="24" styleClass="event-details-section">
       <Label text="EVENT DETAILS" styleClass="section-heading" />
       <VBox fx:id="eventDetails" spacing="24">

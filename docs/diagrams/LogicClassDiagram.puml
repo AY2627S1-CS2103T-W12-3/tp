@@ -3,6 +3,8 @@
 skinparam arrowThickness 1.1
 skinparam arrowColor LOGIC_COLOR_T4
 skinparam classBackgroundColor LOGIC_COLOR
+skinparam nodesep 40
+skinparam ranksep 55
 
 package Logic as LogicPackage {
 
@@ -15,10 +17,15 @@ Class "{abstract}\nCommand" as Command
 
 Class "<<interface>>\nLogic" as Logic
 Class LogicManager
+Class ReminderService
+
+note right of XYZCommand
+  XYZCommand = AddCommand,
+  SearchCommand, DismissCommand, etc.
+end note
 }
 
 package Model {
-Class HiddenModel #FFFFFF
 }
 
 package Storage {
@@ -27,21 +34,24 @@ package Storage {
 Class HiddenOutside #FFFFFF
 HiddenOutside ..> Logic
 
-LogicManager .right.|> Logic
-LogicManager -right->"1" ParserClasses
+LogicManager ..|> Logic
+LogicManager --> "1" ParserClasses
 ParserClasses ..> XYZCommand : <<create>>
+ParserClasses ..> ReminderService
 
-XYZCommand -up-|> Command
-LogicManager .left.> Command : <<call>>
+XYZCommand --|> Command
+XYZCommand ..> ReminderService
+LogicManager ..> Command : <<call>>
 
 LogicManager --> Model
 LogicManager --> Storage
-Storage --[hidden] Model
-Command .[hidden]up.> Storage
-Command .right.> Model
-note right of XYZCommand: XYZCommand = AddCommand, \nSearchCommand, etc
+LogicManager *--> "1" ReminderService
+ReminderService --> Model
+ReminderService --> Storage
+Command ..> Model
 
 Logic ..> CommandResult
-LogicManager .down.> CommandResult
-Command .up.> CommandResult : <<create>>
+LogicManager ..> CommandResult
+Command ..> CommandResult : <<create>>
+
 @enduml

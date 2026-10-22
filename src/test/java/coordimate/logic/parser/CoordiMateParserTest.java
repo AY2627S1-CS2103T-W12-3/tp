@@ -32,6 +32,7 @@ import coordimate.logic.commands.ListTagsCommand;
 import coordimate.logic.commands.MarkAttendanceCommand;
 import coordimate.logic.commands.MembersCommand;
 import coordimate.logic.commands.SearchCommand;
+import coordimate.logic.commands.TutorialCommand;
 import coordimate.logic.commands.UnassignCommand;
 import coordimate.logic.parser.exceptions.ParseException;
 import coordimate.logic.reminder.ReminderService;
@@ -179,6 +180,13 @@ public class CoordiMateParserTest {
     public void parseCommand_help() throws Exception {
         assertTrue(parser.parseCommand(HelpCommand.COMMAND_WORD) instanceof HelpCommand);
         assertTrue(parser.parseCommand(HelpCommand.COMMAND_WORD + " 3") instanceof HelpCommand);
+    }
+
+    @Test
+    public void parseCommand_tutorial() throws Exception {
+        assertTrue(parser.parseCommand(TutorialCommand.COMMAND_WORD) instanceof TutorialCommand);
+        assertTrue(parser.parseCommand(TutorialCommand.COMMAND_WORD + " 3") instanceof TutorialCommand);
+        assertEquals(TutorialCommand.MESSAGE_USAGE, CoordiMateParser.getUsage(TutorialCommand.COMMAND_WORD));
     }
 
     @Test

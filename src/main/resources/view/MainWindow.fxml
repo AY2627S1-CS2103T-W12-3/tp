@@ -30,8 +30,11 @@
     <Scene>
       <stylesheets>
         <URL value="@DarkTheme.css" />
+        <URL value="@TutorialWindow.css" />
       </stylesheets>
 
+      <StackPane fx:id="appRoot">
+        <children>
       <VBox styleClass="app-shell">
         <HBox alignment="CENTER_LEFT" styleClass="app-header" spacing="12">
           <Label text="CoordiMate" styleClass="app-title" HBox.hgrow="ALWAYS" maxWidth="Infinity" />
@@ -45,6 +48,7 @@
             </Menu>
           </MenuBar>
           <Label fx:id="helpLabel" text="Help" focusTraversable="true" styleClass="top-menu-item" />
+          <Label fx:id="tutorialLabel" text="Tutorial" focusTraversable="true" styleClass="top-menu-item" />
         </HBox>
 
         <StackPane fx:id="reminderPanelPlaceholder" VBox.vgrow="NEVER" />
@@ -122,7 +126,7 @@
                   <ListView fx:id="tagListView" VBox.vgrow="ALWAYS" minWidth="0" minHeight="0"
                             accessibleText="All saved tags." styleClass="tag-list" />
                 </VBox>
-                <VBox spacing="16" minWidth="0" styleClass="tag-details-section">
+                <VBox fx:id="tagDetailsPane" spacing="16" minWidth="0" styleClass="tag-details-section">
                   <Label text="TAG DETAILS" styleClass="section-heading" />
                   <Label fx:id="selectedTagName" text="Select a tag" wrapText="true" styleClass="contact-name" />
                   <Label fx:id="tagMemberCount" text="Members (0)" styleClass="section-heading" />
@@ -148,6 +152,8 @@
         </HBox>
         <StackPane fx:id="statusbarPlaceholder" VBox.vgrow="NEVER" />
       </VBox>
+        </children>
+      </StackPane>
     </Scene>
   </scene>
 </fx:root>

@@ -78,6 +78,19 @@ The `HelpWindow` provides an in-app command quick reference. Its read-only, scro
 resizable layout. The User Guide URL remains available for more detailed instructions.
 The window's **Close** button is marked as the JavaFX cancel button, allowing users to dismiss it by selecting the
 button or pressing <kbd>Esc</kbd> without exiting the application.
+`MainWindow` hosts the guided `TutorialWindow` as an overlay above the main application scene. The sixteen-step tour
+highlights the Contacts, Events, and Tags views, contact commands and input, lists, details, the event member list, and
+Help. It also introduces keyboard navigation. It selects an existing contact, event, or tag when needed, without
+changing saved data; empty lists show their existing hints.
+The event details pane scrolls to the member list for its step, and highlights inside a scroll pane are clipped to the
+visible viewport. The dim backdrop leaves the highlighted area clear while a transparent blocker and disabled command
+box prevent commands from running during the tour. `UiManager` opens the overlay on first launch. `MainWindow` records
+the tutorial preference when the user closes or finishes it. The `tutorial` command, the Tutorial item beside Help in
+the top bar, and the <kbd>F2</kbd> shortcut can open the overlay again at any time. `TutorialCommand` returns a
+`CommandResult` whose `shouldShowTutorial()` flag asks `MainWindow` to open the overlay, in the same way that
+`shouldShowHelp()` opens the Help window. The overlay handles Left and Right Arrow navigation, Escape dismissal, and
+Tab focus movement before key events can reach the command box or the main window's navigation shortcuts. Tab and
+Shift+Tab cycle through the card's enabled buttons so that keyboard focus cannot leave the card.
 
 `CommandBox` keeps submitted, nonblank commands in a session-only list. The list has no configured cap or eviction;
 its practical limit is the JVM heap, and it is discarded when the app closes. It records an attempt before execution
@@ -184,7 +197,7 @@ Command error messages follow these conventions:
 ### Model component
 **API** : [`Model.java`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/Model.java)
 
-<puml src="diagrams/ModelClassDiagram.puml" width="450" />
+<puml src="diagrams/ModelClassDiagram.puml" width="575" />
 
 
 The `Model` component,
@@ -197,14 +210,15 @@ The `Model` component,
 * stores all `Event` objects. Each `Event` records its assigned members as an ordered list of contact `Name`s. `CoordiMate` keeps these lists in sync with the contacts: deleting a contact removes their name from every event, and renaming a contact updates it.
 * stores the `Person` objects selected by the current filter, such as search results, in a separate _filtered_ list. It exposes this list as an unmodifiable `ObservableList<Person>` that the UI can observe and bind to, so the UI updates when the list changes.
 * keeps an archive view, which decides whether the filtered contact list and the filtered event list show active or [archived](#archiving-contacts-and-events) items.
-* stores a `UserPrefs` object that represents the user’s preferences (currently, the window's normal size and position,
-  and whether it is maximized). This is exposed to the outside as a `ReadOnlyUserPrefs` object.
+* stores a `UserPrefs` object that represents the user’s preferences, including window size and position, maximized
+  state, and whether the first-launch tutorial has been completed or dismissed. This is exposed to the outside as a
+  `ReadOnlyUserPrefs` object.
 * does not depend on any of the other three components (as the `Model` represents data entities of the domain, they should make sense on their own without depending on other components)
 
 
 <box type="info" seamless>
 
-**Note:** The alternative, arguably more object-oriented, design below keeps a unique list of tags in `CoordiMate`, and each `Person` references tags from that list. This lets `CoordiMate` maintain one `Tag` object per unique tag instead of each `Person` holding its own `Tag` objects.<br>
+**Note:** `CoordiMate` already keeps a global `UniqueTagList`, but each `Person` holds its own `Tag` objects, which are compared with those in the list by value and are not necessarily the same objects. The alternative, arguably more object-oriented, design below has each `Person` reference the `Tag` objects in that list instead, so `CoordiMate` maintains exactly one `Tag` object per unique tag.<br>
 
 <puml src="diagrams/BetterModelClassDiagram.puml" width="450" />
 </box>
@@ -220,6 +234,9 @@ The `Storage` component,
 * can save both CoordiMate data and user preference data in JSON format, and read them back into corresponding objects.
 * is implemented by `StorageManager`, which delegates the actual JSON file access to `JsonCoordiMateStorage` and `JsonUserPrefsStorage` (one class per data file).
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
+
+The tutorial flag is saved with the other user preferences. Preference files without that field are read with the
+tutorial flag set to `false`, so the tutorial is offered until the user closes or finishes it.
 
 Previously saved digit-only phone numbers with at least three digits remain valid model data, so older JSON files can
 still load. The command parser applies the current 7–15-digit rule whenever a user supplies a phone number for `add`

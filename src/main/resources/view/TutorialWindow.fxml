@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.TextFlow?>
+
+<fx:root alignment="CENTER" maxHeight="Infinity" maxWidth="Infinity" type="javafx.scene.layout.StackPane"
+         xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
+  <children>
+    <Pane fx:id="overlayPane" maxHeight="Infinity" maxWidth="Infinity" minHeight="0.0" minWidth="0.0"
+          pickOnBounds="false" prefHeight="0.0" prefWidth="0.0" StackPane.alignment="TOP_LEFT">
+      <children>
+        <Region fx:id="backdropFull" managed="false" pickOnBounds="true" styleClass="tutorial-backdrop" />
+        <Region fx:id="backdropTop" managed="false" pickOnBounds="true" styleClass="tutorial-backdrop"
+                visible="false" />
+        <Region fx:id="backdropBottom" managed="false" pickOnBounds="true" styleClass="tutorial-backdrop"
+                visible="false" />
+        <Region fx:id="backdropLeft" managed="false" pickOnBounds="true" styleClass="tutorial-backdrop"
+                visible="false" />
+        <Region fx:id="backdropRight" managed="false" pickOnBounds="true" styleClass="tutorial-backdrop"
+                visible="false" />
+        <Region fx:id="targetBlocker" managed="false" pickOnBounds="true" styleClass="tutorial-target-blocker"
+                visible="false" />
+        <Region fx:id="targetHighlight" managed="false" mouseTransparent="true" styleClass="tutorial-highlight"
+                visible="false" />
+        <VBox fx:id="tutorialCard" maxHeight="Infinity" maxWidth="540.0" minHeight="0.0" minWidth="0.0"
+              spacing="16.0" styleClass="tutorial-card">
+          <children>
+            <HBox alignment="CENTER_LEFT" spacing="10.0">
+              <children>
+                <Label fx:id="stepCounter" styleClass="tutorial-progress" text="Step 1 of 16" />
+                <Region HBox.hgrow="ALWAYS" />
+                <Button fx:id="closeButton" mnemonicParsing="false" onAction="#close" text="Close (Esc)"
+                        accessibleText="Close tutorial, Escape" />
+              </children>
+            </HBox>
+            <Label fx:id="stepTitle" maxWidth="Infinity" styleClass="tutorial-heading" text="Welcome"
+                   wrapText="true" />
+            <VBox spacing="14.0" styleClass="tutorial-content">
+              <children>
+                <TextFlow fx:id="stepDescription" maxWidth="Infinity" styleClass="tutorial-description" />
+              </children>
+              <padding>
+                <Insets bottom="4.0" left="4.0" right="4.0" top="4.0" />
+              </padding>
+            </VBox>
+            <HBox alignment="CENTER_LEFT" spacing="10.0">
+              <children>
+                <Button fx:id="backButton" mnemonicParsing="false" onAction="#showPreviousStep" text="← Back"
+                        accessibleText="Back, Left Arrow" />
+                <Region HBox.hgrow="ALWAYS" />
+                <Button fx:id="nextButton" defaultButton="true" mnemonicParsing="false" onAction="#showNextStep"
+                        text="Next →" />
+              </children>
+            </HBox>
+          </children>
+          <padding>
+            <Insets bottom="20.0" left="22.0" right="22.0" top="20.0" />
+          </padding>
+        </VBox>
+      </children>
+    </Pane>
+  </children>
+</fx:root>

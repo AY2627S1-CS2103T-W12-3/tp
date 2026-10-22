@@ -20,6 +20,7 @@ import coordimate.logic.commands.CommandResult;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.logic.parser.exceptions.ParseException;
 import javafx.application.Platform;
+import javafx.event.ActionEvent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
@@ -289,6 +290,37 @@ public class CommandBoxTest {
             assertTrue(input.isDisabled());
             assertTrue(button.isDisabled());
             assertEquals("unfinished draft", input.getText());
+            assertEquals(List.of("list"), submitted);
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void executionDisabled_allowsEditingButBlocksSubmission() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            List<String> submitted = new ArrayList<>();
+            CommandBox commandBox = new CommandBox(text -> {
+                submitted.add(text);
+                return new CommandResult("Result");
+            }, () -> false);
+            Region root = commandBox.getRoot();
+            new Scene(root);
+            TextField input = (TextField) root.lookup("#commandTextField");
+            Button button = (Button) root.lookup("#submitButton");
+
+            commandBox.setExecutionDisabled(true);
+            input.setText("list");
+            input.fireEvent(new ActionEvent());
+            button.fire();
+            assertFalse(input.isDisabled());
+            assertTrue(button.isDisabled());
+            assertEquals("list", input.getText());
+            assertTrue(submitted.isEmpty());
+
+            commandBox.setExecutionDisabled(false);
+            button.fire();
             assertEquals(List.of("list"), submitted);
             return null;
         });

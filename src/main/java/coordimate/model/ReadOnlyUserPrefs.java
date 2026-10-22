@@ -12,4 +12,7 @@ public interface ReadOnlyUserPrefs {
      */
     GuiSettings getGuiSettings();
 
+    /** Returns whether the first-launch tutorial has already been shown. */
+    boolean hasSeenTutorial();
+
 }

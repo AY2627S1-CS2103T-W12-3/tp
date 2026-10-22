@@ -2,6 +2,7 @@ package coordimate.ui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.awt.GraphicsEnvironment;
@@ -9,16 +10,20 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import javafx.application.Platform;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
@@ -31,7 +36,7 @@ public class HelpWindowTest {
     private static final List<String> COMMAND_WORDS = List.of(
             "add", "addevent", "addtag", "archive", "archiveevent", "assign", "clear", "delete", "deleteevent",
             "deletetag", "dismiss", "edit", "editevent", "edittag", "exit", "filter", "help", "list", "listtags",
-            "markattendance", "members", "search", "unarchive", "unarchiveevent", "unassign");
+            "markattendance", "members", "search", "tutorial", "unarchive", "unarchiveevent", "unassign");
 
     @BeforeAll
     public static void startJavaFx() throws InterruptedException {
@@ -43,6 +48,7 @@ public class HelpWindowTest {
             Platform.runLater(started::countDown);
         }
         assertTrue(started.await(10, TimeUnit.SECONDS));
+        Platform.setImplicitExit(false);
     }
 
     @Test
@@ -58,6 +64,31 @@ public class HelpWindowTest {
                 .findFirst()
                 .orElseThrow()
                 .format());
+    }
+
+    @Test
+    public void tutorialShortcut_runsHandlerOnlyForF2() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            HelpWindow helpWindow = new HelpWindow(new Stage());
+            Node root = helpWindow.getRoot().getScene().getRoot();
+            AtomicInteger runs = new AtomicInteger();
+
+            KeyEvent beforeHandlerSet = new KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.F2,
+                    false, false, false, false);
+            javafx.event.Event.fireEvent(root, beforeHandlerSet);
+
+            helpWindow.setTutorialShortcutHandler(runs::incrementAndGet);
+            javafx.event.Event.fireEvent(root, new KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.A,
+                    false, false, false, false));
+            assertEquals(0, runs.get());
+            javafx.event.Event.fireEvent(root, new KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.F2,
+                    false, false, false, false));
+            assertEquals(1, runs.get());
+            helpWindow.hide();
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
@@ -85,6 +116,8 @@ public class HelpWindowTest {
             assertEquals(HelpWindow.COMMAND_USAGES, commandTable.getItems());
             assertEquals(TableView.CONSTRAINED_RESIZE_POLICY, commandTable.getColumnResizePolicy());
             assertTrue(helpMessage.getText().contains("Fn + F1"));
+            assertTrue(helpMessage.getText().contains("Fn + F2"));
+            assertNull(root.getScene().lookup("#tutorialButton"));
             assertFalse(commandTable.isEditable());
             assertEquals("Command mode (default): type commands; press Esc to navigate cards.",
                     commandModeText.getText());

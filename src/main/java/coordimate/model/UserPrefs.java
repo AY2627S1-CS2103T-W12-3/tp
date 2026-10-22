@@ -12,6 +12,7 @@ import coordimate.commons.core.GuiSettings;
 public class UserPrefs implements ReadOnlyUserPrefs {
 
     private GuiSettings guiSettings = new GuiSettings();
+    private boolean hasSeenTutorial;
 
     /**
      * Creates a {@code UserPrefs} with default values.
@@ -24,6 +25,7 @@ public class UserPrefs implements ReadOnlyUserPrefs {
     public UserPrefs(ReadOnlyUserPrefs userPrefs) {
         requireNonNull(userPrefs);
         setGuiSettings(userPrefs.getGuiSettings());
+        setHasSeenTutorial(userPrefs.hasSeenTutorial());
     }
 
     @Override
@@ -40,6 +42,16 @@ public class UserPrefs implements ReadOnlyUserPrefs {
     }
 
     @Override
+    public boolean hasSeenTutorial() {
+        return hasSeenTutorial;
+    }
+
+    /** Records whether the first-launch tutorial has been shown. */
+    public void setHasSeenTutorial(boolean hasSeenTutorial) {
+        this.hasSeenTutorial = hasSeenTutorial;
+    }
+
+    @Override
     public boolean equals(Object other) {
         if (other == this) {
             return true;
@@ -50,17 +62,18 @@ public class UserPrefs implements ReadOnlyUserPrefs {
             return false;
         }
 
-        return guiSettings.equals(otherUserPrefs.guiSettings);
+        return guiSettings.equals(otherUserPrefs.guiSettings)
+                && hasSeenTutorial == otherUserPrefs.hasSeenTutorial;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(guiSettings);
+        return Objects.hash(guiSettings, hasSeenTutorial);
     }
 
     @Override
     public String toString() {
-        return "Gui Settings : " + guiSettings;
+        return "Gui Settings : " + guiSettings + ", Tutorial shown : " + hasSeenTutorial;
     }
 
 }

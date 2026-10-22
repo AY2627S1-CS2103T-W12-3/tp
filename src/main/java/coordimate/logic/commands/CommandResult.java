@@ -37,6 +37,9 @@ public class CommandResult {
     /** The application should exit. */
     private final boolean shouldExit;
 
+    /** The guided tutorial should be shown to the user. */
+    private final boolean shouldShowTutorial;
+
     /** The view requested by the command. */
     private final View viewToShow;
 
@@ -64,14 +67,16 @@ public class CommandResult {
      * Constructs a {@code CommandResult} with the specified fields.
      */
     public CommandResult(String feedbackToUser, boolean shouldShowHelp, boolean shouldExit, View viewToShow) {
-        this(feedbackToUser, shouldShowHelp, shouldExit, viewToShow, false, null, -1);
+        this(feedbackToUser, shouldShowHelp, shouldExit, false, viewToShow, false, null, -1);
     }
 
     private CommandResult(String feedbackToUser, boolean shouldShowHelp, boolean shouldExit,
-            View viewToShow, boolean warning, Person contactToFocus, int contactIndexToFocus) {
+            boolean shouldShowTutorial, View viewToShow, boolean warning, Person contactToFocus,
+            int contactIndexToFocus) {
         this.feedbackToUser = requireNonNull(feedbackToUser);
         this.shouldShowHelp = shouldShowHelp;
         this.shouldExit = shouldExit;
+        this.shouldShowTutorial = shouldShowTutorial;
         this.viewToShow = requireNonNull(viewToShow);
         this.warning = warning;
         this.contactToFocus = contactToFocus;
@@ -88,12 +93,13 @@ public class CommandResult {
 
     /** Reports an operation that took effect for this session but could not be saved. */
     public static CommandResult warning(String feedbackToUser) {
-        return new CommandResult(feedbackToUser, false, false, View.NONE, true, null, -1);
+        return new CommandResult(feedbackToUser, false, false, false, View.NONE, true, null, -1);
     }
 
     /** Returns a command result that asks the UI to focus a saved contact. */
     public static CommandResult withContactToFocus(String feedbackToUser, View viewToShow, Person contact) {
-        return new CommandResult(feedbackToUser, false, false, viewToShow, false, requireNonNull(contact), -1);
+        return new CommandResult(feedbackToUser, false, false, false, viewToShow, false, requireNonNull(contact),
+                -1);
     }
 
     /** Returns a command result that asks the UI to focus the contact now at a removed contact's index. */
@@ -101,7 +107,12 @@ public class CommandResult {
         if (contactIndex < 0) {
             throw new IllegalArgumentException("Contact index to focus must be non-negative.");
         }
-        return new CommandResult(feedbackToUser, false, false, viewToShow, false, null, contactIndex);
+        return new CommandResult(feedbackToUser, false, false, false, viewToShow, false, null, contactIndex);
+    }
+
+    /** Returns a command result that asks the UI to open the guided tutorial. */
+    public static CommandResult showingTutorial(String feedbackToUser) {
+        return new CommandResult(feedbackToUser, false, false, true, View.NONE, false, null, -1);
     }
 
     public boolean isWarning() {
@@ -136,6 +147,13 @@ public class CommandResult {
     }
 
     /**
+     * Returns true if the command requests that the guided tutorial be shown.
+     */
+    public boolean shouldShowTutorial() {
+        return shouldShowTutorial;
+    }
+
+    /**
      * Returns the view requested by the command, or {@code View.NONE} if it does not change views.
      */
     public View getViewToShow() {
@@ -156,6 +174,7 @@ public class CommandResult {
         return feedbackToUser.equals(otherCommandResult.feedbackToUser)
                 && shouldShowHelp == otherCommandResult.shouldShowHelp
                 && shouldExit == otherCommandResult.shouldExit
+                && shouldShowTutorial == otherCommandResult.shouldShowTutorial
                 && viewToShow == otherCommandResult.viewToShow
                 && warning == otherCommandResult.warning
                 && Objects.equals(contactToFocus, otherCommandResult.contactToFocus)
@@ -164,7 +183,7 @@ public class CommandResult {
 
     @Override
     public int hashCode() {
-        return Objects.hash(feedbackToUser, shouldShowHelp, shouldExit, viewToShow, warning,
+        return Objects.hash(feedbackToUser, shouldShowHelp, shouldExit, shouldShowTutorial, viewToShow, warning,
                 contactToFocus, contactIndexToFocus);
     }
 
@@ -174,6 +193,7 @@ public class CommandResult {
                 .add("feedbackToUser", feedbackToUser)
                 .add("showHelp", shouldShowHelp)
                 .add("exit", shouldExit)
+                .add("showTutorial", shouldShowTutorial)
                 .add("viewToShow", viewToShow)
                 .add("warning", warning)
                 .add("contactToFocus", contactToFocus)
