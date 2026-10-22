@@ -229,4 +229,14 @@ public class PersonTest {
         assertTrue(identified.isArchived());
         assertEquals(new MemberId(7), identified.withArchived(false).getMemberId().orElseThrow());
     }
+
+    @Test
+    public void constructor_archivedArgument_setsStatusThatCopiesKeep() {
+        Person archived = new PersonBuilder(ALICE).withArchived(true).build();
+
+        assertTrue(archived.isArchived());
+        assertEquals(ALICE.withArchived(true), archived);
+        assertTrue(new PersonBuilder(archived).build().isArchived());
+        assertFalse(new PersonBuilder(archived).withArchived(false).build().isArchived());
+    }
 }

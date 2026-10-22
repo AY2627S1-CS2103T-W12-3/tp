@@ -331,4 +331,15 @@ public class JsonAdaptedPersonTest {
             assertEquals(BENSON, loaded);
         }
     }
+
+    @Test
+    public void toModelType_archivedCreatorArgument_loadsArchivedContact() throws Exception {
+        JsonAdaptedPerson archived = new JsonAdaptedPerson("Alice Tan", "91234567", "alice@example.com", null,
+                "Member", null, null, null, null, List.of(), null, true);
+        JsonAdaptedPerson notArchived = new JsonAdaptedPerson("Alice Tan", "91234567", "alice@example.com", null,
+                "Member", null, null, null, null, List.of(), null, null);
+
+        assertTrue(archived.toModelType().isArchived());
+        assertFalse(notArchived.toModelType().isArchived());
+    }
 }

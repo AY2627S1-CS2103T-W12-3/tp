@@ -127,8 +127,7 @@ public class EditCommand extends Command {
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
         Person personToEdit = resolvePersonToEdit(model);
-        Person editedPerson = createEditedPerson(personToEdit, editPersonDescriptor, model.getTagList())
-                .withArchived(personToEdit.isArchived());
+        Person editedPerson = createEditedPerson(personToEdit, editPersonDescriptor, model.getTagList());
 
         boolean duplicatesAnotherPerson = model.getCoordiMate().getPersonList().stream()
                 .anyMatch(person -> !person.equals(personToEdit) && person.isSamePerson(editedPerson));
@@ -223,7 +222,8 @@ public class EditCommand extends Command {
         Set<Tag> updatedTags = createUpdatedTags(personToEdit, editPersonDescriptor, savedTags);
 
         return new Person(personToEdit.getMemberId().orElse(null), updatedName, updatedPhone, updatedEmail, updatedRole,
-                updatedBirthday, updatedAddress, updatedOrganisation, updatedNote, updatedLeaveDate, updatedTags);
+                updatedBirthday, updatedAddress, updatedOrganisation, updatedNote, updatedLeaveDate, updatedTags,
+                personToEdit.isArchived());
     }
 
     private static Set<Tag> createUpdatedTags(Person personToEdit, EditPersonDescriptor descriptor,

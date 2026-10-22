@@ -63,14 +63,15 @@ public class Person {
      */
     public Person(Name name, Phone phone, Email email, Role role, Birthday birthday, Address address,
             Organisation organisation, Note note, LeaveDate leaveDate, Set<Tag> tags) {
-        this(null, name, phone, email, role, birthday, address, organisation, note, leaveDate, tags);
+        this(null, name, phone, email, role, birthday, address, organisation, note, leaveDate, tags, false);
     }
 
     /**
-     * Creates a person with the given ID, or no ID for a contact not yet accepted by the model.
+     * Creates a person with the given ID, or no ID for a contact not yet accepted by the model, and archive status.
+     * Code that copies an existing contact must use this constructor, so that it passes the archive status on.
      */
     public Person(MemberId memberId, Name name, Phone phone, Email email, Role role, Birthday birthday, Address address,
-            Organisation organisation, Note note, LeaveDate leaveDate, Set<Tag> tags) {
+            Organisation organisation, Note note, LeaveDate leaveDate, Set<Tag> tags, boolean archived) {
         requireAllNonNull(name, phone, email, role, tags);
         this.memberId = memberId;
         this.name = name;
@@ -83,24 +84,6 @@ public class Person {
         this.note = note;
         this.leaveDate = leaveDate;
         this.tags.addAll(tags);
-        this.archived = false;
-    }
-
-    /**
-     * Creates a copy of {@code source} with the given archive status.
-     */
-    private Person(Person source, boolean archived) {
-        this.memberId = source.memberId;
-        this.name = source.name;
-        this.phone = source.phone;
-        this.email = source.email;
-        this.role = source.role;
-        this.birthday = source.birthday;
-        this.address = source.address;
-        this.organisation = source.organisation;
-        this.note = source.note;
-        this.leaveDate = source.leaveDate;
-        this.tags.addAll(source.tags);
         this.archived = archived;
     }
 
@@ -122,8 +105,8 @@ public class Person {
             }
             return this;
         }
-        return new Person(id, name, phone, email, role, birthday, address, organisation, note, leaveDate, tags)
-                .withArchived(archived);
+        return new Person(id, name, phone, email, role, birthday, address, organisation, note, leaveDate, tags,
+                archived);
     }
 
     public Name getName() {
@@ -186,7 +169,11 @@ public class Person {
      * Returns a copy of this contact with the given archive status, preserving all other details.
      */
     public Person withArchived(boolean archived) {
-        return archived == this.archived ? this : new Person(this, archived);
+        if (archived == this.archived) {
+            return this;
+        }
+        return new Person(memberId, name, phone, email, role, birthday, address, organisation, note, leaveDate, tags,
+                archived);
     }
 
     /**

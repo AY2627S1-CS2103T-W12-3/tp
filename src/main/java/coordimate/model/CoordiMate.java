@@ -215,7 +215,7 @@ public class CoordiMate implements ReadOnlyCoordiMate {
                 .filter(tag -> !tag.isSameTag(target))
                 .toList();
         List<Person> updatedPersons = persons.asUnmodifiableObservableList().stream()
-                .map(person -> removeTagFromPerson(person, target).withArchived(person.isArchived()))
+                .map(person -> removeTagFromPerson(person, target))
                 .toList();
         tags.setTags(remainingTags);
         persons.setPersons(updatedPersons);
@@ -239,7 +239,7 @@ public class CoordiMate implements ReadOnlyCoordiMate {
                 .map(tag -> tag.isSameTag(target) ? editedTag : tag)
                 .toList();
         List<Person> editedPersons = persons.asUnmodifiableObservableList().stream()
-                .map(person -> replaceTag(person, target, editedTag).withArchived(person.isArchived()))
+                .map(person -> replaceTag(person, target, editedTag))
                 .toList();
         tags.setTags(editedTags);
         persons.setPersons(editedPersons);
@@ -375,7 +375,7 @@ public class CoordiMate implements ReadOnlyCoordiMate {
                 person.getRole(),
                 person.getBirthday().orElse(null), person.getAddress().orElse(null),
                 person.getOrganisation().orElse(null), person.getNote().orElse(null),
-                person.getLeaveDate().orElse(null), editedTags);
+                person.getLeaveDate().orElse(null), editedTags, person.isArchived());
     }
 
     /**
@@ -392,7 +392,7 @@ public class CoordiMate implements ReadOnlyCoordiMate {
                 person.getRole(),
                 person.getBirthday().orElse(null), person.getAddress().orElse(null),
                 person.getOrganisation().orElse(null), person.getNote().orElse(null),
-                person.getLeaveDate().orElse(null), remainingTags);
+                person.getLeaveDate().orElse(null), remainingTags, person.isArchived());
     }
 
     /**
