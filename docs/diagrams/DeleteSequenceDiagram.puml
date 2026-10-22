@@ -5,10 +5,8 @@ skinparam ArrowFontStyle plain
 box Logic LOGIC_COLOR_T1
 participant ":LogicManager" as LogicManager LOGIC_COLOR
 participant ":CoordiMateParser" as CoordiMateParser LOGIC_COLOR
-participant ":DeleteCommandParser" as DeleteCommandParser LOGIC_COLOR
 participant "d:DeleteCommand" as DeleteCommand LOGIC_COLOR
 participant "c:DeleteCommand" as ConfirmedDelete LOGIC_COLOR
-participant "r:CommandResult" as CommandResult LOGIC_COLOR
 end box
 
 box Model MODEL_COLOR_T1
@@ -24,19 +22,7 @@ activate LogicManager
 
 LogicManager -> CoordiMateParser : parseCommand("delete 1")
 activate CoordiMateParser
-create DeleteCommandParser
-CoordiMateParser -> DeleteCommandParser
-activate DeleteCommandParser
-DeleteCommandParser --> CoordiMateParser
-deactivate DeleteCommandParser
-CoordiMateParser -> DeleteCommandParser : parse("1")
-activate DeleteCommandParser
-create DeleteCommand
-DeleteCommandParser -> DeleteCommand
-DeleteCommand --> DeleteCommandParser : d
-DeleteCommandParser --> CoordiMateParser : d
-deactivate DeleteCommandParser
-destroy DeleteCommandParser
+note right of CoordiMateParser : DeleteCommandParser creates d
 CoordiMateParser --> LogicManager : d
 deactivate CoordiMateParser
 
@@ -56,24 +42,33 @@ DeleteCommand --> LogicManager : p
 deactivate DeleteCommand
 note right of LogicManager : pendingDelete = p; no deletion yet
 
-note right of LogicManager : Format confirmation prompt from p
-create CommandResult
-LogicManager -> CommandResult : new CommandResult(prompt for p, CONTACTS)
-CommandResult --> LogicManager : prompt result
+note right of LogicManager : Return CommandResult(prompt for p, CONTACTS)
 [<-- LogicManager : prompt result
 deactivate LogicManager
 
-[-> LogicManager : execute("y")
+[-> LogicManager : execute(response)
 activate LogicManager
-note right of LogicManager : Consume pending response; do not parse "y"
+note right of LogicManager : Clear pendingDelete; consume response without parsing
+alt response is y or Y
 create ConfirmedDelete
 LogicManager -> ConfirmedDelete : forResolvedPerson(p)
 ConfirmedDelete --> LogicManager : c
 
+note over ConfirmedDelete, Model
+  Here c executes on the candidate model
+  and deletes the resolved contact p.
+end note
 ref over LogicManager, ConfirmedDelete, Model, Storage
   executeAtomicCommand
 end ref
 
 [<-- LogicManager : deletion result
+else any other response
+note right of LogicManager
+  Leave data unchanged.
+  Return MESSAGE_DELETE_CANCELLED.
+end note
+[<-- LogicManager : cancellation result
+end
 deactivate LogicManager
 @enduml

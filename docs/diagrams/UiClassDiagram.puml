@@ -11,6 +11,7 @@ Class UiManager
 Class MainWindow
 Class WindowBounds
 Class HelpWindow
+Class TutorialWindow
 Class ResultDisplay
 Class PersonListPanel
 Class PersonCard
@@ -40,6 +41,7 @@ MainWindow *-down-> "1" PersonListPanel
 MainWindow *-down-> "1" EventListPanel
 MainWindow *-down-> "1" ReminderPanel
 MainWindow *-down-> "1" StatusBarFooter
+MainWindow *-down-> "1" TutorialWindow
 MainWindow --> "0..1" HelpWindow
 MainWindow ..> WindowBounds
 MainWindow ..> TagListViewModel

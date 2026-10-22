@@ -71,9 +71,9 @@ The **API** of this component is specified in [`Ui.java`](https://github.com/AY2
 
 <puml src="diagrams/UiClassDiagram.puml" alt="Structure of the UI Component"/>
 
-The first diagram shows the parts created or used by `MainWindow`, including `CommandBox`, `ResultDisplay`, `PersonListPanel`, `EventListPanel`, `ReminderPanel`, and `StatusBarFooter`. `MainWindow` also uses `TagListViewModel` to keep the Tags view synchronized with contact and tag data.
+The first diagram shows the parts created or used by `MainWindow`, including `CommandBox`, `ResultDisplay`, `PersonListPanel`, `EventListPanel`, `ReminderPanel`, `StatusBarFooter`, and `TutorialWindow`. `MainWindow` also uses `TagListViewModel` to keep the Tags view synchronized with contact and tag data.
 
-The partial inheritance diagram highlights `MainWindow`, `EventListPanel`, and `ReminderPanel`. `CommandBox`, `ResultDisplay`, `PersonListPanel`, `PersonCard`, `StatusBarFooter`, and `HelpWindow` also inherit from the abstract `UiPart` class, which captures behavior shared by visible GUI parts. `TagListViewModel` and `WindowBounds` are helpers rather than `UiPart` subclasses.
+The inheritance diagram shows all ten subclasses of the abstract `UiPart`, which captures behavior shared by visible GUI parts. Each `UiPart` box represents the same superclass, repeated to keep the arrows clear. `TagListViewModel` and `WindowBounds` are helpers rather than `UiPart` subclasses.
 
 <puml src="diagrams/UiPartInheritanceDiagram.puml" alt="UI component inheritance from UiPart"/>
 
@@ -144,7 +144,7 @@ Here's a (partial) class diagram of the `Logic` component:
 
 <puml src="diagrams/LogicClassDiagram.puml" width="550"/>
 
-The sequence diagram below follows `execute("delete 1")` and the subsequent `execute("y")` confirmation. The first call resolves and stores the contact without deleting it; the second runs the confirmed deletion through the atomic save path.
+The sequence diagram below follows `execute("delete 1")` and the subsequent confirmation response. The first call resolves and stores the contact without deleting it. If the response is `y` or `Y`, the confirmed command deletes the contact on a candidate model through the atomic save path; any other response cancels the deletion without changing data.
 
 <puml src="diagrams/DeleteSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `delete 1` Command" />
 
@@ -157,7 +157,7 @@ How the `Logic` component works:
 
 1. When `Logic` is called upon to execute a command, the command is passed to a `CoordiMateParser` object, which in turn creates a parser that matches the command (e.g., `DeleteCommandParser`) and uses it to parse the command.
 1. This results in a `Command` object (more precisely, an object of one of its subclasses e.g., `DeleteCommand`). For `delete`, `LogicManager` first calls `resolvePerson` and returns a confirmation prompt without executing the deletion.
-1. If the next input is `y` or `Y`, `LogicManager` creates a command for the resolved `Person` and executes it on a candidate model. That command deletes the contact from the candidate, which is saved before the live model changes.
+1. If the next input is `y` or `Y`, `LogicManager` creates a command for the resolved `Person` and executes it on a candidate model. That command deletes the contact from the candidate, which is saved before the live model changes. Any other input cancels the deletion.
 1. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
 
 Here are the other classes in `Logic` (omitted from the class diagram above) that are used for parsing a user command:
@@ -337,7 +337,7 @@ These are `AddCommand`, `EditCommand`,
 
 The live model is not touched until step 5, so a failure at any earlier step leaves the app exactly as it was.
 
-The sequence diagram below shows these steps for an `addevent` command that succeeds. Parsing is omitted.
+The sequence diagram below shows a successful call to `executeAtomicCommand(c)` with an `AddEventCommand` as `c`. Parsing is omitted.
 
 <puml src="diagrams/AtomicCommandSequenceDiagram.puml" alt="Interactions when a command that changes data is executed" />
 

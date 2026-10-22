@@ -17,7 +17,7 @@ box Storage STORAGE_COLOR_T1
 participant ":Storage" as Storage STORAGE_COLOR
 end box
 
-[-> LogicManager : execute("addevent ...")
+[-> LogicManager : executeAtomicCommand(c)
 activate LogicManager
 
 LogicManager -> Storage : readCoordiMate()
