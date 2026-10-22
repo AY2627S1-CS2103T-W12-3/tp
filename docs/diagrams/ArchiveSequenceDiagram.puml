@@ -5,6 +5,7 @@ skinparam ArrowFontStyle plain
 box Logic LOGIC_COLOR_T1
 participant ":LogicManager" as LogicManager LOGIC_COLOR
 participant "c:ArchiveCommand" as Command LOGIC_COLOR
+participant "<<class>>\nMemberIdResolver" as Resolver LOGIC_COLOR
 end box
 
 box Model MODEL_COLOR_T1
@@ -17,7 +18,7 @@ box Storage STORAGE_COLOR_T1
 participant ":Storage" as Storage STORAGE_COLOR
 end box
 
-[-> LogicManager : execute("archive 1")
+[-> LogicManager : execute("archive 12")
 activate LogicManager
 
 LogicManager -> Storage : readCoordiMate()
@@ -42,11 +43,16 @@ deactivate Candidate
 LogicManager -> Command : execute(candidate)
 activate Command
 
-Command -> Candidate : getFilteredPersonList()
-activate Candidate
+Command -> Resolver : resolve(candidate, 12)
+activate Resolver
 
-Candidate --> Command : shown contacts
-deactivate Candidate
+note right of Resolver
+  Searches all saved contacts,
+  not only the displayed ones.
+end note
+
+Resolver --> Command : p
+deactivate Resolver
 
 Command -> Person : withArchived(true)
 activate Person

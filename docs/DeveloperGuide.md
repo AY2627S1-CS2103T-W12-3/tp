@@ -721,8 +721,10 @@ returns a copy from `withArchived(boolean)`:
 * `Event#withArchived` builds the copy through the full constructor. Every other `Event` copy method, such as
   `withAttendance` and `withDetails`, passes the flag on.
 * `Person#withArchived` uses a private copy constructor, so the public constructors are unchanged. Code that rebuilds
-  a contact through a public constructor carries the flag over explicitly: `EditCommand#execute`, and the tag updates
-  in `CoordiMate#setTag` and `CoordiMate#deleteTag`.
+  a contact through a public constructor carries the flag over explicitly: `EditCommand#execute`, the tag updates in
+  `CoordiMate#setTag` and `CoordiMate#deleteTag`, and `Person#withMemberId`. The last matters when loading a data
+  file saved before member IDs existed: `CoordiMate#addPerson` gives each contact an ID, and the contact must stay
+  archived.
 
 Archiving changes nothing else: an archived contact keeps its name in event member lists, and an archived event
 keeps its members and attendance.
@@ -737,16 +739,22 @@ contact filter set by commands:
 * A filtered event list, `Model#getFilteredEventList`, shows the events whose `archived` value matches the view.
   The **Events** tab and its count use this list. A contact's details pane uses the full event list instead, so that
   archived events still appear in the contact's history.
-* `Model#setShowingArchived` switches both lists. `MainWindow` observes `showingArchivedProperty` to change the tab
-  titles to **Archived contacts** and **Archived events**.
+* `Model#setShowingArchived` switches both lists. `MainWindow` observes `showingArchivedProperty` to:
+  * change the tab titles to **Archived contacts** and **Archived events**,
+  * tell `PersonListPanel` and `EventListPanel` to show `No archived contacts.` or `No archived events.` for an empty
+    list, and the event list heading to read **Archived events**, and
+  * show short sidebar command lists, `archivedContactsCommands` and `archivedEventsCommands` in `MainWindow.fxml`,
+    which list only the restore command and `list`, in place of the full lists for the **Contacts** and **Events**
+    tabs.
 
 Because the view is applied inside the model, `search`, `filter`, and `members` hide archived contacts without any
 change to those commands.
 
-The sequence diagram below shows `archive 1`. `ArchiveCommand` is one of the commands that `LogicManager` executes on
-a copy of the model, as described in [Saving data atomically](#saving-data-atomically). `LogicManager` copies the
-current archive view onto that copy, so that `unarchive 1` in the archived view refers to the same contact on the copy
-as on the screen.
+The sequence diagram below shows `archive 12`. `ArchiveCommand` finds the contact by its permanent member ID with
+`MemberIdResolver`, which searches all saved contacts, so the command works whatever the displayed list shows. Like
+`edit`, it is one of the commands that `LogicManager` executes on a copy of the model, as described in
+[Saving data atomically](#saving-data-atomically). `LogicManager` copies the current archive view onto that copy, so
+that commands which read the displayed list see the same contacts on the copy as on the screen.
 
 <puml src="diagrams/ArchiveSequenceDiagram.puml" width="700" />
 
@@ -756,9 +764,16 @@ as on the screen.
 * The instance method `EventMembersCommand#findEvent`, used by `assign` and `unassign`, rejects an archived event.
   `MembersCommand`, `MarkAttendanceCommand`, `EditEventCommand`, and `DeleteEventCommand` search the full event list,
   so they still work on archived events.
+* `AssignCommand` resolves its member IDs with `EventMembersCommand#resolvePersons` and rejects the whole command if
+  any of the contacts is archived. `UnassignCommand` does not check, so an archived contact can still be removed from
+  an event.
+* The **Tags** member list in `MainWindow` and the event member list in `EventListPanel` mark archived contacts as
+  `(archived)`, and `PersonListPanel` marks archived events in a contact's event list.
 * `AddEventCommand` reports an archived duplicate with a hint to unarchive it, since the user cannot see the
   existing event.
-* `LogicManager` sets the view back to active after `add` and `addevent`, so that the new item is visible.
+* `ModelManager#addPerson` sets the view back to active, like the filter it already clears, and `LogicManager` does
+  the same on the displayed model after `add` and `addevent`, so that the new item is visible. The first is needed
+  because `AddCommand` looks up the new contact in the displayed list of the model copy to select it.
 
 **Storage.** [`JsonAdaptedEvent`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/storage/JsonAdaptedEvent.java)
 reads `archived` as a `Boolean` creator parameter, and
@@ -778,6 +793,17 @@ files saved before archiving existed still load.
 * **Alternative 2:** Each command adds `!person.isArchived()` to its own predicate.
   * Pros: The model stays unchanged.
   * Cons: Easy to forget in a new command, and `list archived` would have to change every command's behaviour.
+
+**Aspect: How `archive` and `unarchive` identify a contact**
+
+* **Alternative 1 (current choice):** By permanent member ID, as `edit`, `delete`, and `assign` do.
+  * Pros: Consistent with the other contact commands. A contact can be restored from any view, and a search or
+    filter cannot change which contact an ID refers to.
+  * Cons: The user needs to know the ID, which is shown on each contact card.
+
+* **Alternative 2:** By index in the displayed list.
+  * Pros: Easy to use right after a search.
+  * Cons: Restoring a contact would first need `list archived`, and indexes shift when the list changes.
 
 **Aspect: Where archived items are stored**
 
@@ -1718,42 +1744,65 @@ and `PAST_DATE` is any date before today, such as `01-01-2020`.
 
 1. Archiving and restoring a contact
 
-   1. Prerequisites: The sample contacts are loaded. Run `list`.
+   1. Prerequisites: The sample contacts are loaded. Run `list`. Note the member ID shown on the 2nd contact; the steps
+      below assume it is `2`.
 
-   1. Test case: `archive 1`<br>
-      Expected: The 1st contact disappears from the contact list, and the **Contacts** tab count drops by 1. The
-      status message shows `Archived contact: {NAME}.`
+   1. Test case: `archive 2`<br>
+      Expected: The contact disappears from the contact list, and the **Contacts** tab count drops by 1. The status
+      message shows `Archived contact: {NAME}.`
 
    1. Test case: `list archived`<br>
       Expected: The tabs are titled **Archived contacts (1)** and **Archived events (0)**. Only the archived contact
-      is shown, with an **Archived** badge.
+      is shown, with an **Archived** badge. The sidebar lists only `unarchive` and `list`.
 
-   1. Test case: `unarchive 1`<br>
-      Expected: The contact leaves the archived view. After `list`, it is back in the contact list.
+   1. Test case: `unarchive 2`<br>
+      Expected: The contact leaves the archived view, which shows `No archived contacts.` After `list`, the contact is
+      back in the contact list and the sidebar shows all contact commands again.
 
-   1. Test case: `unarchive 1` in the normal view<br>
-      Expected: No change. The status message shows `{NAME} is not archived. No changes were made.`
+   1. Test case: `search` for another contact, then `archive 2` and `unarchive 2`<br>
+      Expected: Both succeed although the contact is not displayed.
 
-   1. Other incorrect commands to try: `archive`, `archive 0`, `archive x`, `archive 999`, `list archive`<br>
+   1. Other incorrect commands to try: `archive`, `archive 0`, `archive x`, `archive 999`, `unarchive 2` on an active
+      contact, `list archive`<br>
       Expected: No change. The status message shows error details.
 
 1. Archiving and restoring an event
 
    1. Prerequisites: Run `addevent evn/Orientation st/DATE et/DATE`, where `DATE` is tomorrow in `dd-MM-yyyy`
-      format. Assign the 1st contact with `assign evn/Orientation c/1`. A reminder for `Orientation` is shown.
+      format. Assign the 1st contact with `assign evn/Orientation c/ID`, using its member ID. A reminder for
+      `Orientation` is shown.
 
    1. Test case: `archiveevent evn/orientation`<br>
       Expected: The event disappears from the **Events** tab, and its reminder disappears. The status message shows
-      `Archived Event Orientation.` The 1st contact's details still list `Orientation (archived)`.
+      `Archived Event Orientation.` The contact's details still list `Orientation (archived)`.
 
-   1. Test case: `assign evn/Orientation c/2`<br>
+   1. Test case: `assign evn/Orientation c/ID` with another contact's ID<br>
       Expected: No change. The status message says the event is archived and suggests `unarchiveevent`.
 
    1. Test case: `addevent evn/Orientation st/DATE et/DATE`<br>
       Expected: No event is added. The status message says an archived event with that name already exists.
 
+   1. Test case: `list archived`, then open the **Events** tab<br>
+      Expected: The tab and list heading read **Archived events (1)**. The sidebar lists only `unarchiveevent` and
+      `list`.
+
    1. Test case: `unarchiveevent evn/Orientation`<br>
-      Expected: The event is back in the **Events** tab, with its members, and its reminder reappears.
+      Expected: The archived events list shows `No archived events.` After `list`, the event is back in the **Events**
+      tab with its members, and its reminder reappears.
+
+1. Archived contacts in events and tags
+
+   1. Prerequisites: The 1st contact is a member of `Orientation`, and has the tag `friends`. Archive the contact with
+      `archive ID`.
+
+   1. Test case: Select `Orientation` in the **Events** tab, then the `friends` tag in the **Tags** tab<br>
+      Expected: Both member lists show the contact's name followed by `(archived)`.
+
+   1. Test case: `assign evn/Orientation c/ID`, using the archived contact's ID<br>
+      Expected: No change. The status message says the contact is archived and suggests `unarchive`.
+
+   1. Test case: `unassign evn/Orientation c/ID`<br>
+      Expected: The archived contact is removed from the event.
 
 1. Keeping the archive status after restarting
 
