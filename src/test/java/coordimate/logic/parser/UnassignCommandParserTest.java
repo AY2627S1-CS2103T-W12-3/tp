@@ -8,10 +8,10 @@ import java.util.Arrays;
 
 import org.junit.jupiter.api.Test;
 
-import coordimate.commons.core.index.Index;
 import coordimate.logic.commands.UnassignCommand;
 import coordimate.logic.parser.exceptions.ParseException;
 import coordimate.model.event.Event;
+import coordimate.model.person.MemberId;
 
 public class UnassignCommandParserTest {
     private static final String INVALID_FORMAT =
@@ -21,6 +21,8 @@ public class UnassignCommandParserTest {
 
     @Test
     public void parse_validArgs_success() throws Exception {
+        assertEquals(unassign("Final Concert", 12, 45, 12), parser.parse(" evn/Final Concert c/12 45 12"));
+        assertEquals(unassign("Final Concert", Integer.MAX_VALUE), parser.parse(" evn/Final Concert c/2147483647"));
         assertEquals(unassign("Final Concert", 2), parser.parse(" evn/Final Concert c/2"));
         assertEquals(unassign("Final Concert", 1, 4, 5), parser.parse(" evn/Final Concert c/1 4 5"));
         assertEquals(unassign("Final Concert", 1, 1, 3), parser.parse(" evn/Final Concert c/1 1 3"));
@@ -45,9 +47,10 @@ public class UnassignCommandParserTest {
     }
 
     @Test
-    public void parse_invalidContactIndexes_rejected() {
-        for (String indexes : new String[] {"0", "-1", "+1", "a", "1 x", "1,2", "1.5", "99999999999"}) {
-            assertError(" evn/Final Concert c/" + indexes, UnassignCommandParser.MESSAGE_INVALID_CONTACT_INDEXES);
+    public void parse_invalidMemberIds_rejected() {
+        for (String ids : new String[] {"0", "-1", "+1", "a", "1 x", "1,2", "1.5", "1.0", "1e0",
+            "2147483648", "99999999999"}) {
+            assertError(" evn/Final Concert c/" + ids, UnassignCommandParser.MESSAGE_INVALID_MEMBER_IDS);
         }
     }
 
@@ -74,7 +77,7 @@ public class UnassignCommandParserTest {
         assertEquals(message, assertThrows(ParseException.class, () -> parser.parse(input)).getMessage());
     }
 
-    private static UnassignCommand unassign(String eventName, Integer... oneBasedIndexes) {
-        return new UnassignCommand(eventName, Arrays.stream(oneBasedIndexes).map(Index::fromOneBased).toList());
+    private static UnassignCommand unassign(String eventName, Integer... memberIds) {
+        return new UnassignCommand(eventName, Arrays.stream(memberIds).map(MemberId::new).toList());
     }
 }

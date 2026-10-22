@@ -82,8 +82,8 @@ public class CommandErrorMessagesTest {
             {"editevent evn/Fair et/", "End time", "et/17-09-2026 18:30"},
             {"addevent evn/Fair st/ et/17-09-2026", "Start time", "st/17-09-2026 16:30"},
             {"addevent evn/Fair st/17-09-2026 et/", "End time", "et/17-09-2026 18:30"},
-            {"assign evn/Fair c/", "Contact indexes", "c/1 3 5"},
-            {"unassign evn/Fair c/", "Contact indexes", "c/1 3 5"},
+            {"assign evn/Fair c/", "Member IDs", "c/1 3 5"},
+            {"unassign evn/Fair c/", "Member IDs", "c/1 3 5"},
             {"markattendance evn/Fair mem/ att/present", "Member name", "mem/Aisha Tan"},
             {"markattendance evn/Fair mem/Alice att/", "Attendance status", "att/present"},
             {"filter tag/", "Filter value", "tag/Publicity"},
@@ -170,8 +170,7 @@ public class CommandErrorMessagesTest {
         for (String input : inputs) {
             CommandException error = assertThrows(CommandException.class, () ->
                     parser.parseCommand(input).execute(model), input);
-            assertEquals("No contact exists at index 1. Use an index from the current contact list.",
-                    error.getMessage(), input);
+            assertEquals("No contact exists with member ID: 1. Use an existing member ID.", error.getMessage(), input);
         }
     }
 

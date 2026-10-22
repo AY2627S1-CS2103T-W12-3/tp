@@ -443,6 +443,11 @@ public class CoordiMateTest {
         }
 
         @Override
+        public long getNextMemberId() {
+            return 1;
+        }
+
+        @Override
         public ObservableList<Person> getPersonList() {
             return persons;
         }

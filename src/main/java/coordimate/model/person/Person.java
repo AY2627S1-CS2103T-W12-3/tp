@@ -19,6 +19,8 @@ import coordimate.model.tag.Tag;
  */
 public class Person {
 
+    private final MemberId memberId;
+
     // Contact details used for duplicate checks
     private final Phone phone;
     private final Email email;
@@ -56,11 +58,20 @@ public class Person {
     }
 
     /**
-     * Creates a person with optional birthday, organization, note, and leave end date details.
+     * Creates a person with optional birthday, organization, note, and leave end date details, but no ID.
      */
     public Person(Name name, Phone phone, Email email, Role role, Birthday birthday, Address address,
             Organisation organisation, Note note, LeaveDate leaveDate, Set<Tag> tags) {
+        this(null, name, phone, email, role, birthday, address, organisation, note, leaveDate, tags);
+    }
+
+    /**
+     * Creates a person with the given ID, or no ID for a contact not yet accepted by the model.
+     */
+    public Person(MemberId memberId, Name name, Phone phone, Email email, Role role, Birthday birthday, Address address,
+            Organisation organisation, Note note, LeaveDate leaveDate, Set<Tag> tags) {
         requireAllNonNull(name, phone, email, role, tags);
+        this.memberId = memberId;
         this.name = name;
         this.phone = phone;
         this.email = email;
@@ -71,6 +82,27 @@ public class Person {
         this.note = note;
         this.leaveDate = leaveDate;
         this.tags.addAll(tags);
+    }
+
+    /**
+     * Returns the permanent ID, which is absent until the model accepts a new contact.
+     */
+    public Optional<MemberId> getMemberId() {
+        return Optional.ofNullable(memberId);
+    }
+
+    /**
+     * Returns an identified copy of a new contact, rejecting changes to an existing ID.
+     */
+    public Person withMemberId(MemberId id) {
+        requireNonNull(id);
+        if (memberId != null) {
+            if (!memberId.equals(id)) {
+                throw new IllegalArgumentException("A member's ID cannot be changed.");
+            }
+            return this;
+        }
+        return new Person(id, name, phone, email, role, birthday, address, organisation, note, leaveDate, tags);
     }
 
     public Name getName() {
@@ -159,7 +191,8 @@ public class Person {
             return false;
         }
 
-        return name.equals(otherPerson.name)
+        return Objects.equals(memberId, otherPerson.memberId)
+                && name.equals(otherPerson.name)
                 && phone.equals(otherPerson.phone)
                 && email.equals(otherPerson.email)
                 && role.equals(otherPerson.role)
@@ -174,12 +207,14 @@ public class Person {
     @Override
     public int hashCode() {
         // use this method for custom fields hashing instead of implementing your own
-        return Objects.hash(name, phone, email, role, birthday, address, organisation, note, leaveDate, tags);
+        return Objects.hash(memberId, name, phone, email, role, birthday, address, organisation, note, leaveDate,
+                tags);
     }
 
     @Override
     public String toString() {
         return new ToStringBuilder(this)
+                .add("memberId", memberId)
                 .add("name", name)
                 .add("phone", phone)
                 .add("email", email)

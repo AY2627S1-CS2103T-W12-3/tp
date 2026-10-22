@@ -4,7 +4,6 @@ import static coordimate.logic.commands.CommandTestUtil.assertCommandFailure;
 import static coordimate.logic.commands.CommandTestUtil.assertCommandSuccess;
 import static coordimate.logic.commands.CommandTestUtil.showPersonAtIndex;
 import static coordimate.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
-import static coordimate.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
 import static coordimate.testutil.TypicalPersons.ALICE;
 import static coordimate.testutil.TypicalPersons.BENSON;
 import static coordimate.testutil.TypicalPersons.getTypicalCoordiMate;
@@ -17,12 +16,12 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import coordimate.commons.core.index.Index;
 import coordimate.logic.commands.DeleteCommand.IdentifierType;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.Model;
 import coordimate.model.ModelManager;
 import coordimate.model.UserPrefs;
+import coordimate.model.person.MemberId;
 import coordimate.model.person.Person;
 import coordimate.testutil.PersonBuilder;
 
@@ -35,9 +34,25 @@ public class DeleteCommandTest {
     private Model model = new ModelManager(getTypicalCoordiMate(), new UserPrefs());
 
     @Test
-    public void execute_validIndexUnfilteredList_success() {
+    public void constructor_nullArguments_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> new DeleteCommand((MemberId) null));
+        assertThrows(NullPointerException.class, () -> new DeleteCommand(null, "Alice Pauline"));
+        assertThrows(NullPointerException.class, () -> new DeleteCommand(IdentifierType.NAME, null));
+        assertThrows(NullPointerException.class, () -> DeleteCommand.forResolvedPerson(null));
+    }
+
+    @Test
+    public void constructor_blankIdentifier_throwsIllegalArgumentException() {
+        for (IdentifierType type : IdentifierType.values()) {
+            assertThrows(IllegalArgumentException.class, () -> new DeleteCommand(type, ""));
+            assertThrows(IllegalArgumentException.class, () -> new DeleteCommand(type, " \t\n "));
+        }
+    }
+
+    @Test
+    public void execute_validMemberIdUnfilteredList_success() {
         Person personToDelete = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
-        DeleteCommand deleteCommand = new DeleteCommand(INDEX_FIRST_PERSON);
+        DeleteCommand deleteCommand = new DeleteCommand(new MemberId(1));
 
         String expectedMessage = String.format(DeleteCommand.MESSAGE_DELETE_PERSON_SUCCESS,
                 personToDelete.getName());
@@ -49,20 +64,20 @@ public class DeleteCommandTest {
     }
 
     @Test
-    public void execute_invalidIndexUnfilteredList_throwsCommandException() {
-        Index outOfBoundIndex = Index.fromOneBased(model.getFilteredPersonList().size() + 1);
-        DeleteCommand deleteCommand = new DeleteCommand(outOfBoundIndex);
+    public void execute_unknownMemberIdUnfilteredList_throwsCommandException() {
+        MemberId unknownId = new MemberId(99);
+        DeleteCommand deleteCommand = new DeleteCommand(unknownId);
 
         assertCommandFailure(deleteCommand, model,
-                String.format(DeleteCommand.MESSAGE_INVALID_INDEX, outOfBoundIndex.getOneBased()));
+                String.format(DeleteCommand.MESSAGE_UNKNOWN_MEMBER_ID, unknownId.getValue()));
     }
 
     @Test
-    public void execute_validIndexFilteredList_success() {
+    public void execute_validMemberIdFilteredList_success() {
         showPersonAtIndex(model, INDEX_FIRST_PERSON);
 
         Person personToDelete = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
-        DeleteCommand deleteCommand = new DeleteCommand(INDEX_FIRST_PERSON);
+        DeleteCommand deleteCommand = new DeleteCommand(new MemberId(1));
 
         String expectedMessage = String.format(DeleteCommand.MESSAGE_DELETE_PERSON_SUCCESS,
                 personToDelete.getName());
@@ -75,17 +90,13 @@ public class DeleteCommandTest {
     }
 
     @Test
-    public void execute_invalidIndexFilteredList_throwsCommandException() {
+    public void execute_memberHiddenByFilter_success() {
         showPersonAtIndex(model, INDEX_FIRST_PERSON);
-
-        Index outOfBoundIndex = INDEX_SECOND_PERSON;
-        // ensures that outOfBoundIndex is still in bounds of CoordiMate list
-        assertTrue(outOfBoundIndex.getZeroBased() < model.getCoordiMate().getPersonList().size());
-
-        DeleteCommand deleteCommand = new DeleteCommand(outOfBoundIndex);
-
-        assertCommandFailure(deleteCommand, model,
-                String.format(DeleteCommand.MESSAGE_INVALID_INDEX, outOfBoundIndex.getOneBased()));
+        Model expectedModel = new ModelManager(model.getCoordiMate(), new UserPrefs());
+        expectedModel.deletePerson(BENSON);
+        expectedModel.updateFilteredPersonList(person -> person.equals(ALICE));
+        assertCommandSuccess(new DeleteCommand(new MemberId(2)), model,
+                String.format(DeleteCommand.MESSAGE_DELETE_PERSON_SUCCESS, BENSON.getName()), expectedModel);
     }
 
     @Test
@@ -106,37 +117,37 @@ public class DeleteCommandTest {
     }
 
     @Test
-    public void resolveMatches_ambiguousName_showsOnlyDisplayedIndex() {
-        Person otherAlice = new PersonBuilder(ALICE).withPhone("22222222")
+    public void resolveMatches_ambiguousName_showsPermanentIds() {
+        Person otherAlice = new PersonBuilder(ALICE).withMemberId(12).withPhone("22222222")
                 .withEmail("other@example.com").build();
         DeleteCommand command = new DeleteCommand(IdentifierType.NAME, "Alice Pauline");
 
         CommandException exception = assertThrows(CommandException.class, () ->
-                command.resolveMatches(List.of(ALICE, otherAlice), List.of(otherAlice)));
+                command.resolveMatches(List.of(ALICE, otherAlice)));
 
         assertEquals("Multiple contacts match that identifier:\n"
-                + "- Alice Pauline | Phone: 94351253 | Email: alice@example.com\n"
-                + "- Alice Pauline | Phone: 22222222 | Email: other@example.com | Current-list index: 1\n"
-                + "Use a displayed index, phone number, or email address to identify the contact.",
+                + "- Alice Pauline | ID: 1 | Phone: 94351253 | Email: alice@example.com\n"
+                + "- Alice Pauline | ID: 12 | Phone: 22222222 | Email: other@example.com\n"
+                + "Use a member ID, phone number, or email address to identify the contact.",
                 exception.getMessage());
     }
 
     @Test
     public void confirmationPrompt_containsContactAndQuestion() {
-        assertEquals("Contact found:\nName: Alice Pauline\nPhone: 94351253\nEmail: alice@example.com\n"
+        assertEquals("Contact found:\nID: 1\nName: Alice Pauline\nPhone: 94351253\nEmail: alice@example.com\n"
                 + "Role: NA\nConfirm deletion? [y/N]", DeleteCommand.confirmationPrompt(ALICE));
     }
 
     @Test
     public void equals() {
-        DeleteCommand deleteFirstCommand = new DeleteCommand(INDEX_FIRST_PERSON);
-        DeleteCommand deleteSecondCommand = new DeleteCommand(INDEX_SECOND_PERSON);
+        DeleteCommand deleteFirstCommand = new DeleteCommand(new MemberId(1));
+        DeleteCommand deleteSecondCommand = new DeleteCommand(new MemberId(2));
 
         // same object -> returns true
         assertTrue(deleteFirstCommand.equals(deleteFirstCommand));
 
         // same values -> returns true
-        DeleteCommand deleteFirstCommandCopy = new DeleteCommand(INDEX_FIRST_PERSON);
+        DeleteCommand deleteFirstCommandCopy = new DeleteCommand(new MemberId(1));
         assertTrue(deleteFirstCommand.equals(deleteFirstCommandCopy));
 
         // different types -> returns false
@@ -150,10 +161,45 @@ public class DeleteCommandTest {
     }
 
     @Test
+    public void equals_detailIdentifiers_comparesTypeAndTrimmedValue() {
+        DeleteCommand byName = new DeleteCommand(IdentifierType.NAME, "Alice Pauline");
+        DeleteCommand sameName = new DeleteCommand(IdentifierType.NAME, "  Alice Pauline  ");
+
+        assertEquals(byName, sameName);
+        assertEquals(sameName, byName);
+        assertEquals(byName.hashCode(), sameName.hashCode());
+        assertFalse(byName.equals(new DeleteCommand(IdentifierType.EMAIL, "Alice Pauline")));
+        assertFalse(byName.equals(new DeleteCommand(IdentifierType.NAME, "Benson Meier")));
+        assertFalse(byName.equals(DeleteCommand.forResolvedPerson(ALICE)));
+    }
+
+    @Test
+    public void equals_resolvedContacts_comparesAllContactDetails() {
+        DeleteCommand confirmed = DeleteCommand.forResolvedPerson(ALICE);
+        DeleteCommand sameContact = DeleteCommand.forResolvedPerson(new PersonBuilder(ALICE).build());
+        Person editedAlice = new PersonBuilder(ALICE).withRole("President").build();
+
+        assertEquals(confirmed, sameContact);
+        assertEquals(sameContact, confirmed);
+        assertEquals(confirmed.hashCode(), sameContact.hashCode());
+        assertFalse(confirmed.equals(DeleteCommand.forResolvedPerson(editedAlice)));
+        assertFalse(confirmed.equals(DeleteCommand.forResolvedPerson(BENSON)));
+    }
+
+    @Test
+    public void hashCode_equalMemberIds_returnsSameHashCode() {
+        DeleteCommand command = new DeleteCommand(new MemberId(1));
+        DeleteCommand copy = new DeleteCommand(new MemberId(1));
+
+        assertEquals(command, copy);
+        assertEquals(command.hashCode(), copy.hashCode());
+    }
+
+    @Test
     public void toStringMethod() {
-        Index targetIndex = Index.fromOneBased(1);
-        DeleteCommand deleteCommand = new DeleteCommand(targetIndex);
-        String expected = DeleteCommand.class.getCanonicalName() + "{targetIndex=" + targetIndex
+        MemberId memberId = new MemberId(1);
+        DeleteCommand deleteCommand = new DeleteCommand(memberId);
+        String expected = DeleteCommand.class.getCanonicalName() + "{memberId=" + memberId
                 + ", identifierType=null, identifier=null, resolvedTarget=null}";
         assertEquals(expected, deleteCommand.toString());
     }

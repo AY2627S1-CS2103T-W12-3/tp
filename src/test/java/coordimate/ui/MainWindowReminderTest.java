@@ -48,6 +48,8 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.image.WritableImage;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -305,6 +307,43 @@ public class MainWindowReminderTest {
     }
 
     @Test
+    public void navigationMode_releasesDismissFocusAndBlocksControlKeys() throws Exception {
+        onJavaFxThread(() -> {
+            Fixture fixture = openWindow(true);
+            try {
+                Parent root = fixture.stage().getScene().getRoot();
+                Button dismiss = (Button) root.lookup(".reminder-dismiss");
+                Label mode = (Label) root.lookup("#interactionModeLabel");
+                ToggleButton eventsView = (ToggleButton) root.lookup("#eventsView");
+                dismiss.requestFocus();
+                assertSame(dismiss, fixture.stage().getScene().getFocusOwner());
+
+                dismiss.fireEvent(keyEvent(KeyCode.ESCAPE));
+
+                assertEquals("NAVIGATION · j/k move · s switch view · i to type", mode.getText());
+                assertSame(mode, fixture.stage().getScene().getFocusOwner());
+                List<String> remindersBeforeBlockedKeys = names(root);
+                for (KeyCode blockedKey : List.of(KeyCode.ENTER, KeyCode.SPACE, KeyCode.TAB,
+                        KeyCode.UP, KeyCode.DOWN, KeyCode.LEFT, KeyCode.RIGHT)) {
+                    dismiss.fireEvent(keyEvent(blockedKey));
+                    assertEquals(remindersBeforeBlockedKeys, names(root));
+                    assertSame(mode, fixture.stage().getScene().getFocusOwner());
+                }
+
+                dismiss.fireEvent(keyEvent(KeyCode.S));
+                assertTrue(eventsView.isSelected());
+
+                dismiss.fire();
+                assertPanelHidden(root);
+                assertSame(mode, fixture.stage().getScene().getFocusOwner());
+            } finally {
+                fixture.stage().close();
+            }
+            return null;
+        });
+    }
+
+    @Test
     public void dismissButton_restart_keepsReminderHiddenDuringScheduledChecks() throws Exception {
         onJavaFxThread(() -> {
             Fixture fixture = openWindow(true);
@@ -537,6 +576,11 @@ public class MainWindowReminderTest {
 
     private static Event event(String name, String start, String end) {
         return new Event(name, new EventTime(start), new EventTime(end));
+    }
+
+    private static KeyEvent keyEvent(KeyCode keyCode) {
+        return new KeyEvent(KeyEvent.KEY_PRESSED, "", "", keyCode,
+                false, false, false, false);
     }
 
     private static VBox rows(Parent root) {

@@ -234,6 +234,12 @@ public class JsonCoordiMateStorageTest {
      * Fails while its data is being converted for saving, after the temporary file has been created.
      */
     private static class FailingCoordiMate implements ReadOnlyCoordiMate {
+
+        @Override
+        public long getNextMemberId() {
+            return 1;
+        }
+
         @Override
         public ObservableList<Person> getPersonList() {
             return FXCollections.observableArrayList(ALICE);

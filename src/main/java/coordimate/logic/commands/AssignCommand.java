@@ -6,19 +6,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import coordimate.commons.core.index.Index;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.Model;
 import coordimate.model.event.Event;
+import coordimate.model.person.MemberId;
 import coordimate.model.person.Name;
 
 /**
- * Assigns contacts from the displayed contact list to the event identified by its name, ignoring case.
+ * Assigns contacts identified by permanent member IDs to the event identified by its name, ignoring case.
  */
 public class AssignCommand extends EventMembersCommand {
     public static final String COMMAND_WORD = "assign";
     public static final String MESSAGE_USAGE = COMMAND_WORD + ": Assigns contacts to an event.\n"
-            + "Parameters: evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...\n"
+            + "Parameters: evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]...\n"
             + "Example: " + COMMAND_WORD + " evn/Final Concert c/1 3";
     public static final String MESSAGE_SUCCESS = "Assigned %d member(s) to %s.";
     public static final String MESSAGE_SOME_ALREADY_ASSIGNED = " %d contact(s) were already assigned.";
@@ -27,10 +27,10 @@ public class AssignCommand extends EventMembersCommand {
     public static final String MESSAGE_SAVE_ERROR = "Assignment could not be saved. No changes were made.";
 
     /**
-     * Creates an assignment of the contacts at the given displayed indexes to the named event.
+     * Creates an assignment of the contacts with the given permanent member IDs to the named event.
      */
-    public AssignCommand(String eventName, List<Index> contactIndexes) {
-        super(eventName, contactIndexes);
+    public AssignCommand(String eventName, List<MemberId> memberIds) {
+        super(eventName, memberIds);
     }
 
     @Override

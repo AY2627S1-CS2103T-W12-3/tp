@@ -7,6 +7,7 @@ import coordimate.model.person.Address;
 import coordimate.model.person.Birthday;
 import coordimate.model.person.Email;
 import coordimate.model.person.LeaveDate;
+import coordimate.model.person.MemberId;
 import coordimate.model.person.Name;
 import coordimate.model.person.Note;
 import coordimate.model.person.Organisation;
@@ -28,6 +29,7 @@ public class PersonBuilder {
     public static final String DEFAULT_ADDRESS = "123, Jurong West Ave 6, #08-111";
 
     private Name name;
+    private MemberId memberId;
     private Phone phone;
     private Email email;
     private Role role;
@@ -54,6 +56,7 @@ public class PersonBuilder {
      * Initializes the PersonBuilder with the data of {@code personToCopy}.
      */
     public PersonBuilder(Person personToCopy) {
+        memberId = personToCopy.getMemberId().orElse(null);
         name = personToCopy.getName();
         phone = personToCopy.getPhone();
         email = personToCopy.getEmail();
@@ -64,6 +67,22 @@ public class PersonBuilder {
         note = personToCopy.getNote().orElse(null);
         leaveDate = personToCopy.getLeaveDate().orElse(null);
         tags = new HashSet<>(personToCopy.getTags());
+    }
+
+    /**
+     * Sets the member ID explicitly for tests of saved contacts.
+     */
+    public PersonBuilder withMemberId(int memberId) {
+        this.memberId = new MemberId(memberId);
+        return this;
+    }
+
+    /**
+     * Leaves the contact awaiting model ID allocation.
+     */
+    public PersonBuilder withoutMemberId() {
+        memberId = null;
+        return this;
     }
 
     /**
@@ -179,7 +198,7 @@ public class PersonBuilder {
     }
 
     public Person build() {
-        return new Person(name, phone, email, role, birthday, address, organisation, note, leaveDate, tags);
+        return new Person(memberId, name, phone, email, role, birthday, address, organisation, note, leaveDate, tags);
     }
 
 }

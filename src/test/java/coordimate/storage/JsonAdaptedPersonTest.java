@@ -71,7 +71,7 @@ public class JsonAdaptedPersonTest {
         JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS,
                 VALID_TAGS);
 
-        assertEquals(BENSON, person.toModelType());
+        assertEquals(new PersonBuilder(BENSON).withoutMemberId().build(), person.toModelType());
     }
 
     @Test
@@ -84,7 +84,7 @@ public class JsonAdaptedPersonTest {
     @Test
     public void toModelType_endedLeave_keptButNotOnLeave() throws Exception {
         JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS,
-                null, null, null, null, "01-01-2020", VALID_TAGS);
+                null, null, null, null, "01-01-2020", VALID_TAGS, null);
         Person contact = person.toModelType();
 
         assertEquals(new LeaveDate("01-01-2020"), contact.getLeaveDate().orElseThrow());
@@ -102,7 +102,7 @@ public class JsonAdaptedPersonTest {
     @Test
     public void toModelType_invalidLeaveDate_throwsIllegalValueException() {
         JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS,
-                null, null, null, null, "31-11-2026", VALID_TAGS);
+                null, null, null, null, "31-11-2026", VALID_TAGS, null);
 
         assertThrows(IllegalValueException.class, LeaveDate.MESSAGE_CONSTRAINTS, person::toModelType);
     }

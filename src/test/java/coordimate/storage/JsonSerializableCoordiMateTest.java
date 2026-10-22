@@ -18,6 +18,7 @@ import coordimate.commons.util.JsonUtil;
 import coordimate.model.CoordiMate;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
+import coordimate.model.person.MemberId;
 import coordimate.model.person.Person;
 import coordimate.model.tag.Tag;
 import coordimate.testutil.PersonBuilder;
@@ -50,7 +51,7 @@ public class JsonSerializableCoordiMateTest {
         String json = JsonUtil.toJsonString(new JsonSerializableCoordiMate(source));
         CoordiMate restored = JsonUtil.fromJsonString(json, JsonSerializableCoordiMate.class).toModelType();
 
-        assertEquals(List.of(contact), restored.getPersonList());
+        assertEquals(List.of(contact.withMemberId(new MemberId(1))), restored.getPersonList());
     }
 
     @Test
@@ -63,7 +64,7 @@ public class JsonSerializableCoordiMateTest {
         String json = JsonUtil.toJsonString(new JsonSerializableCoordiMate(source));
         CoordiMate restored = JsonUtil.fromJsonString(json, JsonSerializableCoordiMate.class).toModelType();
 
-        assertEquals(List.of(contact), restored.getPersonList());
+        assertEquals(List.of(contact.withMemberId(new MemberId(1))), restored.getPersonList());
     }
 
     @Test
@@ -75,7 +76,7 @@ public class JsonSerializableCoordiMateTest {
         String json = JsonUtil.toJsonString(new JsonSerializableCoordiMate(source));
         CoordiMate restored = JsonUtil.fromJsonString(json, JsonSerializableCoordiMate.class).toModelType();
 
-        assertEquals(List.of(contact), restored.getPersonList());
+        assertEquals(List.of(contact.withMemberId(new MemberId(1))), restored.getPersonList());
     }
 
     @Test
@@ -203,7 +204,7 @@ public class JsonSerializableCoordiMateTest {
         CoordiMate restored = data.toModelType();
 
         assertEquals(List.of(new Tag("FRIENDS"), new Tag("Unused"), new Tag("Publicity")), restored.getTagList());
-        assertEquals(List.of(contact), restored.getPersonList());
+        assertEquals(List.of(contact.withMemberId(new MemberId(1))), restored.getPersonList());
     }
 
     @Test

@@ -7,31 +7,29 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-import coordimate.commons.core.index.Index;
 import coordimate.logic.Messages;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.Model;
 import coordimate.model.event.Event;
+import coordimate.model.person.MemberId;
 import coordimate.model.person.Name;
-import coordimate.model.person.Person;
 
 /**
- * Changes the members of the event identified by its name, ignoring case, using contacts chosen by their
- * indexes in the displayed contact list.
+ * Changes the members of the event identified by its name, ignoring case, using permanent member IDs.
  */
 public abstract class EventMembersCommand extends Command {
     public static final String MESSAGE_EVENT_NOT_FOUND = Messages.MESSAGE_EVENT_NOT_FOUND;
-    public static final String MESSAGE_CONTACT_NOT_FOUND = Messages.MESSAGE_INVALID_PERSON_DISPLAYED_INDEX;
+    public static final String MESSAGE_UNKNOWN_MEMBER_ID = Messages.MESSAGE_MEMBER_ID_NOT_FOUND;
 
     private final String eventName;
-    private final List<Index> contactIndexes;
+    private final List<MemberId> memberIds;
 
     /**
-     * Creates a command for the named event and the contacts at the given displayed indexes.
+     * Creates a command for the named event and the contacts with the given permanent IDs.
      */
-    protected EventMembersCommand(String eventName, List<Index> contactIndexes) {
+    protected EventMembersCommand(String eventName, List<MemberId> memberIds) {
         this.eventName = requireNonNull(eventName).strip();
-        this.contactIndexes = List.copyOf(contactIndexes);
+        this.memberIds = List.copyOf(memberIds);
     }
 
     /**
@@ -55,19 +53,15 @@ public abstract class EventMembersCommand extends Command {
     }
 
     /**
-     * Returns the names of the contacts at this command's indexes in the displayed contact list, in the order
-     * given, with repeated contacts counted once. Every index is checked before any name is returned.
+     * Resolves IDs across all saved contacts, retaining command order and counting repeated contacts once.
+     * Every ID is checked before any name is returned, so an unknown ID cannot cause a partial update.
      *
-     * @throws CommandException If an index is outside the displayed contact list.
+     * @throws CommandException If a member ID does not exist.
      */
     protected Set<Name> resolveContacts(Model model) throws CommandException {
-        List<Person> displayedContacts = model.getFilteredPersonList();
         Set<Name> selected = new LinkedHashSet<>();
-        for (Index index : contactIndexes) {
-            if (index.getZeroBased() >= displayedContacts.size()) {
-                throw new CommandException(String.format(MESSAGE_CONTACT_NOT_FOUND, index.getOneBased()));
-            }
-            selected.add(displayedContacts.get(index.getZeroBased()).getName());
+        for (MemberId memberId : memberIds) {
+            selected.add(MemberIdResolver.resolve(model, memberId).getName());
         }
         return selected;
     }
@@ -76,11 +70,11 @@ public abstract class EventMembersCommand extends Command {
     public boolean equals(Object other) {
         return other != null && other.getClass() == getClass()
                 && eventName.equals(((EventMembersCommand) other).eventName)
-                && contactIndexes.equals(((EventMembersCommand) other).contactIndexes);
+                && memberIds.equals(((EventMembersCommand) other).memberIds);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getClass(), eventName, contactIndexes.stream().map(Index::getZeroBased).toList());
+        return Objects.hash(getClass(), eventName, memberIds);
     }
 }

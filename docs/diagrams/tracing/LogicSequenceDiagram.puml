@@ -14,7 +14,7 @@ create ecp
 cmp -> ecp
 cmp -> ecp ++: parse(arguments)
 create ec
-ecp -> ec ++: index, editPersonDescriptor
+ecp -> ec ++: memberId, editPersonDescriptor
 ec --> ecp --
 ecp --> cmp --: command
 cmp --> logic --: command

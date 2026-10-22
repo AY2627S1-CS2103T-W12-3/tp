@@ -16,13 +16,13 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import coordimate.commons.core.index.Index;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.ModelManager;
 import coordimate.model.UserPrefs;
 import coordimate.model.event.AttendanceStatus;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
+import coordimate.model.person.MemberId;
 import coordimate.model.person.Name;
 
 public class UnassignCommandTest {
@@ -75,7 +75,7 @@ public class UnassignCommandTest {
     }
 
     @Test
-    public void execute_repeatedIndex_countedOnce() throws Exception {
+    public void execute_repeatedId_countedOnce() throws Exception {
         assertEquals("Removed 1 member(s) from Final Concert.",
                 unassign("Final Concert", 1, 1).execute(model).getFeedbackToUser());
         assertEquals("Removed 1 member(s) from Final Concert. 1 contact(s) were not assigned.",
@@ -98,21 +98,23 @@ public class UnassignCommandTest {
     }
 
     @Test
-    public void execute_contactIndexOutOfRange_noChanges() {
-        int outOfRange = model.getFilteredPersonList().size() + 1;
-        assertEquals("No contact exists at index " + outOfRange + ". Use an index from the current contact list.",
+    public void execute_unknownMemberId_noChanges() {
+        int unknownId = 99;
+        assertEquals("No contact exists with member ID: 99. Use an existing member ID.",
                 assertThrows(CommandException.class, () ->
-                        unassign("Final Concert", 1, outOfRange, 2).execute(model)).getMessage());
+                        unassign("Final Concert", 1, unknownId, 2).execute(model)).getMessage());
         assertEquals(List.of(concert, fair), model.getCoordiMate().getEventList());
     }
 
     @Test
-    public void execute_filteredList_usesDisplayedIndexes() throws Exception {
+    public void execute_filteredList_usesPermanentIds() throws Exception {
         model.updateFilteredPersonList(person -> person.equals(BENSON) || person.equals(DANIEL));
         assertEquals("Removed 1 member(s) from Final Concert. 1 contact(s) were not assigned.",
-                unassign("Final Concert", 1, 2).execute(model).getFeedbackToUser());
+                unassign("Final Concert", 2, 4).execute(model).getFeedbackToUser());
         assertEquals(event(ALICE.getName(), CARL.getName()), model.getCoordiMate().getEventList().getFirst());
-        assertThrows(CommandException.class, () -> unassign("Final Concert", 3).execute(model));
+        unassign("Final Concert", 1).execute(model);
+        assertEquals(event(CARL.getName()), model.getCoordiMate().getEventList().getFirst());
+        assertEquals(List.of(BENSON, DANIEL), model.getFilteredPersonList());
     }
 
     @Test
@@ -132,16 +134,16 @@ public class UnassignCommandTest {
         assertEquals(command.hashCode(), unassign("Final Concert", 1, 2).hashCode());
         assertNotEquals(command, unassign("Final Concert", 2, 1));
         assertNotEquals(command, unassign("Fair", 1, 2));
-        assertNotEquals(command, new AssignCommand("Final Concert", List.of(Index.fromOneBased(1),
-                Index.fromOneBased(2))));
+        assertNotEquals(command, new AssignCommand("Final Concert", List.of(new MemberId(1),
+                new MemberId(2))));
         assertNotEquals(command, null);
         assertThrows(NullPointerException.class, () -> command.execute(null));
-        assertThrows(NullPointerException.class, () -> new UnassignCommand(null, List.of(Index.fromOneBased(1))));
+        assertThrows(NullPointerException.class, () -> new UnassignCommand(null, List.of(new MemberId(1))));
         assertThrows(NullPointerException.class, () -> new UnassignCommand("Final Concert", null));
     }
 
-    private static UnassignCommand unassign(String eventName, Integer... oneBasedIndexes) {
-        return new UnassignCommand(eventName, Arrays.stream(oneBasedIndexes).map(Index::fromOneBased).toList());
+    private static UnassignCommand unassign(String eventName, Integer... memberIds) {
+        return new UnassignCommand(eventName, Arrays.stream(memberIds).map(MemberId::new).toList());
     }
 
     private Event event(Name... members) {
