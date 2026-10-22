@@ -58,6 +58,7 @@
         "filtering-contacts": "Filtering contacts",
         "keeping-events-in-sync-with-contacts": "Keeping events in sync with contacts",
         "marking-contacts-as-on-leave": "Marking contacts as on leave",
+        "archiving-contacts-and-events": "Archiving contacts and events",
         "documentation-logging-testing-dev-ops": "Documentation, logging, testing, dev-ops",
         "appendix-requirements": "Appendix: Requirements",
         "product-scope": "Product scope",
@@ -80,6 +81,7 @@
         "marking-attendance": "Marking attendance",
         "marking-a-contact-as-on-leave": "Marking a contact as on leave",
         "managing-tags": "Managing tags",
+        "archiving-contacts-and-events-2": "Archiving contacts and events",
         "saving-data": "Saving data"
       },
       "headingKeywords": {}
@@ -142,7 +144,7 @@
         "removing-members-from-an-event-unassign": "Removing members from an event: unassign",
         "viewing-members-of-an-event-members": "Viewing members of an event: members",
         "marking-attendance-markattendance": "Marking attendance: markattendance",
-        "listing-all-contacts-list": "Listing all contacts: list",
+        "listing-contacts-and-events-list": "Listing contacts and events: list",
         "deleting-a-tag-deletetag": "Deleting a tag: deletetag",
         "editing-a-tag-edittag": "Editing a tag: edittag",
         "adding-a-tag-addtag": "Adding a tag: addtag",
@@ -152,6 +154,7 @@
         "searching-contacts-search": "Searching contacts: search",
         "filtering-contacts-filter": "Filtering contacts: filter",
         "deleting-a-contact-delete": "Deleting a contact: delete",
+        "archiving-contacts-and-events-archive-archiveevent": "Archiving contacts and events: archive, archiveevent",
         "clearing-all-entries-clear": "Clearing all entries: clear",
         "exiting-the-program-exit": "Exiting the program: exit",
         "saving-the-data": "Saving the data",
