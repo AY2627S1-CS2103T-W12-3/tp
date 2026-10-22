@@ -362,6 +362,12 @@ consequences that developers should be aware of:
 `CommandResult.View` carries one requested view, or `NONE` when a command does not request a view change.
 `MainWindow` applies a requested view through the same view controls used by the sidebar.
 
+Commands that produce contact, event, or tag results request the corresponding `CommandResult.View`, which
+`MainWindow` applies after successful execution. A failed command does not return a view request, so the current
+tab remains selected. Contact deletion requests Contacts when its confirmation prompt is displayed. `assign` and
+`unassign` deliberately return `View.NONE`; the current tab remains selected while its observable contact or event
+details refresh.
+
 #### Design considerations
 
 **Aspect: How a command is prevented from taking effect when saving fails**

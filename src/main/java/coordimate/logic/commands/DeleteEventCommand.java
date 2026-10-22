@@ -35,7 +35,7 @@ public class DeleteEventCommand extends Command {
                 .filter(event -> event.getName().equalsIgnoreCase(eventName)).findFirst()
                 .orElseThrow(() -> new CommandException(String.format(MESSAGE_EVENT_NOT_FOUND, eventName)));
         model.deleteEvent(target);
-        return new CommandResult(String.format(MESSAGE_SUCCESS, target.getName()));
+        return new CommandResult(String.format(MESSAGE_SUCCESS, target.getName()), CommandResult.View.EVENTS);
     }
 
     @Override

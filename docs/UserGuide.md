@@ -34,6 +34,13 @@
    Click a command name to put only the command word in the input and show its format and an example below the input.
    Complete the command by typing its arguments after the command word.
    The main workspace shows a list beside its details, and the command box, feedback, and prefix hints stay at the bottom.
+   After a successful command, CoordiMate opens the view for its result: contact commands open Contacts, event
+   commands open Events, and tag commands open Tags. `assign` and `unassign` keep the current view and refresh its
+   related contact or event details. Failed commands keep the current view. A valid `delete` request opens Contacts
+   when its confirmation prompt appears; Contacts remains open whether deletion is confirmed or cancelled. Successful
+   `add` and `edit` commands select and reveal the affected contact. Confirmed deletion selects the contact now at the
+   removed contact's position, or the previous contact if the removed contact was last. If the deleted contact was
+   outside the displayed list, the current selection is retained.
 
 1. Type a command in the command box and press Enter to execute it. For example, type **`help`** and press Enter to open the help window.<br>
    Press <kbd>Up</kbd> to recall earlier commands and <kbd>Down</kbd> to move toward the command you were typing.<br>
@@ -230,8 +237,8 @@ Birthday, address, organisation, leave end date, and note are optional. An empty
 as does omitting it. Non-tag fields may appear only once; `t/TAG` may repeat. An empty `t/` clears the
 tags collected so far. A valid new tag is saved as a custom tag. Successful feedback is
 `Contact saved successfully: NAME`.
-Select the saved contact in the list to view all its details. Unset optional values are shown as
-`— (not specified)` in the details pane, but remain unset in storage.
+After a successful `add`, CoordiMate selects and reveals the new contact so its details are shown. Unset optional
+values are shown as `— (not specified)` in the details pane, but remain unset in storage.
 
 <box type="tip" seamless>
 

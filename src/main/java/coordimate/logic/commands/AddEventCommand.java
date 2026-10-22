@@ -39,7 +39,7 @@ public class AddEventCommand extends Command {
         }
         model.addEvent(toAdd);
         return new CommandResult(String.format(MESSAGE_SUCCESS,
-                toAdd.getName(), toAdd.getStartTime(), toAdd.getEndTime()));
+                toAdd.getName(), toAdd.getStartTime(), toAdd.getEndTime()), CommandResult.View.EVENTS);
     }
 
     @Override

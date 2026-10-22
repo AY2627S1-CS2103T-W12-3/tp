@@ -486,7 +486,7 @@ public class MainWindowTest {
     }
 
     @Test
-    public void listCommand_keepsSelectedView() throws Exception {
+    public void listCommand_opensContactsView() throws Exception {
         FutureTask<Void> task = new FutureTask<>(() -> {
             Stage stage = new Stage();
             try {
@@ -496,7 +496,7 @@ public class MainWindowTest {
                 MainWindow window = new MainWindow(stage, new LogicManager(new ModelManager(), storage),
                         temporaryFolder.resolve("data.json"));
                 try {
-                    assertListCommandKeepsSelectedView(window, stage);
+                    assertListCommandOpensContactsView(window, stage);
                 } finally {
                     window.stop();
                 }
@@ -509,11 +509,13 @@ public class MainWindowTest {
         task.get(10, TimeUnit.SECONDS);
     }
 
-    private static void assertListCommandKeepsSelectedView(MainWindow window, Stage stage) {
+    private static void assertListCommandOpensContactsView(MainWindow window, Stage stage) {
         window.fillInnerParts();
         stage.getScene().getRoot().applyCss();
 
         ToggleButton events = (ToggleButton) stage.getScene().getRoot().lookup("#eventsView");
+        ToggleButton contacts = (ToggleButton) stage.getScene().getRoot().lookup("#contactsView");
+        TabPane views = (TabPane) stage.getScene().getRoot().lookup("#views");
         TextField input = (TextField) stage.getScene().getRoot().lookup("#commandTextField");
         Button submit = (Button) stage.getScene().getRoot().lookup("#submitButton");
         Label feedback = (Label) stage.getScene().getRoot().lookup("#resultDisplay");
@@ -522,8 +524,168 @@ public class MainWindowTest {
         input.setText("list");
         submit.fire();
 
-        assertTrue(events.isSelected());
+        assertTrue(contacts.isSelected());
+        assertFalse(events.isSelected());
+        assertTrue(views.getSelectionModel().getSelectedItem().getText().startsWith("Contacts"));
         assertEquals("Listed all contacts.", feedback.getText());
+
+        events.fire();
+        input.setText("search");
+        submit.fire();
+        assertTrue(events.isSelected());
+        assertTrue(feedback.getText().startsWith("Invalid command format."));
+    }
+
+    @Test
+    public void assignmentCommands_keepCurrentView() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            ModelManager model = new ModelManager();
+            model.addPerson(TypicalPersons.ALICE);
+            EventTime date = new EventTime("08-08-2026");
+            model.addEvent(new Event("Orientation", date, date));
+
+            Path dataPath = temporaryFolder.resolve("assignment-data.json");
+            StorageManager storage = new StorageManager(new JsonCoordiMateStorage(dataPath),
+                    new JsonUserPrefsStorage(temporaryFolder.resolve("assignment-prefs.json")));
+            storage.saveCoordiMate(model.getCoordiMate());
+
+            MainWindow window = new MainWindow(stage, new LogicManager(model, storage), dataPath);
+            try {
+                window.fillInnerParts();
+                stage.getScene().getRoot().applyCss();
+
+                ToggleButton contacts = (ToggleButton) stage.getScene().getRoot().lookup("#contactsView");
+                ToggleButton events = (ToggleButton) stage.getScene().getRoot().lookup("#eventsView");
+                TextField input = (TextField) stage.getScene().getRoot().lookup("#commandTextField");
+                Button submit = (Button) stage.getScene().getRoot().lookup("#submitButton");
+
+                if (!contacts.isSelected()) {
+                    contacts.fire();
+                }
+                input.setText("assign evn/Orientation c/1");
+                submit.fire();
+                assertTrue(contacts.isSelected());
+
+                events.fire();
+                input.setText("unassign evn/Orientation c/1");
+                submit.fire();
+                assertTrue(events.isSelected());
+            } finally {
+                window.stop();
+                stage.close();
+            }
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void deleteCommand_opensContactsForConfirmation() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            ModelManager model = new ModelManager();
+            model.addPerson(TypicalPersons.ALICE);
+
+            Path dataPath = temporaryFolder.resolve("delete-routing-data.json");
+            StorageManager storage = new StorageManager(new JsonCoordiMateStorage(dataPath),
+                    new JsonUserPrefsStorage(temporaryFolder.resolve("delete-routing-prefs.json")));
+            storage.saveCoordiMate(model.getCoordiMate());
+
+            MainWindow window = new MainWindow(stage, new LogicManager(model, storage), dataPath);
+            try {
+                window.fillInnerParts();
+                stage.getScene().getRoot().applyCss();
+
+                ToggleButton contacts = (ToggleButton) stage.getScene().getRoot().lookup("#contactsView");
+                ToggleButton events = (ToggleButton) stage.getScene().getRoot().lookup("#eventsView");
+                TextField input = (TextField) stage.getScene().getRoot().lookup("#commandTextField");
+                Button submit = (Button) stage.getScene().getRoot().lookup("#submitButton");
+                Label feedback = (Label) stage.getScene().getRoot().lookup("#resultDisplay");
+
+                events.fire();
+                input.setText("delete 1");
+                submit.fire();
+                assertTrue(contacts.isSelected());
+                assertTrue(feedback.getText().contains("Confirm deletion? [y/N]"));
+
+                input.setText("n");
+                submit.fire();
+                assertTrue(contacts.isSelected());
+                assertEquals("Deletion cancelled. No changes were made.", feedback.getText());
+            } finally {
+                window.stop();
+                stage.close();
+            }
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void contactCommands_switchToContactsAndFocusAffectedContact() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            MainWindow window = null;
+            try {
+                ModelManager model = new ModelManager();
+                model.addPerson(TypicalPersons.ALICE);
+                model.addPerson(TypicalPersons.BENSON);
+                Path dataPath = temporaryFolder.resolve("contact-focus-data.json");
+                StorageManager storage = new StorageManager(new JsonCoordiMateStorage(dataPath),
+                        new JsonUserPrefsStorage(temporaryFolder.resolve("contact-focus-prefs.json")));
+                storage.saveCoordiMate(model.getCoordiMate());
+                LogicManager logic = new LogicManager(model, storage);
+                window = new MainWindow(stage, logic, dataPath);
+                window.fillInnerParts();
+                stage.getScene().getRoot().applyCss();
+
+                ToggleButton contactsView = (ToggleButton) stage.getScene().getRoot().lookup("#contactsView");
+                ToggleButton eventsView = (ToggleButton) stage.getScene().getRoot().lookup("#eventsView");
+                TextField input = (TextField) stage.getScene().getRoot().lookup("#commandTextField");
+                Button submit = (Button) stage.getScene().getRoot().lookup("#submitButton");
+                @SuppressWarnings("unchecked")
+                ListView<Person> contacts = (ListView<Person>) stage.getScene().getRoot().lookup("#personListView");
+                Label selectedName = (Label) window.getPersonListPanel().getRoot().lookup("#selectedName");
+
+                eventsView.fire();
+                input.setText("add n/Charlie Clark p/98765430 e/charlie@example.com r/Member");
+                submit.fire();
+                assertTrue(contactsView.isSelected());
+                assertEquals("Charlie Clark", selectedName.getText());
+                Label selectedEmail = (Label) window.getPersonListPanel().getRoot().lookup("#email");
+                assertEquals("charlie@example.com", selectedEmail.getText());
+
+                eventsView.fire();
+                input.setText("edit target/charlie@example.com n/Charles Clark");
+                submit.fire();
+                assertTrue(contactsView.isSelected());
+                assertEquals("Charles Clark", selectedName.getText());
+                assertEquals("Charles Clark", contacts.getSelectionModel().getSelectedItem().getName().getFullName());
+
+                eventsView.fire();
+                input.setText("delete e/charlie@example.com");
+                submit.fire();
+                assertTrue(logic.isAwaitingDeleteConfirmation());
+                assertEquals("Charles Clark", selectedName.getText());
+
+                input.setText("y");
+                submit.fire();
+                assertFalse(logic.isAwaitingDeleteConfirmation());
+                assertEquals("Benson Meier", selectedName.getText());
+                assertEquals(TypicalPersons.BENSON, contacts.getSelectionModel().getSelectedItem());
+            } finally {
+                if (window != null) {
+                    window.stop();
+                }
+                stage.close();
+            }
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test

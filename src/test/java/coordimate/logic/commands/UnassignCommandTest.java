@@ -42,8 +42,9 @@ public class UnassignCommandTest {
 
     @Test
     public void execute_singleMember_success() throws Exception {
-        assertEquals("Removed 1 member(s) from Final Concert.",
-                unassign("Final Concert", 2).execute(model).getFeedbackToUser());
+        CommandResult result = unassign("Final Concert", 2).execute(model);
+        assertEquals("Removed 1 member(s) from Final Concert.", result.getFeedbackToUser());
+        assertEquals(CommandResult.View.NONE, result.getViewToShow());
         assertEquals(List.of(event(ALICE.getName(), CARL.getName()), fair), model.getCoordiMate().getEventList());
     }
 
