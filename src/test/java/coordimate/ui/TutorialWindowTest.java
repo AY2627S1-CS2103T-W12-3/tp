@@ -114,7 +114,13 @@ public class TutorialWindowTest {
 
             Button nextButton = (Button) stage.getScene().lookup("#nextButton");
             Label counter = (Label) stage.getScene().lookup("#stepCounter");
-            stage.getScene().lookup("#backdropFull").fireEvent(keyEvent(KeyCode.RIGHT));
+            Node backdrop = stage.getScene().lookup("#backdropFull");
+            AtomicBoolean backdropReceivedKey = new AtomicBoolean();
+            backdrop.addEventHandler(KeyEvent.KEY_PRESSED, event -> backdropReceivedKey.set(true));
+            backdrop.fireEvent(keyEvent(KeyCode.J));
+            assertFalse(backdropReceivedKey.get());
+            assertEquals("Step 1 of 16", counter.getText());
+            backdrop.fireEvent(keyEvent(KeyCode.RIGHT));
             assertEquals("Step 2 of 16", counter.getText());
 
             nextButton.fireEvent(keyEvent(KeyCode.LEFT));
@@ -125,6 +131,10 @@ public class TutorialWindowTest {
                     false, false, false, false));
             nextButton.fireEvent(new KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.RIGHT,
                     false, true, false, false));
+            nextButton.fireEvent(new KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.RIGHT,
+                    false, false, true, false));
+            nextButton.fireEvent(new KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.RIGHT,
+                    false, false, false, true));
             nextButton.fireEvent(keyEvent(KeyCode.J));
             assertEquals("Step 1 of 16", counter.getText());
 
@@ -158,6 +168,7 @@ public class TutorialWindowTest {
             nextButton.fireEvent(mouseClickEvent());
             assertFalse(backdropReceivedClick.get());
             assertTrue(cardReceivedClick.get());
+            assertFalse(tutorial.isInteractiveTarget(new Object()));
             tutorial.hide();
             stage.close();
             return null;
@@ -247,6 +258,13 @@ public class TutorialWindowTest {
             Node card = stage.getScene().lookup("#tutorialCard");
             Node highlight = stage.getScene().lookup("#targetHighlight");
 
+            target.relocate(0, 0);
+            applyLayout(stage);
+            tutorial.highlight(target);
+            assertTrue(highlight.isVisible());
+            assertFalse(stage.getScene().lookup("#backdropTop").isVisible());
+            assertFalse(stage.getScene().lookup("#backdropLeft").isVisible());
+
             target.relocate(150, 50);
             applyLayout(stage);
             tutorial.highlight(target);
@@ -260,6 +278,12 @@ public class TutorialWindowTest {
                     < highlight.localToScene(highlight.getLayoutBounds()).getMinY());
 
             target.relocate(1050, 150);
+            applyLayout(stage);
+            tutorial.highlight(target);
+            assertFalse(highlight.isVisible());
+            assertTrue(stage.getScene().lookup("#backdropFull").isVisible());
+
+            target.relocate(-800, 150);
             applyLayout(stage);
             tutorial.highlight(target);
             assertFalse(highlight.isVisible());
