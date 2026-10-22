@@ -207,7 +207,7 @@ public class PersonListPanelTest {
 
             assertEquals(BENSON, getList(root).getSelectionModel().getSelectedItem());
             assertEquals("Benson Meier", getLabel(root, "selectedName").getText());
-            assertEquals("Index: 2", getLabel(root, "selectedIndex").getText());
+            assertEquals("ID: 2", getLabel(root, "selectedMemberId").getText());
             assertTrue(getDetails(root).isVisible());
             assertFalse(getHint(root).isVisible());
         });
