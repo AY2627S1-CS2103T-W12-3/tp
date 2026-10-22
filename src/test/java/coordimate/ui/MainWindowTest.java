@@ -1014,7 +1014,7 @@ public class MainWindowTest {
     }
 
     @Test
-    public void listArchived_emptyListsShowArchivedMessages() throws Exception {
+    public void listArchived_showsArchivedMessagesHeaderAndCommands() throws Exception {
         FutureTask<Void> task = new FutureTask<>(() -> {
             Stage stage = new Stage();
             Path dataPath = temporaryFolder.resolve("archived-empty-data.json");
@@ -1034,15 +1034,29 @@ public class MainWindowTest {
                 assertEquals(PersonListPanel.MESSAGE_NO_CONTACTS, placeholderText(contacts));
                 assertEquals(EventListPanel.MESSAGE_NO_EVENTS, placeholderText(events));
 
+                ToggleButton eventsView = (ToggleButton) stage.getScene().getRoot().lookup("#eventsView");
+                Label eventCount = (Label) stage.getScene().getRoot().lookup("#eventCount");
+                List<String> contactCommands = visibleCommandNames(stage);
+                assertTrue(contactCommands.containsAll(List.of("add", "archive", "unarchive", "list")));
+                assertEquals("Events (0)", eventCount.getText());
+
                 input.setText("list archived");
                 submit.fire();
                 assertEquals(PersonListPanel.MESSAGE_NO_ARCHIVED_CONTACTS, placeholderText(contacts));
                 assertEquals(EventListPanel.MESSAGE_NO_ARCHIVED_EVENTS, placeholderText(events));
+                assertEquals("Archived events (0)", eventCount.getText());
+                assertEquals(List.of("unarchive", "list"), visibleCommandNames(stage));
+                eventsView.fire();
+                assertEquals(List.of("unarchiveevent", "list"), visibleCommandNames(stage));
 
                 input.setText("list");
                 submit.fire();
                 assertEquals(PersonListPanel.MESSAGE_NO_CONTACTS, placeholderText(contacts));
                 assertEquals(EventListPanel.MESSAGE_NO_EVENTS, placeholderText(events));
+                assertEquals("Events (0)", eventCount.getText());
+                assertEquals(contactCommands, visibleCommandNames(stage));
+                eventsView.fire();
+                assertTrue(visibleCommandNames(stage).containsAll(List.of("addevent", "archiveevent", "assign")));
             } finally {
                 window.stop();
                 stage.close();
@@ -1051,6 +1065,13 @@ public class MainWindowTest {
         });
         Platform.runLater(task);
         task.get(10, TimeUnit.SECONDS);
+    }
+
+    private static List<String> visibleCommandNames(Stage stage) {
+        return stage.getScene().getRoot().lookupAll(".command-cheatsheet").stream()
+                .filter(Node::isVisible)
+                .flatMap(list -> list.lookupAll(".cheat-name").stream())
+                .map(node -> ((Label) node).getText()).toList();
     }
 
     private static String placeholderText(ListView<?> list) {

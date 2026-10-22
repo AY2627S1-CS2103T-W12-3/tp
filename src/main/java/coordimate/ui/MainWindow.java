@@ -26,6 +26,8 @@ import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.StringBinding;
+import javafx.beans.property.ReadOnlyBooleanProperty;
+import javafx.beans.value.ObservableBooleanValue;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.geometry.Orientation;
@@ -173,6 +175,12 @@ public class MainWindow extends UiPart<Stage> {
     private VBox tagsCommands;
 
     @FXML
+    private VBox archivedContactsCommands;
+
+    @FXML
+    private VBox archivedEventsCommands;
+
+    @FXML
     private TextFlow prefixHelp;
 
     @FXML
@@ -292,12 +300,13 @@ public class MainWindow extends UiPart<Stage> {
         tagSplitPane.widthProperty().addListener((observable, oldWidth, width) ->
                 tagSplitPane.setOrientation(width.doubleValue() < 650
                         ? Orientation.VERTICAL : Orientation.HORIZONTAL));
-        contactsCommands.visibleProperty().bind(contactsView.selectedProperty());
-        contactsCommands.managedProperty().bind(contactsCommands.visibleProperty());
-        eventsCommands.visibleProperty().bind(eventsView.selectedProperty());
-        eventsCommands.managedProperty().bind(eventsCommands.visibleProperty());
-        tagsCommands.visibleProperty().bind(tagsView.selectedProperty());
-        tagsCommands.managedProperty().bind(tagsCommands.visibleProperty());
+        // The archived view lists only the commands that restore items or leave the view.
+        ReadOnlyBooleanProperty showingArchived = logic.showingArchivedProperty();
+        showCommandsWhen(contactsCommands, contactsView.selectedProperty().and(showingArchived.not()));
+        showCommandsWhen(archivedContactsCommands, contactsView.selectedProperty().and(showingArchived));
+        showCommandsWhen(eventsCommands, eventsView.selectedProperty().and(showingArchived.not()));
+        showCommandsWhen(archivedEventsCommands, eventsView.selectedProperty().and(showingArchived));
+        showCommandsWhen(tagsCommands, tagsView.selectedProperty());
         contactsTab.textProperty().bind(tabTitle("Contacts", logic.getFilteredPersonList()));
         eventsTab.textProperty().bind(tabTitle("Events", logic.getFilteredEventList()));
         contactsView.textProperty().bind(contactsTab.textProperty());
@@ -343,6 +352,13 @@ public class MainWindow extends UiPart<Stage> {
         makeCommandRowsInteractive(contactsCommands);
         makeCommandRowsInteractive(eventsCommands);
         makeCommandRowsInteractive(tagsCommands);
+        makeCommandRowsInteractive(archivedContactsCommands);
+        makeCommandRowsInteractive(archivedEventsCommands);
+    }
+
+    private static void showCommandsWhen(VBox commandList, ObservableBooleanValue condition) {
+        commandList.visibleProperty().bind(condition);
+        commandList.managedProperty().bind(commandList.visibleProperty());
     }
 
     private void makeCommandRowsInteractive(VBox commandList) {

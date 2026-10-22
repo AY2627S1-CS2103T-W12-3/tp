@@ -12,6 +12,8 @@ import coordimate.model.person.Name;
 import coordimate.model.person.Person;
 import coordimate.model.tag.Tag;
 import javafx.beans.binding.Bindings;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -84,6 +86,7 @@ public class EventListPanel extends UiPart<Region> {
     private int lastSelectedIndex = -1;
     private final ObservableList<Person> persons;
     private final Label emptyListMessage = new Label(MESSAGE_NO_EVENTS);
+    private final BooleanProperty showingArchived = new SimpleBooleanProperty(false);
 
     /**
      * Observes saved events and stacks the panes when the window is narrow.
@@ -101,7 +104,8 @@ public class EventListPanel extends UiPart<Region> {
         eventListView.setItems(events);
         eventListView.setCellFactory(list -> new EventListCell());
         eventListView.setPlaceholder(emptyListMessage);
-        eventCount.textProperty().bind(Bindings.size(events).asString("Events (%d)"));
+        eventCount.textProperty().bind(Bindings.createStringBinding(() -> countText(events.size()),
+                events, showingArchived));
         eventListView.getSelectionModel().selectedItemProperty().addListener((observable, oldEvent, event) ->
                 showDetails(event));
         eventListView.getSelectionModel().selectedIndexProperty().addListener((observable, oldIndex, index) -> {
@@ -229,11 +233,16 @@ public class EventListPanel extends UiPart<Region> {
     }
 
     /**
-     * Shows an empty-list message suited to the archived view if {@code isShowingArchived} is true,
-     * since suggesting {@code addevent} there would be misleading.
+     * Labels the list header and empty-list message for the archived view if {@code isShowingArchived} is true.
+     * The normal empty-list message suggests {@code addevent}, which would be misleading there.
      */
     public void setShowingArchived(boolean isShowingArchived) {
+        showingArchived.set(isShowingArchived);
         emptyListMessage.setText(isShowingArchived ? MESSAGE_NO_ARCHIVED_EVENTS : MESSAGE_NO_EVENTS);
+    }
+
+    private String countText(int count) {
+        return (showingArchived.get() ? "Archived events (" : "Events (") + count + ")";
     }
 
     @SuppressWarnings("unchecked")
