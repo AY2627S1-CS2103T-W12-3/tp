@@ -140,7 +140,7 @@ public class LogicManager implements Logic {
 
     /**
      * Executes a command on a copy of the model and commits it only after storage succeeds.
-     * The copy shows the same contacts as the displayed list, so contact indexes refer to the same contacts.
+     * The copy preserves member IDs and the active view while commands resolve IDs across all saved contacts.
      * Rejects the command if existing data cannot be loaded or the new data cannot be saved.
      */
     private CommandResult executeAtomicCommand(Command command) throws CommandException {

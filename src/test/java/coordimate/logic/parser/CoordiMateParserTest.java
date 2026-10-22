@@ -39,6 +39,7 @@ import coordimate.model.event.AttendanceStatus;
 import coordimate.model.person.ContactMatchesKeywordPredicate;
 import coordimate.model.person.FilterCriterion;
 import coordimate.model.person.FilterField;
+import coordimate.model.person.MemberId;
 import coordimate.model.person.Name;
 import coordimate.model.person.Person;
 import coordimate.model.tag.Tag;
@@ -71,7 +72,7 @@ public class CoordiMateParserTest {
     public void parseCommand_assign() throws Exception {
         AssignCommand command = (AssignCommand) parser.parseCommand(
                 AssignCommand.COMMAND_WORD + " evn/Final Concert c/1 3");
-        assertEquals(new AssignCommand("Final Concert", List.of(INDEX_FIRST_PERSON, Index.fromOneBased(3))),
+        assertEquals(new AssignCommand("Final Concert", List.of(new MemberId(1), new MemberId(3))),
                 command);
     }
 
@@ -79,7 +80,7 @@ public class CoordiMateParserTest {
     public void parseCommand_unassign() throws Exception {
         UnassignCommand command = (UnassignCommand) parser.parseCommand(
                 UnassignCommand.COMMAND_WORD + " evn/Final Concert c/1 3");
-        assertEquals(new UnassignCommand("Final Concert", List.of(INDEX_FIRST_PERSON, Index.fromOneBased(3))),
+        assertEquals(new UnassignCommand("Final Concert", List.of(new MemberId(1), new MemberId(3))),
                 command);
     }
 
@@ -111,7 +112,7 @@ public class CoordiMateParserTest {
     public void parseCommand_delete() throws Exception {
         DeleteCommand command = (DeleteCommand) parser.parseCommand(
                 DeleteCommand.COMMAND_WORD + " " + INDEX_FIRST_PERSON.getOneBased());
-        assertEquals(new DeleteCommand(INDEX_FIRST_PERSON), command);
+        assertEquals(new DeleteCommand(new MemberId(1)), command);
     }
 
     @Test
@@ -126,7 +127,7 @@ public class CoordiMateParserTest {
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder(person).build();
         EditCommand command = (EditCommand) parser.parseCommand(EditCommand.COMMAND_WORD + " "
                 + INDEX_FIRST_PERSON.getOneBased() + " " + PersonUtil.getEditPersonDescriptorDetails(descriptor));
-        assertEquals(new EditCommand(INDEX_FIRST_PERSON, descriptor), command);
+        assertEquals(new EditCommand(new MemberId(1), descriptor), command);
     }
 
     @Test

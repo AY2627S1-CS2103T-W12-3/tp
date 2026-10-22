@@ -1,21 +1,25 @@
 package coordimate.model.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 
-import java.util.Arrays;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import coordimate.model.person.MemberId;
+import coordimate.model.person.Person;
 import coordimate.model.tag.Tag;
 
 public class SampleDataUtilTest {
 
     @Test
     public void getSampleCoordiMate_returnsSamplePersons() {
-        assertIterableEquals(Arrays.asList(SampleDataUtil.getSamplePersons()),
-                SampleDataUtil.getSampleCoordiMate().getPersonList());
+        Person[] samplePersons = SampleDataUtil.getSamplePersons();
+        List<Person> storedPersons = SampleDataUtil.getSampleCoordiMate().getPersonList();
+        assertEquals(samplePersons.length, storedPersons.size());
+        for (int i = 0; i < samplePersons.length; i++) {
+            assertEquals(samplePersons[i].withMemberId(new MemberId(i + 1)), storedPersons.get(i));
+        }
     }
 
     @Test

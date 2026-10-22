@@ -32,13 +32,13 @@ import coordimate.storage.StorageManager;
 import coordimate.testutil.PersonBuilder;
 
 public class EditCommandPersistenceTest {
-    private static final String EDIT = "edit 1 n/Benson Tan at/Alumni2026";
+    private static final String EDIT = "edit 2 n/Benson Tan at/Alumni2026";
 
     @TempDir
     public Path temporaryFolder;
 
     @Test
-    public void execute_filteredIndex_savedAndReloadedWithRenamedEventMemberAndCustomTag() throws Exception {
+    public void execute_filteredMemberId_savedAndReloadedWithRenamedEventMemberAndCustomTag() throws Exception {
         ModelManager model = modelWithAssignedEvent();
         model.updateFilteredPersonList(person -> person.equals(BENSON));
         JsonCoordiMateStorage storage = new JsonCoordiMateStorage(temporaryFolder.resolve("data.json"));

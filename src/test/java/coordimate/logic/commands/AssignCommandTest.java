@@ -16,13 +16,13 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import coordimate.commons.core.index.Index;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.ModelManager;
 import coordimate.model.UserPrefs;
 import coordimate.model.event.AttendanceStatus;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
+import coordimate.model.person.MemberId;
 import coordimate.model.person.Name;
 
 public class AssignCommandTest {
@@ -84,7 +84,7 @@ public class AssignCommandTest {
     }
 
     @Test
-    public void execute_repeatedIndex_countedOnce() throws Exception {
+    public void execute_repeatedId_countedOnce() throws Exception {
         assertEquals("Assigned 2 member(s) to Final Concert.",
                 assign("Final Concert", 1, 1, 3).execute(model).getFeedbackToUser());
         assertEquals(withMembers(concert, ALICE.getName(), CARL.getName()),
@@ -108,20 +108,23 @@ public class AssignCommandTest {
     }
 
     @Test
-    public void execute_contactIndexOutOfRange_noChanges() {
-        int outOfRange = model.getFilteredPersonList().size() + 1;
-        assertEquals("No contact exists at index " + outOfRange + ". Use an index from the current contact list.",
+    public void execute_unknownMemberId_noChanges() {
+        int unknownId = 99;
+        assertEquals("No contact exists with member ID: 99. Use an existing member ID.",
                 assertThrows(CommandException.class, () ->
-                        assign("Final Concert", 1, outOfRange, 2).execute(model)).getMessage());
+                        assign("Final Concert", 1, unknownId, 2).execute(model)).getMessage());
         assertEquals(List.of(concert, fair), model.getCoordiMate().getEventList());
     }
 
     @Test
-    public void execute_filteredList_usesDisplayedIndexes() throws Exception {
+    public void execute_filteredList_usesPermanentIds() throws Exception {
         model.updateFilteredPersonList(person -> person.equals(CARL) || person.equals(DANIEL));
         assign("Final Concert", 2).execute(model);
-        assertEquals(withMembers(concert, DANIEL.getName()), model.getCoordiMate().getEventList().getFirst());
-        assertThrows(CommandException.class, () -> assign("Final Concert", 3).execute(model));
+        assertEquals(withMembers(concert, BENSON.getName()), model.getCoordiMate().getEventList().getFirst());
+        assign("Final Concert", 3).execute(model);
+        assertEquals(withMembers(concert, BENSON.getName(), CARL.getName()),
+                model.getCoordiMate().getEventList().getFirst());
+        assertEquals(List.of(CARL, DANIEL), model.getFilteredPersonList());
     }
 
     @Test
@@ -133,12 +136,12 @@ public class AssignCommandTest {
         assertNotEquals(command, assign("Fair", 1, 2));
         assertNotEquals(command, null);
         assertThrows(NullPointerException.class, () -> command.execute(null));
-        assertThrows(NullPointerException.class, () -> new AssignCommand(null, List.of(Index.fromOneBased(1))));
+        assertThrows(NullPointerException.class, () -> new AssignCommand(null, List.of(new MemberId(1))));
         assertThrows(NullPointerException.class, () -> new AssignCommand("Final Concert", null));
     }
 
-    private static AssignCommand assign(String eventName, Integer... oneBasedIndexes) {
-        return new AssignCommand(eventName, Arrays.stream(oneBasedIndexes).map(Index::fromOneBased).toList());
+    private static AssignCommand assign(String eventName, Integer... memberIds) {
+        return new AssignCommand(eventName, Arrays.stream(memberIds).map(MemberId::new).toList());
     }
 
     private static Event withMembers(Event event, Name... members) {

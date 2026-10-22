@@ -15,9 +15,11 @@ import coordimate.commons.util.ToStringBuilder;
 import coordimate.model.event.AttendanceStatus;
 import coordimate.model.event.Event;
 import coordimate.model.event.MemberNameConflictException;
+import coordimate.model.person.MemberId;
 import coordimate.model.person.Name;
 import coordimate.model.person.Person;
 import coordimate.model.person.UniquePersonList;
+import coordimate.model.person.exceptions.DuplicatePersonException;
 import coordimate.model.tag.Tag;
 import coordimate.model.tag.UniqueTagList;
 import javafx.collections.FXCollections;
@@ -25,7 +27,7 @@ import javafx.collections.ObservableList;
 
 /**
  * Wraps all data at the CoordiMate level.
- * Duplicates are not allowed (by .isSamePerson comparison).
+ * Contacts have unique member IDs as well as distinct names, phone numbers, and email addresses.
  */
 public class CoordiMate implements ReadOnlyCoordiMate {
 
@@ -36,6 +38,7 @@ public class CoordiMate implements ReadOnlyCoordiMate {
             new Tag("Logistics"));
 
     private final UniquePersonList persons = new UniquePersonList();
+    private long nextMemberId = 1;
     private final UniqueTagList tags = new UniqueTagList();
     private final ObservableList<Event> events = FXCollections.observableArrayList();
     private final ObservableList<Event> unmodifiableEvents = FXCollections.unmodifiableObservableList(events);
@@ -44,6 +47,17 @@ public class CoordiMate implements ReadOnlyCoordiMate {
      * Creates an empty contact and event store.
      */
     public CoordiMate() {
+        this(1);
+    }
+
+    /**
+     * Creates an empty store with restored allocation state, including IDs of deleted members.
+     */
+    public CoordiMate(long nextMemberId) {
+        if (nextMemberId < 1 || nextMemberId > Integer.MAX_VALUE + 1L) {
+            throw new IllegalArgumentException("Invalid next member ID.");
+        }
+        this.nextMemberId = nextMemberId;
         tags.setTags(DEFAULT_TAGS);
     }
 
@@ -60,11 +74,30 @@ public class CoordiMate implements ReadOnlyCoordiMate {
     /**
      * Replaces the contents of the person list with {@code persons}.
      * {@code persons} must not contain duplicate persons.
+     * Assigns missing IDs after reserving the supplied IDs, retaining the allocation state.
      */
     public void setPersons(List<Person> persons) {
         requireNonNull(persons);
-        this.persons.setPersons(persons);
-        registerTagsFromPersons(persons);
+        UniquePersonList replacement = new UniquePersonList();
+        replacement.setPersons(persons);
+        long candidateNextId = nextMemberId;
+        for (Person person : persons) {
+            if (person.getMemberId().isPresent()) {
+                candidateNextId = Math.max(candidateNextId, person.getMemberId().orElseThrow().getValue() + 1L);
+            }
+        }
+        List<Person> identifiedPersons = new ArrayList<>();
+        for (Person person : persons) {
+            if (person.getMemberId().isEmpty()) {
+                person = person.withMemberId(createMemberId(candidateNextId));
+                candidateNextId++;
+            }
+            identifiedPersons.add(person);
+        }
+        replacement.setPersons(identifiedPersons);
+        this.persons.setPersons(replacement);
+        nextMemberId = candidateNextId;
+        registerTagsFromPersons(identifiedPersons);
     }
 
     /**
@@ -82,11 +115,17 @@ public class CoordiMate implements ReadOnlyCoordiMate {
     public void resetData(ReadOnlyCoordiMate newData) {
         requireNonNull(newData);
 
+        CoordiMate replacement = new CoordiMate(newData.getNextMemberId());
+        replacement.setEvents(newData.getEventList());
+        replacement.setPersons(newData.getPersonList());
+        replacement.setTags(newData.getTagList());
+
         // Events are replaced first: replacing the persons makes filtered person lists re-check their
         // predicates, and predicates such as EventMembersPredicate must then see the new events.
-        setEvents(newData.getEventList());
-        setPersons(newData.getPersonList());
-        setTags(newData.getTagList());
+        setEvents(replacement.getEventList());
+        persons.setPersons(replacement.persons);
+        nextMemberId = replacement.nextMemberId;
+        tags.setTags(replacement.getTagList());
     }
 
     /**
@@ -234,11 +273,31 @@ public class CoordiMate implements ReadOnlyCoordiMate {
     /**
      * Adds a person to the CoordiMate.
      * The person must not already exist in the CoordiMate.
+     * Assigns an ID if absent, or reserves the supplied ID for a restored contact.
      */
     public void addPerson(Person p) {
         requireNonNull(p);
+        if (persons.contains(p)) {
+            throw new DuplicatePersonException();
+        }
+        if (p.getMemberId().isEmpty()) {
+            p = p.withMemberId(createMemberId(nextMemberId));
+        }
         persons.add(p);
+        nextMemberId = Math.max(nextMemberId, p.getMemberId().orElseThrow().getValue() + 1L);
         registerTagsFromPersons(List.of(p));
+    }
+
+    @Override
+    public long getNextMemberId() {
+        return nextMemberId;
+    }
+
+    private static MemberId createMemberId(long value) {
+        if (value > Integer.MAX_VALUE) {
+            throw new IllegalStateException("No more member IDs are available.");
+        }
+        return new MemberId((int) value);
     }
 
     /**
@@ -312,7 +371,8 @@ public class CoordiMate implements ReadOnlyCoordiMate {
         Set<Tag> editedTags = person.getTags().stream()
                 .map(tag -> tag.isSameTag(target) ? editedTag : tag)
                 .collect(Collectors.toSet());
-        return new Person(person.getName(), person.getPhone(), person.getEmail(), person.getRole(),
+        return new Person(person.getMemberId().orElse(null), person.getName(), person.getPhone(), person.getEmail(),
+                person.getRole(),
                 person.getBirthday().orElse(null), person.getAddress().orElse(null),
                 person.getOrganisation().orElse(null), person.getNote().orElse(null), editedTags);
     }
@@ -327,7 +387,8 @@ public class CoordiMate implements ReadOnlyCoordiMate {
         Set<Tag> remainingTags = person.getTags().stream()
                 .filter(tag -> !tag.isSameTag(target))
                 .collect(Collectors.toSet());
-        return new Person(person.getName(), person.getPhone(), person.getEmail(), person.getRole(),
+        return new Person(person.getMemberId().orElse(null), person.getName(), person.getPhone(), person.getEmail(),
+                person.getRole(),
                 person.getBirthday().orElse(null), person.getAddress().orElse(null),
                 person.getOrganisation().orElse(null), person.getNote().orElse(null), remainingTags);
     }
@@ -376,12 +437,13 @@ public class CoordiMate implements ReadOnlyCoordiMate {
         }
 
         return persons.equals(otherCoordiMate.persons)
+                && nextMemberId == otherCoordiMate.nextMemberId
                 && tags.equals(otherCoordiMate.tags)
                 && events.equals(otherCoordiMate.events);
     }
 
     @Override
     public int hashCode() {
-        return java.util.Objects.hash(persons, tags, events);
+        return java.util.Objects.hash(persons, nextMemberId, tags, events);
     }
 }

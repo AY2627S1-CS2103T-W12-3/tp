@@ -46,6 +46,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
@@ -68,12 +69,12 @@ public class MainWindow extends UiPart<Stage> {
             Map.entry("add", "Format: add n/NAME p/PHONE e/EMAIL r/ROLE [b/BIRTHDAY] [a/ADDRESS]"
                     + " [o/ORGANISATION] [t/TAG]... [m/NOTE]\n"
                     + "Example: add n/Aisha Tan p/+6591234567 e/aisha@example.com r/Logistics t/EXCO"),
-            Map.entry("edit", "Format: edit INDEX [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY]"
+            Map.entry("edit", "Format: edit MEMBER_ID [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY]"
                     + " [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [t/TAG]... [at/TAG]... [rt/TAG]...\n"
                     + "Or: edit target/IDENTIFIER [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY]"
                     + " [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [t/TAG]... [at/TAG]... [rt/TAG]...\n"
                     + "Example: edit 1 p/91234567 e/johndoe@example.com"),
-            Map.entry("delete", "Format: delete INDEX (or n/NAME, p/PHONE, or e/EMAIL)\n"
+            Map.entry("delete", "Format: delete MEMBER_ID (or n/NAME, p/PHONE, or e/EMAIL)\n"
                     + "Example: delete e/aisha@example.com"),
             Map.entry("search", "Format: search KEYWORD\nExample: search jurong west"),
             Map.entry("filter", "Format: filter FIELD/VALUE [FIELD/VALUE]...\n"
@@ -88,9 +89,9 @@ public class MainWindow extends UiPart<Stage> {
             Map.entry("deleteevent", "Format: deleteevent evn/EVENT_NAME\n"
                     + "Example: deleteevent evn/Final Concert"),
             Map.entry("dismiss", "Format: dismiss INDEX\nExample: dismiss 1"),
-            Map.entry("assign", "Format: assign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...\n"
+            Map.entry("assign", "Format: assign evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]...\n"
                     + "Example: assign evn/Final Concert c/2 3"),
-            Map.entry("unassign", "Format: unassign evn/EVENT_NAME c/CONTACT_INDEX [MORE_CONTACT_INDEXES]...\n"
+            Map.entry("unassign", "Format: unassign evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]...\n"
                     + "Example: unassign evn/Final Concert c/2 3"),
             Map.entry("members", "Format: members evn/EVENT_NAME\nExample: members evn/Final Concert"),
             Map.entry("markattendance", "Format: markattendance evn/EVENT_NAME mem/MEMBER_NAME att/STATUS\n"
@@ -292,7 +293,7 @@ public class MainWindow extends UiPart<Stage> {
             contactsView.setSelected(tab == contactsTab);
             eventsView.setSelected(tab == eventsTab);
             tagsView.setSelected(tab == tagsTab);
-            setPrefixHelpText(tab == eventsTab ? "Prefixes: evn/Event  st/Start  et/End  c/Contact"
+            setPrefixHelpText(tab == eventsTab ? "Prefixes: evn/Event  st/Start  et/End  c/Member ID"
                     : tab == tagsTab ? "Prefixes: t/Tag"
                     : "Prefixes: n/Name  p/Phone  e/Email  r/Role  t/Tag  m/Note");
         });
@@ -537,6 +538,10 @@ public class MainWindow extends UiPart<Stage> {
             identityLine.setAlignment(Pos.CENTER_LEFT);
             identityLine.getStyleClass().add("event-member-identity");
             identityLine.getChildren().add(name);
+            Label memberId = new Label("ID: " + person.getMemberId().orElseThrow());
+            memberId.setMinWidth(Region.USE_PREF_SIZE);
+            memberId.getStyleClass().add("event-member-id");
+            identityLine.getChildren().add(memberId);
             person.getTags().stream()
                     .sorted((left, right) -> String.CASE_INSENSITIVE_ORDER.compare(
                             left.getTagName(), right.getTagName()))

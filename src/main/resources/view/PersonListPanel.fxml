@@ -33,8 +33,10 @@
               <Label fx:id="selectedAvatar" styleClass="contact-avatar" />
               <VBox spacing="4" minWidth="0" HBox.hgrow="ALWAYS">
                 <HBox alignment="CENTER_LEFT" spacing="10">
-                  <Label fx:id="selectedName" id="selectedName" wrapText="true" styleClass="contact-name" />
-                  <Label fx:id="selectedIndex" id="selectedIndex" styleClass="detail-caption" />
+                  <Label fx:id="selectedName" id="selectedName" minWidth="0" wrapText="true"
+                         styleClass="contact-name" HBox.hgrow="ALWAYS" />
+                  <Label fx:id="selectedMemberId" id="selectedMemberId" minWidth="-Infinity"
+                         styleClass="detail-caption" />
                 </HBox>
                 <Label fx:id="selectedSubtitle" wrapText="true" styleClass="detail-caption" />
               </VBox>

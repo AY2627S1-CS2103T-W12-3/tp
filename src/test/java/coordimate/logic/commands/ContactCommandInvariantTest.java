@@ -5,8 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
-import coordimate.commons.core.index.Index;
 import coordimate.model.ModelManager;
+import coordimate.model.person.MemberId;
 import coordimate.model.person.Person;
 import coordimate.model.person.Role;
 
@@ -22,7 +22,7 @@ public class ContactCommandInvariantTest {
         model.addPerson(AMY);
         EditCommand.EditPersonDescriptor descriptor = new EditCommand.EditPersonDescriptor();
         descriptor.setRole(new Role("President"));
-        EditCommand command = new EditCommand(Index.fromOneBased(1), descriptor);
+        EditCommand command = new EditCommand(new MemberId(1), descriptor);
 
         assertThrows(AssertionError.class, () -> command.execute(model));
     }
@@ -31,7 +31,7 @@ public class ContactCommandInvariantTest {
     public void execute_deleteModelDoesNotRemoveContact_triggersAssertion() {
         ModelWithoutDeletedContact model = new ModelWithoutDeletedContact();
         model.addPerson(AMY);
-        DeleteCommand command = new DeleteCommand(Index.fromOneBased(1));
+        DeleteCommand command = new DeleteCommand(new MemberId(1));
 
         assertThrows(AssertionError.class, () -> command.execute(model));
     }
