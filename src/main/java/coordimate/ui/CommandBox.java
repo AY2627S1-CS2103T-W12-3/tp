@@ -8,7 +8,6 @@ import coordimate.logic.commands.CommandResult;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.logic.parser.exceptions.ParseException;
 import javafx.collections.ObservableList;
-import javafx.event.EventTarget;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
@@ -88,11 +87,6 @@ public class CommandBox extends UiPart<Region> {
     /** Returns keyboard focus to the command input. */
     void requestFocus() {
         commandTextField.requestFocus();
-    }
-
-    /** Returns whether the given event target is this command box's text input. */
-    boolean isCommandInput(EventTarget eventTarget) {
-        return eventTarget == commandTextField;
     }
 
     /** Focuses the command input without changing its text. */

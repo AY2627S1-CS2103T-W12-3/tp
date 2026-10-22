@@ -31,7 +31,6 @@
    a secondary screen or changing the display resolution, CoordiMate adjusts the window to remain fully visible.<br>
 
    The left sidebar switches between Contacts, Events, and Tags and shows commands for the selected view.
-   You can also use `switch contacts`, `switch events`, or `switch tags` in the command box.
    Click a command name to put only the command word in the input and show its format and an example below the input.
    Complete the command by typing its arguments after the command word.
    The main workspace shows a list beside its details, and the command box, feedback, and prefix hints stay at the bottom.
@@ -39,7 +38,8 @@
 1. Type a command in the command box and press Enter to execute it. For example, type **`help`** and press Enter to open the help window.<br>
    Press <kbd>Up</kbd> to recall earlier commands and <kbd>Down</kbd> to move toward the command you were typing.<br>
    To browse cards without reaching for the mouse, press <kbd>Esc</kbd> to enter Navigation mode, use
-   <kbd>J</kbd>/<kbd>K</kbd> to move through the active view, then press <kbd>I</kbd> to return to Command mode.<br>
+   <kbd>J</kbd>/<kbd>K</kbd> to move through the active view, <kbd>S</kbd> to switch views, then press <kbd>I</kbd>
+   to return to Command mode.<br>
    Some example commands you can try:
 
    * `list` : Lists all contacts.
@@ -147,10 +147,16 @@ Use the following keys to browse Contacts, Events, or Tags without the mouse:
 | <kbd>Esc</kbd> | Enter **Navigation mode** from Command mode. |
 | <kbd>J</kbd> | Select the next card in the active view. If nothing is selected, select the first card. |
 | <kbd>K</kbd> | Select the previous card in the active view. If nothing is selected, select the last card. |
+| <kbd>S</kbd> | Switch to the next view, wrapping from Tags back to Contacts. |
 | <kbd>I</kbd> | Return to **Command mode** and focus the command box. |
 
 Navigation stops at the first or last card rather than wrapping around. On an empty list, <kbd>J</kbd> and <kbd>K</kbd>
-do nothing. The shortcuts apply to whichever of the Contacts, Events, or Tags views is active.
+do nothing. The shortcuts apply to whichever of the Contacts, Events, or Tags views is active. Each view keeps its
+selection when you switch away and back.
+
+Other unmodified keys, including <kbd>Enter</kbd>, <kbd>Space</kbd>, <kbd>Tab</kbd>, and the arrow keys, are disabled
+in Navigation mode. Pressing <kbd>Esc</kbd> moves keyboard focus away from controls such as a reminder's
+**Dismiss** button, so those controls cannot be activated accidentally. Mouse controls remain available.
 
 You can chain navigation and command entry without clicking. For example, press <kbd>Esc</kbd>, <kbd>J</kbd>,
 <kbd>J</kbd>, <kbd>I</kbd>, then type a command. Any unfinished command remains in the command box while you navigate.
@@ -182,20 +188,6 @@ Selecting **Help** in the top bar opens this window directly. Press <kbd>Fn</kbd
 keyboard. In the command formats, parameters enclosed in square brackets `[ ]` are optional.
 
 Format: `help`
-
-
-### Switching views: `switch`
-
-Switches to the Contacts, Events, or Tags view without changing saved data. Switching to the current view also succeeds.
-The view name must be lowercase. A missing or unrecognised view name is rejected without changing the selected view.
-
-Formats: `switch contacts` | `switch events` | `switch tags`
-
-Example: `switch events`
-
-| Condition | Error message |
-|---|---|
-| The view name is missing, unknown, or followed by extra text. | `Invalid command format.` |
 
 
 ### Adding a contact: `add`
@@ -989,9 +981,8 @@ A command that changes your data is saved to the data file **before** the change
 cannot be saved, the command is rejected with an error such as `Event could not be saved. No changes were made.`
 and both the app and the data file stay as they were, so what you see always matches what is saved.
 
-Most commands that do not change saved data also attempt to save after running. The `switch` command only
-changes the selected view and does not read or save the data file. For other commands, a save failure reports
-one of the following messages; a command may already have changed the displayed view when this happens.
+Commands that do not change saved data also attempt to save after running. A save failure reports one of the
+following messages; a command may already have changed the displayed view when this happens.
 
 | Condition | Error message |
 |---|---|
@@ -1007,7 +998,7 @@ CoordiMate data is saved automatically as a JSON file `[JAR file location]/data/
 <box type="warning" seamless>
 
 **Caution:**
-If your changes make the data file invalid, CoordiMate starts with an empty dataset at the next run. While the file is invalid, commands that change data (such as `add`, `addevent`, and `clear`) are rejected with `Saved data could not be loaded. Check the local data file.` and leave the file untouched, so that you can close the app and fix it. Commands such as `list`, `search`, and `filter` save the data currently in the app, which **replaces the invalid file**. The `switch` command does not access the data file. We therefore recommend backing up the file before editing it.<br>
+If your changes make the data file invalid, CoordiMate starts with an empty dataset at the next run. While the file is invalid, commands that change data (such as `add`, `addevent`, and `clear`) are rejected with `Saved data could not be loaded. Check the local data file.` and leave the file untouched, so that you can close the app and fix it. Commands such as `list`, `search`, and `filter` save the data currently in the app, which **replaces the invalid file**. We therefore recommend backing up the file before editing it.<br>
 Each name in an event's `members` list must exactly match the name of a saved contact, or the data file is invalid.<br>
 If a contact uses a tag that is missing from the top-level `tags` list, CoordiMate adds it to the global tag list when
 the file is loaded. Existing top-level tags, including unused tags, retain their saved order and capitalization.<br>
@@ -1051,7 +1042,6 @@ Action | Format, Examples
 **Edit tag** | `edittag OLD_TAG t/NEW_TAG`<br> e.g., `edittag Media t/Publicity`
 **Delete tag** | `deletetag t/TAG`<br> e.g., `deletetag t/Publicity`
 **List tags** | `listtags`
-**Switch views** | `switch contacts` \| `switch events` \| `switch tags`<br> e.g., `switch events`
 **Clear** | `clear`
 **Help** | `help`
 **Exit** | `exit`
