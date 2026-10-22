@@ -80,6 +80,10 @@ public class TutorialWindowTest {
                 if (index == 9) {
                     assertTrue(tutorial.getCurrentStep().description().contains("mark attendance"));
                 }
+                if (index == 14) {
+                    assertTrue(tutorial.getCurrentStep().description().contains("type help in the command box"));
+                    assertTrue(tutorial.getCurrentStep().description().contains(HelpWindow.HELP_SHORTCUT));
+                }
                 if (index < titles.size() - 1) {
                     nextButton.fire();
                 }

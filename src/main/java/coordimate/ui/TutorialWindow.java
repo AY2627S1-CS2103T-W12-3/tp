@@ -87,7 +87,8 @@ public class TutorialWindow extends UiPart<StackPane> {
                             + "in the current tab. Press I to return to Command mode and focus the command box.",
                     TutorialPlacement.CENTER, TutorialTarget.NONE),
             new TutorialStep("Get help anytime",
-                    "Select Help in the top bar to see command formats and keyboard shortcuts.",
+                    "Select Help in the top bar, type help in the command box, or press "
+                            + HelpWindow.HELP_SHORTCUT + " to see command formats and keyboard shortcuts.",
                     TutorialPlacement.BESIDE_TARGET, TutorialTarget.HELP),
             new TutorialStep("Take the tour again",
                     "Select Tutorial in the top bar whenever you need a reminder.",
