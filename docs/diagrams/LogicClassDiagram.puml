@@ -19,12 +19,10 @@ Class "<<interface>>\nLogic" as Logic
 Class LogicManager
 Class ReminderService
 
-note as CommandExamples
+note right of XYZCommand
   XYZCommand = AddCommand,
-  SearchCommand, etc.
+  SearchCommand, DismissCommand, etc.
 end note
-CommandExamples -[hidden]down-> LogicManager
-CommandExamples -[hidden,norank]-> ReminderService
 }
 
 package Model {
@@ -39,8 +37,10 @@ HiddenOutside ..> Logic
 LogicManager ..|> Logic
 LogicManager --> "1" ParserClasses
 ParserClasses ..> XYZCommand : <<create>>
+ParserClasses ..> ReminderService
 
 XYZCommand --|> Command
+XYZCommand ..> ReminderService
 LogicManager ..> Command : <<call>>
 
 LogicManager --> Model
