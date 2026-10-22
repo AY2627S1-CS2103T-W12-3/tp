@@ -108,7 +108,6 @@ public class MainWindow extends UiPart<Stage> {
     private Path dataFilePath;
     private Rectangle2D normalWindowBounds;
     private boolean isNormalBoundsUpdateScheduled;
-    private boolean suppressCommandModeShortcutText;
     private InteractionMode interactionMode = InteractionMode.COMMAND;
 
     // Independent Ui parts residing in this Ui container
@@ -317,8 +316,8 @@ public class MainWindow extends UiPart<Stage> {
         commandBox = new CommandBox(this::executeCommand, logic::isAwaitingDeleteConfirmation);
         commandBoxPlaceholder.getChildren().add(commandBox.getRoot());
         getRoot().addEventFilter(KeyEvent.KEY_PRESSED, this::handleKeyboardInput);
-        getRoot().addEventFilter(KeyEvent.KEY_TYPED, this::handleCommandModeShortcutText);
         getRoot().addEventFilter(KeyEvent.KEY_RELEASED, this::handleCommandModeShortcutRelease);
+        commandBox.getRoot().addEventFilter(MouseEvent.MOUSE_PRESSED, this::handleCommandBoxClick);
         personListPanel.setCardListClickHandler(this::enterNavigationMode);
         eventListPanel.setCardListClickHandler(this::enterNavigationMode);
         tagListView.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> enterNavigationMode());
@@ -370,16 +369,13 @@ public class MainWindow extends UiPart<Stage> {
             return;
         }
 
-        if (event.isShiftDown() || event.isControlDown() || event.isAltDown() || event.isMetaDown()) {
+        if (hasShortcutModifier(event)) {
             return;
         }
 
         switch (event.getCode()) {
             case ESCAPE -> focusNavigationMode();
-            case I -> {
-                suppressCommandModeShortcutText = true;
-                enterCommandMode();
-            }
+            case I -> { } // Command mode is entered when the key is released.
             case J -> navigateCards(true);
             case K -> navigateCards(false);
             case S -> switchToNextView();
@@ -388,15 +384,23 @@ public class MainWindow extends UiPart<Stage> {
         event.consume();
     }
 
-    private void handleCommandModeShortcutText(KeyEvent event) {
-        if (suppressCommandModeShortcutText && "i".equalsIgnoreCase(event.getCharacter())) {
+    private void handleCommandModeShortcutRelease(KeyEvent event) {
+        if (interactionMode == InteractionMode.NAVIGATION
+                && event.getCode() == KeyCode.I
+                && !hasShortcutModifier(event)) {
+            enterCommandMode();
             event.consume();
         }
     }
 
-    private void handleCommandModeShortcutRelease(KeyEvent event) {
-        if (event.getCode() == KeyCode.I) {
-            suppressCommandModeShortcutText = false;
+    private boolean hasShortcutModifier(KeyEvent event) {
+        return event.isShiftDown() || event.isControlDown() || event.isAltDown() || event.isMetaDown();
+    }
+
+    private void handleCommandBoxClick(MouseEvent event) {
+        if (interactionMode == InteractionMode.NAVIGATION) {
+            enterCommandMode();
+            event.consume();
         }
     }
 

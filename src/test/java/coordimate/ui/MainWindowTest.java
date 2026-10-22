@@ -273,26 +273,42 @@ public class MainWindowTest {
                 assertTrue(contactsView.isSelected());
                 assertEquals(secondContact, contacts.getSelectionModel().getSelectedItem());
 
+                input.setText("list");
                 fireMousePress(input);
-                assertEquals("NAVIGATION · j/k move · s switch view · i to type", mode.getText());
+                assertEquals("COMMAND · Esc to navigate", mode.getText());
+                assertEquals("list", input.getText());
+                assertFalse(input.isDisabled());
+                assertFalse(submit.isDisabled());
+                assertFalse(keyReachesTarget(input, keyEvent(KeyCode.ESCAPE)));
                 assertFalse(keyReachesTarget(contactsView, keyEvent(KeyCode.I)));
+                assertEquals("NAVIGATION · j/k move · s switch view · i to type", mode.getText());
+                assertTrue(input.isDisabled());
+                assertTrue(submit.isDisabled());
+                assertTrue(keyReachesTarget(mode, keyReleasedEvent(KeyCode.A)));
+                assertEquals("NAVIGATION · j/k move · s switch view · i to type", mode.getText());
+                assertFalse(keyReachesTarget(mode, keyReleasedEvent(KeyCode.I)));
                 assertEquals("COMMAND · Esc to navigate", mode.getText());
                 assertFalse(input.isDisabled());
                 assertFalse(submit.isDisabled());
-                assertTrue(keyReachesTarget(input, typedKeyEvent("a")));
+                assertTrue(keyReachesTarget(input, keyReleasedEvent(KeyCode.I)));
+                fireMousePress(input);
+                assertEquals("COMMAND · Esc to navigate", mode.getText());
                 input.clear();
-                assertTrue(keyReachesTarget(input, keyReleasedEvent(KeyCode.A)));
-                assertFalse(keyReachesTarget(input, typedKeyEvent("i")));
-                assertTrue(input.getText().isEmpty());
-                input.fireEvent(keyReleasedEvent(KeyCode.I));
-                assertTrue(keyReachesTarget(input, typedKeyEvent("a")));
+                assertFalse(keyReachesTarget(input, keyEvent(KeyCode.ESCAPE)));
+                assertTrue(keyReachesTarget(mode, keyReleasedEvent(KeyCode.I, true, false, false, false)));
+                assertEquals("NAVIGATION · j/k move · s switch view · i to type", mode.getText());
+                assertFalse(keyReachesTarget(mode, keyEvent(KeyCode.I)));
+                fireMousePress(input);
+                assertEquals("COMMAND · Esc to navigate", mode.getText());
+                assertTrue(keyReachesTarget(input, typedKeyEvent("i")));
                 fireMousePress(contacts);
                 assertEquals("NAVIGATION · j/k move · s switch view · i to type", mode.getText());
                 fireMousePress(input);
-                assertEquals("NAVIGATION · j/k move · s switch view · i to type", mode.getText());
+                assertEquals("COMMAND · Esc to navigate", mode.getText());
                 fireMousePress(events);
                 assertEquals("NAVIGATION · j/k move · s switch view · i to type", mode.getText());
                 fireMousePress(input);
+                assertEquals("COMMAND · Esc to navigate", mode.getText());
                 fireMousePress(tags);
                 assertEquals("NAVIGATION · j/k move · s switch view · i to type", mode.getText());
             } finally {
@@ -335,6 +351,8 @@ public class MainWindowTest {
                 assertEquals(contact, contacts.getSelectionModel().getSelectedItem());
                 assertEquals("list", input.getText());
                 assertFalse(keyReachesTarget(input, keyEvent(KeyCode.I)));
+                assertEquals("NAVIGATION · j/k move · s switch view · i to type", mode.getText());
+                assertFalse(keyReachesTarget(mode, keyReleasedEvent(KeyCode.I)));
                 assertEquals("COMMAND · Esc to navigate", mode.getText());
                 assertEquals("list", input.getText());
                 input.clear();
@@ -363,6 +381,8 @@ public class MainWindowTest {
 
                 contacts.requestFocus();
                 assertFalse(keyReachesTarget(contacts, keyEvent(KeyCode.I)));
+                assertEquals("NAVIGATION · j/k move · s switch view · i to type", mode.getText());
+                assertFalse(keyReachesTarget(mode, keyReleasedEvent(KeyCode.I)));
                 assertEquals("COMMAND · Esc to navigate", mode.getText());
 
                 TabPane views = (TabPane) stage.getScene().getRoot().lookup("#views");
@@ -736,8 +756,13 @@ public class MainWindowTest {
     }
 
     private static KeyEvent keyReleasedEvent(KeyCode keyCode) {
+        return keyReleasedEvent(keyCode, false, false, false, false);
+    }
+
+    private static KeyEvent keyReleasedEvent(KeyCode keyCode, boolean shiftDown, boolean controlDown,
+                                             boolean altDown, boolean metaDown) {
         return new KeyEvent(KeyEvent.KEY_RELEASED, "", "", keyCode,
-                false, false, false, false);
+                shiftDown, controlDown, altDown, metaDown);
     }
 
     private static KeyEvent typedKeyEvent(String character) {

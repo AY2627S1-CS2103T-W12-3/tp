@@ -19,7 +19,10 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
 import javafx.stage.Stage;
 
 public class HelpWindowTest {
@@ -66,27 +69,29 @@ public class HelpWindowTest {
             TableView<HelpWindow.CommandUsage> commandTable =
                     (TableView<HelpWindow.CommandUsage>) root.getScene().lookup("#commandTable");
             VBox keyboardHelp = (VBox) root.getScene().lookup("#keyboardHelp");
-            Label commandModeHelp = (Label) root.getScene().lookup("#commandModeHelp");
-            Label navigationModeHelp = (Label) root.getScene().lookup("#navigationModeHelp");
-            Label syntaxNote = (Label) root.getScene().lookup("#syntaxNote");
+            TextFlow commandModeHelp = (TextFlow) root.getScene().lookup("#commandModeHelp");
+            TextFlow navigationModeHelp = (TextFlow) root.getScene().lookup("#navigationModeHelp");
+            Text commandModeText = (Text) commandModeHelp.getChildren().get(0);
+            Text navigationModeText = (Text) navigationModeHelp.getChildren().get(0);
+            TextFlow syntaxNote = (TextFlow) root.getScene().lookup("#syntaxNote");
+            Text syntaxNoteText = (Text) syntaxNote.getChildren().get(0);
             Label helpMessage = (Label) root.getScene().lookup("#helpMessage");
+            Button copyButton = (Button) root.getScene().lookup("#copyButton");
             Button closeButton = (Button) root.getScene().lookup("#closeButton");
 
             assertTrue(root.isResizable());
             assertEquals(680.0, root.getMinWidth());
             assertEquals(450.0, root.getMinHeight());
             assertEquals(HelpWindow.COMMAND_USAGES, commandTable.getItems());
+            assertEquals(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN,
+                    commandTable.getColumnResizePolicy());
             assertTrue(helpMessage.getText().contains("Fn + F1"));
             assertFalse(commandTable.isEditable());
             assertEquals("Command mode (default): type commands; press Esc to navigate cards.",
-                    commandModeHelp.getText());
+                    commandModeText.getText());
             assertEquals("Navigation mode: press j for next, k for previous, s to switch views, or i to focus "
                     + "the command box. Other unmodified keys are disabled. Click the command box or a card list "
-                    + "to switch modes.", navigationModeHelp.getText());
-            assertTrue(commandModeHelp.isWrapText());
-            assertTrue(navigationModeHelp.isWrapText());
-            assertEquals(Double.POSITIVE_INFINITY, commandModeHelp.getMaxWidth());
-            assertEquals(Double.POSITIVE_INFINITY, navigationModeHelp.getMaxWidth());
+                    + "to switch modes.", navigationModeText.getText());
             assertEquals("Command mode is the default. Press Escape to enter Navigation mode. "
                     + "In Navigation mode, press J for the next card, K for the previous card, S to switch views, "
                     + "or I to focus the command box. Other unmodified keys are disabled. Clicking the command "
@@ -94,12 +99,37 @@ public class HelpWindowTest {
                     keyboardHelp.getAccessibleText());
             assertEquals("Note: [ ] marks optional parameters; (A | B) means choose one. "
                     + "For edit, provide at least one field or tag operation. "
-                    + "For editevent, provide at least one field.", syntaxNote.getText());
+                    + "For editevent, provide at least one field.", syntaxNoteText.getText());
             assertEquals(List.of("Command", "Usage format"), commandTable.getColumns().stream()
                     .map(TableColumn::getText).toList());
             assertEquals("add", commandTable.getColumns().get(0).getCellObservableValue(0).getValue());
             assertEquals(HelpWindow.COMMAND_USAGES.get(0).format(),
                     commandTable.getColumns().get(1).getCellObservableValue(0).getValue());
+
+            root.setWidth(root.getMinWidth());
+            Platform.setImplicitExit(false);
+            root.show();
+            commandTable.scrollTo(COMMAND_WORDS.indexOf("edit"));
+            root.getScene().getRoot().applyCss();
+            root.getScene().getRoot().layout();
+            assertTrue(commandModeHelp.getWidth() > 0);
+            assertTrue(navigationModeHelp.getWidth() > 0);
+            assertTrue(navigationModeHelp.getHeight() > navigationModeText.getFont().getSize() * 2);
+            assertTrue(syntaxNote.getHeight() > syntaxNoteText.getFont().getSize() * 2);
+            assertEquals(Region.USE_PREF_SIZE, copyButton.getMinWidth());
+            assertEquals(Region.USE_PREF_SIZE, closeButton.getMinWidth());
+            assertTrue(copyButton.getWidth() >= copyButton.prefWidth(-1));
+            assertTrue(closeButton.getWidth() >= closeButton.prefWidth(-1));
+            Text editUsage = root.getScene().getRoot().lookupAll(".usage-text").stream()
+                    .map(Text.class::cast)
+                    .filter(text -> text.getText().startsWith("edit "))
+                    .findFirst()
+                    .orElseThrow();
+            assertTrue(editUsage.getWrappingWidth() > 0);
+            assertTrue(editUsage.getLayoutBounds().getHeight() > editUsage.getFont().getSize() * 2, () ->
+                    "Expected wrapped usage text, but text was " + editUsage.getWrappingWidth() + "x"
+                            + editUsage.getLayoutBounds().getHeight() + " at font size "
+                            + editUsage.getFont().getSize());
             assertTrue(closeButton.isCancelButton());
             closeButton.fire();
             assertFalse(root.isShowing());
@@ -108,4 +138,5 @@ public class HelpWindowTest {
         Platform.runLater(task);
         task.get(10, TimeUnit.SECONDS);
     }
+
 }

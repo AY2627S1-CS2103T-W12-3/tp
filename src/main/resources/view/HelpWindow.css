@@ -36,7 +36,7 @@
 }
 
 .keyboard-help-text {
-    -fx-text-fill: #f0f6fc;
+    -fx-fill: #f0f6fc;
 }
 
 .syntax-note {
@@ -84,6 +84,10 @@
     -fx-padding: 8px;
     -fx-text-fill: #f0f6fc;
     -fx-wrap-text: true;
+}
+
+#commandTable .usage-text {
+    -fx-fill: #f0f6fc;
 }
 
 #commandTable .table-row-cell:filled:selected {
