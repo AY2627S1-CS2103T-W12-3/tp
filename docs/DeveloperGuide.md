@@ -203,7 +203,7 @@ The `Model` component,
 
 <box type="info" seamless>
 
-**Note:** `CoordiMate` already keeps a global `UniqueTagList`, but each `Person` holds its own `Tag` objects, which are only equal in value to those in the list. The alternative, arguably more object-oriented, design below has each `Person` reference the `Tag` objects in that list instead, so `CoordiMate` maintains exactly one `Tag` object per unique tag.<br>
+**Note:** `CoordiMate` already keeps a global `UniqueTagList`, but each `Person` holds its own `Tag` objects, which are compared with those in the list by value and are not necessarily the same objects. The alternative, arguably more object-oriented, design below has each `Person` reference the `Tag` objects in that list instead, so `CoordiMate` maintains exactly one `Tag` object per unique tag.<br>
 
 <puml src="diagrams/BetterModelClassDiagram.puml" width="450" />
 </box>

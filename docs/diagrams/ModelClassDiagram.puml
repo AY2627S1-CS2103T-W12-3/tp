@@ -27,7 +27,7 @@ Class Organisation
 Class Note
 Class LeaveDate
 Class Tag
-note "Compared by value;\nnot the same objects\nas in UniqueTagList." as TagNote
+note "Compared by value;\nnot necessarily the same\nobjects as in UniqueTagList." as TagNote
 
 Class I #FFFFFF
 }
@@ -46,10 +46,10 @@ UserPrefs .up.|> ReadOnlyUserPrefs
 
 CoordiMate *--> "1" UniquePersonList
 CoordiMate *--> "1" UniqueTagList
-CoordiMate *--> "*" Event
+CoordiMate *--> "~*" Event
 UniquePersonList --> "~* all" Person
-UniqueTagList --> "*" Tag
-Person *-left-> "*" Tag
+UniqueTagList --> "~*" Tag
+Person -left-> "~*" Tag
 
 Person *--> "0..1" MemberId
 Person *--> "1" Name
