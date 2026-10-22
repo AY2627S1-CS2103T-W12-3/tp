@@ -6,11 +6,6 @@ box Logic LOGIC_COLOR_T1
 participant ":LogicManager" as LogicManager LOGIC_COLOR
 participant ":CoordiMateParser" as CoordiMateParser LOGIC_COLOR
 participant "d:DeleteCommand" as DeleteCommand LOGIC_COLOR
-participant "c:DeleteCommand" as ConfirmedDelete LOGIC_COLOR
-end box
-
-box Model MODEL_COLOR_T1
-participant "m:Model" as Model MODEL_COLOR
 end box
 
 box Storage STORAGE_COLOR_T1
@@ -22,7 +17,6 @@ activate LogicManager
 
 LogicManager -> CoordiMateParser : parseCommand("delete 1")
 activate CoordiMateParser
-note right of CoordiMateParser : DeleteCommandParser creates d
 CoordiMateParser --> LogicManager : d
 deactivate CoordiMateParser
 
@@ -31,42 +25,30 @@ activate Storage
 Storage --> LogicManager : loaded
 deactivate Storage
 
-LogicManager -> DeleteCommand : resolvePerson(m)
+LogicManager -> DeleteCommand : resolvePerson(model)
 activate DeleteCommand
-DeleteCommand -> Model : getCoordiMate().getPersonList()
-activate Model
-Model --> DeleteCommand : saved contacts
-deactivate Model
-note right of DeleteCommand : Resolve ID 1 to contact p
 DeleteCommand --> LogicManager : p
 deactivate DeleteCommand
-note right of LogicManager : pendingDelete = p; no deletion yet
-
-note right of LogicManager : Return CommandResult(prompt for p, CONTACTS)
-[<-- LogicManager : prompt result
+note right of LogicManager : Resolve ID 1 to p; pendingDelete = p
+[<-- LogicManager : confirmation prompt for p
 deactivate LogicManager
 
 [-> LogicManager : execute(response)
 activate LogicManager
-note right of LogicManager : Clear pendingDelete; consume response without parsing
+note right of LogicManager : Clear pendingDelete; do not parse response
 alt response is y or Y
-create ConfirmedDelete
-LogicManager -> ConfirmedDelete : forResolvedPerson(p)
-ConfirmedDelete --> LogicManager : c
-
-note over ConfirmedDelete, Model
-  Here c executes on the candidate model
-  and deletes the resolved contact p.
+note over LogicManager, Storage
+  c = DeleteCommand.forResolvedPerson(p).
+  c deletes p on the candidate model.
 end note
-ref over LogicManager, ConfirmedDelete, Model, Storage
+ref over LogicManager, Storage
   executeAtomicCommand
 end ref
 
 [<-- LogicManager : deletion result
 else any other response
 note right of LogicManager
-  Leave data unchanged.
-  Return MESSAGE_DELETE_CANCELLED.
+  Leave data unchanged; return MESSAGE_DELETE_CANCELLED.
 end note
 [<-- LogicManager : cancellation result
 end
