@@ -691,7 +691,8 @@ Format: `list [archived]`
 * In the archived view, the left sidebar lists only `unarchive` (or `unarchiveevent` in the **Events** tab) and `list`.
   Other commands still work: `search`, `filter`, and `members` look only at archived contacts, and `edit`, `delete`,
   `editevent`, `deleteevent`, and `markattendance` work on archived items. Unarchived items leave the view immediately.
-* `add` and `addevent` return to the normal view, so that the new contact or event is visible.
+* `add` and `addevent` return to the normal view, so that the new contact or event is visible. Opening the
+  tutorial also returns to the normal view, since it walks through the normal lists and commands.
 
 Examples:
 

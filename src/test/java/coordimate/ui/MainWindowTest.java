@@ -1421,6 +1421,42 @@ public class MainWindowTest {
         task.get(10, TimeUnit.SECONDS);
     }
 
+    @Test
+    public void openingTutorialInArchivedView_returnsToActiveView() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            ModelManager model = new ModelManager();
+            model.addPerson(TypicalPersons.ALICE);
+            model.addPerson(TypicalPersons.BENSON);
+            model.setPerson(TypicalPersons.ALICE, TypicalPersons.ALICE.withArchived(true));
+            model.setShowingArchived(true);
+            LogicManager logic = new LogicManager(model, null);
+            MainWindow window = new MainWindow(stage, logic, Path.of("data", "coordimate.json"));
+            try {
+                window.fillInnerParts();
+                window.show();
+                stage.getScene().getRoot().applyCss();
+                assertEquals(List.of("unarchive", "list"), visibleCommandNames(stage));
+
+                Label tutorialLabel = (Label) stage.getScene().lookup("#tutorialLabel");
+                javafx.event.Event.fireEvent(tutorialLabel, mouseClickEvent());
+                stage.getScene().getRoot().applyCss();
+
+                assertTrue(stage.getScene().lookup("#tutorialOverlay").isVisible());
+                assertFalse(logic.showingArchivedProperty().get());
+                assertEquals(List.of(TypicalPersons.BENSON), logic.getFilteredPersonList());
+                assertTrue(visibleCommandNames(stage).containsAll(List.of("add", "archive", "list")));
+                assertTrue(stage.getScene().lookup("#contactsCommands").isVisible());
+            } finally {
+                window.stop();
+                stage.close();
+            }
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
     private static List<String> visibleCommandNames(Stage stage) {
         return stage.getScene().getRoot().lookupAll(".command-cheatsheet").stream()
                 .filter(Node::isVisible)

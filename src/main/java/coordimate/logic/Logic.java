@@ -52,6 +52,12 @@ public interface Logic {
     ReadOnlyBooleanProperty showingArchivedProperty();
 
     /**
+     * Shows active contacts and events instead of archived ones, keeping the current contact filter.
+     * This only changes what is displayed, so nothing is saved.
+     */
+    void showActiveItems();
+
+    /**
      * Returns the live, unmodifiable list of active reminders in chronological order.
      * Refreshes it against the current time and saved model data.
      */

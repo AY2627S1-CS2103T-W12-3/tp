@@ -704,6 +704,8 @@ public class MainWindow extends UiPart<Stage> {
         }
         helpWindow.hide();
         interactionModeBeforeTutorial = interactionMode;
+        // The tutorial points at the normal lists and command panels, which the archived view hides.
+        logic.showActiveItems();
         showContacts();
         commandBox.setInputDisabled(true);
         commandBox.setExecutionDisabled(true);

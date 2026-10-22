@@ -42,6 +42,7 @@ import coordimate.model.Model;
 import coordimate.model.ModelManager;
 import coordimate.model.ReadOnlyCoordiMate;
 import coordimate.model.UserPrefs;
+import coordimate.model.person.ContactMatchesKeywordPredicate;
 import coordimate.model.tag.Tag;
 import coordimate.storage.JsonCoordiMateStorage;
 import coordimate.storage.JsonUserPrefsStorage;
@@ -422,6 +423,22 @@ public class LogicManagerTest {
         assertEquals("Contact deleted successfully: " + ALICE.getName() + ".", logic.execute("y").getFeedbackToUser());
         assertEquals(List.of(BENSON), model.getCoordiMate().getPersonList());
         assertEquals(List.of(BENSON.getName()), model.getCoordiMate().getEventList().getFirst().getMembers());
+    }
+
+    @Test
+    public void showActiveItems_leavesArchivedViewAndKeepsFilter() throws Exception {
+        model.addPerson(ALICE);
+        model.addPerson(BENSON);
+        logic.execute("archive 2");
+        logic.execute("list archived");
+        ContactMatchesKeywordPredicate predicate = new ContactMatchesKeywordPredicate("Alice");
+        model.updateFilteredPersonList(predicate);
+
+        logic.showActiveItems();
+
+        assertFalse(logic.showingArchivedProperty().get());
+        assertEquals(predicate, model.getFilteredPersonPredicate());
+        assertEquals(List.of(ALICE), logic.getFilteredPersonList());
     }
 
     @Test

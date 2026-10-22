@@ -277,6 +277,11 @@ public class LogicManager implements Logic {
     }
 
     @Override
+    public void showActiveItems() {
+        model.setShowingArchived(false);
+    }
+
+    @Override
     public ObservableList<Event> getReminders() {
         return reminderService.getReminders();
     }
