@@ -117,7 +117,7 @@ public class HelpWindow extends UiPart<Stage> {
         commandColumn.setCellValueFactory(usage -> new ReadOnlyStringWrapper(usage.getValue().command()));
         usageColumn.setCellValueFactory(usage -> new ReadOnlyStringWrapper(usage.getValue().format()));
         usageColumn.setCellFactory(column -> new WrappingUsageCell());
-        commandTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+        commandTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         commandTable.getItems().setAll(COMMAND_USAGES);
     }
 

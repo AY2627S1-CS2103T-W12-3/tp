@@ -83,8 +83,7 @@ public class HelpWindowTest {
             assertEquals(680.0, root.getMinWidth());
             assertEquals(450.0, root.getMinHeight());
             assertEquals(HelpWindow.COMMAND_USAGES, commandTable.getItems());
-            assertEquals(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN,
-                    commandTable.getColumnResizePolicy());
+            assertEquals(TableView.CONSTRAINED_RESIZE_POLICY, commandTable.getColumnResizePolicy());
             assertTrue(helpMessage.getText().contains("Fn + F1"));
             assertFalse(commandTable.isEditable());
             assertEquals("Command mode (default): type commands; press Esc to navigate cards.",
