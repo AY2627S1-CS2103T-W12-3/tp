@@ -366,6 +366,56 @@ public class MainWindowTest {
     }
 
     @Test
+    public void tutorialCommandAndShortcut_openTutorialFromFirstStep() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            MainWindow window = null;
+            try {
+                StorageManager storage = new StorageManager(
+                        new JsonCoordiMateStorage(temporaryFolder.resolve("tutorial-data.json")),
+                        new JsonUserPrefsStorage(temporaryFolder.resolve("tutorial-prefs.json")));
+                LogicManager logic = new LogicManager(new ModelManager(), storage);
+                window = new MainWindow(stage, logic, temporaryFolder.resolve("tutorial-data.json"));
+                window.fillInnerParts();
+                window.show();
+                Node overlay = stage.getScene().lookup("#tutorialOverlay");
+                Label counter = (Label) stage.getScene().lookup("#stepCounter");
+                Label tutorialLabel = (Label) stage.getScene().lookup("#tutorialLabel");
+                TextField commandInput = (TextField) stage.getScene().lookup("#commandTextField");
+                Button submitButton = (Button) stage.getScene().lookup("#submitButton");
+                Button nextButton = (Button) stage.getScene().lookup("#nextButton");
+                assertTrue(tutorialLabel.getTooltip().getText().contains(TutorialWindow.TUTORIAL_SHORTCUT));
+
+                commandInput.setText("tutorial");
+                submitButton.fire();
+                assertTrue(overlay.isVisible());
+                assertEquals("Step 1 of 16", counter.getText());
+                assertTrue(commandInput.isDisabled());
+                assertTrue(commandInput.getText().isEmpty());
+
+                nextButton.fire();
+                assertFalse(keyReachesTarget(commandInput, keyEvent(KeyCode.F2)));
+                assertEquals("Step 2 of 16", counter.getText());
+                assertFalse(keyReachesTarget(commandInput, keyEvent(KeyCode.ESCAPE)));
+                assertFalse(overlay.isVisible());
+                assertFalse(commandInput.isDisabled());
+
+                assertFalse(keyReachesTarget(commandInput, keyEvent(KeyCode.F2)));
+                assertTrue(overlay.isVisible());
+                assertEquals("Step 1 of 16", counter.getText());
+            } finally {
+                if (window != null) {
+                    window.stop();
+                }
+                stage.close();
+            }
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
     public void tutorialCardAndMemberSteps_rehighlightAfterJavaFxLayout() throws Exception {
         FutureTask<MainWindow> setup = new FutureTask<>(() -> {
             Stage stage = new Stage();

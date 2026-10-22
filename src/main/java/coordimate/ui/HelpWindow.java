@@ -24,6 +24,7 @@ import coordimate.logic.commands.ListTagsCommand;
 import coordimate.logic.commands.MarkAttendanceCommand;
 import coordimate.logic.commands.MembersCommand;
 import coordimate.logic.commands.SearchCommand;
+import coordimate.logic.commands.TutorialCommand;
 import coordimate.logic.commands.UnassignCommand;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ReadOnlyStringWrapper;
@@ -47,8 +48,8 @@ public class HelpWindow extends UiPart<Stage> {
 
     public static final String USERGUIDE_URL = "https://ay2627s1-cs2103t-w12-3.github.io/tp/";
     public static final String HELP_SHORTCUT = "Fn + F1";
-    public static final String HELP_MESSAGE = "Keyboard shortcut: " + HELP_SHORTCUT
-            + ". Refer to the user guide: " + USERGUIDE_URL;
+    public static final String HELP_MESSAGE = "Keyboard shortcuts: " + HELP_SHORTCUT + " for Help, "
+            + TutorialWindow.TUTORIAL_SHORTCUT + " for the tutorial. Refer to the user guide: " + USERGUIDE_URL;
 
     static final List<CommandUsage> COMMAND_USAGES = List.of(
             commandUsage(AddCommand.COMMAND_WORD,
@@ -80,6 +81,7 @@ public class HelpWindow extends UiPart<Stage> {
                     "evn/EVENT_NAME mem/MEMBER_NAME att/STATUS"),
             commandUsage(MembersCommand.COMMAND_WORD, "evn/EVENT_NAME"),
             commandUsage(SearchCommand.COMMAND_WORD, "KEYWORD"),
+            commandUsage(TutorialCommand.COMMAND_WORD, ""),
             commandUsage(UnassignCommand.COMMAND_WORD,
                     "evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]..."));
 

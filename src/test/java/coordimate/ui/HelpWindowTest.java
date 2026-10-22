@@ -32,7 +32,7 @@ public class HelpWindowTest {
     private static final List<String> COMMAND_WORDS = List.of(
             "add", "addevent", "addtag", "assign", "clear", "delete", "deleteevent", "deletetag", "dismiss",
             "edit", "editevent", "edittag", "exit", "filter", "help", "list", "listtags", "markattendance",
-            "members", "search", "unassign");
+            "members", "search", "tutorial", "unassign");
 
     @BeforeAll
     public static void startJavaFx() throws InterruptedException {
@@ -87,6 +87,7 @@ public class HelpWindowTest {
             assertEquals(HelpWindow.COMMAND_USAGES, commandTable.getItems());
             assertEquals(TableView.CONSTRAINED_RESIZE_POLICY, commandTable.getColumnResizePolicy());
             assertTrue(helpMessage.getText().contains("Fn + F1"));
+            assertTrue(helpMessage.getText().contains("Fn + F2"));
             assertNull(root.getScene().lookup("#tutorialButton"));
             assertFalse(commandTable.isEditable());
             assertEquals("Command mode (default): type commands; press Esc to navigate cards.",

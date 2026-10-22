@@ -30,6 +30,7 @@ import coordimate.logic.commands.ListTagsCommand;
 import coordimate.logic.commands.MarkAttendanceCommand;
 import coordimate.logic.commands.MembersCommand;
 import coordimate.logic.commands.SearchCommand;
+import coordimate.logic.commands.TutorialCommand;
 import coordimate.logic.commands.UnassignCommand;
 import coordimate.logic.parser.exceptions.ParseException;
 import coordimate.logic.reminder.ReminderService;
@@ -95,6 +96,7 @@ public class CoordiMateParser {
                 case MarkAttendanceCommand.COMMAND_WORD -> new MarkAttendanceCommandParser().parse(arguments);
                 case ExitCommand.COMMAND_WORD -> new ExitCommand();
                 case HelpCommand.COMMAND_WORD -> new HelpCommand();
+                case TutorialCommand.COMMAND_WORD -> new TutorialCommand();
                 default -> {
                     logger.finer("This user input caused a ParseException: " + userInput);
                     throw new ParseException(MESSAGE_UNKNOWN_COMMAND);
@@ -131,6 +133,7 @@ public class CoordiMateParser {
             case MarkAttendanceCommand.COMMAND_WORD -> MarkAttendanceCommand.MESSAGE_USAGE;
             case ExitCommand.COMMAND_WORD -> ExitCommand.MESSAGE_USAGE;
             case HelpCommand.COMMAND_WORD -> HelpCommand.MESSAGE_USAGE;
+            case TutorialCommand.COMMAND_WORD -> TutorialCommand.MESSAGE_USAGE;
             default -> HelpCommand.MESSAGE_USAGE;
         };
     }

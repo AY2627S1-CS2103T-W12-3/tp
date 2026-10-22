@@ -31,6 +31,8 @@ public class CommandResultTest {
         assertNotEquals(commandResult, new CommandResult("feedback", View.CONTACTS));
         assertNotEquals(commandResult, new CommandResult("feedback", View.EVENTS));
         assertNotEquals(commandResult, CommandResult.warning("feedback"));
+        assertNotEquals(commandResult, CommandResult.showingTutorial("feedback"));
+        assertEquals(CommandResult.showingTutorial("feedback"), CommandResult.showingTutorial("feedback"));
         assertNotEquals(commandResult, CommandResult.withContactToFocus("feedback", View.CONTACTS,
                 TypicalPersons.ALICE));
         assertNotEquals(commandResult, CommandResult.withContactIndexToFocus("feedback", View.CONTACTS, 0));
@@ -50,6 +52,7 @@ public class CommandResultTest {
         assertNotEquals(commandResult.hashCode(), new CommandResult("feedback", View.CONTACTS).hashCode());
         assertNotEquals(commandResult.hashCode(), new CommandResult("feedback", View.EVENTS).hashCode());
         assertNotEquals(commandResult.hashCode(), CommandResult.warning("feedback").hashCode());
+        assertNotEquals(commandResult.hashCode(), CommandResult.showingTutorial("feedback").hashCode());
     }
 
     @Test
@@ -57,9 +60,22 @@ public class CommandResultTest {
         CommandResult commandResult = new CommandResult("feedback", View.EVENTS);
         String expected = CommandResult.class.getCanonicalName() + "{feedbackToUser="
                 + commandResult.getFeedbackToUser() + ", showHelp=" + commandResult.shouldShowHelp()
-                + ", exit=" + commandResult.shouldExit() + ", viewToShow=" + commandResult.getViewToShow()
+                + ", exit=" + commandResult.shouldExit() + ", showTutorial=" + commandResult.shouldShowTutorial()
+                + ", viewToShow=" + commandResult.getViewToShow()
                 + ", warning=" + commandResult.isWarning() + ", contactToFocus=null, contactIndexToFocus=-1}";
         assertEquals(expected, commandResult.toString());
+    }
+
+    @Test
+    public void showingTutorial_requestsTutorialWithoutOtherActions() {
+        CommandResult result = CommandResult.showingTutorial("Opened tutorial.");
+        assertEquals("Opened tutorial.", result.getFeedbackToUser());
+        assertTrue(result.shouldShowTutorial());
+        assertFalse(result.shouldShowHelp());
+        assertFalse(result.shouldExit());
+        assertFalse(result.isWarning());
+        assertEquals(View.NONE, result.getViewToShow());
+        assertFalse(new CommandResult("Saved").shouldShowTutorial());
     }
 
     @Test

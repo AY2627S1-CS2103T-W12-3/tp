@@ -242,7 +242,8 @@ public class MainWindow extends UiPart<Stage> {
         helpTooltip.setShowDelay(Duration.millis(200));
         helpLabel.setTooltip(helpTooltip);
         configureTopMenuItem(helpLabel, this::handleHelp);
-        Tooltip tutorialTooltip = new Tooltip("Open the CoordiMate tutorial");
+        Tooltip tutorialTooltip = new Tooltip(
+                "Open the CoordiMate tutorial (" + TutorialWindow.TUTORIAL_SHORTCUT + ")");
         tutorialTooltip.setShowDelay(Duration.millis(200));
         tutorialLabel.setTooltip(tutorialTooltip);
         tutorialLabel.setAccessibleText("Open the CoordiMate tutorial");
@@ -273,6 +274,7 @@ public class MainWindow extends UiPart<Stage> {
 
     private void setAccelerators() {
         KeyCombination helpShortcut = KeyCombination.valueOf("F1");
+        KeyCombination tutorialShortcut = KeyCombination.valueOf("F2");
         getRoot().addEventFilter(KeyEvent.ANY, event -> {
             if (tutorialWindow != null && tutorialWindow.isShowing()) {
                 if (tutorialWindow.handleShortcut(event)
@@ -287,6 +289,9 @@ public class MainWindow extends UiPart<Stage> {
             }
             if (helpShortcut.match(event)) {
                 handleHelp();
+                event.consume();
+            } else if (tutorialShortcut.match(event)) {
+                showTutorial();
                 event.consume();
             }
         });
@@ -887,6 +892,10 @@ public class MainWindow extends UiPart<Stage> {
 
             if (commandResult.shouldShowHelp()) {
                 handleHelp();
+            }
+
+            if (commandResult.shouldShowTutorial()) {
+                showTutorial();
             }
 
             switch (commandResult.getViewToShow()) {

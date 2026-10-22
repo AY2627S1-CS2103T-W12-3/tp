@@ -26,6 +26,8 @@ import javafx.scene.text.TextFlow;
 /** A guided introduction shown as an overlay on the main window. */
 public class TutorialWindow extends UiPart<StackPane> {
 
+    public static final String TUTORIAL_SHORTCUT = "Fn + F2";
+
     private static final String FXML = "TutorialWindow.fxml";
     private static final double CARD_MAX_WIDTH = 620;
     private static final double CARD_MIN_WIDTH = 260;
@@ -91,7 +93,8 @@ public class TutorialWindow extends UiPart<StackPane> {
                             + HelpWindow.HELP_SHORTCUT + " to see command formats and keyboard shortcuts.",
                     TutorialPlacement.BESIDE_TARGET, TutorialTarget.HELP),
             new TutorialStep("Take the tour again",
-                    "Select Tutorial in the top bar whenever you need a reminder.",
+                    "Select Tutorial in the top bar, type tutorial in the command box, or press "
+                            + TUTORIAL_SHORTCUT + " whenever you need a reminder.",
                     TutorialPlacement.CENTER, TutorialTarget.TUTORIAL));
 
     @FXML
