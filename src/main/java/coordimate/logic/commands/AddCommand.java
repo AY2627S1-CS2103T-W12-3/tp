@@ -82,9 +82,14 @@ public class AddCommand extends Command {
             throw new CommandException(MESSAGE_NO_MORE_MEMBER_IDS, e);
         }
         assert model.hasPerson(toAdd) : "Added contact must be present in the model.";
+        Person savedPerson = model.getFilteredPersonList().stream()
+                .filter(toAdd::isSamePerson)
+                .findFirst()
+                .orElseThrow();
         toAdd.getLeaveDate().ifPresent(leaveDate ->
                 logger.info("Added contact " + toAdd.getName() + " on leave until " + leaveDate));
-        return new CommandResult(String.format(MESSAGE_SUCCESS, toAdd.getName()));
+        return CommandResult.withContactToFocus(String.format(MESSAGE_SUCCESS, toAdd.getName()),
+                CommandResult.View.CONTACTS, savedPerson);
     }
 
     @Override

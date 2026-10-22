@@ -70,14 +70,22 @@ public class CommandTestUtil {
 
     /**
      * Executes the given {@code command}, confirms that <br>
-     * - the returned {@link CommandResult} matches {@code expectedCommandResult} <br>
+     * - the returned {@link CommandResult} matches its expected user-visible fields and focus target <br>
      * - the {@code actualModel} matches {@code expectedModel}.
      */
     public static void assertCommandSuccess(Command command, Model actualModel, CommandResult expectedCommandResult,
             Model expectedModel) {
+        List<Person> contactsBefore = new ArrayList<>(actualModel.getCoordiMate().getPersonList());
+        List<Person> displayedBefore = new ArrayList<>(actualModel.getFilteredPersonList());
+        int expectedDeleteFocusIndex = getDeletedContactIndex(command, actualModel, displayedBefore);
         try {
             CommandResult result = command.execute(actualModel);
-            assertEquals(expectedCommandResult, result);
+            assertEquals(expectedCommandResult.getFeedbackToUser(), result.getFeedbackToUser());
+            assertEquals(expectedCommandResult.shouldShowHelp(), result.shouldShowHelp());
+            assertEquals(expectedCommandResult.shouldExit(), result.shouldExit());
+            assertEquals(expectedCommandResult.getViewToShow(), result.getViewToShow());
+            assertEquals(expectedCommandResult.isWarning(), result.isWarning());
+            assertCommandFocus(command, result, contactsBefore, expectedModel, expectedDeleteFocusIndex);
             assertEquals(expectedModel, actualModel);
         } catch (CommandException ce) {
             throw new AssertionError("Execution of command should not fail.", ce);
@@ -90,8 +98,54 @@ public class CommandTestUtil {
      */
     public static void assertCommandSuccess(Command command, Model actualModel, String expectedMessage,
             Model expectedModel) {
-        CommandResult expectedCommandResult = new CommandResult(expectedMessage);
+        CommandResult expectedCommandResult = new CommandResult(expectedMessage, expectedViewFor(command));
         assertCommandSuccess(command, actualModel, expectedCommandResult, expectedModel);
+    }
+
+    private static int getDeletedContactIndex(Command command, Model model, List<Person> displayedBefore) {
+        if (!(command instanceof DeleteCommand deleteCommand)) {
+            return -1;
+        }
+        try {
+            return displayedBefore.indexOf(deleteCommand.resolvePerson(model));
+        } catch (CommandException e) {
+            throw new AssertionError("The target of a successful deletion should resolve.", e);
+        }
+    }
+
+    private static void assertCommandFocus(Command command, CommandResult result, List<Person> contactsBefore,
+            Model expectedModel, int expectedDeleteFocusIndex) {
+        if (command instanceof AddCommand) {
+            Person addedContact = expectedModel.getCoordiMate().getPersonList().stream()
+                    .filter(person -> !contactsBefore.contains(person)).findFirst().orElseThrow();
+            assertEquals(java.util.Optional.of(addedContact), result.getContactToFocus());
+            assertTrue(result.getContactIndexToFocus().isEmpty());
+        } else if (command instanceof EditCommand) {
+            Person focusedContact = result.getContactToFocus().orElseThrow();
+            assertTrue(expectedModel.getCoordiMate().getPersonList().contains(focusedContact));
+            assertTrue(result.getContactIndexToFocus().isEmpty());
+        } else if (command instanceof DeleteCommand) {
+            if (expectedDeleteFocusIndex < 0) {
+                assertTrue(result.getContactIndexToFocus().isEmpty());
+            } else {
+                assertEquals(expectedDeleteFocusIndex, result.getContactIndexToFocus().orElseThrow());
+            }
+            assertTrue(result.getContactToFocus().isEmpty());
+        } else {
+            assertTrue(result.getContactToFocus().isEmpty());
+            assertTrue(result.getContactIndexToFocus().isEmpty());
+        }
+    }
+
+    private static CommandResult.View expectedViewFor(Command command) {
+        return switch (command) {
+            case AddCommand _, EditCommand _, DeleteCommand _, ListCommand _, SearchCommand _, FilterCommand _,
+                MembersCommand _ -> CommandResult.View.CONTACTS;
+            case AddEventCommand _, EditEventCommand _, DeleteEventCommand _, MarkAttendanceCommand _ ->
+                CommandResult.View.EVENTS;
+            case MutatingTagCommand _, ListTagsCommand _ -> CommandResult.View.TAGS;
+            default -> CommandResult.View.NONE;
+        };
     }
 
     /**

@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import coordimate.logic.commands.AddCommand;
+import coordimate.logic.commands.CommandResult;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.CoordiMate;
 import coordimate.model.ModelManager;
@@ -40,8 +41,11 @@ public class AddCommandPersistenceTest {
         model.updateFilteredPersonList(person -> false);
         JsonCoordiMateStorage storage = new JsonCoordiMateStorage(temporaryFolder.resolve("data.json"));
 
-        assertEquals("Contact saved successfully: New Contact",
-                newLogic(model, storage).execute(COMMAND + " t/Publicity t/EXCO").getFeedbackToUser());
+        CommandResult result = newLogic(model, storage).execute(COMMAND + " t/Publicity t/EXCO");
+
+        assertEquals("Contact saved successfully: New Contact", result.getFeedbackToUser());
+        assertEquals(model.getCoordiMate().getPersonList().getLast(), result.getContactToFocus().orElseThrow());
+        assertTrue(result.getContactIndexToFocus().isEmpty());
 
         assertEquals(model.getCoordiMate(), storage.readCoordiMate().orElseThrow());
         assertEquals(2, model.getFilteredPersonList().size());

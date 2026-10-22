@@ -21,6 +21,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import coordimate.commons.core.LogsCenter;
 import coordimate.commons.exceptions.DataLoadingException;
+import coordimate.logic.commands.CommandResult;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.ModelManager;
 import coordimate.model.ReadOnlyCoordiMate;
@@ -54,9 +55,11 @@ public class ContactOperationLoggingTest {
         LogicManager logic = newLogic(model, storage);
 
         try (CapturingLog capture = new CapturingLog()) {
-            logic.execute("edit 1 r/President");
+            CommandResult result = logic.execute("edit 1 r/President");
 
             assertHasMessage(capture, Level.INFO, "Contact edit completed successfully.");
+            assertSame(model.getCoordiMate().getPersonList().getFirst(), result.getContactToFocus().orElseThrow());
+            assertTrue(result.getContactIndexToFocus().isEmpty());
             assertNoContactDetails(capture, AMY.getName().getFullName(), AMY.getPhone().toString(),
                     AMY.getEmail().toString());
         }

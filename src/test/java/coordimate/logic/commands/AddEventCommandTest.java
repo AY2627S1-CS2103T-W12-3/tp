@@ -22,8 +22,10 @@ public class AddEventCommandTest {
     @Test
     public void execute_newEvent_success() throws Exception {
         ModelManager model = new ModelManager();
+        CommandResult result = new AddEventCommand(event).execute(model);
         assertEquals("Created Event Final Concert. Start Time: 08-08-2026 15:00. End Time: 08-08-2026 18:00.",
-                new AddEventCommand(event).execute(model).getFeedbackToUser());
+                result.getFeedbackToUser());
+        assertEquals(CommandResult.View.EVENTS, result.getViewToShow());
         assertEquals(List.of(event), model.getCoordiMate().getEventList());
     }
 

@@ -153,7 +153,8 @@ public class EditCommand extends Command {
                     .orElse("Cleared leave for " + editedPerson.getName()));
         }
         model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
-        return new CommandResult(successMessage(editedPerson));
+        return CommandResult.withContactToFocus(successMessage(editedPerson),
+                CommandResult.View.CONTACTS, editedPerson);
     }
 
     static String successMessage(Person person) {

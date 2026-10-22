@@ -47,13 +47,15 @@ public class MarkAttendanceCommand extends Command {
 
         if (hasMatchingAttendanceStatus(matchingEvent, matchingMember)) {
             return new CommandResult(
-                    String.format(MESSAGE_ALREADY_MARKED, matchingMember, status, matchingEvent.getName()));
+                    String.format(MESSAGE_ALREADY_MARKED, matchingMember, status, matchingEvent.getName()),
+                    CommandResult.View.EVENTS);
         }
 
         Event updatedEvent = matchingEvent.withAttendance(matchingMember, status);
         model.setEvent(matchingEvent, updatedEvent);
 
-        return new CommandResult(String.format(MESSAGE_SUCCESS, matchingMember, status, matchingEvent.getName()));
+        return new CommandResult(String.format(MESSAGE_SUCCESS, matchingMember, status, matchingEvent.getName()),
+                CommandResult.View.EVENTS);
     }
 
     private Event findMatchingEvent(Model model) throws CommandException {

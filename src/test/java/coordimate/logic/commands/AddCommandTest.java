@@ -19,9 +19,11 @@ import coordimate.model.CoordiMate;
 import coordimate.model.Model;
 import coordimate.model.ReadOnlyCoordiMate;
 import coordimate.model.ReadOnlyUserPrefs;
+import coordimate.model.person.MemberId;
 import coordimate.model.person.Person;
 import coordimate.model.tag.Tag;
 import coordimate.testutil.PersonBuilder;
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
 public class AddCommandTest {
@@ -40,7 +42,10 @@ public class AddCommandTest {
 
         assertEquals(String.format(AddCommand.MESSAGE_SUCCESS, validPerson.getName()),
                 commandResult.getFeedbackToUser());
-        assertEquals(List.of(validPerson), modelStub.personsAdded);
+        assertEquals(modelStub.personsAdded.getFirst(), commandResult.getContactToFocus().orElseThrow());
+        assertEquals(new MemberId(1), commandResult.getContactToFocus().orElseThrow().getMemberId().orElseThrow());
+        assertTrue(commandResult.getContactIndexToFocus().isEmpty());
+        assertEquals(List.of(validPerson.withMemberId(new MemberId(1))), modelStub.personsAdded);
     }
 
     @Test
@@ -239,7 +244,12 @@ public class AddCommandTest {
         @Override
         public void addPerson(Person person) {
             requireNonNull(person);
-            personsAdded.add(person);
+            personsAdded.add(person.withMemberId(new MemberId(personsAdded.size() + 1)));
+        }
+
+        @Override
+        public ObservableList<Person> getFilteredPersonList() {
+            return FXCollections.observableArrayList(personsAdded);
         }
 
         @Override

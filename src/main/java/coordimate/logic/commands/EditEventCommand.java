@@ -56,7 +56,8 @@ public class EditEventCommand extends Command {
 
         model.setEvent(target, editedEvent);
         return new CommandResult(String.format(MESSAGE_SUCCESS,
-                editedEvent.getName(), editedEvent.getStartTime(), editedEvent.getEndTime()));
+                editedEvent.getName(), editedEvent.getStartTime(), editedEvent.getEndTime()),
+                CommandResult.View.EVENTS);
     }
 
     private void validateEditRequest() throws CommandException {
