@@ -197,7 +197,7 @@ Command error messages follow these conventions:
 ### Model component
 **API** : [`Model.java`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/Model.java)
 
-<puml src="diagrams/ModelClassDiagram.puml" width="450" />
+<puml src="diagrams/ModelClassDiagram.puml" width="575" />
 
 
 The `Model` component,
@@ -217,7 +217,7 @@ The `Model` component,
 
 <box type="info" seamless>
 
-**Note:** The alternative, arguably more object-oriented, design below keeps a unique list of tags in `CoordiMate`, and each `Person` references tags from that list. This lets `CoordiMate` maintain one `Tag` object per unique tag instead of each `Person` holding its own `Tag` objects.<br>
+**Note:** `CoordiMate` already keeps a global `UniqueTagList`, but each `Person` holds its own `Tag` objects, which are compared with those in the list by value and are not necessarily the same objects. The alternative, arguably more object-oriented, design below has each `Person` reference the `Tag` objects in that list instead, so `CoordiMate` maintains exactly one `Tag` object per unique tag.<br>
 
 <puml src="diagrams/BetterModelClassDiagram.puml" width="450" />
 </box>
