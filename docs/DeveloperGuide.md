@@ -232,6 +232,7 @@ The `Model` component,
 The `Storage` component,
 * can save both CoordiMate data and user preference data in JSON format, and read them back into corresponding objects.
 * is implemented by `StorageManager`, which delegates the actual JSON file access to `JsonCoordiMateStorage` and `JsonUserPrefsStorage` (one class per data file).
+* converts CoordiMate data through `JsonSerializableCoordiMate`, which stores contacts (`JsonAdaptedPerson`), events (`JsonAdaptedEvent`), and the global tag list (`JsonAdaptedTag`) as separate lists. Each contact also stores its own tags. An event records its members by contact name, so events are stored separately from contacts rather than inside them.
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
 
 The tutorial flag is saved with the other user preferences. Preference files without that field are read with the
