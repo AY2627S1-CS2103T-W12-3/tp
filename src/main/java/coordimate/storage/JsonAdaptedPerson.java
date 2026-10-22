@@ -15,6 +15,7 @@ import coordimate.commons.exceptions.IllegalValueException;
 import coordimate.model.person.Address;
 import coordimate.model.person.Birthday;
 import coordimate.model.person.Email;
+import coordimate.model.person.LeaveDate;
 import coordimate.model.person.MemberId;
 import coordimate.model.person.Name;
 import coordimate.model.person.Note;
@@ -40,17 +41,20 @@ class JsonAdaptedPerson {
     private final String address;
     private final String organisation;
     private final String note;
+    private final String leaveUntil;
     private final List<JsonAdaptedTag> tags = new ArrayList<>();
 
     /**
      * Constructs a {@code JsonAdaptedPerson} with the given person details.
+     * {@code leaveUntil} is absent from files saved before leave existed, and such contacts are not on leave.
      */
     @JsonCreator
     public JsonAdaptedPerson(@JsonProperty("name") String name, @JsonProperty("phone") String phone,
             @JsonProperty("email") String email, @JsonProperty("address") String address,
             @JsonProperty("role") String role, @JsonProperty("birthday") String birthday,
             @JsonProperty("organisation") String organisation, @JsonProperty("note") String note,
-            @JsonProperty("tags") List<JsonAdaptedTag> tags, @JsonProperty("memberId") JsonNode memberId) {
+            @JsonProperty("leaveUntil") String leaveUntil, @JsonProperty("tags") List<JsonAdaptedTag> tags,
+            @JsonProperty("memberId") JsonNode memberId) {
         this.memberId = memberId;
         this.name = name;
         this.phone = phone;
@@ -60,17 +64,18 @@ class JsonAdaptedPerson {
         this.address = address;
         this.organisation = organisation;
         this.note = note;
+        this.leaveUntil = leaveUntil;
         if (tags != null) {
             this.tags.addAll(tags);
         }
     }
 
     /**
-     * Creates a legacy record without a member ID.
+     * Creates a legacy record without a member ID or leave.
      */
     public JsonAdaptedPerson(String name, String phone, String email, String address, String role, String birthday,
             String organisation, String note, List<JsonAdaptedTag> tags) {
-        this(name, phone, email, address, role, birthday, organisation, note, tags, null);
+        this(name, phone, email, address, role, birthday, organisation, note, null, tags, null);
     }
 
     /**
@@ -102,6 +107,7 @@ class JsonAdaptedPerson {
         address = source.getAddress().map(Address::getValue).orElse(null);
         organisation = source.getOrganisation().map(Organisation::getValue).orElse(null);
         note = source.getNote().map(Note::getValue).orElse(null);
+        leaveUntil = source.getLeaveDate().map(LeaveDate::getValue).orElse(null);
         tags.addAll(source.getTags().stream()
                 .map(JsonAdaptedTag::new)
                 .collect(Collectors.toList()));
@@ -175,9 +181,15 @@ class JsonAdaptedPerson {
         }
         final Note modelNote = note == null ? null : new Note(note);
 
+        // Leave that has ended stays in the file, so past dates are valid here.
+        if (leaveUntil != null && !LeaveDate.isValidLeaveDate(leaveUntil)) {
+            throw new IllegalValueException(LeaveDate.MESSAGE_CONSTRAINTS);
+        }
+        final LeaveDate modelLeaveDate = leaveUntil == null ? null : new LeaveDate(leaveUntil);
+
         final Set<Tag> modelTags = new HashSet<>(personTags);
         return new Person(modelMemberId, modelName, modelPhone, modelEmail, modelRole, modelBirthday, modelAddress,
-                modelOrganisation, modelNote, modelTags);
+                modelOrganisation, modelNote, modelLeaveDate, modelTags);
     }
 
 }

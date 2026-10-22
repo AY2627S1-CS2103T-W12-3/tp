@@ -3,6 +3,7 @@ package coordimate.model.person;
 import static coordimate.commons.util.CollectionUtil.requireAllNonNull;
 import static java.util.Objects.requireNonNull;
 
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
@@ -31,6 +32,7 @@ public class Person {
     private final Address address;
     private final Organisation organisation;
     private final Note note;
+    private final LeaveDate leaveDate;
     private final Set<Tag> tags = new HashSet<>();
 
     /**
@@ -48,18 +50,26 @@ public class Person {
     }
 
     /**
-     * Creates a person with optional birthday, organization, and note details.
+     * Creates a person with optional birthday, organization, and note details, who is not on leave.
      */
     public Person(Name name, Phone phone, Email email, Role role, Birthday birthday, Address address,
             Organisation organisation, Note note, Set<Tag> tags) {
-        this(null, name, phone, email, role, birthday, address, organisation, note, tags);
+        this(name, phone, email, role, birthday, address, organisation, note, null, tags);
+    }
+
+    /**
+     * Creates a person with optional birthday, organization, note, and leave end date details, but no ID.
+     */
+    public Person(Name name, Phone phone, Email email, Role role, Birthday birthday, Address address,
+            Organisation organisation, Note note, LeaveDate leaveDate, Set<Tag> tags) {
+        this(null, name, phone, email, role, birthday, address, organisation, note, leaveDate, tags);
     }
 
     /**
      * Creates a person with the given ID, or no ID for a contact not yet accepted by the model.
      */
     public Person(MemberId memberId, Name name, Phone phone, Email email, Role role, Birthday birthday, Address address,
-            Organisation organisation, Note note, Set<Tag> tags) {
+            Organisation organisation, Note note, LeaveDate leaveDate, Set<Tag> tags) {
         requireAllNonNull(name, phone, email, role, tags);
         this.memberId = memberId;
         this.name = name;
@@ -70,6 +80,7 @@ public class Person {
         this.address = address;
         this.organisation = organisation;
         this.note = note;
+        this.leaveDate = leaveDate;
         this.tags.addAll(tags);
     }
 
@@ -91,7 +102,7 @@ public class Person {
             }
             return this;
         }
-        return new Person(id, name, phone, email, role, birthday, address, organisation, note, tags);
+        return new Person(id, name, phone, email, role, birthday, address, organisation, note, leaveDate, tags);
     }
 
     public Name getName() {
@@ -124,6 +135,22 @@ public class Person {
 
     public Optional<Note> getNote() {
         return Optional.ofNullable(note);
+    }
+
+    /**
+     * Returns the saved last day of leave, including a date that has already passed.
+     */
+    public Optional<LeaveDate> getLeaveDate() {
+        return Optional.ofNullable(leaveDate);
+    }
+
+    /**
+     * Returns true if the contact is on leave on {@code today}, that is, a leave end date is saved and
+     * {@code today} is not after it.
+     */
+    public boolean isOnLeave(LocalDate today) {
+        requireNonNull(today);
+        return leaveDate != null && leaveDate.covers(today);
     }
 
     /**
@@ -173,13 +200,15 @@ public class Person {
                 && Objects.equals(address, otherPerson.address)
                 && Objects.equals(organisation, otherPerson.organisation)
                 && Objects.equals(note, otherPerson.note)
+                && Objects.equals(leaveDate, otherPerson.leaveDate)
                 && tags.equals(otherPerson.tags);
     }
 
     @Override
     public int hashCode() {
         // use this method for custom fields hashing instead of implementing your own
-        return Objects.hash(memberId, name, phone, email, role, birthday, address, organisation, note, tags);
+        return Objects.hash(memberId, name, phone, email, role, birthday, address, organisation, note, leaveDate,
+                tags);
     }
 
     @Override
@@ -194,6 +223,7 @@ public class Person {
                 .add("address", address)
                 .add("organisation", organisation)
                 .add("note", note)
+                .add("leaveDate", leaveDate)
                 .add("tags", tags)
                 .toString();
     }

@@ -196,6 +196,18 @@ public class CoordiMateTest {
     }
 
     @Test
+    public void tagChanges_contactOnLeave_keepsLeaveDate() {
+        Person onLeave = new PersonBuilder(ALICE).withLeaveDate("30-11-2026").withTags("Publicity").build();
+        coordiMate.addPerson(onLeave);
+
+        coordiMate.setTag(new Tag("Publicity"), new Tag("Media"));
+        assertEquals("30-11-2026", coordiMate.getPersonList().get(0).getLeaveDate().orElseThrow().getValue());
+
+        coordiMate.removeTag(new Tag("Media"));
+        assertEquals("30-11-2026", coordiMate.getPersonList().get(0).getLeaveDate().orElseThrow().getValue());
+    }
+
+    @Test
     public void setPerson_renamedContactWithAttendance_attendanceMovedToNewName() {
         addContactsAndEventsWithAttendance();
         Person renamedAlice = new PersonBuilder(ALICE).withName("Alice Tan").build();

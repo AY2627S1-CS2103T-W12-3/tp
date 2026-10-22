@@ -6,6 +6,7 @@ import java.util.Set;
 import coordimate.model.person.Address;
 import coordimate.model.person.Birthday;
 import coordimate.model.person.Email;
+import coordimate.model.person.LeaveDate;
 import coordimate.model.person.MemberId;
 import coordimate.model.person.Name;
 import coordimate.model.person.Note;
@@ -36,6 +37,7 @@ public class PersonBuilder {
     private Address address;
     private Organisation organisation;
     private Note note;
+    private LeaveDate leaveDate;
     private Set<Tag> tags;
 
     /**
@@ -63,6 +65,7 @@ public class PersonBuilder {
         address = personToCopy.getAddress().orElse(null);
         organisation = personToCopy.getOrganisation().orElse(null);
         note = personToCopy.getNote().orElse(null);
+        leaveDate = personToCopy.getLeaveDate().orElse(null);
         tags = new HashSet<>(personToCopy.getTags());
     }
 
@@ -180,8 +183,22 @@ public class PersonBuilder {
         return this;
     }
 
+    /**
+     * Sets the last day of the contact's leave, which may be in the past.
+     */
+    public PersonBuilder withLeaveDate(String leaveDate) {
+        this.leaveDate = new LeaveDate(leaveDate);
+        return this;
+    }
+
+    /** Leaves the contact without leave. */
+    public PersonBuilder withoutLeaveDate() {
+        leaveDate = null;
+        return this;
+    }
+
     public Person build() {
-        return new Person(memberId, name, phone, email, role, birthday, address, organisation, note, tags);
+        return new Person(memberId, name, phone, email, role, birthday, address, organisation, note, leaveDate, tags);
     }
 
 }

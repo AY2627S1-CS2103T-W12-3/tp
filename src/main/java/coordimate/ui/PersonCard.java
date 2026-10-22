@@ -1,5 +1,6 @@
 package coordimate.ui;
 
+import java.time.LocalDate;
 import java.util.Comparator;
 
 import coordimate.model.person.Address;
@@ -37,6 +38,8 @@ public class PersonCard extends UiPart<Region> {
     @FXML
     private Label role;
     @FXML
+    private Label leave;
+    @FXML
     private Label address;
     @FXML
     private Label email;
@@ -47,12 +50,23 @@ public class PersonCard extends UiPart<Region> {
      * Creates a {@code PersonCard} displaying the contact's permanent member ID.
      */
     public PersonCard(Person person) {
+        this(person, LocalDate.now());
+    }
+
+    /**
+     * Creates a {@code PersonCard} that shows the contact's leave as of {@code today}.
+     */
+    public PersonCard(Person person, LocalDate today) {
         super(FXML);
         this.person = person;
         id.setText("ID: " + person.getMemberId().orElseThrow());
         name.setText(person.getName().getFullName());
         phone.setText(person.getPhone().getValue());
         role.setText(person.getRole().getValue());
+        boolean isOnLeave = person.isOnLeave(today);
+        leave.setText(isOnLeave ? "On leave until " + person.getLeaveDate().orElseThrow() : "");
+        leave.setVisible(isOnLeave);
+        leave.setManaged(isOnLeave);
         boolean hasAddress = person.getAddress().isPresent();
         address.setText(person.getAddress().map(Address::getValue).orElse(""));
         address.setVisible(hasAddress);
