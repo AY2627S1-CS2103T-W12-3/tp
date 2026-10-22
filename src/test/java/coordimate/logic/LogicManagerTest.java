@@ -26,6 +26,7 @@ import org.junit.jupiter.api.io.TempDir;
 import coordimate.commons.exceptions.DataLoadingException;
 import coordimate.logic.commands.AddCommand;
 import coordimate.logic.commands.ArchiveCommand;
+import coordimate.logic.commands.ArchiveEventCommand;
 import coordimate.logic.commands.CommandResult;
 import coordimate.logic.commands.CreateTagCommand;
 import coordimate.logic.commands.DeleteCommand;
@@ -367,6 +368,60 @@ public class LogicManagerTest {
                 + ADDRESS_DESC_AMY);
         assertFalse(logic.showingArchivedProperty().get());
         assertEquals(1, logic.getFilteredPersonList().size());
+    }
+
+    @Test
+    public void execute_unarchiveErrors_showUnarchiveUsage() throws Exception {
+        model.addPerson(ALICE);
+        logic.execute("addevent evn/Concert st/08-08-2026 et/08-08-2026");
+
+        assertThrows(CommandException.class, Messages.withUsage(
+                String.format(ArchiveCommand.MESSAGE_NOT_ARCHIVED, ALICE.getName()),
+                ArchiveCommand.MESSAGE_UNARCHIVE_USAGE), () -> logic.execute("unarchive 1"));
+        assertThrows(CommandException.class, Messages.withUsage(
+                String.format(ArchiveEventCommand.MESSAGE_NOT_ARCHIVED, "Concert"),
+                ArchiveEventCommand.MESSAGE_UNARCHIVE_USAGE), () -> logic.execute("unarchiveevent evn/Concert"));
+    }
+
+    @Test
+    public void execute_searchInArchivedView_findsOnlyArchivedContacts() throws Exception {
+        model.addPerson(ALICE);
+        model.addPerson(BENSON);
+        logic.execute("archive 2");
+        logic.execute("list archived");
+
+        logic.execute("search Meier");
+        assertEquals(List.of(BENSON.withArchived(true)), logic.getFilteredPersonList());
+        logic.execute("search Alice");
+        assertEquals(List.of(), logic.getFilteredPersonList());
+        logic.execute("list");
+        logic.execute("search Alice");
+        assertEquals(List.of(ALICE), logic.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_addWithArchivedContactName_rejectedAsDuplicate() throws Exception {
+        model.addPerson(ALICE);
+        logic.execute("archive 1");
+
+        assertThrows(CommandException.class, Messages.withUsage(AddCommand.MESSAGE_DUPLICATE_PERSON,
+                AddCommand.MESSAGE_USAGE), () -> logic.execute(AddCommand.COMMAND_WORD + " n/"
+                + ALICE.getName() + " p/91234567 e/other@example.com r/Member"));
+        assertEquals(1, model.getCoordiMate().getPersonList().size());
+    }
+
+    @Test
+    public void execute_deleteArchivedContact_removesItAndItsMemberships() throws Exception {
+        model.addPerson(ALICE);
+        model.addPerson(BENSON);
+        logic.execute("addevent evn/Concert st/08-08-2026 et/08-08-2026");
+        logic.execute("assign evn/Concert c/1 2");
+        logic.execute("archive 1");
+
+        logic.execute("delete 1");
+        assertEquals("Contact deleted successfully: " + ALICE.getName() + ".", logic.execute("y").getFeedbackToUser());
+        assertEquals(List.of(BENSON), model.getCoordiMate().getPersonList());
+        assertEquals(List.of(BENSON.getName()), model.getCoordiMate().getEventList().getFirst().getMembers());
     }
 
     @Test

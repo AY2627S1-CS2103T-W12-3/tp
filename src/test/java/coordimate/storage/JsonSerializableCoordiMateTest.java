@@ -5,6 +5,8 @@ import static coordimate.testutil.TypicalPersons.ALICE;
 import static coordimate.testutil.TypicalPersons.BENSON;
 import static coordimate.testutil.TypicalPersons.CARL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -265,4 +267,32 @@ public class JsonSerializableCoordiMateTest {
         assertThrows(IllegalArgumentException.class, message, () -> new JsonSerializableCoordiMate(null, List.of()));
     }
 
+    @Test
+    public void toModelType_legacyContactsWithoutIds_keepArchiveStatus() throws Exception {
+        String json = """
+                {"persons": [
+                  {"name": "Alice Tan", "phone": "91234567", "email": "alice@example.com", "role": "Member",
+                   "archived": true},
+                  {"name": "Bob Lim", "phone": "98765432", "email": "bob@example.com", "role": "Member"}],
+                 "events": [
+                  {"name": "Orientation", "startTime": "25-10-2026", "endTime": "25-10-2026",
+                   "members": ["Alice Tan"], "archived": true}]}
+                """;
+
+        CoordiMate data = JsonUtil.fromJsonString(json, JsonSerializableCoordiMate.class).toModelType();
+
+        Person alice = data.getPersonList().get(0);
+        Person bob = data.getPersonList().get(1);
+        assertEquals(new MemberId(1), alice.getMemberId().orElseThrow());
+        assertEquals(new MemberId(2), bob.getMemberId().orElseThrow());
+        assertTrue(alice.isArchived());
+        assertFalse(bob.isArchived());
+        assertTrue(data.getEventList().getFirst().isArchived());
+
+        CoordiMate reloaded = JsonUtil.fromJsonString(
+                JsonUtil.toJsonString(new JsonSerializableCoordiMate(data)), JsonSerializableCoordiMate.class)
+                .toModelType();
+        assertEquals(data.getPersonList(), reloaded.getPersonList());
+        assertEquals(data.getEventList(), reloaded.getEventList());
+    }
 }
