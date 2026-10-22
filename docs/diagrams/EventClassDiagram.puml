@@ -18,9 +18,16 @@ CoordiMate --> "~*" Event
 
 Person *--> "1" Name
 
-Event *--> "2" EventTime
-Event --> "~* members" Name
+Event *-right-> "1" EventTime : startTime
+Event *-right-> "1" EventTime : endTime
+Event *-right-> "~*" EventTime : dismissedReminderStarts
+Event --> "~*" Name : members {ordered}
 Event --> "~* attendance" AttendanceStatus
+
+note bottom of AttendanceStatus
+  attendance is keyed by assigned member names;
+  each member has zero or one recorded status.
+end note
 
 Person -[hidden]right-> Event
 EventTime -[hidden]right-> AttendanceStatus

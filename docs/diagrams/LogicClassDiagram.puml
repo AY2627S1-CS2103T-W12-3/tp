@@ -15,6 +15,7 @@ Class "{abstract}\nCommand" as Command
 
 Class "<<interface>>\nLogic" as Logic
 Class LogicManager
+Class ReminderService
 }
 
 package Model {
@@ -36,6 +37,9 @@ LogicManager .left.> Command : <<call>>
 
 LogicManager --> Model
 LogicManager --> Storage
+LogicManager *--> "1" ReminderService
+ReminderService --> Model
+ReminderService --> Storage
 Storage --[hidden] Model
 Command .[hidden]up.> Storage
 Command .right.> Model
