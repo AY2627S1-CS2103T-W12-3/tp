@@ -2,12 +2,15 @@ package coordimate.logic.commands;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.Model;
 import coordimate.model.event.Event;
+import coordimate.model.event.EventMembersPredicate;
+import coordimate.model.person.ContactFilterPredicate;
 import coordimate.model.person.FilterCriterion;
 import coordimate.model.person.Person;
 
@@ -34,12 +37,12 @@ public class FilterCommand extends Command {
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
-        Predicate<Person> combined = person -> true;
+        List<Predicate<Person>> resolved = new ArrayList<>();
         for (FilterCriterion criterion : criteria) {
-            combined = combined.and(resolvePredicate(criterion, model));
+            resolved.add(resolvePredicate(criterion, model));
         }
 
-        model.updateFilteredPersonList(combined);
+        model.updateFilteredPersonList(new ContactFilterPredicate(resolved));
         int matchCount = model.getFilteredPersonList().size();
         if (matchCount == 0) {
             return new CommandResult(MESSAGE_NO_MATCHES, CommandResult.View.CONTACTS);
@@ -62,11 +65,13 @@ public class FilterCommand extends Command {
                 return person -> person.getTags().stream().anyMatch(tag -> tag.getTagName().equalsIgnoreCase(value));
             }
             case EVENT -> {
-                Event event = model.getCoordiMate().getEventList().stream()
-                        .filter(candidate -> candidate.getName().equalsIgnoreCase(value))
-                        .findFirst()
-                        .orElseThrow(() -> new CommandException(MESSAGE_NO_MATCHING_VALUE));
-                return person -> event.hasMember(person.getName());
+                List<Event> events = model.getCoordiMate().getEventList();
+                boolean eventExists = events.stream().anyMatch(event -> event.getName().equalsIgnoreCase(value));
+                if (!eventExists) {
+                    throw new CommandException(MESSAGE_NO_MATCHING_VALUE);
+                }
+                // Looks the event up on every test, so the filtered list follows later changes to its members.
+                return new EventMembersPredicate(value, events);
             }
             case ORGANISATION -> {
                 Predicate<Person> inOrganisation = person -> person.getOrganisation()

@@ -54,6 +54,18 @@ public class EventMembersPredicateTest {
     }
 
     @Test
+    public void withEventName_followsNewNameInSameEventList() {
+        List<Event> events = new ArrayList<>(List.of(concert));
+        EventMembersPredicate renamed = new EventMembersPredicate("Final Concert", events)
+                .withEventName("Grand Concert");
+        assertEquals("Grand Concert", renamed.getEventName());
+        assertFalse(renamed.test(ALICE));
+
+        events.set(0, concert.withDetails("Grand Concert", date, date));
+        assertTrue(renamed.test(ALICE));
+    }
+
+    @Test
     public void equalityAndNullArguments() {
         EventMembersPredicate predicate = new EventMembersPredicate(" Final Concert ", List.of(concert));
         assertEquals("Final Concert", predicate.getEventName());

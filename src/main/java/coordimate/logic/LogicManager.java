@@ -5,6 +5,8 @@ import static coordimate.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.time.Clock;
+import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,6 +38,7 @@ import coordimate.model.Model;
 import coordimate.model.ModelManager;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventMembersPredicate;
+import coordimate.model.person.ContactFilterPredicate;
 import coordimate.model.person.Person;
 import coordimate.model.tag.Tag;
 import coordimate.storage.Storage;
@@ -196,7 +199,7 @@ public class LogicManager implements Logic {
         if (command instanceof AddCommand || command instanceof EditCommand) {
             model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
         }
-        keepMembersViewAfterRename(command);
+        keepEventViewsAfterRename(command);
         logContactOperationSuccess(command);
         return result;
     }
@@ -225,15 +228,26 @@ public class LogicManager implements Logic {
     }
 
     /**
-     * Keeps showing the same members when {@code command} renames the event whose members are displayed,
-     * since the displayed list follows the event by its name.
+     * Keeps showing the same members when {@code command} renames an event that the displayed list follows,
+     * either as a members view or as an event criterion of a filter, since both follow the event by its name.
      */
-    private void keepMembersViewAfterRename(Command command) {
-        if (command instanceof EditEventCommand editEvent
-                && model.getFilteredPersonPredicate() instanceof EventMembersPredicate shown
-                && editEvent.renamesEvent(shown.getEventName())) {
-            model.updateFilteredPersonList(new EventMembersPredicate(editEvent.getNewName(),
-                    model.getCoordiMate().getEventList()));
+    private void keepEventViewsAfterRename(Command command) {
+        if (!(command instanceof EditEventCommand editEvent) || editEvent.getNewName() == null) {
+            return;
+        }
+        UnaryOperator<Predicate<Person>> followRename = criterion ->
+                criterion instanceof EventMembersPredicate shown && editEvent.renamesEvent(shown.getEventName())
+                        ? shown.withEventName(editEvent.getNewName())
+                        : criterion;
+        Predicate<? super Person> current = model.getFilteredPersonPredicate();
+        Predicate<Person> updated = switch (current) {
+            case EventMembersPredicate members -> followRename.apply(members);
+            case ContactFilterPredicate filter -> filter.withCriteriaReplaced(followRename);
+            case null, default -> null;
+        };
+        if (updated != null && !updated.equals(current)) {
+            logger.fine("Displayed contact list now follows renamed event " + editEvent.getNewName() + ".");
+            model.updateFilteredPersonList(updated);
         }
     }
 

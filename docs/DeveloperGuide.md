@@ -530,20 +530,22 @@ turns each criterion into a `Predicate<Person>` using the model:
 | Field | The value must match, ignoring case | A contact matches if |
 |---|---|---|
 | `tag` | a tag in `Model#getTagList()` | it has that tag |
-| `event` | the name of a saved event | it is a member of that event |
+| `event` | the name of a saved event | it is a member of the event with that name |
 | `organisation` | the organisation of at least one saved contact | its organisation is that value |
 
 If a value matches nothing, the command throws a `CommandException` with `No matching value found.` before the
 displayed list is changed. This tells the user about a mistyped value instead of showing an empty list. Otherwise
-the predicates are combined with `Predicate#and` and passed to `Model#updateFilteredPersonList`.
+the predicates are combined into a [`ContactFilterPredicate`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/person/ContactFilterPredicate.java),
+which a contact matches only if it matches every predicate, and passed to `Model#updateFilteredPersonList`.
 
 `filter` does not change data, so it is executed directly on the live model.
 
 <box type="info" seamless>
 
-**Note:** The `event` predicate holds the `Event` found when the command was executed. Since an `Event` is
-immutable, the filtered list does not follow later changes to that event's members until `filter` is run again.
-The `members` command differs: it uses `EventMembersPredicate`, which looks the event up each time it is tested.
+**Note:** The `event` predicate is the same `EventMembersPredicate` that the `members` command uses. It holds the
+event's name and looks the event up each time it is tested, so the filtered list follows later changes to that
+event, as described in [Keeping events in sync with contacts](#keeping-events-in-sync-with-contacts). The existence
+check above is made only when `filter` is executed: if the event is deleted afterwards, the list becomes empty.
 </box>
 
 To add a filter field, add a constant to `FilterField`, add a case to `FilterCommand#resolvePredicate`, and update
@@ -604,10 +606,15 @@ who is not a saved contact, with `Event members must refer to existing contacts.
 The predicate holds the event's name and the model's live event list, and looks the event up each time it is tested.
 The displayed members therefore follow later changes:
 
-* After `unassign`, the removed member no longer matches and disappears from the list.
+* After `assign` or `unassign`, an added member matches and a removed member no longer does.
 * After `deleteevent`, no event has that name, so the list becomes empty.
 * After `editevent` renames the event, the old name would match nothing, so
-  `LogicManager#keepMembersViewAfterRename` replaces the predicate with one for the new name.
+  `LogicManager#keepEventViewsAfterRename` replaces the predicate with one for the new name.
+
+`filter event/...` uses the same predicate as one of the criteria of a `ContactFilterPredicate`, so a filtered list
+follows the same changes. For a rename, `keepEventViewsAfterRename` uses
+`ContactFilterPredicate#withCriteriaReplaced` to replace only the event criteria for the renamed event, keeping the
+other criteria unchanged.
 
 A filtered list re-tests its predicate only when the contact list changes. For this reason `CoordiMate#resetData`
 replaces the events **before** the contacts: when the contacts are replaced and the predicate is tested again, it
@@ -748,7 +755,7 @@ contact filter set by commands:
 
 * The filtered contact list shows a contact only if its `archived` value matches the view **and** it matches the
   latest predicate passed to `updateFilteredPersonList`. `getFilteredPersonPredicate` still returns that predicate,
-  so code such as `LogicManager#keepMembersViewAfterRename` sees the command's filter and not the combined test.
+  so code such as `LogicManager#keepEventViewsAfterRename` sees the command's filter and not the combined test.
 * A filtered event list, `Model#getFilteredEventList`, shows the events whose `archived` value matches the view.
   The **Events** tab and its count use this list. A contact's details pane uses the full event list instead, so that
   archived events still appear in the contact's history.
