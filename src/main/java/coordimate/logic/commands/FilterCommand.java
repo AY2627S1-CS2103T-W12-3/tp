@@ -5,6 +5,7 @@ import static java.util.Objects.requireNonNull;
 import java.util.List;
 import java.util.function.Predicate;
 
+import coordimate.commons.util.StringUtil;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.Model;
 import coordimate.model.event.Event;
@@ -62,8 +63,9 @@ public class FilterCommand extends Command {
                 return person -> person.getTags().stream().anyMatch(tag -> tag.getTagName().equalsIgnoreCase(value));
             }
             case EVENT -> {
+                String eventName = StringUtil.normalizeWhitespace(value);
                 Event event = model.getCoordiMate().getEventList().stream()
-                        .filter(candidate -> candidate.getName().equalsIgnoreCase(value))
+                        .filter(candidate -> candidate.getName().equalsIgnoreCase(eventName))
                         .findFirst()
                         .orElseThrow(() -> new CommandException(MESSAGE_NO_MATCHING_VALUE));
                 return person -> event.hasMember(person.getName());
