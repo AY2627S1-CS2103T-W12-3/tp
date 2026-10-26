@@ -196,7 +196,7 @@ public class LogicManagerTest {
     }
 
     @Test
-    public void execute_readOnlyCommands_storageUnwritable_doNotAttemptSave() throws Exception {
+    public void executeReadOnlyCommands_storageUnwritable_noSaveAttempt() throws Exception {
         int[] saveAttempts = {0};
         JsonCoordiMateStorage coordiMateStorage =
                 new JsonCoordiMateStorage(temporaryFolder.resolve("coordiMate.json")) {
