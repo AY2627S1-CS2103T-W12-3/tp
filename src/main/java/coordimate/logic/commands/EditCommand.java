@@ -231,7 +231,7 @@ public class EditCommand extends Command {
         Set<Tag> updatedTags = new HashSet<>();
         if (descriptor.getTags().isPresent()) {
             for (Tag tag : descriptor.getTags().orElseThrow()) {
-                Tag canonicalTag = findSavedTag(tag, savedTags);
+                Tag canonicalTag = tag.findSavedTag(savedTags);
                 if (updatedTags.stream().noneMatch(canonicalTag::isSameTag)) {
                     updatedTags.add(canonicalTag);
                 }
@@ -243,17 +243,13 @@ public class EditCommand extends Command {
             Tag tag = operation.tag();
             if (operation.type() == TagOperationType.ADD) {
                 if (updatedTags.stream().noneMatch(tag::isSameTag)) {
-                    updatedTags.add(findSavedTag(tag, savedTags));
+                    updatedTags.add(tag.findSavedTag(savedTags));
                 }
             } else {
                 updatedTags.removeIf(tag::isSameTag);
             }
         }
         return updatedTags;
-    }
-
-    private static Tag findSavedTag(Tag requested, List<Tag> savedTags) {
-        return savedTags.stream().filter(requested::isSameTag).findFirst().orElse(requested);
     }
 
     /** The effect of an {@code at/} or {@code rt/} argument. */

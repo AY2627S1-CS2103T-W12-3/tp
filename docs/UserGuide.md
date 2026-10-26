@@ -250,7 +250,9 @@ message stating the field's constraints, such as
 Birthday, address, organisation, leave end date, and note are optional. An empty `b/`, `a/`, `o/`, `lv/`, or
 `m/` leaves that field unset,
 as does omitting it. Non-tag fields may appear only once; `t/TAG` may repeat. An empty `t/` clears the
-tags collected so far. A valid new tag is saved as a custom tag. Successful feedback is
+tags collected so far. A tag that matches a saved tag, ignoring capitalization, uses the saved tag's
+capitalization; for example, `t/exco` gives the contact the default `EXCO` tag. A valid new tag keeps its typed
+capitalization and is saved as a custom tag. Successful feedback is
 `Contact saved successfully: NAME`.
 After a successful `add`, CoordiMate selects and reveals the new contact so its details are shown. Unset optional
 values are shown as `— (not specified)` in the details pane, but remain unset in storage.
