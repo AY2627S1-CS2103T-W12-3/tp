@@ -550,7 +550,8 @@ To add a filter field, add a constant to `FilterField`, add a case to `FilterCom
 `FilterCommandParser.MESSAGE_INVALID_FIELD`.
 
 The `search` command is implemented separately. `SearchCommand` uses `ContactMatchesKeywordPredicate`, which tests
-whether a contact's name, phone, email, address, or organisation contains the keyword, ignoring case.
+whether a contact's name, phone, email, address, or organisation contains the keyword, ignoring case. It compares
+substrings with `String#regionMatches(true, ...)`, using the same case comparison as duplicate-name detection.
 
 #### Design considerations
 
