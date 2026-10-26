@@ -33,6 +33,7 @@ public class AddEventCommandParserTest {
     @Test
     public void parse_emptyValues_specificErrors() {
         assertError(" evn/ st/09-10-2026 et/10-10-2026", Event.MESSAGE_EMPTY_NAME);
+        assertError(" evn/\u200B st/09-10-2026 et/10-10-2026", Event.MESSAGE_NAME_CONSTRAINTS);
         assertError(" evn/" + "E".repeat(Event.MAX_NAME_LENGTH + 1) + " st/09-10-2026 et/10-10-2026",
                 Event.MESSAGE_NAME_LENGTH_CONSTRAINTS);
         assertError(" evn/Fair st/ et/10-10-2026", "Start time must not be empty. Example: st/17-09-2026 16:30");
