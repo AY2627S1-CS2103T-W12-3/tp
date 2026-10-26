@@ -32,9 +32,11 @@ import coordimate.logic.commands.CreateTagCommand;
 import coordimate.logic.commands.DeleteCommand;
 import coordimate.logic.commands.DeleteTagCommand;
 import coordimate.logic.commands.EditTagCommand;
+import coordimate.logic.commands.HelpCommand;
 import coordimate.logic.commands.ListCommand;
 import coordimate.logic.commands.MarkAttendanceCommand;
 import coordimate.logic.commands.MutatingTagCommand;
+import coordimate.logic.commands.SearchCommand;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.logic.parser.CoordiMateParser;
 import coordimate.logic.parser.exceptions.ParseException;
@@ -194,11 +196,34 @@ public class LogicManagerTest {
     }
 
     @Test
-    public void execute_readOnlyCommandSaveFailure_includesUsage() {
-        useStorageThatFailsNextSave();
-        String expected = String.format(LogicManager.FILE_OPS_ERROR_FORMAT, DUMMY_IO_EXCEPTION.getMessage())
-                + "\n" + ListCommand.MESSAGE_USAGE;
-        assertThrows(CommandException.class, expected, () -> logic.execute("list"));
+    public void execute_readOnlyCommands_storageUnwritable_doNotAttemptSave() throws Exception {
+        int[] saveAttempts = {0};
+        JsonCoordiMateStorage coordiMateStorage =
+                new JsonCoordiMateStorage(temporaryFolder.resolve("coordiMate.json")) {
+                    @Override
+                    public void saveCoordiMate(ReadOnlyCoordiMate coordiMate) throws IOException {
+                        saveAttempts[0]++;
+                        throw DUMMY_IO_EXCEPTION;
+                    }
+                };
+        JsonUserPrefsStorage userPrefsStorage =
+                new JsonUserPrefsStorage(temporaryFolder.resolve("userPrefs.json"));
+        logic = new LogicManager(model, new StorageManager(coordiMateStorage, userPrefsStorage));
+        model.addPerson(ALICE);
+        model.addPerson(BENSON);
+
+        CommandResult searchResult = logic.execute("search Alice");
+        assertEquals(String.format(SearchCommand.MESSAGE_SUCCESS, 1, "Alice"), searchResult.getFeedbackToUser());
+        assertEquals(List.of(ALICE), logic.getFilteredPersonList());
+
+        CommandResult listResult = logic.execute("list");
+        assertEquals(ListCommand.MESSAGE_SUCCESS, listResult.getFeedbackToUser());
+        assertEquals(List.of(ALICE, BENSON), logic.getFilteredPersonList());
+
+        CommandResult helpResult = logic.execute("help");
+        assertEquals(HelpCommand.SHOWING_HELP_MESSAGE, helpResult.getFeedbackToUser());
+        assertTrue(helpResult.shouldShowHelp());
+        assertEquals(0, saveAttempts[0]);
     }
 
     @Test
