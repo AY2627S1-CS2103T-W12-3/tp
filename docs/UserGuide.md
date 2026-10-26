@@ -104,9 +104,9 @@ For `dismiss`, data-loading and saving failures instead produce the session-only
 * Parameters can be in any order.<br>
   For example, if the command specifies `n/NAME p/PHONE_NUMBER`, `p/PHONE_NUMBER n/NAME` is also acceptable.
 
-* Extraneous parameters for commands that take no parameters, such as `help`, `tutorial`, `exit`, and `clear`, are
-  ignored.<br>
-  For example, `help 123` is interpreted as `help`.
+* Commands that take no parameters, such as `help`, `tutorial`, `exit`, and `clear`, reject extraneous
+  parameters.<br>
+  For example, `help 123` is invalid; use `help` instead.
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
 </box>
