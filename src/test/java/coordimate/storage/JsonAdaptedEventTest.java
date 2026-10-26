@@ -19,6 +19,29 @@ import coordimate.model.person.Name;
 
 public class JsonAdaptedEventTest {
     @Test
+    public void toModelType_positiveYearBoundaries_roundTrip() throws Exception {
+        for (String time : new String[] {"", " 00:00"}) {
+            Event expected = new Event("Boundary Years", new EventTime("01-01-0001" + time),
+                    new EventTime("31-12-9999" + time));
+            String json = JsonUtil.toJsonString(new JsonAdaptedEvent(expected));
+            assertEquals(expected, JsonUtil.fromJsonString(json, JsonAdaptedEvent.class).toModelType());
+        }
+    }
+
+    @Test
+    public void toModelType_yearZero_throwsIllegalValueException() {
+        for (String value : new String[] {"01-01-0000", "01-01-0000 00:00"}) {
+            for (JsonAdaptedEvent event : new JsonAdaptedEvent[] {
+                new JsonAdaptedEvent("Concert", value, "02-01-0001"),
+                new JsonAdaptedEvent("Concert", "01-01-0001", value),
+                new JsonAdaptedEvent("Concert", "01-01-0001", "02-01-0001", List.of(), Map.of(), List.of(value))}) {
+                assertEquals(EventTime.MESSAGE_CONSTRAINTS,
+                        assertThrows(IllegalValueException.class, event::toModelType).getMessage());
+            }
+        }
+    }
+
+    @Test
     public void toModelType_dismissalHistory_preservesDateOnlyAndTimedStarts() throws Exception {
         EventTime dateOnly = new EventTime("08-08-2026");
         EventTime midnight = new EventTime("08-08-2026 00:00");
