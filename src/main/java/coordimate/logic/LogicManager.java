@@ -3,7 +3,6 @@ package coordimate.logic;
 import static coordimate.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 
 import java.io.IOException;
-import java.nio.file.AccessDeniedException;
 import java.time.Clock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -38,6 +37,7 @@ import coordimate.model.event.Event;
 import coordimate.model.event.EventMembersPredicate;
 import coordimate.model.person.Person;
 import coordimate.model.tag.Tag;
+import coordimate.storage.DataConflictException;
 import coordimate.storage.Storage;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.collections.ObservableList;
@@ -46,12 +46,6 @@ import javafx.collections.ObservableList;
  * The main LogicManager of the app.
  */
 public class LogicManager implements Logic {
-    public static final String FILE_OPS_ERROR_FORMAT =
-            "Data could not be saved. Check the local data file. Details: %s";
-
-    public static final String FILE_OPS_PERMISSION_ERROR_FORMAT =
-            "Data could not be saved to %s. Check write permissions for the file and its folder.";
-
     public static final String MESSAGE_DELETE_CANCELLED = "Deletion cancelled. No changes were made.";
 
     private final Logger logger = LogsCenter.getLogger(LogicManager.class);
@@ -129,17 +123,7 @@ public class LogicManager implements Logic {
                 || command instanceof UnassignCommand) {
             return executeAtomicCommand(command);
         }
-        CommandResult commandResult = command.execute(model);
-
-        try {
-            storage.saveCoordiMate(model.getCoordiMate());
-        } catch (AccessDeniedException e) {
-            throw new CommandException(String.format(FILE_OPS_PERMISSION_ERROR_FORMAT, e.getMessage()), e);
-        } catch (IOException ioe) {
-            throw new CommandException(String.format(FILE_OPS_ERROR_FORMAT, ioe.getMessage()), ioe);
-        }
-
-        return commandResult;
+        return command.execute(model);
     }
 
     /**
@@ -167,7 +151,9 @@ public class LogicManager implements Logic {
         candidate.updateFilteredPersonList(model.getFilteredPersonList()::contains);
         CommandResult result = command.execute(candidate);
         try {
-            storage.saveCoordiMate(candidate.getCoordiMate());
+            storage.saveCoordiMateIfUnchanged(candidate.getCoordiMate());
+        } catch (DataConflictException e) {
+            throw new CommandException(DataConflictException.MESSAGE, e);
         } catch (IOException e) {
             logContactOperationFailure(command, "save contact data", e);
             String message = switch (command) {

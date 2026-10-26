@@ -3,14 +3,21 @@ package coordimate.storage;
 import static coordimate.testutil.TypicalPersons.getTypicalCoordiMate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.io.IOException;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import coordimate.commons.core.GuiSettings;
+import coordimate.commons.exceptions.DataLoadingException;
 import coordimate.model.CoordiMate;
 import coordimate.model.ReadOnlyCoordiMate;
 import coordimate.model.UserPrefs;
@@ -58,6 +65,52 @@ public class StorageManagerTest {
         storageManager.saveCoordiMate(original);
         ReadOnlyCoordiMate retrieved = storageManager.readCoordiMate().get();
         assertEquals(original, new CoordiMate(retrieved));
+    }
+
+    @Test
+    public void initialRead_fileChangesWhileLoading_usesLatestRevision() throws Exception {
+        Path path = getTempFilePath("changing.json");
+        new JsonCoordiMateStorage(path).saveCoordiMate(new CoordiMate());
+        JsonCoordiMateStorage changingStorage = new JsonCoordiMateStorage(path) {
+            private boolean isFirstRead = true;
+
+            @Override
+            public Optional<ReadOnlyCoordiMate> readCoordiMate() throws DataLoadingException {
+                if (isFirstRead) {
+                    isFirstRead = false;
+                    try {
+                        saveCoordiMate(getTypicalCoordiMate());
+                    } catch (IOException e) {
+                        throw new DataLoadingException(e);
+                    }
+                }
+                return super.readCoordiMate();
+            }
+        };
+        StorageManager storage = new StorageManager(changingStorage,
+                new JsonUserPrefsStorage(getTempFilePath("prefs")));
+
+        ReadOnlyCoordiMate loaded = storage.readCoordiMate().orElseThrow();
+        assertEquals(getTypicalCoordiMate(), loaded);
+        storage.saveCoordiMateIfUnchanged(loaded);
+        assertEquals(loaded, new JsonCoordiMateStorage(path).readCoordiMate().orElseThrow());
+    }
+
+    @Test
+    public void conditionalSave_whileLockIsHeld_leavesFileUnchanged() throws Exception {
+        Path path = getTempFilePath("locked.json");
+        JsonCoordiMateStorage jsonStorage = new JsonCoordiMateStorage(path);
+        jsonStorage.saveCoordiMate(new CoordiMate());
+        StorageManager storage = new StorageManager(jsonStorage,
+                new JsonUserPrefsStorage(getTempFilePath("prefs")));
+        storage.readCoordiMate();
+        Path lockPath = path.resolveSibling(path.getFileName() + ".lock");
+
+        try (FileChannel channel = FileChannel.open(lockPath, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+                FileLock ignored = channel.lock()) {
+            assertThrows(IOException.class, () -> storage.saveCoordiMateIfUnchanged(getTypicalCoordiMate()));
+        }
+        assertEquals(new CoordiMate(), jsonStorage.readCoordiMate().orElseThrow());
     }
 
     @Test

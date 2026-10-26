@@ -194,11 +194,12 @@ public class LogicManagerTest {
     }
 
     @Test
-    public void execute_readOnlyCommandSaveFailure_includesUsage() {
+    public void execute_readOnlyCommand_doesNotSave() throws Exception {
         useStorageThatFailsNextSave();
-        String expected = String.format(LogicManager.FILE_OPS_ERROR_FORMAT, DUMMY_IO_EXCEPTION.getMessage())
-                + "\n" + ListCommand.MESSAGE_USAGE;
-        assertThrows(CommandException.class, expected, () -> logic.execute("list"));
+        assertEquals(ListCommand.MESSAGE_SUCCESS, logic.execute("list").getFeedbackToUser());
+        assertThrows(CommandException.class, Messages.withUsage(AddCommand.MESSAGE_SAVE_ERROR,
+                AddCommand.MESSAGE_USAGE), () -> logic.execute(AddCommand.COMMAND_WORD + NAME_DESC_AMY
+                        + PHONE_DESC_AMY + EMAIL_DESC_AMY + " r/NA" + ADDRESS_DESC_AMY));
     }
 
     @Test
