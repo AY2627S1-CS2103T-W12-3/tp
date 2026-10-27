@@ -46,6 +46,13 @@ public class ArchiveCommandTest {
     }
 
     @Test
+    public void execute_archiveOrUnarchive_opensContacts() throws Exception {
+        assertEquals(CommandResult.View.CONTACTS, archive(2).execute(model).getViewToShow());
+        assertEquals(CommandResult.View.CONTACTS,
+                new ArchiveCommand(new MemberId(2), false).execute(model).getViewToShow());
+    }
+
+    @Test
     public void execute_contactHiddenByFilter_archivedById() throws Exception {
         model.updateFilteredPersonList(new ContactMatchesKeywordPredicate("Alice"));
 

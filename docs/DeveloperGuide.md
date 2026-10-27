@@ -1789,8 +1789,9 @@ and `PAST_DATE` is any date before today, such as `01-01-2020`.
       `Orientation` is shown.
 
    1. Test case: `archiveevent evn/orientation`<br>
-      Expected: The event disappears from the **Events** tab, and its reminder disappears. The status message shows
-      `Archived Event Orientation.` The contact's details still list `Orientation (archived)`.
+      Expected: The **Events** tab opens, even if another tab was selected. The event disappears from it, and its
+      reminder disappears. The status message shows `Archived Event Orientation.` In the **Contacts** tab, the
+      contact's details still list `Orientation (archived)`.
 
    1. Test case: `assign evn/Orientation c/ID` with another contact's ID<br>
       Expected: No change. The status message says the event is archived and suggests `unarchiveevent`.
