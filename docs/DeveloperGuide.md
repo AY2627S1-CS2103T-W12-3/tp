@@ -233,9 +233,11 @@ The `Storage` component,
 The tutorial flag is saved with the other user preferences. Preference files without that field are read with the
 tutorial flag set to `false`, so the tutorial is offered until the user closes or finishes it.
 
-Previously saved digit-only phone numbers with at least three digits remain valid model data, so older JSON files can
-still load. The command parser applies the current 7–15-digit rule whenever a user supplies a phone number for `add`
-or `edit`; editing another field does not require replacing a legacy phone number.
+Previously saved digit-only phone numbers with at least three digits, and 7–15-digit numbers whose brackets do not
+match, remain valid model data, so older JSON files can still load. The command parser applies the current rule,
+`Phone#isValidInputPhone`, whenever a user supplies a phone number for `add` or `edit`: 7–15 digits, an optional `+`
+or bracketed country code such as `(+65)` at the start, and brackets in non-nested pairs that each enclose a digit.
+Editing another field does not require replacing a legacy phone number.
 
 When loading JSON data, explicitly saved tags are validated and restored before contacts. If a contact uses a tag
 that is missing from the saved global tag list, CoordiMate registers it automatically. This also migrates older files

@@ -121,7 +121,7 @@ A command that breaks a constraint is rejected and makes no changes.
 | Parameter | Prefix | Constraints |
 |---|---|---|
 | `NAME`, `MEMBER_NAME` | `n/`, `mem/` | 1 to 80 characters. Letters, spaces, hyphens (`-`), apostrophes (`'`), and periods (`.`) only, with at least one letter. Digits are not allowed. Several spaces in a row count as one. Contact names are unique, ignoring case and extra spaces. |
-| `PHONE` | `p/` | 7 to 15 digits. May start with `+`, and may contain spaces, hyphens, and brackets. Unique among contacts once spaces, hyphens, and brackets are removed. |
+| `PHONE` | `p/` | 7 to 15 digits. May start with `+` or a bracketed country code such as `(+65)`, and may contain spaces, hyphens, and brackets. Brackets must come in pairs that each enclose at least one digit, and cannot be nested. Unique among contacts once spaces, hyphens, and brackets are removed. |
 | `EMAIL` | `e/` | `local-part@domain`. The local part uses letters, digits, and `_`, `%`, `+`, `-`, `.`; it cannot start or end with a period or contain two periods in a row. The domain is made of labels separated by periods; each label uses letters, digits, and hyphens and cannot start or end with a hyphen. The last label has at least 2 letters. Unique among contacts, ignoring case. |
 | `ROLE` | `r/` | 1 to 50 characters. Letters, digits, spaces, hyphens, and `/` only, with at least one letter or digit. |
 | `BIRTHDAY` | `b/` | A real date in `dd-MM-yyyy` format that is not in the future, e.g. `18-06-2004`. |
@@ -237,7 +237,7 @@ Name, phone, email, and role are required. Each field accepts the following valu
 | Field | Constraints |
 |---|---|
 | `NAME` | 1 to 80 characters: letters, spaces, hyphens (`-`), apostrophes (`'`), and periods (`.`), with at least one letter. |
-| `PHONE` | 7 to 15 digits, optionally starting with `+`, with optional spaces, hyphens, and brackets. |
+| `PHONE` | 7 to 15 digits, optionally starting with `+` or `(+country code)`, with optional spaces, hyphens, and matching brackets around digits, e.g. `(+65) 9123 4567`. |
 | `EMAIL` | `local-part@domain`, at most 254 characters, with a local part of at most 64 characters. |
 | `ROLE` | 1 to 50 characters: letters, digits, spaces, hyphens, and slashes (`/`), with at least one letter or digit. |
 | `BIRTHDAY` | A real date in `dd-MM-yyyy` format that is not in the future. |
@@ -281,7 +281,7 @@ Examples:
 | The email is empty or contains only whitespace. | `Email must not be empty. Example: e/aish@example.com` |
 | The role is empty or contains only whitespace. | `Role must not be empty. Example: r/Logistics Lead` |
 | The name violates its constraints. | `Invalid name. Use 1 to 80 characters: letters, spaces, hyphens, apostrophes, and periods, with at least one letter. Example: n/Aisha Tan` |
-| The phone number violates its constraints. | `Invalid phone number. Use 7 to 15 digits, optionally starting with +, with optional spaces, hyphens, and brackets. Example: p/+6591234567` |
+| The phone number violates its constraints. | `Invalid phone number. Use 7 to 15 digits, optionally starting with + or (+country code), with optional spaces, hyphens, and matching brackets around digits. Example: p/+6591234567` |
 | The email violates its constraints. | `Invalid email. Use local-part@domain, at most 254 characters, with a local part of at most 64 characters. Example: e/aish@example.com` |
 | The role violates its constraints. | `Invalid role. Use 1 to 50 characters: letters, digits, spaces, hyphens, and slashes, with at least one letter or digit. Example: r/Logistics Lead` |
 | A non-empty birthday is invalid, incorrectly formatted, or in the future. | `Invalid birthday. Use a real date in dd-MM-yyyy format that is not in the future. Example: b/18-06-2004` |
@@ -846,8 +846,8 @@ Or: `edit target/IDENTIFIER [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [
 * Provide at least one field or tag operation. Omitted fields retain their existing values.
 * Name, phone, email, and role cannot be cleared. Use `b/`, `a/`, `o/`, `lv/`, or `m/` with no value to clear that optional field.
 * Birthday uses `dd-MM-yyyy` and cannot be in the future. Edited values follow the same validation rules as `add`.
-* Older saved digit-only phone numbers with at least 3 digits remain usable. An edit without `p/` keeps the existing
-  number; a supplied `p/` value must follow the current 7–15-digit rule.
+* Older saved digit-only phone numbers with at least 3 digits, and older saved numbers with unmatched brackets,
+  remain usable. An edit without `p/` keeps the existing number; a supplied `p/` value must follow the current rule.
 * Each non-tag field may be specified only once. Unknown parameters are rejected.
 * `t/TAG` replaces all existing tags; repeat it to specify several replacement tags. `t/` with no value clears the tag set.
 * `at/TAG` adds a tag without removing other tags, while `rt/TAG` removes only that tag from the contact. These may be repeated or mixed and are applied in command order. Neither may be mixed with `t/`.
