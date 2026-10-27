@@ -545,6 +545,10 @@ Format: `assign evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]...`
 * Each parameter may appear only once.
 * All IDs are checked before any change is made. If any ID is invalid or does not exist, no contacts are assigned.
 * Contacts who are already assigned to the event are skipped, and an ID repeated in the same command is counted once.
+* A new member cannot be assigned if their leave covers the entire event: their last day of leave is on or after
+  the event's end date. This includes events ending at any time on the last day of leave, or with a date-only end.
+  If any new member meets this condition, no contacts are assigned. Leave ending before or during the event
+  does not prevent assignment.
 * New members are added after the existing members, in the order given.
 
 Selecting the event in the **Events** tab shows its members under **Members**.
@@ -566,6 +570,7 @@ If some contacts were already assigned: `Assigned 1 member(s) to Final Concert. 
 | A member ID does not exist. | `No contact exists with member ID: {MEMBER_ID}. Use an existing member ID.` |
 | A member ID is not written as digits representing a value from 1 to 2147483647. | `Member IDs must be positive integers separated by spaces. Example: c/1 3 5` |
 | A specified contact is archived. | `{NAME} is archived, so it cannot be assigned. No changes were made. Unarchive it first with: unarchive {MEMBER_ID}` |
+| A new member's leave covers the entire event. | `{NAME} is on leave until {LEAVE_END_DATE}, covering the entire event {EVENT_NAME}. No changes were made.` |
 | Every specified contact is already assigned. | `All specified contacts are already assigned to {EVENT_NAME}. No changes were made.` |
 | The event name is empty. | `Event name must not be empty. Example: evn/Final Concert` |
 | The event name is longer than 100 characters. | `Event name must not exceed 100 characters. Example: evn/Final Concert` |
@@ -920,9 +925,11 @@ Format: `edit MEMBER_ID lv/LEAVE_END_DATE` or `edit target/IDENTIFIER lv/LEAVE_E
   **On leave until LEAVE_END_DATE**, and the details pane shows the date under **On leave until**.
 * From the day after, the contact is no longer shown as on leave. You do not need to run any command: if CoordiMate
   is open at midnight, the badge and the details pane update within a minute.
-* The ended leave date stays in the data file but has no effect. The details pane shows `— (not on leave)`.
+* The ended leave date stays in the data file. The details pane shows `— (not on leave)`.
 * Setting a new date replaces the previous one. `edit MEMBER_ID lv/` with no date ends the leave immediately.
-* Leave does not affect events: a contact on leave can still be assigned to events and have attendance marked.
+* A contact cannot be newly [assigned to an event](#assigning-members-to-an-event-assign) if their leave covers
+  the entire event. They can be assigned if their leave ends before the event or they return during it.
+* Changing leave retains existing event assignments and attendance records. Attendance can still be marked.
 
 Examples:
 
