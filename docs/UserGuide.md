@@ -1181,8 +1181,12 @@ Event names containing Unicode space separators, including em and non-breaking s
 spaces when loaded. At startup, saved events whose names contain whitespace followed by parameter-like text
 (for example, `Planning` followed by an em space and `c/review`) are deleted because those names cannot be used
 in event commands. This also applies to archived events. A warning lists the deleted names, showing non-ordinary
-whitespace as codes such as `\u2003`. Other contacts and events are preserved. If the remaining data is invalid
-or cleanup cannot be saved, the file is left unchanged.<br>
+whitespace as codes such as `\u2003`. If event names were distinct under the older Unicode whitespace rules but
+now normalise to the same name, all events are kept: later collisions receive an available suffix such as ` (2)`.
+Long names are shortened to fit the suffix within the 100-character limit. The warning lists the old and new names;
+members, attendance, reminder dismissal history, and archive status are preserved. These migrations are saved before
+the data is loaded. Other contacts and events are preserved. If the remaining data is invalid or cleanup cannot be
+saved, the file is left unchanged.<br>
 Each contact's `memberId` must be a unique integer from `1` to `2147483647`. Keep existing IDs unchanged.
 Keep the top-level `nextMemberId` field: it must exceed every saved ID, must not be reduced after deleting contacts,
 and cannot exceed `2147483648`.<br>

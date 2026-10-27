@@ -45,18 +45,20 @@ public class JsonCoordiMateStorage {
         if (savedData.isEmpty()) {
             return Optional.empty();
         }
-        List<String> deletedNames = savedData.get().removeEventsWithEmbeddedParameters();
-        if (deletedNames.isEmpty()) {
-            return Optional.empty();
-        }
         try {
-            return Optional.of(new EventNameCleanup(savedData.get().toModelType(), List.copyOf(deletedNames)));
+            List<String> deletedNames = savedData.get().removeEventsWithEmbeddedParameters();
+            List<EventNameCleanupResult.Rename> renamedEvents = savedData.get().renameEventsWithCollidingNames();
+            EventNameCleanupResult changes = new EventNameCleanupResult(deletedNames, renamedEvents);
+            if (changes.isEmpty()) {
+                return Optional.empty();
+            }
+            return Optional.of(new EventNameCleanup(savedData.get().toModelType(), changes));
         } catch (IllegalValueException | IllegalArgumentException | NullPointerException e) {
             throw new DataLoadingException(e);
         }
     }
 
-    record EventNameCleanup(ReadOnlyCoordiMate data, List<String> deletedNames) {}
+    record EventNameCleanup(ReadOnlyCoordiMate data, EventNameCleanupResult changes) {}
 
     /**
      * Returns CoordiMate data as a {@link ReadOnlyCoordiMate}.

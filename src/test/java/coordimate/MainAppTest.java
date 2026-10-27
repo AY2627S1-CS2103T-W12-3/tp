@@ -21,6 +21,7 @@ import coordimate.model.CoordiMate;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
 import coordimate.model.util.SampleDataUtil;
+import coordimate.storage.EventNameCleanupResult;
 import coordimate.storage.JsonCoordiMateStorage;
 import coordimate.testutil.UnicodeWhitespace;
 import coordimate.ui.Ui;
@@ -89,6 +90,48 @@ public class MainAppTest {
         app.logic.execute("addevent evn/Usable After Cleanup st/02-01-2027 et/02-01-2027");
         assertTrue(new JsonCoordiMateStorage(dataFile).readCoordiMate().orElseThrow()
                 .findEvent("Usable After Cleanup").isPresent());
+    }
+
+    @Test
+    public void init_legacyEventNamesCollide_preservesBothEventsAndAllowsCommands() throws Exception {
+        Path dataFile = testFolder.resolve("coordimate.json");
+        Files.writeString(dataFile, """
+                {"persons":[],"events":[
+                  {"name":"Planning Meeting","startTime":"01-01-2027","endTime":"01-01-2027"},
+                  {"name":"Planning\u00a0Meeting","startTime":"02-01-2027","endTime":"02-01-2027"}]}
+                """);
+        MainApp app = new MainApp(testFolder.resolve("preferences.json"), dataFile);
+
+        app.init();
+
+        assertEquals(java.util.List.of("Planning Meeting", "Planning Meeting (2)"),
+                app.model.getCoordiMate().getEventList().stream().map(Event::getName).toList());
+        app.logic.execute("editevent evn/Planning Meeting (2) nevn/Second Meeting");
+        assertEquals(java.util.List.of("Planning Meeting", "Second Meeting"),
+                new JsonCoordiMateStorage(dataFile).readCoordiMate().orElseThrow()
+                        .getEventList().stream().map(Event::getName).toList());
+        app.init();
+        assertEquals(2, app.model.getCoordiMate().getEventList().size());
+    }
+
+    @Test
+    public void formatEventNameCleanup_renamesAndDeletions_explainsAllChanges() {
+        EventNameCleanupResult.Rename rename = new EventNameCleanupResult.Rename(
+                "Planning\u00a0Meeting", "Planning Meeting (2)");
+        String renamedOnly = MainApp.formatEventNameCleanup(new EventNameCleanupResult(
+                java.util.List.of(), java.util.List.of(rename)));
+        assertTrue(renamedOnly.startsWith("Renamed 1 saved event"));
+        assertTrue(renamedOnly.contains("\"Planning\\u00A0Meeting\" -> \"Planning Meeting (2)\""));
+        String combined = MainApp.formatEventNameCleanup(new EventNameCleanupResult(
+                java.util.List.of("Bad\u2003c/review"), java.util.List.of(rename,
+                        new EventNameCleanupResult.Rename("Planning\u202fMeeting", "Planning Meeting (3)"))));
+        assertTrue(combined.contains("Deleted 1 saved event"));
+        assertTrue(combined.contains("Renamed 2 saved events"));
+        assertTrue(combined.contains("\"Planning\\u202FMeeting\" -> \"Planning Meeting (3)\""));
+        assertTrue(combined.contains("All event details were preserved"));
+        assertEquals(MainApp.formatDeletedEvents(java.util.List.of("Bad c/review")),
+                MainApp.formatEventNameCleanup(new EventNameCleanupResult(
+                        java.util.List.of("Bad c/review"), java.util.List.of())));
     }
 
     @Test

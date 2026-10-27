@@ -19,6 +19,7 @@ import coordimate.model.ReadOnlyCoordiMate;
 import coordimate.model.ReadOnlyUserPrefs;
 import coordimate.model.UserPrefs;
 import coordimate.model.util.SampleDataUtil;
+import coordimate.storage.EventNameCleanupResult;
 import coordimate.storage.JsonCoordiMateStorage;
 import coordimate.storage.JsonUserPrefsStorage;
 import coordimate.storage.Storage;
@@ -75,13 +76,13 @@ public class MainApp extends Application {
 
         String startupWarning = "";
         try {
-            List<String> deletedNames = storageManager.removeEventsWithEmbeddedParameters();
-            if (!deletedNames.isEmpty()) {
-                startupWarning = formatDeletedEvents(deletedNames);
+            EventNameCleanupResult cleanup = storageManager.cleanUpEventNames();
+            if (!cleanup.isEmpty()) {
+                startupWarning = formatEventNameCleanup(cleanup);
             }
         } catch (DataLoadingException | IOException e) {
             logger.warning("Could not clean up saved events: " + StringUtil.getDetails(e));
-            startupWarning = "Saved data could not be loaded or cleaned up. No events were deleted. "
+            startupWarning = "Saved data could not be loaded or cleaned up. No events were deleted or renamed. "
                     + "Check the data file: " + coordiMateFilePath;
         }
 
@@ -90,6 +91,21 @@ public class MainApp extends Application {
         logic = new LogicManager(model, storage);
 
         ui = new UiManager(logic, storage.getCoordiMateFilePath(), startupWarning);
+    }
+
+    static String formatEventNameCleanup(EventNameCleanupResult cleanup) {
+        String deleted = cleanup.deletedNames().isEmpty() ? "" : formatDeletedEvents(cleanup.deletedNames());
+        if (cleanup.renamedEvents().isEmpty()) {
+            return deleted;
+        }
+        String noun = cleanup.renamedEvents().size() == 1 ? "event" : "events";
+        String renamed = "Renamed " + cleanup.renamedEvents().size() + " saved " + noun
+                + " to keep names unique after Unicode whitespace normalization. All event details were preserved:\n\n"
+                + String.join("\n", cleanup.renamedEvents().stream()
+                        .map(rename -> quoteEventName(rename.originalName()) + " -> "
+                                + quoteEventName(rename.newName()))
+                        .toList());
+        return deleted.isEmpty() ? renamed : deleted + "\n\n" + renamed;
     }
 
     static String formatDeletedEvents(List<String> names) {

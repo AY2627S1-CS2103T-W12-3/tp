@@ -68,14 +68,14 @@ public class StorageManager implements Storage {
     }
 
     /**
-     * Deletes legacy events with embedded parameters at startup, validating the remaining data before saving.
+     * Deletes unusable legacy events and renames normalization collisions, validating the result before saving.
      * Leaves the initial model load responsible for capturing its own matching file revision.
      */
-    public List<String> removeEventsWithEmbeddedParameters() throws DataLoadingException, IOException {
+    public EventNameCleanupResult cleanUpEventNames() throws DataLoadingException, IOException {
         Optional<String> originalRevision = dataRevision();
         Optional<JsonCoordiMateStorage.EventNameCleanup> cleanup = coordiMateStorage.readEventNameCleanup();
         if (cleanup.isEmpty()) {
-            return List.of();
+            return new EventNameCleanupResult(List.of(), List.of());
         }
         if (isDataRevisionInitialized && !expectedDataRevision.equals(originalRevision)) {
             throw new DataConflictException();
@@ -84,7 +84,7 @@ public class StorageManager implements Storage {
         if (isDataRevisionInitialized) {
             expectedDataRevision = savedRevision;
         }
-        return cleanup.get().deletedNames();
+        return cleanup.get().changes();
     }
 
     @Override

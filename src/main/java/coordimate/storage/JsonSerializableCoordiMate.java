@@ -3,6 +3,8 @@ package coordimate.storage;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -36,6 +38,8 @@ class JsonSerializableCoordiMate {
     public static final String MESSAGE_DUPLICATE_EVENT = "Events list contains duplicate event name(s).";
     public static final String MESSAGE_DUPLICATE_TAG = "Tags list contains duplicate tag name(s).";
     public static final String MESSAGE_UNKNOWN_MEMBER = "Event members must refer to existing contacts.";
+
+    private static final Pattern LEGACY_WHITESPACE_RUN = Pattern.compile("\\p{javaWhitespace}+");
 
     private final List<JsonAdaptedPerson> persons = new ArrayList<>();
     private final List<JsonAdaptedEvent> events = new ArrayList<>();
@@ -169,6 +173,52 @@ class JsonSerializableCoordiMate {
             return false;
         });
         return removedNames;
+    }
+
+    /**
+     * Preserves events that were distinct under the old whitespace rules by giving collisions unique suffixes.
+     * Names already present anywhere in the file are reserved before choosing replacements.
+     */
+    List<EventNameCleanupResult.Rename> renameEventsWithCollidingNames() throws IllegalValueException {
+        List<Event> modelEvents = new ArrayList<>();
+        Set<String> legacyNames = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        Set<String> reservedNames = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        for (JsonAdaptedEvent savedEvent : events) {
+            if (savedEvent == null) {
+                throw new IllegalValueException("Events list must not contain null entries.");
+            }
+            Event event = savedEvent.toModelType();
+            String legacyName = LEGACY_WHITESPACE_RUN.matcher(savedEvent.getName().strip()).replaceAll(" ");
+            if (!legacyNames.add(legacyName)) {
+                throw new IllegalValueException(MESSAGE_DUPLICATE_EVENT);
+            }
+            modelEvents.add(event);
+            reservedNames.add(event.getName());
+        }
+
+        List<EventNameCleanupResult.Rename> renamedEvents = new ArrayList<>();
+        Set<String> seenNames = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        for (int i = 0; i < modelEvents.size(); i++) {
+            Event event = modelEvents.get(i);
+            if (seenNames.add(event.getName())) {
+                continue;
+            }
+            String newName = uniqueEventName(event.getName(), reservedNames);
+            renamedEvents.add(new EventNameCleanupResult.Rename(events.get(i).getName(), newName));
+            events.set(i, new JsonAdaptedEvent(event.withDetails(newName, event.getStartTime(), event.getEndTime())));
+        }
+        return renamedEvents;
+    }
+
+    private static String uniqueEventName(String name, Set<String> reservedNames) {
+        for (int number = 2; ; number++) {
+            String suffix = " (" + number + ")";
+            int stemLength = Math.min(name.codePointCount(0, name.length()), Event.MAX_NAME_LENGTH - suffix.length());
+            String candidate = name.substring(0, name.offsetByCodePoints(0, stemLength)).stripTrailing() + suffix;
+            if (reservedNames.add(candidate)) {
+                return candidate;
+            }
+        }
     }
 
     private long resolveNextMemberId(long minimumNextId) throws IllegalValueException {
