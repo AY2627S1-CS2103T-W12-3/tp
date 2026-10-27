@@ -325,8 +325,8 @@ Success: `Created Event Student Life Fair. Start Time: 09-10-2026. End Time: 10-
 
 Use the **Events** tab on the left to browse saved events. Selecting an event shows its
 start time, end time, duration, and members. Each member row shows the contact's role,
-organisation, tags, notes, and attendance status. A successful `addevent` opens this tab and selects
-the new event. Each event card shows its member count and attendance summary. At narrower window
+organisation, tags, notes, current leave status, and attendance status. A successful `addevent` opens this tab
+and selects the new event. Each event card shows its member count and attendance summary. At narrower window
 sizes, the list appears above the details. The list and details divider can be dragged, but the
 details pane keeps a minimum width while the panes are side by side.
 
@@ -634,6 +634,10 @@ Format: `members evn/EVENT_NAME`
 
 Selecting an event in the **Events** tab also shows its members under **Members**, in the order they were assigned. Each member shows **Present**, **Absent**, or **Not marked** if attendance has not been recorded. The counts above the list show how many members have each status. They update as soon as attendance is successfully marked or changed with `markattendance`.
 
+Members who are currently on leave also show **On leave until LEAVE_END_DATE** beneath their role. This reflects
+their leave as of today, regardless of the event date. It updates when their leave is edited or cleared, and disappears
+after their last day of leave. Leave status is separate from attendance and does not change the attendance counts.
+
 Examples:
 
 * `members evn/Final Concert` shows the members of `Final Concert`.
@@ -916,11 +920,12 @@ Format: `edit MEMBER_ID lv/LEAVE_END_DATE` or `edit target/IDENTIFIER lv/LEAVE_E
 * `LEAVE_END_DATE` is the **last day** of leave, in `dd-MM-yyyy` format. It must be today or a later date.
 * The contact is on leave up to and including that date. While on leave, their card in the contact list shows
   **On leave until LEAVE_END_DATE**, and the details pane shows the date under **On leave until**.
+  The same leave label appears beside their details in the **Events** tab when they are assigned to the selected event.
 * From the day after, the contact is no longer shown as on leave. You do not need to run any command: if CoordiMate
-  is open at midnight, the badge and the details pane update within a minute.
+  is open at midnight, the Contacts and Events views update within a minute.
 * The ended leave date stays in the data file but has no effect. The details pane shows `— (not on leave)`.
 * Setting a new date replaces the previous one. `edit MEMBER_ID lv/` with no date ends the leave immediately.
-* Leave does not affect events: a contact on leave can still be assigned to events and have attendance marked.
+* A contact on leave can still be assigned to events and have attendance marked.
 
 Examples:
 
