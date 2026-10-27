@@ -46,10 +46,13 @@ public class JsonCoordiMateStorage {
             return Optional.empty();
         }
         try {
+            List<String> yearZeroDeletedNames = savedData.get().removeYearZeroEvents();
             List<String> deletedNames = savedData.get().removeEventsWithEmbeddedParameters();
+            boolean removedHistory = savedData.get().removeYearZeroReminderStarts();
             List<EventNameCleanupResult.Rename> renamedEvents = savedData.get().renameEventsWithCollidingNames();
-            EventNameCleanupResult changes = new EventNameCleanupResult(deletedNames, renamedEvents);
-            if (changes.isEmpty()) {
+            EventNameCleanupResult changes = new EventNameCleanupResult(
+                    deletedNames, renamedEvents, yearZeroDeletedNames);
+            if (changes.isEmpty() && !removedHistory) {
                 return Optional.empty();
             }
             return Optional.of(new EventNameCleanup(savedData.get().toModelType(), changes));
@@ -59,6 +62,32 @@ public class JsonCoordiMateStorage {
     }
 
     record EventNameCleanup(ReadOnlyCoordiMate data, EventNameCleanupResult changes) {}
+
+    /**
+     * Deletes events with year-zero dates and removes year-zero reminder history at startup,
+     * after validating all remaining data.
+     * Returns the deleted names only after the cleaned file is saved successfully.
+     */
+    public List<String> removeYearZeroEvents() throws DataLoadingException, IOException {
+        Optional<JsonSerializableCoordiMate> savedData = JsonUtil.readJsonFile(
+                filePath, JsonSerializableCoordiMate.class);
+        if (savedData.isEmpty()) {
+            return List.of();
+        }
+        List<String> removedNames = savedData.get().removeYearZeroEvents();
+        boolean removedHistory = savedData.get().removeYearZeroReminderStarts();
+        if (removedNames.isEmpty() && !removedHistory) {
+            return List.of();
+        }
+        ReadOnlyCoordiMate cleanedData;
+        try {
+            cleanedData = savedData.get().toModelType();
+        } catch (IllegalValueException | IllegalArgumentException | NullPointerException e) {
+            throw new DataLoadingException(e);
+        }
+        saveCoordiMate(cleanedData);
+        return List.copyOf(removedNames);
+    }
 
     /**
      * Returns CoordiMate data as a {@link ReadOnlyCoordiMate}.

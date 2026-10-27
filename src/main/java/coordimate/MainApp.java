@@ -3,6 +3,7 @@ package coordimate;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
@@ -94,18 +95,26 @@ public class MainApp extends Application {
     }
 
     static String formatEventNameCleanup(EventNameCleanupResult cleanup) {
-        String deleted = cleanup.deletedNames().isEmpty() ? "" : formatDeletedEvents(cleanup.deletedNames());
-        if (cleanup.renamedEvents().isEmpty()) {
-            return deleted;
+        List<String> warnings = new ArrayList<>();
+        if (!cleanup.deletedNames().isEmpty()) {
+            warnings.add(formatDeletedEvents(cleanup.deletedNames()));
         }
-        String noun = cleanup.renamedEvents().size() == 1 ? "event" : "events";
-        String renamed = "Renamed " + cleanup.renamedEvents().size() + " saved " + noun
-                + " to keep names unique after Unicode whitespace normalization. All event details were preserved:\n\n"
-                + String.join("\n", cleanup.renamedEvents().stream()
-                        .map(rename -> quoteEventName(rename.originalName()) + " -> "
-                                + quoteEventName(rename.newName()))
-                        .toList());
-        return deleted.isEmpty() ? renamed : deleted + "\n\n" + renamed;
+        if (!cleanup.renamedEvents().isEmpty()) {
+            String noun = cleanup.renamedEvents().size() == 1 ? "event" : "events";
+            warnings.add("Renamed " + cleanup.renamedEvents().size() + " saved " + noun
+                    + " to keep names unique after Unicode whitespace normalization. "
+                    + "All event details were preserved:\n\n"
+                    + String.join("\n", cleanup.renamedEvents().stream()
+                            .map(rename -> quoteEventName(rename.originalName()) + " -> "
+                                    + quoteEventName(rename.newName()))
+                            .toList()));
+        }
+        if (!cleanup.yearZeroDeletedNames().isEmpty()) {
+            warnings.add("Deleted the following events because their saved dates use year 0000, "
+                    + "which does not exist in the BC/AD calendar:\n\n"
+                    + String.join("\n", cleanup.yearZeroDeletedNames().stream().map(MainApp::quoteEventName).toList()));
+        }
+        return String.join("\n\n", warnings);
     }
 
     static String formatDeletedEvents(List<String> names) {

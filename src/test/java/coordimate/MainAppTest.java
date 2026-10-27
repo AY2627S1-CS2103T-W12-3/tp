@@ -13,6 +13,7 @@ import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import coordimate.commons.util.JsonUtil;
@@ -59,6 +60,49 @@ public class MainAppTest {
         app.init();
 
         assertEquals(storedData, app.model.getCoordiMate());
+    }
+
+    @Test
+    public void init_yearZeroEvents_deletesInvalidEventsAndLoadsRemainingData() throws Exception {
+        Path dataFile = testFolder.resolve("coordimate.json");
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(dataFile);
+        CoordiMate expected = getTypicalCoordiMate();
+        expected.addEvent(new Event("Keep", new EventTime("01-01-0001"), new EventTime("31-12-9999")));
+        storage.saveCoordiMate(expected);
+        ObjectNode json = JsonUtil.fromJsonString(Files.readString(dataFile), ObjectNode.class);
+        json.withArray("events").add(JsonUtil.fromJsonString("""
+                {"name":"Year Zero","startTime":"01-01-0000","endTime":"02-01-0000"}
+                """, JsonNode.class));
+        Files.writeString(dataFile, JsonUtil.toJsonString(json));
+        MainApp app = new MainApp(testFolder.resolve("preferences.json"), dataFile);
+
+        app.init();
+
+        assertEquals(expected, app.model.getCoordiMate());
+        assertEquals(expected, storage.readCoordiMate().orElseThrow());
+        String cleaned = Files.readString(dataFile);
+        app.init();
+        assertEquals(cleaned, Files.readString(dataFile));
+    }
+
+    @Test
+    public void init_mixedLegacyEvents_appliesBothCleanupsBeforeLoading() throws Exception {
+        Path dataFile = testFolder.resolve("coordimate.json");
+        Files.writeString(dataFile, """
+                {"persons":[],"events":[
+                  {"name":"Year Zero","startTime":"01-01-0000","endTime":"01-01-2027"},
+                  {"name":"Bad\u2003c/review","startTime":"01-01-2027","endTime":"01-01-2027"},
+                  {"name":"Planning Meeting","startTime":"01-01-2027","endTime":"01-01-2027"},
+                  {"name":"Planning\u00a0Meeting","startTime":"02-01-2027","endTime":"02-01-2027"}]}
+                """);
+        MainApp app = new MainApp(testFolder.resolve("preferences.json"), dataFile);
+
+        app.init();
+
+        assertEquals(java.util.List.of("Planning Meeting", "Planning Meeting (2)"),
+                app.model.getCoordiMate().getEventList().stream().map(Event::getName).toList());
+        app.logic.execute("editevent evn/Planning Meeting (2) nevn/Second Meeting");
+        assertEquals(app.model.getCoordiMate(), new JsonCoordiMateStorage(dataFile).readCoordiMate().orElseThrow());
     }
 
     @Test
@@ -132,6 +176,15 @@ public class MainAppTest {
         assertEquals(MainApp.formatDeletedEvents(java.util.List.of("Bad c/review")),
                 MainApp.formatEventNameCleanup(new EventNameCleanupResult(
                         java.util.List.of("Bad c/review"), java.util.List.of())));
+        String yearZeroOnly = MainApp.formatEventNameCleanup(new EventNameCleanupResult(
+                java.util.List.of(), java.util.List.of(), java.util.List.of("Year\u2003Zero")));
+        assertTrue(yearZeroOnly.contains("year 0000"));
+        assertTrue(yearZeroOnly.contains("\"Year\\u2003Zero\""));
+        String allChanges = MainApp.formatEventNameCleanup(new EventNameCleanupResult(
+                java.util.List.of("Bad c/review"), java.util.List.of(rename), java.util.List.of("Year Zero")));
+        assertTrue(allChanges.contains("Deleted 1 saved event"));
+        assertTrue(allChanges.contains("Renamed 1 saved event"));
+        assertTrue(allChanges.contains("year 0000"));
     }
 
     @Test

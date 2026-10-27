@@ -68,7 +68,7 @@ public class StorageManager implements Storage {
     }
 
     /**
-     * Deletes unusable legacy events and renames normalization collisions, validating the result before saving.
+     * Removes unusable names, year-zero dates and history, and renames normalization collisions before saving.
      * Leaves the initial model load responsible for capturing its own matching file revision.
      */
     public EventNameCleanupResult cleanUpEventNames() throws DataLoadingException, IOException {

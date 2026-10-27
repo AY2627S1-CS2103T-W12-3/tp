@@ -68,6 +68,82 @@ public class EventNameCleanupTest {
     }
 
     @Test
+    public void cleanup_mixedNameAndYearZeroData_savesBothMigrationsTogether() throws Exception {
+        Path path = testFolder.resolve("data.json");
+        Files.writeString(path, """
+                {"persons":[],"events":[
+                  {"name":"Year\u2003c/review","startTime":"01-01-0000","endTime":"01-01-2027"},
+                  {"name":"Bad\u2003c/review","startTime":"01-01-2027","endTime":"01-01-2027"},
+                  {"name":"Planning Meeting","startTime":"01-01-2027","endTime":"01-01-2027",
+                   "dismissedReminderStarts":["01-01-0000","01-01-2027"],"archived":true},
+                  {"name":"Planning\u00a0Meeting","startTime":"02-01-2027","endTime":"02-01-2027"}]}
+                """);
+        int[] saves = {0};
+        StorageManager storage = storage(new JsonCoordiMateStorage(path) {
+            @Override
+            public void saveCoordiMate(ReadOnlyCoordiMate data) throws IOException {
+                saves[0]++;
+                super.saveCoordiMate(data);
+            }
+        });
+
+        EventNameCleanupResult changes = storage.cleanUpEventNames();
+
+        assertEquals(1, saves[0]);
+        assertEquals(List.of("Bad\u2003c/review"), changes.deletedNames());
+        assertEquals(List.of("Year\u2003c/review"), changes.yearZeroDeletedNames());
+        assertEquals(List.of(new EventNameCleanupResult.Rename("Planning\u00a0Meeting", "Planning Meeting (2)")),
+                changes.renamedEvents());
+        EventTime firstDate = new EventTime("01-01-2027");
+        EventTime secondDate = new EventTime("02-01-2027");
+        CoordiMate expected = new CoordiMate();
+        expected.addEvent(new Event("Planning Meeting", firstDate, firstDate, List.of(), Map.of(),
+                Set.of(firstDate), true));
+        expected.addEvent(new Event("Planning Meeting (2)", secondDate, secondDate));
+        assertEquals(expected, storage.readCoordiMate().orElseThrow());
+        storage.saveCoordiMateIfUnchanged(expected);
+        assertTrue(storage.cleanUpEventNames().isEmpty());
+        assertEquals(2, saves[0]);
+    }
+
+    @Test
+    public void cleanup_yearZeroHistoryOnly_savesWithoutDeletingEvent() throws Exception {
+        Path path = testFolder.resolve("data.json");
+        Files.writeString(path, """
+                {"persons":[],"events":[
+                  {"name":"Planning Meeting","startTime":"01-01-2027","endTime":"01-01-2027",
+                   "dismissedReminderStarts":["01-01-0000","01-01-2027"]}]}
+                """);
+        StorageManager storage = storage(new JsonCoordiMateStorage(path));
+
+        assertTrue(storage.cleanUpEventNames().isEmpty());
+
+        Event event = storage.readCoordiMate().orElseThrow().getEventList().getFirst();
+        assertEquals("Planning Meeting", event.getName());
+        assertEquals(Set.of(new EventTime("01-01-2027")), event.getDismissedReminderStarts());
+        assertFalse(Files.readString(path).contains("0000"));
+        storage.saveCoordiMateIfUnchanged(storage.readCoordiMate().orElseThrow());
+    }
+
+    @Test
+    public void cleanup_mixedLegacyDataWithInvalidRemainder_preservesOriginalFile() throws Exception {
+        Path path = testFolder.resolve("data.json");
+        String original = """
+                {"persons":[],"events":[
+                  {"name":"Year Zero","startTime":"01-01-0000","endTime":"01-01-2027"},
+                  {"name":"Bad\u2003c/review","startTime":"01-01-2027","endTime":"01-01-2027"},
+                  {"name":"Planning Meeting","startTime":"01-01-2027","endTime":"01-01-2027"},
+                  {"name":"Planning\u00a0Meeting","startTime":"02-01-2027","endTime":"02-01-2027"},
+                  {"name":"Broken","startTime":"bad","endTime":"01-01-2027"}]}
+                """;
+        Files.writeString(path, original);
+
+        assertThrows(DataLoadingException.class, () -> storage(new JsonCoordiMateStorage(path)).cleanUpEventNames());
+
+        assertEquals(original, Files.readString(path));
+    }
+
+    @Test
     public void cleanup_usableNamesAndFormatCharacters_preservesFile() throws Exception {
         Path path = testFolder.resolve("data.json");
         List<String> names = new ArrayList<>(List.of("/review", "\u2003c/review\u2003",

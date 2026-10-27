@@ -124,6 +124,24 @@ class JsonAdaptedEvent {
     }
 
     /**
+     * Identifies legacy event start or end dates that use year zero.
+     */
+    boolean hasYearZeroEventDate() {
+        return isYearZero(startTime) || isYearZero(endTime);
+    }
+
+    /**
+     * Removes year-zero reminder history from an event whose dates are otherwise valid.
+     */
+    boolean removeYearZeroReminderStarts() {
+        return dismissedReminderStarts.removeIf(JsonAdaptedEvent::isYearZero);
+    }
+
+    private static boolean isYearZero(String value) {
+        return value != null && value.strip().matches("[0-9]{2}-[0-9]{2}-0000( [0-9]{2}:[0-9]{2})?");
+    }
+
+    /**
      * Returns an event reconstructed from this record using the model's validation rules.
      *
      * @throws IllegalValueException If required fields are missing or violate event constraints.
