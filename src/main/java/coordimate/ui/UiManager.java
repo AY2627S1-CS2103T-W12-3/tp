@@ -10,6 +10,7 @@ import coordimate.logic.Logic;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.TextArea;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
@@ -26,14 +27,23 @@ public class UiManager implements Ui {
     private Logic logic;
     private Path dataFilePath;
     private MainWindow mainWindow;
+    private final String startupWarning;
 
     /**
      * Creates a {@code UiManager} with the given {@code Logic} and the data file path
      * to show in the status bar.
      */
     public UiManager(Logic logic, Path dataFilePath) {
+        this(logic, dataFilePath, "");
+    }
+
+    /**
+     * Creates the UI with a warning to show after the main window opens.
+     */
+    public UiManager(Logic logic, Path dataFilePath, String startupWarning) {
         this.logic = logic;
         this.dataFilePath = dataFilePath;
+        this.startupWarning = startupWarning;
     }
 
     @Override
@@ -47,6 +57,10 @@ public class UiManager implements Ui {
             mainWindow = new MainWindow(primaryStage, logic, dataFilePath);
             mainWindow.show(); //This should be called before creating other UI parts
             mainWindow.fillInnerParts();
+            if (!startupWarning.isEmpty()) {
+                showAlertDialogAndWait(AlertType.WARNING, "Saved event data", "Saved event data needs attention",
+                        startupWarning);
+            }
             mainWindow.showTutorialOnFirstLaunch();
 
         } catch (Throwable e) {
@@ -81,7 +95,16 @@ public class UiManager implements Ui {
         alert.initOwner(owner);
         alert.setTitle(title);
         alert.setHeaderText(headerText);
-        alert.setContentText(contentText);
+        if (type == AlertType.WARNING) {
+            TextArea details = new TextArea(contentText);
+            details.setEditable(false);
+            details.setWrapText(false);
+            details.setPrefColumnCount(72);
+            details.setPrefRowCount((int) Math.min(14, contentText.lines().count() + 1));
+            alert.getDialogPane().setContent(details);
+        } else {
+            alert.setContentText(contentText);
+        }
         alert.getDialogPane().setId(ALERT_DIALOG_PANE_FIELD_ID);
         alert.showAndWait();
     }

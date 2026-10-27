@@ -3,6 +3,7 @@ package coordimate;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -69,13 +70,50 @@ public class MainApp extends Application {
         JsonUserPrefsStorage userPrefsStorage = new JsonUserPrefsStorage(userPrefsFilePath);
         UserPrefs userPrefs = initPrefs(userPrefsStorage);
         JsonCoordiMateStorage coordiMateStorage = new JsonCoordiMateStorage(coordiMateFilePath);
-        storage = new StorageManager(coordiMateStorage, userPrefsStorage);
+        StorageManager storageManager = new StorageManager(coordiMateStorage, userPrefsStorage);
+        storage = storageManager;
+
+        String startupWarning = "";
+        try {
+            List<String> deletedNames = storageManager.removeEventsWithEmbeddedParameters();
+            if (!deletedNames.isEmpty()) {
+                startupWarning = formatDeletedEvents(deletedNames);
+            }
+        } catch (DataLoadingException | IOException e) {
+            logger.warning("Could not clean up saved events: " + StringUtil.getDetails(e));
+            startupWarning = "Saved data could not be loaded or cleaned up. No events were deleted. "
+                    + "Check the data file: " + coordiMateFilePath;
+        }
 
         model = initModelManager(storage, userPrefs);
 
         logic = new LogicManager(model, storage);
 
-        ui = new UiManager(logic, storage.getCoordiMateFilePath());
+        ui = new UiManager(logic, storage.getCoordiMateFilePath(), startupWarning);
+    }
+
+    static String formatDeletedEvents(List<String> names) {
+        String noun = names.size() == 1 ? "event" : "events";
+        return "Deleted " + names.size() + " saved " + noun + " because their names contain parameter-like text "
+                + "after whitespace and cannot be used in event commands:\n\n"
+                + String.join("\n", names.stream().map(MainApp::quoteEventName).toList());
+    }
+
+    private static String quoteEventName(String name) {
+        StringBuilder result = new StringBuilder("\"");
+        name.codePoints().forEach(codePoint -> {
+            int type = Character.getType(codePoint);
+            if (codePoint != ' ' && (Character.isWhitespace(codePoint) || Character.isSpaceChar(codePoint))
+                    || Character.isISOControl(codePoint)
+                    || type == Character.LINE_SEPARATOR || type == Character.PARAGRAPH_SEPARATOR) {
+                result.append(String.format("\\u%04X", codePoint));
+            } else if (codePoint == '"' || codePoint == '\\') {
+                result.append('\\').appendCodePoint(codePoint);
+            } else {
+                result.appendCodePoint(codePoint);
+            }
+        });
+        return result.append('"').toString();
     }
 
     /**
