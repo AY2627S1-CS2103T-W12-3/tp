@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 
 import coordimate.commons.core.LogsCenter;
 import coordimate.commons.util.CollectionUtil;
+import coordimate.commons.util.StringUtil;
 import coordimate.commons.util.ToStringBuilder;
 import coordimate.logic.Messages;
 import coordimate.logic.commands.exceptions.CommandException;
@@ -182,8 +183,9 @@ public class EditCommand extends Command {
         String trimmedIdentifier = identifier.strip();
         String normalizedPhone = trimmedIdentifier.replace(" ", "").replace("-", "")
                 .replace("(", "").replace(")", "");
+        String normalizedName = StringUtil.normalizeWhitespace(identifier);
         List<Person> matches = savedPersons.stream().filter(person ->
-                person.getName().getFullName().equalsIgnoreCase(trimmedIdentifier)
+                person.getName().getFullName().equalsIgnoreCase(normalizedName)
                 || person.getEmail().getValue().equalsIgnoreCase(trimmedIdentifier)
                 || person.getPhone().getNormalizedValue().equals(normalizedPhone)).toList();
         if (matches.isEmpty()) {

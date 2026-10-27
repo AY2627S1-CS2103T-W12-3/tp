@@ -1,6 +1,7 @@
 package coordimate.commons.util;
 
 import static coordimate.testutil.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -9,6 +10,21 @@ import java.io.FileNotFoundException;
 import org.junit.jupiter.api.Test;
 
 public class StringUtilTest {
+
+    //---------------- Tests for normalizeWhitespace --------------------------------------
+
+    @Test
+    public void normalizeWhitespace_nullString_throwsNullPointerException() {
+        assertThrows(NullPointerException.class, () -> StringUtil.normalizeWhitespace(null));
+    }
+
+    @Test
+    public void normalizeWhitespace_variousSpacing_collapsedToSingleSpaces() {
+        assertEquals("", StringUtil.normalizeWhitespace("   "));
+        assertEquals("Alex Yeoh", StringUtil.normalizeWhitespace("Alex Yeoh"));
+        assertEquals("Alex Yeoh", StringUtil.normalizeWhitespace("  Alex   Yeoh  "));
+        assertEquals("Final Concert Day", StringUtil.normalizeWhitespace("Final\t \nConcert Day"));
+    }
 
     //---------------- Tests for isNonZeroUnsignedInteger --------------------------------------
 

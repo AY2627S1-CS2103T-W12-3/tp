@@ -19,7 +19,7 @@ public class DeleteEventCommandParserTest {
                 CommandParserTestUtil.createParser().parseCommand("deleteevent evn/Final Concert"));
         assertEquals(new DeleteEventCommand("Student Life Fair"),
                 CommandParserTestUtil.createParser().parseCommand("deleteevent evn/Student Life Fair"));
-        assertEquals(new DeleteEventCommand("Student  Life Fair"),
+        assertEquals(new DeleteEventCommand("Student Life Fair"),
                 parser.parse("  evn/ Student  Life Fair  "));
     }
 

@@ -10,11 +10,13 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import coordimate.commons.util.StringUtil;
 import coordimate.model.person.Name;
 import coordimate.model.person.PrintableText;
 
 /**
- * An event's identity is its trimmed, case-insensitive name.
+ * An event's identity is its case-insensitive name, stored without surrounding spaces and with each run of
+ * internal spaces collapsed to one.
  */
 public final class Event {
     public static final int MAX_NAME_LENGTH = 100;
@@ -47,7 +49,7 @@ public final class Event {
     /**
      * Creates an event with a trimmed, non-empty name, a start time no later than its end time,
      * and distinct members kept in assignment order. No member has a recorded attendance status.
-     * Preserves the name's internal spacing and capitalisation.
+     * Collapses runs of internal spaces in the name to one space and preserves its capitalisation.
      */
     public Event(String name, EventTime startTime, EventTime endTime, List<Name> members) {
         this(name, startTime, endTime, members, Map.of());
@@ -77,14 +79,14 @@ public final class Event {
      */
     public Event(String name, EventTime startTime, EventTime endTime, List<Name> members,
                  Map<Name, AttendanceStatus> attendance, Set<EventTime> dismissedReminderStarts, boolean archived) {
-        this.name = requireNonNull(name).strip();
+        this.name = StringUtil.normalizeWhitespace(requireNonNull(name));
         if (this.name.isEmpty()) {
             throw new IllegalArgumentException(MESSAGE_EMPTY_NAME);
         }
         if (this.name.codePointCount(0, this.name.length()) > MAX_NAME_LENGTH) {
             throw new IllegalArgumentException(MESSAGE_NAME_LENGTH_CONSTRAINTS);
         }
-        if (!isValidName(this.name)) {
+        if (!isValidName(name)) {
             throw new IllegalArgumentException(MESSAGE_NAME_CONSTRAINTS);
         }
         this.startTime = requireNonNull(startTime);
@@ -110,12 +112,15 @@ public final class Event {
     }
 
     /**
-     * Returns true if {@code test}, ignoring surrounding whitespace, is a valid event name of 1 to
-     * {@value #MAX_NAME_LENGTH} printable characters.
+     * Returns true if {@code test} contains only printable characters and, ignoring surrounding whitespace and
+     * counting each run of internal whitespace as one space, has 1 to {@value #MAX_NAME_LENGTH} characters.
      */
     public static boolean isValidName(String test) {
         requireNonNull(test);
-        return PrintableText.isValid(test.strip(), MAX_NAME_LENGTH);
+        String trimmedName = test.strip();
+        // Characters are checked before collapsing so that line breaks and tabs inside the name stay invalid.
+        return PrintableText.isValid(trimmedName, trimmedName.length())
+                && PrintableText.isValid(StringUtil.normalizeWhitespace(trimmedName), MAX_NAME_LENGTH);
     }
 
     public EventTime getStartTime() {
