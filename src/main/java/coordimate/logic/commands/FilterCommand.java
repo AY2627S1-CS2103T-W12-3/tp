@@ -20,7 +20,7 @@ public class FilterCommand extends Command {
     public static final String COMMAND_WORD = "filter";
     public static final String MESSAGE_USAGE = COMMAND_WORD + ": Filters contacts by one or more criteria.\n"
             + "Parameters: FIELD/VALUE [FIELD/VALUE]... (FIELD: tag, event, organisation)\n"
-            + "Example: " + COMMAND_WORD + " tag/friend event/Orientation";
+            + "Example: " + COMMAND_WORD + " tag/EXCO organisation/NUS Student Affairs";
     public static final String MESSAGE_SUCCESS = "%1$d contact(s) found.";
     public static final String MESSAGE_NO_MATCHES = "No contacts match the specified filters.";
     public static final String MESSAGE_NO_MATCHING_VALUE =
