@@ -15,15 +15,23 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import coordimate.commons.exceptions.DataLoadingException;
+import coordimate.commons.util.JsonUtil;
 import coordimate.model.CoordiMate;
 import coordimate.model.ReadOnlyCoordiMate;
+import coordimate.model.event.AttendanceStatus;
 import coordimate.model.event.Event;
+import coordimate.model.event.EventTime;
 import coordimate.model.person.Person;
 import coordimate.model.tag.Tag;
 import javafx.collections.FXCollections;
@@ -34,6 +42,104 @@ public class JsonCoordiMateStorageTest {
 
     @TempDir
     public Path testFolder;
+
+    @Test
+    public void removeYearZeroEvents_missingFile_doesNotCreateFile() throws Exception {
+        Path path = testFolder.resolve("missing.json");
+        assertEquals(List.of(), new JsonCoordiMateStorage(path).removeYearZeroEvents());
+        assertFalse(Files.exists(path));
+    }
+
+    @Test
+    public void removeYearZeroEvents_noYearZero_doesNotRewriteFile() throws Exception {
+        Path path = testFolder.resolve("data.json");
+        String original = "{\"persons\":[], \"events\":[]}";
+        Files.writeString(path, original);
+        assertEquals(List.of(), new JsonCoordiMateStorage(path).removeYearZeroEvents());
+        assertEquals(original, Files.readString(path));
+    }
+
+    @Test
+    public void removeYearZeroEvents_mixedData_preservesValidDataAndDeletesOnlyOnce() throws Exception {
+        CoordiMate expected = getTypicalCoordiMate();
+        EventTime start = new EventTime("01-01-0001");
+        expected.addEvent(new Event("Keep", start, new EventTime("31-12-9999 23:59"),
+                List.of(ALICE.getName()), Map.of(ALICE.getName(), AttendanceStatus.PRESENT), Set.of(start)));
+        Path path = writeLegacyEvents(expected,
+                new JsonAdaptedEvent("Zero Start", " 01-01-0000 ", "02-01-0001"),
+                new JsonAdaptedEvent("Zero End", "01-01-0001", "02-01-0000 12:30"),
+                new JsonAdaptedEvent("Zero History", "01-01-0001", "02-01-0001",
+                        List.of(ALICE.getName().toString()), Map.of(ALICE.getName().toString(), "absent"),
+                        List.of("01-01-0001", "01-01-0000 00:00"), true),
+                new JsonAdaptedEvent(null, "01-01-0000", "02-01-0000"));
+        expected.addEvent(new Event("Zero History", start, new EventTime("02-01-0001"),
+                List.of(ALICE.getName()), Map.of(ALICE.getName(), AttendanceStatus.ABSENT), Set.of(start))
+                .withArchived(true));
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path);
+
+        assertEquals(List.of("Zero Start", "Zero End", "(unnamed event)"),
+                storage.removeYearZeroEvents());
+        assertEquals(expected, storage.readCoordiMate().orElseThrow());
+        String cleaned = Files.readString(path);
+        assertEquals(List.of(), storage.removeYearZeroEvents());
+        assertEquals(cleaned, Files.readString(path));
+    }
+
+    @Test
+    public void removeYearZeroEvents_historyOnly_preservesEventAndSavesCleanedHistory() throws Exception {
+        CoordiMate expected = getTypicalCoordiMate();
+        EventTime start = new EventTime("08-08-2026");
+        expected.addEvent(new Event("Concert", start, new EventTime("09-08-2026"),
+                List.of(ALICE.getName()), Map.of(ALICE.getName(), AttendanceStatus.PRESENT), Set.of(start)));
+        Path path = writeLegacyEvents(getTypicalCoordiMate(),
+                new JsonAdaptedEvent("Concert", "08-08-2026", "09-08-2026",
+                        List.of(ALICE.getName().toString()), Map.of(ALICE.getName().toString(), "present"),
+                        List.of("08-08-2026", "01-01-0000")));
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path);
+
+        assertEquals(List.of(), storage.removeYearZeroEvents());
+        assertEquals(expected, storage.readCoordiMate().orElseThrow());
+        String cleaned = Files.readString(path);
+        assertFalse(cleaned.contains("01-01-0000"));
+        assertEquals(List.of(), storage.removeYearZeroEvents());
+        assertEquals(cleaned, Files.readString(path));
+    }
+
+    @Test
+    public void removeYearZeroEvents_otherInvalidData_doesNotRewriteFile() throws Exception {
+        Path path = writeLegacyEvents(new CoordiMate(),
+                new JsonAdaptedEvent("Zero", "01-01-0000", "02-01-0000"),
+                new JsonAdaptedEvent("Invalid", "31-02-2026", "01-03-2026"));
+        String original = Files.readString(path);
+        assertThrows(DataLoadingException.class, () -> new JsonCoordiMateStorage(path).removeYearZeroEvents());
+        assertEquals(original, Files.readString(path));
+    }
+
+    @Test
+    public void removeYearZeroEvents_saveFailure_doesNotRewriteFile() throws Exception {
+        Path path = writeLegacyEvents(new CoordiMate(),
+                new JsonAdaptedEvent("Zero", "01-01-0000", "02-01-0000"));
+        String original = Files.readString(path);
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path) {
+            @Override
+            public void saveCoordiMate(ReadOnlyCoordiMate data) throws IOException {
+                throw new IOException("Disk full");
+            }
+        };
+        assertThrows(IOException.class, storage::removeYearZeroEvents);
+        assertEquals(original, Files.readString(path));
+    }
+
+    private Path writeLegacyEvents(CoordiMate validData, JsonAdaptedEvent... legacyEvents) throws Exception {
+        ObjectNode json = JsonUtil.fromJsonString(
+                JsonUtil.toJsonString(new JsonSerializableCoordiMate(validData)), ObjectNode.class);
+        for (JsonAdaptedEvent event : legacyEvents) {
+            json.withArray("events").add(JsonUtil.fromJsonString(JsonUtil.toJsonString(event), JsonNode.class));
+        }
+        Path path = testFolder.resolve("legacy.json");
+        Files.writeString(path, JsonUtil.toJsonString(json));
+        return path;
+    }
 
     @Test
     public void readCoordiMate_nullFilePath_throwsNullPointerException() {

@@ -19,21 +19,54 @@ import javafx.stage.Stage;
 public class UiManager implements Ui {
 
     public static final String ALERT_DIALOG_PANE_FIELD_ID = "alertDialogPane";
+    public static final String DATA_RECOVERY_ALERT_TITLE = "Saved data could not be loaded";
+    public static final String DATA_RECOVERY_ALERT_HEADER = "CoordiMate cannot start with the saved data";
+    public static final String DATA_RECOVERY_ALERT_CONTENT = "The original data file has not been changed. "
+            + "CoordiMate will now close.\n\nRepair or restore this file, then restart CoordiMate:\n%s";
 
     private static final Logger logger = LogsCenter.getLogger(UiManager.class);
     private static final String ICON_APPLICATION = "/images/coordimate_32.png";
 
     private Logic logic;
     private Path dataFilePath;
+    private final boolean isDataRecoveryMode;
+    private final Runnable exitAction;
     private MainWindow mainWindow;
+    private final String startupWarning;
 
     /**
      * Creates a {@code UiManager} with the given {@code Logic} and the data file path
      * to show in the status bar.
      */
     public UiManager(Logic logic, Path dataFilePath) {
+        this(logic, dataFilePath, "", false, Platform::exit);
+    }
+
+    UiManager(Logic logic, Path dataFilePath, boolean isDataRecoveryMode, Runnable exitAction) {
+        this(logic, dataFilePath, "", isDataRecoveryMode, exitAction);
+    }
+
+    /**
+     * Creates the UI with a warning to show after startup, without asking for confirmation.
+     */
+    public UiManager(Logic logic, Path dataFilePath, String startupWarning) {
+        this(logic, dataFilePath, startupWarning, false, Platform::exit);
+    }
+
+    /**
+     * Creates the UI with a startup warning and recovery state.
+     */
+    public UiManager(Logic logic, Path dataFilePath, String startupWarning, boolean isDataRecoveryMode) {
+        this(logic, dataFilePath, startupWarning, isDataRecoveryMode, Platform::exit);
+    }
+
+    UiManager(Logic logic, Path dataFilePath, String startupWarning, boolean isDataRecoveryMode,
+            Runnable exitAction) {
         this.logic = logic;
         this.dataFilePath = dataFilePath;
+        this.startupWarning = startupWarning;
+        this.isDataRecoveryMode = isDataRecoveryMode;
+        this.exitAction = exitAction;
     }
 
     @Override
@@ -47,6 +80,16 @@ public class UiManager implements Ui {
             mainWindow = new MainWindow(primaryStage, logic, dataFilePath);
             mainWindow.show(); //This should be called before creating other UI parts
             mainWindow.fillInnerParts();
+            if (isDataRecoveryMode) {
+                showAlertDialogAndWait(Alert.AlertType.WARNING, DATA_RECOVERY_ALERT_TITLE,
+                        DATA_RECOVERY_ALERT_HEADER,
+                        String.format(DATA_RECOVERY_ALERT_CONTENT, dataFilePath.toAbsolutePath()));
+                exitAction.run();
+                return;
+            } else if (!startupWarning.isEmpty()) {
+                showAlertDialogAndWait(AlertType.WARNING, "Saved event data", "Saved event data needs attention",
+                        startupWarning);
+            }
             mainWindow.showTutorialOnFirstLaunch();
 
         } catch (Throwable e) {

@@ -48,7 +48,7 @@ public class EditEventCommandParserTest {
     @Test
     public void parse_invalidTimes_rejected() {
         for (String value : new String[] {"31-02-2026", "10-10-2026 24:00", "2026-10-10",
-            "1-10-2026", "10-10-2026 16:30:00", "16:30"}) {
+            "1-10-2026", "10-10-2026 16:30:00", "16:30", "01-01-0000", "01-01-0000 00:00"}) {
             assertError(" evn/Fair st/" + value, EditEventCommand.MESSAGE_TIME_FORMAT);
             assertError(" evn/Fair et/" + value,
                     EditEventCommand.MESSAGE_TIME_FORMAT.replace("Example: st/", "Example: et/"));
