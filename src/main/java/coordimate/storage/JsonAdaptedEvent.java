@@ -145,11 +145,7 @@ class JsonAdaptedEvent {
      * @throws IllegalValueException If required fields are missing or violate event constraints.
      */
     public Event toModelType() throws IllegalValueException {
-        if (archived != null && !archived.isNull() && !archived.isBoolean()) {
-            String event = name != null && Event.isValidName(name)
-                    ? "Event \"" + name + "\"" : "Event with no valid name";
-            throw new IllegalValueException(event + ": " + MESSAGE_INVALID_ARCHIVED);
-        }
+        validateArchived();
         if (name == null || startTime == null || endTime == null) {
             throw new IllegalValueException("Event name, start time and end time must be present.");
         }
@@ -173,6 +169,15 @@ class JsonAdaptedEvent {
                     archived != null && archived.asBoolean());
         } catch (IllegalArgumentException e) {
             throw new IllegalValueException(e.getMessage());
+        }
+    }
+
+    /** Checks archive status even for events removed by legacy date cleanup. */
+    void validateArchived() throws IllegalValueException {
+        if (archived != null && !archived.isNull() && !archived.isBoolean()) {
+            String event = name != null && Event.isValidName(name)
+                    ? "Event \"" + name + "\"" : "Event with no valid name";
+            throw new IllegalValueException(event + ": " + MESSAGE_INVALID_ARCHIVED);
         }
     }
 

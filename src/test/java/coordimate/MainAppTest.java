@@ -126,6 +126,53 @@ public class MainAppTest {
     }
 
     @Test
+    public void init_invalidPreferences_usesDefaultsAndPreservesFileOnExit() throws Exception {
+        Path prefsFile = testFolder.resolve("preferences.json");
+        String invalid = "{\"guiSettings\":{\"windowMaximized\":17}}";
+        Files.writeString(prefsFile, invalid);
+        MainApp app = new MainApp(prefsFile, testFolder.resolve("coordimate.json"));
+
+        app.init();
+
+        assertTrue(app.isPrefsRecoveryMode);
+        assertEquals("Invalid JSON type at guiSettings.windowMaximized: expected a boolean.",
+                app.prefsRecoveryDetail);
+        assertEquals(new coordimate.model.UserPrefs(), app.model.getUserPrefs());
+        assertEquals(invalid, Files.readString(prefsFile));
+        app.stop();
+        assertEquals(invalid, Files.readString(prefsFile));
+    }
+
+    @Test
+    public void init_numericPhone_entersRecoveryModeAndPreservesDataFile() throws Exception {
+        Path dataFile = testFolder.resolve("coordimate.json");
+        String invalid = """
+                {"persons":[{"name":"Alex Yeoh","phone":8000001,"email":"alex@example.com"}]}
+                """;
+        Files.writeString(dataFile, invalid);
+        MainApp app = new MainApp(testFolder.resolve("preferences.json"), dataFile);
+
+        app.init();
+
+        assertTrue(app.isDataRecoveryMode);
+        assertEquals("Invalid JSON type at persons[0].phone: expected a string.", app.dataRecoveryDetail);
+        assertEquals(invalid, Files.readString(dataFile));
+    }
+
+    @Test
+    public void init_malformedPreferences_preservesFileOnExit() throws Exception {
+        Path prefsFile = testFolder.resolve("preferences.json");
+        Files.writeString(prefsFile, "invalid JSON");
+        MainApp app = new MainApp(prefsFile, testFolder.resolve("coordimate.json"));
+
+        app.init();
+        app.stop();
+
+        assertTrue(app.isPrefsRecoveryMode);
+        assertEquals("invalid JSON", Files.readString(prefsFile));
+    }
+
+    @Test
     public void start_startsUi() {
         MainApp app = new MainApp();
         UiStub uiStub = new UiStub();

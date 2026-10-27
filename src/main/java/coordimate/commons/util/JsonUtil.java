@@ -12,6 +12,7 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
@@ -50,7 +51,14 @@ public class JsonUtil {
      */
     public static <T> Optional<T> readJsonFile(
             Path filePath, Class<T> classOfObjectToDeserialize) throws DataLoadingException {
+        return readJsonFile(filePath, classOfObjectToDeserialize, json -> {});
+    }
+
+    /** Reads a JSON file after checking its raw types, before Jackson can coerce scalar values. */
+    public static <T> Optional<T> readJsonFile(Path filePath, Class<T> classOfObjectToDeserialize,
+            JsonTypeValidator validator) throws DataLoadingException {
         requireNonNull(filePath);
+        requireNonNull(validator);
 
         if (!Files.exists(filePath)) {
             return Optional.empty();
@@ -60,7 +68,13 @@ public class JsonUtil {
         T jsonFile;
 
         try {
-            jsonFile = deserializeObjectFromJsonFile(filePath, classOfObjectToDeserialize);
+            JsonNode root = objectMapper.readTree(FileUtil.readFromFile(filePath));
+            if (root == null || root.isNull()) {
+                jsonFile = null;
+            } else {
+                validator.validate(root);
+                jsonFile = objectMapper.treeToValue(root, classOfObjectToDeserialize);
+            }
         } catch (IOException e) {
             logger.warning("Error reading from jsonFile file " + filePath + ": " + e);
             throw new DataLoadingException(e);
@@ -70,6 +84,12 @@ public class JsonUtil {
             throw new DataLoadingException(new IOException("JSON file must contain an object."));
         }
         return Optional.of(jsonFile);
+    }
+
+    /** Checks a parsed JSON tree before it is converted to Java objects. */
+    @FunctionalInterface
+    public interface JsonTypeValidator {
+        void validate(JsonNode root) throws IOException;
     }
 
     /**

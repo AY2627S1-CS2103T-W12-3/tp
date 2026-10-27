@@ -239,6 +239,13 @@ a normal JavaFX shutdown before the tutorial or command interface can be used.
 The tutorial flag is saved with the other user preferences. Preference files without that field are read with the
 tutorial flag set to `false`, so the tutorial is offered until the user closes or finishes it.
 
+Before Jackson binds saved data to Java fields, `SavedJsonTypeValidator` checks the JSON types of known contact,
+event, and preference fields. This prevents Jackson from converting values such as numeric phone numbers or numeric
+window maximization flags. Existing validation for `archived`, member IDs, and model values still runs afterward.
+The validator reports a field path for type errors, while unknown fields remain ignored for compatibility.
+If preferences cannot be loaded, `MainApp` uses defaults and shows a warning. It skips preference writes during that
+session, including shutdown, so the original file remains available for repair.
+
 Previously saved digit-only phone numbers with at least three digits remain valid model data, so older JSON files can
 still load. The command parser applies the current 7–15-digit rule whenever a user supplies a phone number for `add`
 or `edit`; editing another field does not require replacing a legacy phone number.

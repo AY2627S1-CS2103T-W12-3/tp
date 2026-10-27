@@ -1201,10 +1201,18 @@ and cannot exceed `2147483648`.<br>
 Each contact and event has an `archived` value of the JSON boolean `true` or `false`, without quotes. A missing or
 `null` value is read as `false`; quoted strings such as `"false"`, numbers such as `17`, and other values make the
 data file invalid.<br>
+Other saved values must also use the correct JSON type. For example, a phone number must be a quoted string, even
+when it contains only digits; event attendance values must be strings. Numbers or booleans in text fields, and quoted
+booleans in boolean fields, make the file invalid. The warning identifies the affected field when possible.<br>
 If a contact uses a tag that is missing from the top-level `tags` list, CoordiMate adds it to the global tag list when
 the file is loaded. Existing top-level tags, including unused tags, retain their saved order and capitalization.<br>
 Furthermore, certain edits can cause CoordiMate to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </box>
+
+If `preferences.json` contains invalid JSON or a value of the wrong type, CoordiMate warns you and uses default
+preferences for that session. For example, `windowMaximized` must be `true` or `false` without quotes, and window
+width and height must be JSON numbers. The original preferences file is kept unchanged, including when you close the
+app. Repair or restore the file shown in the warning before the next launch.
 
 --------------------------------------------------------------------------------------------------------------------
 

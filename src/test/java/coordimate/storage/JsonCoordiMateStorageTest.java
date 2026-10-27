@@ -61,6 +61,53 @@ public class JsonCoordiMateStorageTest {
     }
 
     @Test
+    public void readCoordiMate_numericPhone_rejectsWithoutChangingFile() throws Exception {
+        Path path = testFolder.resolve("data.json");
+        String invalid = """
+                {"persons":[{"name":"Alex Yeoh","phone":8000001,"email":"alex@example.com"}]}
+                """;
+        Files.writeString(path, invalid);
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path);
+
+        DataLoadingException error = assertThrows(DataLoadingException.class, storage::readCoordiMate);
+
+        assertEquals("Invalid JSON type at persons[0].phone: expected a string.", error.getCause().getMessage());
+        assertThrows(DataLoadingException.class, storage::removeYearZeroEvents);
+        assertEquals(invalid, Files.readString(path));
+    }
+
+    @Test
+    public void readCoordiMate_numericAttendance_rejectsNestedValue() throws Exception {
+        Path path = testFolder.resolve("data.json");
+        Files.writeString(path, """
+                {"persons":[],"events":[{"name":"Concert","startTime":"01-01-2026",
+                "endTime":"02-01-2026","attendance":{"Alex Yeoh":17}}]}
+                """);
+
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path);
+        DataLoadingException error = assertThrows(DataLoadingException.class, storage::readCoordiMate);
+
+        assertEquals("Invalid JSON type at events[0].attendance.Alex Yeoh: expected a string.",
+                error.getCause().getMessage());
+    }
+
+    @Test
+    public void removeYearZeroEvents_invalidArchiveStatus_doesNotRewriteFile() throws Exception {
+        Path path = testFolder.resolve("data.json");
+        String invalid = """
+                {"persons":[],"events":[{"name":"Year Zero","startTime":"01-01-0000",
+                "endTime":"02-01-0000","archived":17}]}
+                """;
+        Files.writeString(path, invalid);
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path);
+
+        DataLoadingException error = assertThrows(DataLoadingException.class, storage::removeYearZeroEvents);
+
+        assertEquals("Event \"Year Zero\": archived must be true or false.", error.getCause().getMessage());
+        assertEquals(invalid, Files.readString(path));
+    }
+
+    @Test
     public void removeYearZeroEvents_mixedData_preservesValidDataAndDeletesOnlyOnce() throws Exception {
         CoordiMate expected = getTypicalCoordiMate();
         EventTime start = new EventTime("01-01-0001");

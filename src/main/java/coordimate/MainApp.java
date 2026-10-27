@@ -11,6 +11,7 @@ import java.util.logging.Logger;
 import coordimate.commons.core.LogsCenter;
 import coordimate.commons.exceptions.DataLoadingException;
 import coordimate.commons.exceptions.IllegalValueException;
+import coordimate.commons.exceptions.JsonTypeMismatchException;
 import coordimate.commons.util.StringUtil;
 import coordimate.logic.Logic;
 import coordimate.logic.LogicManager;
@@ -47,6 +48,8 @@ public class MainApp extends Application {
     protected Model model;
     protected boolean isDataRecoveryMode;
     protected String dataRecoveryDetail = "";
+    protected boolean isPrefsRecoveryMode;
+    protected String prefsRecoveryDetail = "";
 
     private final Path userPrefsFilePath;
     private final Path coordiMateFilePath;
@@ -90,6 +93,15 @@ public class MainApp extends Application {
                     + "Check the data file: " + coordiMateFilePath;
         }
 
+        if (isPrefsRecoveryMode) {
+            String detail = prefsRecoveryDetail.isEmpty() ? "" : "Problem: " + prefsRecoveryDetail + "\n";
+            String prefsWarning = "Preferences could not be loaded. Default preferences are in use for this "
+                    + "session. The original file will not be changed.\n" + detail
+                    + "Repair or restore this file before restarting CoordiMate:\n"
+                    + userPrefsFilePath.toAbsolutePath();
+            startupWarning = startupWarning.isEmpty() ? prefsWarning : startupWarning + "\n\n" + prefsWarning;
+        }
+
         model = initModelManager(storage, userPrefs);
 
         logic = new LogicManager(model, storage);
@@ -122,6 +134,8 @@ public class MainApp extends Application {
             isDataRecoveryMode = true;
             if (e.getCause() instanceof IllegalValueException invalidValue) {
                 dataRecoveryDetail = Objects.toString(invalidValue.getMessage(), "");
+            } else if (e.getCause() instanceof JsonTypeMismatchException invalidType) {
+                dataRecoveryDetail = Objects.toString(invalidType.getMessage(), "");
             }
             initialData = new CoordiMate();
         }
@@ -137,6 +151,8 @@ public class MainApp extends Application {
     protected UserPrefs initPrefs(JsonUserPrefsStorage storage) {
         Path prefsFilePath = storage.getUserPrefsFilePath();
         logger.info("Using preference file : " + prefsFilePath);
+        isPrefsRecoveryMode = false;
+        prefsRecoveryDetail = "";
 
         UserPrefs initializedPrefs;
         try {
@@ -149,13 +165,19 @@ public class MainApp extends Application {
             logger.warning("Preference file at " + prefsFilePath + " could not be loaded."
                     + " Using default preferences.");
             initializedPrefs = new UserPrefs();
+            isPrefsRecoveryMode = true;
+            if (e.getCause() instanceof JsonTypeMismatchException invalidType) {
+                prefsRecoveryDetail = Objects.toString(invalidType.getMessage(), "");
+            }
         }
 
         //Update prefs file in case it was missing to begin with or there are new/unused fields
-        try {
-            storage.saveUserPrefs(initializedPrefs);
-        } catch (IOException e) {
-            logger.warning("Failed to save preference file : " + StringUtil.getDetails(e));
+        if (!isPrefsRecoveryMode) {
+            try {
+                storage.saveUserPrefs(initializedPrefs);
+            } catch (IOException e) {
+                logger.warning("Failed to save preference file : " + StringUtil.getDetails(e));
+            }
         }
 
         return initializedPrefs;
@@ -171,10 +193,12 @@ public class MainApp extends Application {
     public void stop() {
         logger.info("============================ [ Stopping CoordiMate ] =============================");
         ui.stop();
-        try {
-            storage.saveUserPrefs(model.getUserPrefs());
-        } catch (IOException e) {
-            logger.severe("Failed to save preferences " + StringUtil.getDetails(e));
+        if (!isPrefsRecoveryMode) {
+            try {
+                storage.saveUserPrefs(model.getUserPrefs());
+            } catch (IOException e) {
+                logger.severe("Failed to save preferences " + StringUtil.getDetails(e));
+            }
         }
     }
 }

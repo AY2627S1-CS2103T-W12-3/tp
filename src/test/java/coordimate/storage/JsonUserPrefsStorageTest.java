@@ -73,6 +73,26 @@ public class JsonUserPrefsStorageTest {
         assertEquals(expected, actual);
     }
 
+    @Test
+    public void readUserPrefs_wrongScalarTypes_rejectsWithFieldPath() throws IOException {
+        Path prefsFile = testFolder.resolve("preferences.json");
+        String[][] cases = {
+            {"{\"guiSettings\":{\"windowMaximized\":17}}", "guiSettings.windowMaximized", "a boolean"},
+            {"{\"hasSeenTutorial\":\"false\"}", "hasSeenTutorial", "a boolean"},
+            {"{\"guiSettings\":{\"windowWidth\":\"1200\"}}", "guiSettings.windowWidth", "a number"},
+            {"{\"guiSettings\":{\"windowCoordinates\":{\"x\":1.5}}}",
+                "guiSettings.windowCoordinates.x", "an integer"}
+        };
+        for (String[] testCase : cases) {
+            Files.writeString(prefsFile, testCase[0]);
+            JsonUserPrefsStorage storage = new JsonUserPrefsStorage(prefsFile);
+            DataLoadingException error = org.junit.jupiter.api.Assertions.assertThrows(DataLoadingException.class,
+                    storage::readUserPrefs);
+            assertEquals("Invalid JSON type at " + testCase[1] + ": expected " + testCase[2] + ".",
+                    error.getCause().getMessage());
+        }
+    }
+
     private UserPrefs getTypicalUserPrefs() {
         UserPrefs userPrefs = new UserPrefs();
         userPrefs.setGuiSettings(new GuiSettings(1000, 500, 300, 100));
