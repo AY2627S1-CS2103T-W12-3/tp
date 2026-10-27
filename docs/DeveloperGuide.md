@@ -559,6 +559,8 @@ To add a filter field, add a constant to `FilterField`, add a case to `FilterCom
 The `search` command is implemented separately. `SearchCommand` uses `ContactMatchesKeywordPredicate`, which tests
 whether a contact's name, phone, email, address, or organisation contains the keyword, ignoring case. It compares
 substrings with `String#regionMatches(true, ...)`, using the same case comparison as duplicate-name detection.
+A phone number also matches when it contains the keyword after `Phone#normalize` removes spaces, hyphens, and
+brackets from both, the same normalisation that `delete p/`, `edit target/`, and duplicate detection use.
 
 #### Design considerations
 
