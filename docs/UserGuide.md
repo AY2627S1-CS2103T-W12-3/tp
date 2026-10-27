@@ -1155,15 +1155,11 @@ A command that changes your data is saved to the data file **before** the change
 cannot be saved, the command is rejected with an error such as `Event could not be saved. No changes were made.`
 and both the app and the data file stay as they were, so what you see always matches what is saved.
 
-Commands that do not change saved data also attempt to save after running. A save failure reports one of the
-following messages; a command may already have changed the displayed view when this happens.
-
-| Condition | Error message |
-|---|---|
-| Saving is denied by file permissions. | `Data could not be saved to {DETAILS}. Check write permissions for the file and its folder.` |
-| Another file error prevents saving. | `Data could not be saved. Check the local data file. Details: {DETAILS}` |
-
-`{DETAILS}` is supplied by the operating system and can include a file path or an explanation of the failure.
+Commands that only change the displayed view, such as `list`, `search`, and `filter`, do not save the data file.
+If another CoordiMate window changes the data file while this window is open, this window can still display its
+previously loaded data. Its next command that saves data is rejected with
+`The data file changed in another window. Reopen this window before saving. No changes were made.`
+The newer data file is preserved. Close and reopen the stale window before making further changes.
 
 ### Editing the data file
 
@@ -1172,7 +1168,7 @@ CoordiMate data is saved automatically as a JSON file `[JAR file location]/data/
 <box type="warning" seamless>
 
 **Caution:**
-If your changes make the data file invalid, CoordiMate starts with an empty dataset at the next run. While the file is invalid, commands that change data (such as `add`, `addevent`, and `clear`) are rejected with `Saved data could not be loaded. Check the local data file.` and leave the file untouched, so that you can close the app and fix it. Commands such as `list`, `search`, and `filter` save the data currently in the app, which **replaces the invalid file**. We therefore recommend backing up the file before editing it.<br>
+If your changes make the data file invalid, CoordiMate starts with an empty dataset at the next run. While the file is invalid, commands that change data (such as `add`, `addevent`, and `clear`) are rejected with `Saved data could not be loaded. Check the local data file.` and leave the file untouched, so that you can close the app and fix it. Commands such as `list`, `search`, and `filter` do not change the file.<br>
 Each name in an event's `members` list must exactly match the name of a saved contact, or the data file is invalid.<br>
 Contact and event names are read with several spaces in a row treated as one. If two contacts, or two events, have
 names that differ only in letter case or spacing (e.g. `Alex Yeoh` and `Alex  Yeoh`), they are duplicates and the data

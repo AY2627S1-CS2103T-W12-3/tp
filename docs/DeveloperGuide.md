@@ -335,8 +335,10 @@ These are `AddCommand`, `EditCommand`,
    IDs and allocation state. Its filtered contact list initially shows the same contacts as the live view.
    Commands resolve member IDs against the complete saved contact list in either model.
 1. It executes the command on the candidate. If the command fails, the candidate is discarded.
-1. It saves the candidate's data with `Storage#saveCoordiMate`. If saving fails, the command is rejected with a
-   save error such as `Event could not be saved. No changes were made.` and the candidate is discarded.
+1. It saves the candidate's data with `Storage#saveCoordiMateIfUnchanged`. This compares the file with the revision
+   loaded at startup or last saved by this window while holding a lock shared by CoordiMate instances. If another
+   window changed the file, the command is rejected and the candidate is discarded. Other save failures still
+   report an error such as `Event could not be saved. No changes were made.`
 1. Only then does it call `Model#setCoordiMate` to replace the live model's data with the candidate's data,
    which updates the UI.
 
@@ -366,11 +368,9 @@ The next input is treated as the answer, not as a command: `y` or `Y` runs the d
 `executeAtomicCommand`, and any other input cancels it.
 
 **Commands that do not change data**, such as `list`, `search`, `filter`, `members`, and `listtags`, are executed
-directly on the live model. As in AddressBook-Level3, `LogicManager` still saves the model afterwards. This has two
-consequences that developers should be aware of:
-
-* If the data file is invalid, such a command replaces it with the data currently in the app.
-* If the data file cannot be written, such a command reports a save error even though it changed no data.
+directly on the live model without saving. They cannot overwrite a newer or invalid data file. A window that has
+become stale can still show its loaded data, but its next save is rejected until it is reopened. Reminder dismissal
+uses the same conditional save and retains its session-only fallback when saving fails.
 
 `CommandResult.View` carries one requested view, or `NONE` when a command does not request a view change.
 `MainWindow` applies a requested view through the same view controls used by the sidebar.
