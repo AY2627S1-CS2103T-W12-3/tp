@@ -44,6 +44,14 @@ public class SearchCommandParserTest {
     }
 
     @Test
+    public void parse_repeatedSpaces_collapsed() {
+        SearchCommand expected = new SearchCommand(new ContactMatchesKeywordPredicate("NUS Student Affairs"),
+                "NUS Student Affairs");
+        assertParseSuccess(parser, "NUS  Student   Affairs", expected);
+        assertParseSuccess(parser, "\"NUS  Student \t Affairs\"", expected);
+    }
+
+    @Test
     public void parse_null_throwsNullPointerException() {
         org.junit.jupiter.api.Assertions.assertThrows(NullPointerException.class, () -> parser.parse(null));
     }

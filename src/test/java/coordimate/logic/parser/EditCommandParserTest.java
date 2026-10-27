@@ -172,6 +172,14 @@ public class EditCommandParserTest {
     }
 
     @Test
+    public void parse_organisationWithRepeatedSpaces_collapsed() {
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder()
+                .withOrganisation("NUS Student Affairs").build();
+
+        assertParseSuccess(parser, "1 o/NUS  Student   Affairs", new EditCommand(new MemberId(1), descriptor));
+    }
+
+    @Test
     public void parse_emptyOptionalFields_success() {
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder()
                 .withoutBirthday().withoutAddress().withoutOrganisation().withoutNote().build();

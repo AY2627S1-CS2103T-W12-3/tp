@@ -65,6 +65,14 @@ public class ContactMatchesKeywordPredicateTest {
     }
 
     @Test
+    public void test_addressWithRepeatedSpaces_matchesSingleSpacedKeyword() {
+        Person person = new PersonBuilder().withAddress("21 Kent  Ridge Road").build();
+
+        assertTrue(new ContactMatchesKeywordPredicate("kent ridge").test(person));
+        assertEquals("21 Kent  Ridge Road", person.getAddress().orElseThrow().getValue()); // stored as entered
+    }
+
+    @Test
     public void test_noAddress_doesNotMatchAddressKeyword() {
         Person person = new PersonBuilder().withoutAddress().build();
 

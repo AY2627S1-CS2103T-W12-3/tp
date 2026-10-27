@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.function.Predicate;
 
+import coordimate.commons.util.StringUtil;
 import coordimate.commons.util.ToStringBuilder;
 
 /**
@@ -31,7 +32,9 @@ public class ContactMatchesKeywordPredicate implements Predicate<Person> {
         return containsIgnoreCase(person.getName().getFullName(), keyword)
                 || containsIgnoreCase(person.getPhone().getValue(), keyword)
                 || containsIgnoreCase(person.getEmail().getValue(), keyword)
-                || person.getAddress().map(address -> containsIgnoreCase(address.getValue(), keyword))
+                // Addresses keep their spacing as entered, so runs of spaces are collapsed only for matching.
+                || person.getAddress().map(address ->
+                        containsIgnoreCase(StringUtil.normalizeWhitespace(address.getValue()), keyword))
                         .orElse(false)
                 || person.getOrganisation().map(organisation -> containsIgnoreCase(organisation.getValue(), keyword))
                         .orElse(false);

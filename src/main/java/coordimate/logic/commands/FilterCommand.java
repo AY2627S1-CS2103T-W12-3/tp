@@ -71,8 +71,10 @@ public class FilterCommand extends Command {
                 return person -> event.hasMember(person.getName());
             }
             case ORGANISATION -> {
+                String organisationName = StringUtil.normalizeWhitespace(value);
                 Predicate<Person> inOrganisation = person -> person.getOrganisation()
-                        .map(organisation -> organisation.getValue().equalsIgnoreCase(value)).orElse(false);
+                        .map(organisation -> organisation.getValue().equalsIgnoreCase(organisationName))
+                        .orElse(false);
                 boolean organisationExists = model.getCoordiMate().getPersonList().stream().anyMatch(inOrganisation);
                 if (!organisationExists) {
                     throw new CommandException(MESSAGE_NO_MATCHING_VALUE);

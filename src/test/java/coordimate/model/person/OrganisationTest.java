@@ -28,9 +28,11 @@ public class OrganisationTest {
         assertFalse(Organisation.isValidOrganisation("NUS @ Kent Ridge")); // unsupported symbol
         assertFalse(Organisation.isValidOrganisation("NUS #1"));
         assertFalse(Organisation.isValidOrganisation("A".repeat(81)));
+        assertFalse(Organisation.isValidOrganisation("A".repeat(40) + " " + "A".repeat(40)));
 
         assertTrue(Organisation.isValidOrganisation("A"));
         assertTrue(Organisation.isValidOrganisation("A".repeat(80)));
+        assertTrue(Organisation.isValidOrganisation("A".repeat(40) + "   " + "A".repeat(39))); // limit after collapsing
         assertTrue(Organisation.isValidOrganisation("NUS Student Affairs"));
         assertTrue(Organisation.isValidOrganisation("Arts & Culture-2"));
         assertTrue(Organisation.isValidOrganisation("NUS/CCA"));
@@ -48,6 +50,12 @@ public class OrganisationTest {
     @Test
     public void constructor_surroundingSpaces_trimmed() {
         assertEquals("NUS Student Affairs", new Organisation("  NUS Student Affairs  ").getValue());
+    }
+
+    @Test
+    public void constructor_repeatedInternalSpaces_collapsed() {
+        assertEquals("NUS Student Affairs", new Organisation("NUS  Student   Affairs").getValue());
+        assertEquals(new Organisation("NUS Student Affairs"), new Organisation(" NUS  Student Affairs "));
     }
 
     @Test

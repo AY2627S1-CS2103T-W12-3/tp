@@ -42,6 +42,14 @@ public class AddCommandParserTest {
     }
 
     @Test
+    public void parse_organisationWithRepeatedSpaces_collapsed() {
+        AddCommand expected = new AddCommand(new PersonBuilder().withRole("Logistics").withoutAddress()
+                .withOrganisation("NUS Student Affairs").withTags().build());
+
+        assertParseSuccess(parser, REQUIRED + " o/NUS  Student   Affairs", expected);
+    }
+
+    @Test
     public void parse_optionalFieldsOmittedOrEmpty_unset() {
         AddCommand expected = new AddCommand(new PersonBuilder().withRole("Logistics").withoutAddress()
                 .withTags().build());

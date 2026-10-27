@@ -120,6 +120,14 @@ public class JsonAdaptedPersonTest {
     }
 
     @Test
+    public void toModelType_organisationWithRepeatedSpaces_collapsed() throws Exception {
+        JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS,
+                "Logistics", null, "NUS  Student Affairs", null, VALID_TAGS);
+
+        assertEquals(new Organisation("NUS Student Affairs"), person.toModelType().getOrganisation().orElseThrow());
+    }
+
+    @Test
     public void toModelType_invalidOrganisation_throwsIllegalValueException() {
         JsonAdaptedPerson person = new JsonAdaptedPerson(VALID_NAME, VALID_PHONE, VALID_EMAIL, VALID_ADDRESS,
                 "Logistics", null, "NUS_Student Affairs", null, VALID_TAGS);

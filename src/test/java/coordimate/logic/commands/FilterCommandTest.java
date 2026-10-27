@@ -115,6 +115,20 @@ public class FilterCommandTest {
     }
 
     @Test
+    public void execute_organisationFilterWithRepeatedSpaces_success() throws Exception {
+        CoordiMate coordiMate = new CoordiMate();
+        var aliceAtNus = new PersonBuilder(ALICE).withOrganisation("NUS Student Affairs").build();
+        coordiMate.addPerson(aliceAtNus);
+        ModelManager modelWithOrganisations = new ModelManager(coordiMate, new UserPrefs());
+        FilterCommand command = filter(FilterField.ORGANISATION, "NUS  Student   Affairs");
+
+        CommandResult result = command.execute(modelWithOrganisations);
+
+        assertEquals(String.format(FilterCommand.MESSAGE_SUCCESS, 1), result.getFeedbackToUser());
+        assertEquals(List.of(aliceAtNus), modelWithOrganisations.getFilteredPersonList());
+    }
+
+    @Test
     public void execute_organisationDoesNotExist_throwsCommandException() {
         FilterCommand command = filter(FilterField.ORGANISATION, "zzzNoSuchOrganisation");
 
