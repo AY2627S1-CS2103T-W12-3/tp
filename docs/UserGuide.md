@@ -828,6 +828,7 @@ all saved contacts, regardless of the current contact search or filter, and is o
 their tags, role, and organisation. Archived contacts are included and marked `(archived)`. Every tag assigned to a
 contact is included in this global tag list, including tags recovered from older saved data.
 Success: `Here is the list of all existing tags.` followed by `Tags: ` and the tag names, separated by commas.
+If every tag has been deleted, `listtags` shows `There are no tags. Create one with addtag.` instead.
 
 Unlike `list`, `listtags` does not ignore extra text: `listtags 123` is rejected with
 `Invalid command format.`
