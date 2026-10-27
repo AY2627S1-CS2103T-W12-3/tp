@@ -181,8 +181,7 @@ public class EditCommand extends Command {
         requireNonNull(identifier);
         requireNonNull(savedPersons);
         String trimmedIdentifier = identifier.strip();
-        String normalizedPhone = trimmedIdentifier.replace(" ", "").replace("-", "")
-                .replace("(", "").replace(")", "");
+        String normalizedPhone = Phone.normalize(trimmedIdentifier);
         String normalizedName = StringUtil.normalizeWhitespace(identifier);
         List<Person> matches = savedPersons.stream().filter(person ->
                 person.getName().getFullName().equalsIgnoreCase(normalizedName)

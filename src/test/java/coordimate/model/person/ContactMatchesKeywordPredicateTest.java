@@ -47,6 +47,22 @@ public class ContactMatchesKeywordPredicateTest {
     }
 
     @Test
+    public void test_phoneFormattingDiffers_matchesIgnoringFormatting() {
+        Person spaced = new PersonBuilder().withPhone("9123 4567").build();
+        Person plain = new PersonBuilder().withPhone("87438807").build();
+        Person bracketed = new PersonBuilder().withPhone("+65 (9435) 1253").build();
+
+        assertTrue(new ContactMatchesKeywordPredicate("91234567").test(spaced));
+        assertTrue(new ContactMatchesKeywordPredicate("2345").test(spaced)); // across the space
+        assertTrue(new ContactMatchesKeywordPredicate("8743 8807").test(plain));
+        assertTrue(new ContactMatchesKeywordPredicate("8743-8807").test(plain));
+        assertTrue(new ContactMatchesKeywordPredicate("+6594351253").test(bracketed));
+
+        assertFalse(new ContactMatchesKeywordPredicate("91234568").test(spaced));
+        assertFalse(new ContactMatchesKeywordPredicate("( )").test(plain)); // formatting only
+    }
+
+    @Test
     public void test_emailContainsKeyword_returnsTrue() {
         Person person = new PersonBuilder().withEmail("alice@example.com").build();
 

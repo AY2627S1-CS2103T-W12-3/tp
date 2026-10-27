@@ -944,6 +944,8 @@ Format: `search KEYWORD`
 * Partial words match; for example, `Han` matches `Hans`.
 * The entire keyword is matched as one substring within a field. Spaces and word order matter:
   `search Hans Bo` matches `Hans Bo Yang`, but does not match `Bo Hans` or separate contacts named `Hans` and `Bo`.
+* Phone numbers are also matched ignoring spaces, hyphens, and brackets, so `search 91234567` finds `9123 4567`,
+  and `search 9123 4567` finds `91234567`.
 * Surrounding quotation marks are optional: `search "Jurong West"` and `search Jurong West` give the same results.
 * Leading and trailing spaces are ignored. An empty keyword is rejected.
 * Search checks all saved contacts, including those hidden by the current search or filter.
