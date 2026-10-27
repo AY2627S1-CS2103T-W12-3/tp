@@ -29,8 +29,8 @@ public class AssignCommand extends EventMembersCommand {
     public static final String MESSAGE_SAVE_ERROR = "Assignment could not be saved. No changes were made.";
     public static final String MESSAGE_CONTACT_ARCHIVED = "%1$s is archived, so it cannot be assigned. "
             + "No changes were made. Unarchive it first with: unarchive %2$d";
-    public static final String MESSAGE_CONTACT_ON_LEAVE = "%1$s is on leave until %2$s, "
-            + "covering the entire event %3$s. No changes were made.";
+    public static final String MESSAGE_CONTACT_ON_LEAVE = "Unable to assign member. "
+            + "Member is on leave for the entire event. No changes were made.";
 
     /**
      * Creates an assignment of the contacts with the given permanent member IDs to the named event.
@@ -50,8 +50,7 @@ public class AssignCommand extends EventMembersCommand {
                         contact.getMemberId().orElseThrow().getValue()));
             }
             if (!target.hasMember(contact.getName()) && contact.isOnLeave(target.getEndTime().getDate())) {
-                throw new CommandException(String.format(MESSAGE_CONTACT_ON_LEAVE, contact.getName(),
-                        contact.getLeaveDate().orElseThrow(), target.getName()));
+                throw new CommandException(MESSAGE_CONTACT_ON_LEAVE);
             }
         }
         Set<Name> selected = new LinkedHashSet<>();

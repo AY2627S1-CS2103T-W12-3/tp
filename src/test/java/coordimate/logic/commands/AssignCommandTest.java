@@ -122,8 +122,7 @@ public class AssignCommandTest {
     public void execute_leaveEndsAfterEvent_noChanges() {
         model.setPerson(ALICE, new PersonBuilder(ALICE).withLeaveDate("09-08-2026").build());
 
-        assertEquals("Alice Pauline is on leave until 09-08-2026, covering the entire event Final Concert. "
-                + "No changes were made.",
+        assertEquals("Unable to assign member. Member is on leave for the entire event. No changes were made.",
                 assertThrows(CommandException.class, () -> assign("Final Concert", 1).execute(model)).getMessage());
         assertEquals(List.of(concert, fair), model.getCoordiMate().getEventList());
     }
@@ -132,8 +131,7 @@ public class AssignCommandTest {
     public void execute_leaveEndsOnTimedEventEndDate_noChanges() {
         model.setPerson(ALICE, new PersonBuilder(ALICE).withLeaveDate("08-08-2026").build());
 
-        assertEquals(String.format(AssignCommand.MESSAGE_CONTACT_ON_LEAVE, ALICE.getName(),
-                "08-08-2026", concert.getName()),
+        assertEquals(AssignCommand.MESSAGE_CONTACT_ON_LEAVE,
                 assertThrows(CommandException.class, () -> assign("Final Concert", 1).execute(model)).getMessage());
         assertEquals(List.of(concert, fair), model.getCoordiMate().getEventList());
     }
@@ -142,8 +140,7 @@ public class AssignCommandTest {
     public void execute_leaveEndsOnDateOnlyEventEndDate_noChanges() {
         model.setPerson(ALICE, new PersonBuilder(ALICE).withLeaveDate("10-10-2026").build());
 
-        assertEquals(String.format(AssignCommand.MESSAGE_CONTACT_ON_LEAVE, ALICE.getName(),
-                "10-10-2026", fair.getName()),
+        assertEquals(AssignCommand.MESSAGE_CONTACT_ON_LEAVE,
                 assertThrows(CommandException.class, () -> assign("Fair", 1).execute(model)).getMessage());
         assertEquals(List.of(concert, fair), model.getCoordiMate().getEventList());
     }
@@ -184,8 +181,7 @@ public class AssignCommandTest {
         model.setPerson(ALICE, new PersonBuilder(ALICE).withLeaveDate("08-08-2026").build());
         List<Event> before = List.copyOf(model.getCoordiMate().getEventList());
 
-        assertEquals(String.format(AssignCommand.MESSAGE_CONTACT_ON_LEAVE, ALICE.getName(),
-                "08-08-2026", concert.getName()),
+        assertEquals(AssignCommand.MESSAGE_CONTACT_ON_LEAVE,
                 assertThrows(CommandException.class, () -> assign("Final Concert", 3, 1, 4).execute(model))
                         .getMessage());
         assertEquals(before, model.getCoordiMate().getEventList());

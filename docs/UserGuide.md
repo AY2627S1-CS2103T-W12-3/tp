@@ -570,7 +570,7 @@ If some contacts were already assigned: `Assigned 1 member(s) to Final Concert. 
 | A member ID does not exist. | `No contact exists with member ID: {MEMBER_ID}. Use an existing member ID.` |
 | A member ID is not written as digits representing a value from 1 to 2147483647. | `Member IDs must be positive integers separated by spaces. Example: c/1 3 5` |
 | A specified contact is archived. | `{NAME} is archived, so it cannot be assigned. No changes were made. Unarchive it first with: unarchive {MEMBER_ID}` |
-| A new member's leave covers the entire event. | `{NAME} is on leave until {LEAVE_END_DATE}, covering the entire event {EVENT_NAME}. No changes were made.` |
+| A new member's leave covers the entire event. | `Unable to assign member. Member is on leave for the entire event. No changes were made.` |
 | Every specified contact is already assigned. | `All specified contacts are already assigned to {EVENT_NAME}. No changes were made.` |
 | The event name is empty. | `Event name must not be empty. Example: evn/Final Concert` |
 | The event name is longer than 100 characters. | `Event name must not exceed 100 characters. Example: evn/Final Concert` |

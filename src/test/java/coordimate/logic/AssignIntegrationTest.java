@@ -75,8 +75,7 @@ public class AssignIntegrationTest {
         CoordiMate before = new CoordiMate(model.getCoordiMate());
         String beforeFile = Files.readString(path);
 
-        assertEquals(Messages.withUsage(String.format(AssignCommand.MESSAGE_CONTACT_ON_LEAVE,
-                ALICE.getName(), "08-08-2026", "Final Concert"), AssignCommand.MESSAGE_USAGE),
+        assertEquals(Messages.withUsage(AssignCommand.MESSAGE_CONTACT_ON_LEAVE, AssignCommand.MESSAGE_USAGE),
                 assertThrows(CommandException.class, () -> logic.execute("assign evn/Final Concert c/3 1"))
                         .getMessage());
         assertEquals(before, model.getCoordiMate());
