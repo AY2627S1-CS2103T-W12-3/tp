@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.StringJoiner;
 
 import coordimate.model.event.AttendanceStatus;
 import coordimate.model.event.Event;
@@ -429,7 +430,7 @@ public class EventListPanel extends UiPart<Region> {
     }
 
     /**
-     * Counts date-only events inclusively, measures timed events in hours and minutes,
+     * Counts date-only events inclusively, measures timed events in 24-hour days, hours and minutes,
      * and identifies the missing time for mixed inputs.
      */
     private String formatDuration(Event event) {
@@ -448,10 +449,23 @@ public class EventListPanel extends UiPart<Region> {
             return "Unknown (end time not specified)";
         }
         long minutes = Duration.between(startDateTime.orElseThrow(), endDateTime.orElseThrow()).toMinutes();
-        long hours = minutes / 60;
+        if (minutes == 0) {
+            return "0 minutes";
+        }
+        long days = minutes / (24 * 60);
+        long hours = minutes / 60 % 24;
         long remainder = minutes % 60;
-        return hours + (hours == 1 ? " hour" : " hours")
-                + (remainder == 0 ? "" : " " + remainder + (remainder == 1 ? " minute" : " minutes"));
+        StringJoiner units = new StringJoiner(" ");
+        if (days > 0) {
+            units.add(days + (days == 1 ? " day" : " days"));
+        }
+        if (hours > 0) {
+            units.add(hours + (hours == 1 ? " hour" : " hours"));
+        }
+        if (remainder > 0) {
+            units.add(remainder + (remainder == 1 ? " minute" : " minutes"));
+        }
+        return units.toString();
     }
 
     /**

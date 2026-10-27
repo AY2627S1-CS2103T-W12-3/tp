@@ -89,6 +89,41 @@ public class EventListPanelTest {
     }
 
     @Test
+    public void selectEvent_timedDuration_formatsDaysHoursAndMinutes() throws Exception {
+        runOnJavaFxThread(() -> {
+            assertDuration("27-10-2026 09:00", "29-10-2026 10:30", "2 days 1 hour 30 minutes");
+            assertDuration("27-10-2026 09:00", "29-10-2026 09:00", "2 days");
+            assertDuration("27-10-2026 09:00", "28-10-2026 09:00", "1 day");
+            assertDuration("27-10-2026 09:00", "28-10-2026 10:01", "1 day 1 hour 1 minute");
+            assertDuration("27-10-2026 09:00", "29-10-2026 09:30", "2 days 30 minutes");
+            assertDuration("27-10-2026 09:00", "29-10-2026 11:00", "2 days 2 hours");
+        });
+    }
+
+    @Test
+    public void selectEvent_timedDuration_omitsZeroUnitsAndPluralises() throws Exception {
+        runOnJavaFxThread(() -> {
+            assertDuration("27-10-2026 09:00", "27-10-2026 09:00", "0 minutes");
+            assertDuration("27-10-2026 09:00", "27-10-2026 09:01", "1 minute");
+            assertDuration("27-10-2026 09:00", "27-10-2026 09:30", "30 minutes");
+            assertDuration("27-10-2026 09:00", "27-10-2026 10:00", "1 hour");
+            assertDuration("27-10-2026 09:00", "27-10-2026 11:00", "2 hours");
+            assertDuration("27-10-2026 09:00", "27-10-2026 10:01", "1 hour 1 minute");
+            assertDuration("27-10-2026 09:00", "27-10-2026 11:30", "2 hours 30 minutes");
+        });
+    }
+
+    @Test
+    public void selectEvent_timedDuration_countsElapsedTimeAcrossDateBoundaries() throws Exception {
+        runOnJavaFxThread(() -> {
+            assertDuration("27-10-2026 23:59", "28-10-2026 00:00", "1 minute");
+            assertDuration("27-10-2026 09:00", "28-10-2026 08:59", "23 hours 59 minutes");
+            assertDuration("31-10-2026 23:00", "01-11-2026 01:30", "2 hours 30 minutes");
+            assertDuration("31-12-2026 09:00", "02-01-2027 10:00", "2 days 1 hour");
+        });
+    }
+
+    @Test
     public void memberIds_ignoreContactFilteringAndFollowRosterReorderingAndEdits() throws Exception {
         runOnJavaFxThread(() -> {
             Person alice = new PersonBuilder(TypicalPersons.ALICE).withMemberId(12)
