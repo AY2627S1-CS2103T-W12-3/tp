@@ -3,8 +3,10 @@ package coordimate.storage;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -19,6 +21,27 @@ import coordimate.model.event.EventTime;
 import coordimate.model.person.Name;
 
 public class JsonAdaptedEventTest {
+    @Test
+    public void hasYearZero_yearZeroInDatesOrHistory_returnsTrue() {
+        for (String value : List.of("01-01-0000", "01-01-0000 00:00", " 01-01-0000 12:30 ")) {
+            assertTrue(new JsonAdaptedEvent("Concert", value, "02-01-2026").hasYearZero());
+            assertTrue(new JsonAdaptedEvent("Concert", "01-01-2026", value).hasYearZero());
+            assertTrue(new JsonAdaptedEvent("Concert", "01-01-2026", "02-01-2026", List.of(), Map.of(),
+                    List.of("01-01-2026", value)).hasYearZero());
+        }
+    }
+
+    @Test
+    public void hasYearZero_nullPositiveYearOrMalformedDates_returnsFalse() {
+        for (String value : Arrays.asList(null, "", "01-01-0001", "31-12-9999 23:59", "0000-01-01",
+                "01-01-0000 24:00:00")) {
+            JsonAdaptedEvent event = new JsonAdaptedEvent("Concert", value, value, List.of(), Map.of(),
+                    Arrays.asList(value));
+
+            assertFalse(event.hasYearZero());
+        }
+    }
+
     @Test
     public void toModelType_positiveYearBoundaries_roundTrip() throws Exception {
         for (String time : new String[] {"", " 00:00"}) {
@@ -229,7 +252,14 @@ public class JsonAdaptedEventTest {
 
     @Test
     public void toModelType_nullAttendanceKeyOrValue_throwsIllegalValueException() {
-        Map<String, String> nullValue = new java.util.HashMap<>();
+        Map<String, String> nullKey = new HashMap<>();
+        nullKey.put(null, "present");
+        JsonAdaptedEvent eventWithNullKey = new JsonAdaptedEvent("Concert", "08-08-2026", "08-08-2026",
+                List.of("Alex Yeoh"), nullKey);
+        assertEquals(JsonAdaptedEvent.MESSAGE_NULL_ATTENDANCE,
+                assertThrows(IllegalValueException.class, eventWithNullKey::toModelType).getMessage());
+
+        Map<String, String> nullValue = new HashMap<>();
         nullValue.put("Alex Yeoh", null);
         JsonAdaptedEvent eventWithNullValue = new JsonAdaptedEvent("Concert", "08-08-2026", "08-08-2026",
                 List.of("Alex Yeoh"), nullValue);
