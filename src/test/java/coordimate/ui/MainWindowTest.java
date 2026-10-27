@@ -1218,14 +1218,18 @@ public class MainWindowTest {
             window.fillInnerParts();
             window.scheduleNormalWindowBoundsUpdate();
 
+            Rectangle2D screenBounds = Screen.getPrimary().getVisualBounds();
+            stage.setMinWidth(0);
+            stage.setMinHeight(0);
+            stage.setWidth(Math.min(900, screenBounds.getWidth() - 100));
+            stage.setHeight(Math.min(700, screenBounds.getHeight() - 100));
             window.show();
             assertFalse(stage.isMaximized());
             window.scheduleNormalWindowBoundsUpdate();
             window.scheduleNormalWindowBoundsUpdate();
 
-            Rectangle2D screenBounds = Screen.getPrimary().getVisualBounds();
-            stage.setWidth(Math.min(950, screenBounds.getWidth()));
-            stage.setHeight(Math.min(700, screenBounds.getHeight()));
+            stage.setWidth(Math.min(950, screenBounds.getWidth() - 100));
+            stage.setHeight(Math.min(700, screenBounds.getHeight() - 100));
             stage.setX(screenBounds.getMinX());
             stage.setY(screenBounds.getMinY());
             double expectedWidth = stage.getWidth();
