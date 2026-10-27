@@ -42,6 +42,7 @@ public class MainApp extends Application {
     protected Logic logic;
     protected Storage storage;
     protected Model model;
+    protected boolean isDataRecoveryMode;
 
     private final Path userPrefsFilePath;
     private final Path coordiMateFilePath;
@@ -75,7 +76,7 @@ public class MainApp extends Application {
 
         logic = new LogicManager(model, storage);
 
-        ui = new UiManager(logic, storage.getCoordiMateFilePath());
+        ui = new UiManager(logic, storage.getCoordiMateFilePath(), isDataRecoveryMode);
     }
 
     /**
@@ -97,6 +98,7 @@ public class MainApp extends Application {
         } catch (DataLoadingException e) {
             logger.warning("Data file at " + storage.getCoordiMateFilePath() + " could not be loaded."
                     + " Will be starting with an empty CoordiMate.");
+            isDataRecoveryMode = true;
             initialData = new CoordiMate();
         }
 

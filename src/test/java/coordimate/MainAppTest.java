@@ -2,6 +2,7 @@ package coordimate;
 
 import static coordimate.testutil.TypicalPersons.getTypicalCoordiMate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -35,6 +36,7 @@ public class MainAppTest {
         app.init();
 
         assertEquals(new CoordiMate(SampleDataUtil.getSampleCoordiMate()), app.model.getCoordiMate());
+        assertFalse(app.isDataRecoveryMode);
         app.stop();
         assertTrue(Files.exists(prefsFile));
     }
@@ -49,6 +51,7 @@ public class MainAppTest {
         app.init();
 
         assertEquals(storedData, app.model.getCoordiMate());
+        assertFalse(app.isDataRecoveryMode);
     }
 
     @Test
@@ -61,6 +64,8 @@ public class MainAppTest {
 
         assertEquals(new CoordiMate(), app.model.getCoordiMate());
         assertTrue(app.logic.getReminders().isEmpty());
+        assertTrue(app.isDataRecoveryMode);
+        assertEquals("not valid JSON", Files.readString(dataFile));
     }
 
     @Test
