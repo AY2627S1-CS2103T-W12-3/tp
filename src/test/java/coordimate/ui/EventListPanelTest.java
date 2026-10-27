@@ -9,6 +9,9 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.awt.GraphicsEnvironment;
+import java.time.Clock;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -53,6 +56,8 @@ public class EventListPanelTest {
     private static final Name BOB = new Name("Bob Lim");
     private static final Name CHARLIE = new Name("Charlie Ng");
     private static final EventTime DATE = new EventTime("25-10-2026");
+    private static final Clock CLOCK = Clock.fixed(LocalDate.of(2026, 11, 30)
+            .atStartOfDay(ZoneId.of("Asia/Makassar")).toInstant(), ZoneId.of("Asia/Makassar"));
 
     @BeforeAll
     public static void startJavaFx() throws InterruptedException {
@@ -686,6 +691,86 @@ public class EventListPanelTest {
             assertCounts(root, "1 Present", "1 Absent", "1 Not marked");
             assertMembers(root, "Alice Tan", "● present", "Bob Lim", "● absent", "Charlie Ng", "● unmarked");
         }
+    }
+
+    @Test
+    public void selectEvent_showsCurrentLeaveSeparatelyFromAttendance() throws Exception {
+        runOnJavaFxThread(() -> {
+            Person alice = new PersonBuilder().withMemberId(12).withName(ALICE.getFullName())
+                    .withLeaveDate("30-11-2026").withNote("Contact by email").build();
+            Person bob = new PersonBuilder().withMemberId(45).withName(BOB.getFullName())
+                    .withLeaveDate("15-12-2026").build();
+            Event event = event(List.of(ALICE, BOB), Map.of(ALICE, AttendanceStatus.PRESENT));
+            Region root = new EventListPanel(FXCollections.observableArrayList(event),
+                    FXCollections.observableArrayList(alice, bob), CLOCK).getRoot();
+            new Scene(root);
+            root.applyCss();
+            getEventList(root).getSelectionModel().selectFirst();
+
+            assertEquals(List.of("On leave until 30-11-2026", "On leave until 15-12-2026"), leaveBadges(root));
+            HBox row = (HBox) getMembers(root).getChildren().getFirst();
+            VBox details = (VBox) row.getChildren().get(2);
+            Label leave = (Label) row.lookup(".leave-badge");
+            assertTrue(leave.isVisible());
+            assertTrue(leave.isManaged());
+            assertTrue(leave.isWrapText());
+            assertEquals(2, details.getChildren().indexOf(leave));
+            assertEquals(3, details.getChildren().indexOf(row.lookup(".event-member-note")));
+            assertCounts(root, "1 Present", "0 Absent", "1 Not marked");
+            assertMembers(root, "Alice Tan", "● present", "Bob Lim", "● unmarked");
+        });
+    }
+
+    @Test
+    public void selectEvent_endedLeaveNoLeaveOrMissingContact_omitsLeaveIndicator() throws Exception {
+        runOnJavaFxThread(() -> {
+            Person alice = new PersonBuilder().withMemberId(12).withName(ALICE.getFullName())
+                    .withLeaveDate("29-11-2026").build();
+            Person bob = new PersonBuilder().withMemberId(45).withName(BOB.getFullName()).withoutLeaveDate().build();
+            Region root = new EventListPanel(FXCollections.observableArrayList(
+                    event(List.of(ALICE, BOB, CHARLIE), Map.of(BOB, AttendanceStatus.ABSENT))),
+                    FXCollections.observableArrayList(alice, bob), CLOCK).getRoot();
+            new Scene(root);
+            root.applyCss();
+            getEventList(root).getSelectionModel().selectFirst();
+
+            assertEquals(List.of(), leaveBadges(root));
+            assertCounts(root, "0 Present", "1 Absent", "2 Not marked");
+            assertMembers(root, "Alice Tan", "● unmarked", "Bob Lim", "● absent", "Charlie Ng", "● unmarked");
+        });
+    }
+
+    @Test
+    public void editContactLeave_refreshesSelectedEventEvenWhenContactIsFilteredOut() throws Exception {
+        runOnJavaFxThread(() -> {
+            Person alice = new PersonBuilder().withMemberId(12).withName(ALICE.getFullName()).build();
+            ObservableList<Person> persons = FXCollections.observableArrayList(alice);
+            FilteredList<Person> filtered = new FilteredList<>(persons, person -> false);
+            Event event = event(List.of(ALICE), Map.of(ALICE, AttendanceStatus.ABSENT));
+            Region root = new EventListPanel(FXCollections.observableArrayList(event), filtered, CLOCK).getRoot();
+            new Scene(root);
+            root.applyCss();
+            getEventList(root).getSelectionModel().selectFirst();
+            assertEquals(List.of(), leaveBadges(root));
+
+            for (String endDate : List.of("30-11-2026", "15-12-2026")) {
+                persons.set(0, new PersonBuilder(alice).withLeaveDate(endDate).build());
+                assertEquals(List.of("On leave until " + endDate), leaveBadges(root));
+                assertSame(event, getEventList(root).getSelectionModel().getSelectedItem());
+                assertCounts(root, "0 Present", "1 Absent", "0 Not marked");
+                assertMembers(root, "Alice Tan", "● absent");
+            }
+            persons.set(0, new PersonBuilder(alice).withoutLeaveDate().build());
+            assertEquals(List.of(), leaveBadges(root));
+            assertSame(event, getEventList(root).getSelectionModel().getSelectedItem());
+            assertMembers(root, "Alice Tan", "● absent");
+        });
+    }
+
+    private static List<String> leaveBadges(Region root) {
+        return getMembers(root).getChildren().stream()
+                .flatMap(row -> row.lookupAll(".leave-badge").stream())
+                .map(node -> ((Label) node).getText()).toList();
     }
 
     private static List<String> memberIds(Region root) {
