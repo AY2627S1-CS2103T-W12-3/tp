@@ -1287,7 +1287,8 @@ testers are expected to do more *exploratory* testing.
    1. Download the JAR file and copy it into an empty folder.
 
    1. Double-click the JAR file.<br>
-      Expected: The GUI opens maximized with a set of sample contacts.
+      Expected: The GUI opens maximized with a set of sample contacts and a sample event. The first-launch tutorial
+      can show the event's assigned members and attendance information.
 
 1. Saving window preferences
 
@@ -1735,10 +1736,12 @@ and `PAST_DATE` is any date before today, such as `01-01-2020`.
 
 1. Adding, renaming, and deleting tags
 
-   1. Prerequisites: The sample contacts are loaded and no custom tags have been created.
+   1. Prerequisites: The sample contacts are loaded and no additional custom tags have been created.
 
    1. Test case: `listtags`<br>
-      Expected: The Tags view opens. The status message lists `EXCO, Sponsor, UniversityStaff, Logistics, friends, colleagues, neighbours, family, classmates`.
+      Expected: The Tags view opens. The status message lists
+      `EXCO, Sponsor, UniversityStaff, Logistics, friends, neighbours`. Selecting `EXCO` shows Alex Yeoh,
+      Bernice Yu, and Irfan Ibrahim.
 
    1. Test case: `addtag t/Publicity`<br>
       Expected: `Publicity` appears in the Tags view. The status message shows `Created tag: Publicity.`
@@ -1848,10 +1851,14 @@ want to keep.
    1. Prerequisites: The app is closed and `data/coordimate.json` exists.
 
    1. Test case: Delete `data/coordimate.json`, then launch the app.<br>
-      Expected: The app starts with the sample contacts.
+      Expected: The app starts with the sample contacts and the `Freshmen Welcome Night` sample event. The event
+      has two assigned contacts, with Alex Yeoh marked present.
 
    1. Test case: Run `list`, then check the `data` folder.<br>
-      Expected: `data/coordimate.json` has been created again.
+      Expected: `data/coordimate.json` has not been created, because commands that do not change data do not save.
+
+   1. Test case: Run `addtag t/Test`, then check the `data` folder.<br>
+      Expected: `data/coordimate.json` has been created again, containing the sample data and the `Test` tag.
 
 1. Migrating legacy member IDs and keeping command targets across restarts
 

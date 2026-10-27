@@ -80,9 +80,9 @@ public class TagListViewModelTest {
         ReadOnlyCoordiMate sampleData = SampleDataUtil.getSampleCoordiMate();
         TagListViewModel viewModel = new TagListViewModel(sampleData.getTagList(), sampleData.getPersonList());
 
-        viewModel.selectTag("friends");
+        viewModel.selectTag("EXCO");
 
-        assertEquals(List.of("Alex Yeoh", "Bernice Yu"), viewModel.getMembers().stream()
+        assertEquals(List.of("Alex Yeoh", "Bernice Yu", "Irfan Ibrahim"), viewModel.getMembers().stream()
                 .map(person -> person.getName().getFullName()).toList());
     }
 }
