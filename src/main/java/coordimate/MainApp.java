@@ -3,6 +3,7 @@ package coordimate;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -72,11 +73,25 @@ public class MainApp extends Application {
         JsonCoordiMateStorage coordiMateStorage = new JsonCoordiMateStorage(coordiMateFilePath);
         storage = new StorageManager(coordiMateStorage, userPrefsStorage);
 
+        String startupWarning = "";
+        try {
+            List<String> deletedEvents = coordiMateStorage.removeYearZeroEvents();
+            if (!deletedEvents.isEmpty()) {
+                startupWarning = "Deleted the following events because their saved dates use year 0000, "
+                        + "which does not exist in the BC/AD calendar:\n\n"
+                        + String.join("\n", deletedEvents);
+            }
+        } catch (DataLoadingException | IOException e) {
+            logger.warning("Could not clean up saved events: " + StringUtil.getDetails(e));
+            startupWarning = "Saved data could not be loaded or cleaned up. No events were deleted. "
+                    + "Check the data file: " + coordiMateFilePath;
+        }
+
         model = initModelManager(storage, userPrefs);
 
         logic = new LogicManager(model, storage);
 
-        ui = new UiManager(logic, storage.getCoordiMateFilePath(), isDataRecoveryMode);
+        ui = new UiManager(logic, storage.getCoordiMateFilePath(), startupWarning, isDataRecoveryMode);
     }
 
     /**

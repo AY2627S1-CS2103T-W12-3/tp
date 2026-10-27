@@ -29,28 +29,42 @@ public class UiManager implements Ui {
 
     private Logic logic;
     private Path dataFilePath;
-    private boolean isDataRecoveryMode;
-    private Runnable exitAction;
+    private final boolean isDataRecoveryMode;
+    private final Runnable exitAction;
     private MainWindow mainWindow;
+    private final String startupWarning;
 
     /**
      * Creates a {@code UiManager} with the given {@code Logic} and the data file path
      * to show in the status bar.
      */
     public UiManager(Logic logic, Path dataFilePath) {
-        this(logic, dataFilePath, false, Platform::exit);
-    }
-
-    /**
-     * Creates a {@code UiManager} with the given logic, data file path, and startup recovery state.
-     */
-    public UiManager(Logic logic, Path dataFilePath, boolean isDataRecoveryMode) {
-        this(logic, dataFilePath, isDataRecoveryMode, Platform::exit);
+        this(logic, dataFilePath, "", false, Platform::exit);
     }
 
     UiManager(Logic logic, Path dataFilePath, boolean isDataRecoveryMode, Runnable exitAction) {
+        this(logic, dataFilePath, "", isDataRecoveryMode, exitAction);
+    }
+
+    /**
+     * Creates the UI with a warning to show after startup, without asking for confirmation.
+     */
+    public UiManager(Logic logic, Path dataFilePath, String startupWarning) {
+        this(logic, dataFilePath, startupWarning, false, Platform::exit);
+    }
+
+    /**
+     * Creates the UI with a startup warning and recovery state.
+     */
+    public UiManager(Logic logic, Path dataFilePath, String startupWarning, boolean isDataRecoveryMode) {
+        this(logic, dataFilePath, startupWarning, isDataRecoveryMode, Platform::exit);
+    }
+
+    UiManager(Logic logic, Path dataFilePath, String startupWarning, boolean isDataRecoveryMode,
+            Runnable exitAction) {
         this.logic = logic;
         this.dataFilePath = dataFilePath;
+        this.startupWarning = startupWarning;
         this.isDataRecoveryMode = isDataRecoveryMode;
         this.exitAction = exitAction;
     }
@@ -72,6 +86,9 @@ public class UiManager implements Ui {
                         String.format(DATA_RECOVERY_ALERT_CONTENT, dataFilePath.toAbsolutePath()));
                 exitAction.run();
                 return;
+            } else if (!startupWarning.isEmpty()) {
+                showAlertDialogAndWait(AlertType.WARNING, "Saved event data", "Saved event data needs attention",
+                        startupWarning);
             }
             mainWindow.showTutorialOnFirstLaunch();
 

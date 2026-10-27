@@ -88,9 +88,29 @@ public class AddEventIntegrationTest {
     }
 
     @Test
+    public void execute_yearZero_modelAndFileUnchanged() throws Exception {
+        ModelManager model = new ModelManager();
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(temporaryFolder.resolve("data.json"));
+        Logic logic = newLogic(model, storage);
+        logic.execute(COMMAND);
+        CoordiMate beforeModel = new CoordiMate(model.getCoordiMate());
+        String beforeFile = Files.readString(storage.getCoordiMateFilePath());
+        for (String value : new String[] {"01-01-0000", "01-01-0000 00:00"}) {
+            for (String command : new String[] {
+                "addevent evn/Year Zero st/" + value + " et/02-01-0001",
+                "addevent evn/Year Zero st/01-01-0001 et/" + value}) {
+                assertThrows(ParseException.class, () -> logic.execute(command));
+                assertEquals(beforeModel, model.getCoordiMate());
+                assertEquals(beforeFile, Files.readString(storage.getCoordiMateFilePath()));
+            }
+        }
+    }
+
+    @Test
     public void execute_corruptedFile_notOverwritten() throws Exception {
         String event = "{\"name\":\"Fair\",\"startTime\":\"09-10-2026\",\"endTime\":\"10-10-2026\"}";
         String[] corruptedContents = {
+            "{\"persons\":[],\"events\":[" + event.replace("2026", "0000") + "]}",
             "invalid json", "null", "{}", "{\"persons\":[],\"events\":[null]}",
             "{\"persons\":[],\"events\":[" + event + "," + event + "]}",
             "{\"persons\":[],\"events\":[" + event + "," + event.replace("Fair", "fair") + "]}",

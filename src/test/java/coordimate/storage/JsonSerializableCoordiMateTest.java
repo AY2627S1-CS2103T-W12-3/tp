@@ -12,8 +12,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
+
+import com.fasterxml.jackson.databind.node.LongNode;
 
 import coordimate.commons.exceptions.IllegalValueException;
 import coordimate.commons.util.JsonUtil;
@@ -41,6 +45,47 @@ public class JsonSerializableCoordiMateTest {
             TEST_DATA_FOLDER.resolve("internalSpacingDuplicatePersonCoordiMate.json");
     private static final Path INTERNAL_SPACING_DUPLICATE_EVENT_FILE =
             TEST_DATA_FOLDER.resolve("internalSpacingDuplicateEventCoordiMate.json");
+
+    @Test
+    public void removeYearZeroEvents_mixedEvents_preservesOtherDataAndRemovesOnlyOnce() throws Exception {
+        EventTime start = new EventTime("01-01-0001");
+        Event kept = new Event("Keep", start, new EventTime("31-12-9999 23:59"), List.of(ALICE.getName()),
+                Map.of(ALICE.getName(), AttendanceStatus.ABSENT), Set.of(start)).withArchived(true);
+        Event cleanedHistory = new Event("Zero History", start, new EventTime("02-01-0001"),
+                List.of(ALICE.getName()), Map.of(ALICE.getName(), AttendanceStatus.PRESENT), Set.of(start));
+        List<JsonAdaptedEvent> events = List.of(
+                new JsonAdaptedEvent("Zero Start", "01-01-0000", "02-01-0001"),
+                new JsonAdaptedEvent(kept),
+                new JsonAdaptedEvent("Zero End", "01-01-0001", "02-01-0000 12:30"),
+                new JsonAdaptedEvent("Zero History", "01-01-0001", "02-01-0001",
+                        List.of(ALICE.getName().toString()), Map.of(ALICE.getName().toString(), "present"),
+                        List.of("01-01-0001", "01-01-0000")),
+                new JsonAdaptedEvent(null, "01-01-0000", "02-01-0001"));
+        JsonSerializableCoordiMate data = new JsonSerializableCoordiMate(List.of(new JsonAdaptedPerson(ALICE)),
+                events, List.of(new JsonAdaptedTag("Unused")), LongNode.valueOf(50));
+        CoordiMate expected = new CoordiMate(50);
+        expected.setTags(List.of(new Tag("Unused")));
+        expected.addPerson(ALICE);
+        expected.addEvent(kept);
+        expected.addEvent(cleanedHistory);
+
+        assertEquals(List.of("Zero Start", "Zero End", "(unnamed event)"),
+                data.removeYearZeroEvents());
+        assertTrue(data.removeYearZeroReminderStarts());
+        assertEquals(expected, data.toModelType());
+        assertEquals(List.of(), data.removeYearZeroEvents());
+        assertFalse(data.removeYearZeroReminderStarts());
+        assertEquals(expected, data.toModelType());
+    }
+
+    @Test
+    public void removeYearZeroEvents_nullEvent_retainsEntryForValidation() {
+        JsonSerializableCoordiMate data = new JsonSerializableCoordiMate(List.of(),
+                Arrays.asList((JsonAdaptedEvent) null));
+
+        assertEquals(List.of(), data.removeYearZeroEvents());
+        assertThrows(IllegalValueException.class, "Events list must not contain null entries.", data::toModelType);
+    }
 
     @Test
     public void toModelType_typicalPersonsFile_success() throws Exception {
