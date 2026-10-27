@@ -12,6 +12,7 @@ import java.nio.file.StandardOpenOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -64,6 +65,25 @@ public class StorageManager implements Storage {
     @Override
     public Path getCoordiMateFilePath() {
         return coordiMateStorage.getCoordiMateFilePath();
+    }
+
+    /**
+     * Deletes legacy events with embedded parameters at startup, validating the remaining data before saving.
+     * Returns deleted names only after the atomic save succeeds, with the original revision still current.
+     */
+    public List<String> removeEventsWithEmbeddedParameters() throws DataLoadingException, IOException {
+        Optional<String> originalRevision = dataRevision();
+        Optional<JsonCoordiMateStorage.EventNameCleanup> cleanup = coordiMateStorage.readEventNameCleanup();
+        if (cleanup.isEmpty()) {
+            return List.of();
+        }
+        if (isDataRevisionInitialized && !expectedDataRevision.equals(originalRevision)) {
+            throw new DataConflictException();
+        }
+        expectedDataRevision = originalRevision;
+        isDataRevisionInitialized = true;
+        saveCoordiMateIfUnchanged(cleanup.get().data());
+        return cleanup.get().deletedNames();
     }
 
     @Override

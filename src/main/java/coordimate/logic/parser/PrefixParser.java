@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import coordimate.commons.util.ParameterSyntax;
 import coordimate.commons.util.StringUtil;
 import coordimate.logic.parser.exceptions.ParseException;
 
@@ -15,9 +16,9 @@ import coordimate.logic.parser.exceptions.ParseException;
  * Scans command parameters while preserving each command's accepted prefix syntax.
  */
 final class PrefixParser {
-    static final String PARAMETER_BOUNDARY = "(?<![^" + StringUtil.WHITESPACE_CHARACTERS + "])";
+    static final String PARAMETER_BOUNDARY = ParameterSyntax.BOUNDARY;
     static final Pattern CONTACT_PARAMETER_PATTERN = Pattern.compile(PARAMETER_BOUNDARY + "([A-Za-z]+/)");
-    static final Pattern EVENT_PARAMETER_PATTERN = Pattern.compile(PARAMETER_BOUNDARY + "([A-Za-z]+/|/[A-Za-z]+)");
+    static final Pattern EVENT_PARAMETER_PATTERN = ParameterSyntax.EVENT_PARAMETER_PATTERN;
 
     private PrefixParser() {}
 

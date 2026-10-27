@@ -155,6 +155,22 @@ class JsonSerializableCoordiMate {
         return coordiMate;
     }
 
+    /**
+     * Removes legacy events whose names contain embedded command parameters, preserving file order.
+     * The caller must validate the remaining data before saving or reporting these deletions.
+     */
+    List<String> removeEventsWithEmbeddedParameters() {
+        List<String> removedNames = new ArrayList<>();
+        events.removeIf(event -> {
+            if (event != null && event.hasEmbeddedParameterInName()) {
+                removedNames.add(event.getName());
+                return true;
+            }
+            return false;
+        });
+        return removedNames;
+    }
+
     private long resolveNextMemberId(long minimumNextId) throws IllegalValueException {
         if (nextMemberId == null || nextMemberId.isNull()) {
             return minimumNextId;

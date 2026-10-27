@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -34,6 +35,28 @@ public class JsonCoordiMateStorage {
     public Path getCoordiMateFilePath() {
         return filePath;
     }
+
+    /**
+     * Prepares startup cleanup without writing the file. Unrelated invalid data prevents cleanup.
+     */
+    Optional<EventNameCleanup> readEventNameCleanup() throws DataLoadingException {
+        Optional<JsonSerializableCoordiMate> savedData = JsonUtil.readJsonFile(
+                filePath, JsonSerializableCoordiMate.class);
+        if (savedData.isEmpty()) {
+            return Optional.empty();
+        }
+        List<String> deletedNames = savedData.get().removeEventsWithEmbeddedParameters();
+        if (deletedNames.isEmpty()) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(new EventNameCleanup(savedData.get().toModelType(), List.copyOf(deletedNames)));
+        } catch (IllegalValueException | IllegalArgumentException | NullPointerException e) {
+            throw new DataLoadingException(e);
+        }
+    }
+
+    record EventNameCleanup(ReadOnlyCoordiMate data, List<String> deletedNames) {}
 
     /**
      * Returns CoordiMate data as a {@link ReadOnlyCoordiMate}.

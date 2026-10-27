@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import coordimate.commons.exceptions.IllegalValueException;
+import coordimate.commons.util.ParameterSyntax;
 import coordimate.model.event.AttendanceStatus;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
@@ -112,6 +113,14 @@ class JsonAdaptedEvent {
         source.getAttendanceRecord().forEach((memberName, status) -> result.put(memberName.toString(),
                 status.toString()));
         return result;
+    }
+
+    String getName() {
+        return name;
+    }
+
+    boolean hasEmbeddedParameterInName() {
+        return name != null && ParameterSyntax.hasEmbeddedEventParameter(name);
     }
 
     /**
