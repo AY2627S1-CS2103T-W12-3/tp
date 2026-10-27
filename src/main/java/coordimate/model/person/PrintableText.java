@@ -2,10 +2,19 @@ package coordimate.model.person;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.Set;
+
 /**
  * Validation shared by fields that allow printable Unicode text, such as addresses, notes, and event names.
  */
 public final class PrintableText {
+
+    // Assigned, printable code points that render as blank space by design.
+    private static final Set<Integer> BLANK_CODE_POINTS = Set.of(
+            0x115F, 0x1160, 0x3164, 0xFFA0, // Hangul fillers
+            0x2800, // braille pattern blank
+            0x1D159, // musical symbol null notehead
+            0xFFFC); // object replacement character
 
     private PrintableText() {}
 
@@ -15,8 +24,7 @@ public final class PrintableText {
      */
     public static boolean isValid(String value, int maxLength) {
         requireNonNull(value);
-        int length = value.codePointCount(0, value.length());
-        return length > 0 && length <= maxLength
+        return value.codePointCount(0, value.length()) <= maxLength
                 && value.codePoints().allMatch(PrintableText::isPrintable)
                 && value.codePoints().anyMatch(PrintableText::isVisible);
     }
@@ -31,6 +39,8 @@ public final class PrintableText {
         int type = Character.getType(codePoint);
         return !Character.isWhitespace(codePoint) && type != Character.SPACE_SEPARATOR
                 && type != Character.FORMAT && type != Character.NON_SPACING_MARK
-                && type != Character.COMBINING_SPACING_MARK && type != Character.ENCLOSING_MARK;
+                && type != Character.COMBINING_SPACING_MARK && type != Character.ENCLOSING_MARK
+                && type != Character.UNASSIGNED && type != Character.PRIVATE_USE
+                && !BLANK_CODE_POINTS.contains(codePoint);
     }
 }

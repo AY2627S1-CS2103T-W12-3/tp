@@ -247,7 +247,9 @@ Name, phone, email, and role are required. Each field accepts the following valu
 | `NOTE` | 1 to 500 printable characters, including at least one visible character. |
 | `TAG` | 1 to 30 letters or digits with no spaces. |
 
-"Printable" excludes line breaks and other control characters. A value that breaks these rules is rejected with a
+"Printable" excludes line breaks and other control characters. "Visible" excludes spaces, zero-width and formatting
+characters, accent marks on their own, and blank filler characters such as `U+3164` Hangul Filler.
+A value that breaks these rules is rejected with a
 message stating the field's constraints, such as
 `Invalid organisation. Use 1 to 80 characters: letters, digits, spaces, and - & . , ' ( ) /, with at least one letter or digit. Example: o/NUS Student Affairs`.
 Birthday, address, organisation, leave end date, and note are optional. An empty `b/`, `a/`, `o/`, `lv/`, or
