@@ -7,7 +7,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
+import coordimate.testutil.UnicodeWhitespace;
+
 public class NameTest {
+
+    @Test
+    public void isValidName_unicodeSpaces_onlyOrdinaryInternalSpacesAllowed() {
+        for (String space : UnicodeWhitespace.ALL) {
+            assertEquals(space.equals(" "), Name.isValidName("Alice" + space + "Tan"));
+        }
+    }
 
     @Test
     public void constructor_null_throwsNullPointerException() {

@@ -17,8 +17,21 @@ import coordimate.model.event.AttendanceStatus;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
 import coordimate.model.person.Name;
+import coordimate.testutil.UnicodeWhitespace;
 
 public class JsonAdaptedEventTest {
+
+    @Test
+    public void toModelType_unicodeSpaces_normalized() throws Exception {
+        Event expected = new Event("Final Concert", new EventTime("08-08-2026"), new EventTime("09-08-2026"));
+        for (String space : UnicodeWhitespace.ALL) {
+            if (Character.getType(space.codePointAt(0)) == Character.SPACE_SEPARATOR) {
+                assertEquals(expected, new JsonAdaptedEvent(space + "Final" + space + "Concert" + space,
+                        "08-08-2026", "09-08-2026", List.of(), Map.of()).toModelType());
+            }
+        }
+    }
+
     @Test
     public void toModelType_dismissalHistory_preservesDateOnlyAndTimedStarts() throws Exception {
         EventTime dateOnly = new EventTime("08-08-2026");
