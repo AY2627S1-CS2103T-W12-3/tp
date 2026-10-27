@@ -27,7 +27,7 @@ public class Phone {
 
     /** The format accepted before brackets had to match, so that saved numbers from older versions still load. */
     private static final String PREVIOUS_VALIDATION_REGEX = "\\+?[0-9() -]+";
-    private static final String LEGACY_VALIDATION_REGEX = "[0-9]{3,}";
+    private static final String LEGACY_VALIDATION_REGEX = " *[0-9]{3,} *";
     private final String value;
 
     /**
@@ -58,7 +58,7 @@ public class Phone {
      */
     public static boolean isValidPhone(String test) {
         requireNonNull(test);
-        return test.strip().matches(LEGACY_VALIDATION_REGEX) || isValidInputPhone(test)
+        return test.matches(LEGACY_VALIDATION_REGEX) || isValidInputPhone(test)
                 || matchesWithDigitCount(test, PREVIOUS_VALIDATION_REGEX);
     }
 
