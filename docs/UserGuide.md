@@ -476,8 +476,8 @@ If CoordiMate cannot save a dismissal, it hides the reminder for the current ses
 in the feedback area above the command input. The dismissal has not been saved, so the reminder may
 return after restarting.
 
-If the saved data file is invalid, CoordiMate starts with an empty dataset and shows no event reminders.
-See [Editing the data file](#editing-the-data-file) for details of data-loading errors.
+If the saved data file is invalid, CoordiMate shows a recovery warning and closes without showing event reminders.
+See [Editing the data file](#editing-the-data-file) for the recovery steps.
 
 ### Dismissing a reminder: `dismiss`
 
@@ -1169,7 +1169,9 @@ CoordiMate data is saved automatically as a JSON file `[JAR file location]/data/
 <box type="warning" seamless>
 
 **Caution:**
-If your changes make the data file invalid, CoordiMate starts with an empty dataset at the next run. While the file is invalid, commands that change data (such as `add`, `addevent`, and `clear`) are rejected with `Saved data could not be loaded. Check the local data file.` and leave the file untouched, so that you can close the app and fix it. Commands such as `list`, `search`, and `filter` do not change the file.<br>
+If your changes make the data file invalid, CoordiMate shows a warning at the next launch and leaves the original file
+unchanged. Select **OK** to close CoordiMate, repair or restore the file path shown in the warning, then restart the
+app. CoordiMate does not open its normal interface or accept commands until the file can be loaded.<br>
 Each name in an event's `members` list must exactly match the name of a saved contact, or the data file is invalid.<br>
 Contact and event names are read with several spaces in a row treated as one. If two contacts, or two events, have
 names that differ only in letter case or spacing (e.g. `Alex Yeoh` and `Alex  Yeoh`), they are duplicates and the data

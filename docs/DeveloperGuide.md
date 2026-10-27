@@ -230,6 +230,11 @@ The `Storage` component,
 * converts CoordiMate data through `JsonSerializableCoordiMate`, which stores contacts (`JsonAdaptedPerson`), events (`JsonAdaptedEvent`), and the global tag list (`JsonAdaptedTag`) as separate lists. Each contact also stores its own tags, and each event records its members by contact name rather than by member ID.
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
 
+If the data file cannot be loaded during startup, `MainApp` creates an empty in-memory model only for initialization
+and passes a recovery flag to `UiManager`. After the main window is ready, `UiManager` shows a warning that names the
+unchanged data file and asks the user to repair or restore it. Dismissing the warning requests a normal JavaFX
+shutdown before the tutorial or command interface can be used.
+
 The tutorial flag is saved with the other user preferences. Preference files without that field are read with the
 tutorial flag set to `false`, so the tutorial is offered until the user closes or finishes it.
 
@@ -1716,7 +1721,8 @@ and `PAST_DATE` is any date before today, such as `01-01-2020`.
       Expected: The app loads the data. The contact is not shown as on leave, and the details pane shows `— (not on leave)`. The `leaveUntil` value is still in the data file.
 
    1. Test case: Close the app, change `leaveUntil` to `31-02-2030`, save, then launch the app.<br>
-      Expected: The file is treated as invalid, so the app starts with no contacts and no events. Restore the file afterwards.
+      Expected: CoordiMate warns that the saved data could not be loaded and that the original file is unchanged.
+      The warning shows the file path. Selecting **OK** closes the app. Restore the file before launching again.
 
    1. Test case: Run `edit 1 lv/TODAY` and select that contact. Leave the app open past midnight, or set your
       computer's date to the next day.<br>
@@ -1881,23 +1887,23 @@ want to keep.
    1. Prerequisites: The app is closed and `data/coordimate.json` contains at least one contact. Keep a copy of the file.
 
    1. Test case: Open `data/coordimate.json` in a text editor, delete the first `{`, save, then launch the app.<br>
-      Expected: The app starts with no contacts and no events.
+      Expected: CoordiMate warns that the saved data could not be loaded and that the original file is unchanged.
+      The warning shows the path to `data/coordimate.json` and says that CoordiMate will close.
 
-   1. Test case: Without closing the app, run `addevent evn/Test st/01-01-2027 et/01-01-2027`.<br>
-      Expected: No event is added. The status message shows `Saved data could not be loaded. Check the local data file.` The data file is unchanged.
+   1. Test case: Select **OK**, then inspect `data/coordimate.json`.<br>
+      Expected: CoordiMate closes. The file still contains the same corrupted contents and has not been replaced with
+      an empty dataset.
 
-   1. Test case: Close the app, put the `{` back, save, then launch the app.<br>
-      Expected: The original contacts and events are shown again.
-
-   1. Test case: Corrupt the file again as above, launch the app, then run `list`.<br>
-      Expected: The corrupted file is replaced with the app's empty data. Restore the copy of the file to get the original data back.
+   1. Test case: Restore the copy of the file, then launch the app again.<br>
+      Expected: The recovery warning does not appear. The original contacts and events are shown again.
 
 1. Dealing with an event member who is not a contact
 
    1. Prerequisites: The app is closed and `data/coordimate.json` contains an event with at least one member. Keep a copy of the file.
 
    1. Test case: In the data file, change one name in an event's `members` list to a name that no contact has, save, then launch the app.<br>
-      Expected: The file is treated as invalid, so the app starts with no contacts and no events. Restore the copy of the file afterwards.
+      Expected: CoordiMate shows the recovery warning and closes after **OK** is selected. The invalid file remains
+      unchanged. Restore the copy before launching again.
 
 1. Dealing with a failed save
 
