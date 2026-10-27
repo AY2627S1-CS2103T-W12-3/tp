@@ -2,9 +2,11 @@ package coordimate.ui;
 
 import static java.util.Objects.requireNonNull;
 
+import javafx.beans.binding.Bindings;
 import javafx.css.PseudoClass;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
@@ -34,6 +36,12 @@ public class ResultDisplay extends UiPart<Region> {
     @FXML
     private Label resultDisplay;
 
+    @FXML
+    private ScrollPane feedbackMessageScroll;
+
+    @FXML
+    private Label feedbackScrollHint;
+
     /**
      * Starts with neutral feedback until a command succeeds or fails.
      */
@@ -41,6 +49,11 @@ public class ResultDisplay extends UiPart<Region> {
         super(FXML);
         feedbackIcon.setImage(infoIcon);
         resultDisplay.setText("Ready. Choose Contacts, Events, or Tags, then enter a command.");
+        feedbackScrollHint.visibleProperty().bind(Bindings.createBooleanBinding(() ->
+                resultDisplay.getLayoutBounds().getHeight()
+                        > feedbackMessageScroll.getViewportBounds().getHeight() + 1,
+                resultDisplay.layoutBoundsProperty(), feedbackMessageScroll.viewportBoundsProperty()));
+        feedbackScrollHint.managedProperty().bind(feedbackScrollHint.visibleProperty());
     }
 
     /**
@@ -49,6 +62,7 @@ public class ResultDisplay extends UiPart<Region> {
     public void setFeedbackToUser(String feedbackToUser) {
         requireNonNull(feedbackToUser);
         resultDisplay.setText(feedbackToUser);
+        feedbackMessageScroll.setVvalue(0);
         feedbackPane.pseudoClassStateChanged(ERROR, false);
         feedbackPane.pseudoClassStateChanged(SUCCESS, true);
         feedbackIcon.setImage(infoIcon);
@@ -60,6 +74,7 @@ public class ResultDisplay extends UiPart<Region> {
      */
     public void setErrorFeedback(String message) {
         resultDisplay.setText(requireNonNull(message));
+        feedbackMessageScroll.setVvalue(0);
         feedbackPane.pseudoClassStateChanged(ERROR, true);
         feedbackPane.pseudoClassStateChanged(SUCCESS, false);
         feedbackIcon.setImage(errorIcon);

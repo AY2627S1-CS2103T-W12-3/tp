@@ -25,6 +25,7 @@ import coordimate.model.ModelManager;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
 import coordimate.model.person.Person;
+import coordimate.model.tag.Tag;
 import coordimate.storage.JsonCoordiMateStorage;
 import coordimate.storage.JsonUserPrefsStorage;
 import coordimate.storage.StorageManager;
@@ -41,6 +42,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MenuBar;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TextField;
@@ -899,6 +901,77 @@ public class MainWindowTest {
         submit.fire();
         assertTrue(events.isSelected());
         assertTrue(feedback.getText().startsWith("Invalid command format."));
+    }
+
+    @Test
+    public void longFeedback_atMinimumWindowSize_keepsWorkspaceAndCommandInputVisible() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            ModelManager model = new ModelManager();
+            model.setGuiSettings(new GuiSettings(830, 650, 0, 0, false));
+            for (int index = 1; index <= 86; index++) {
+                model.addTag(new Tag("Custom" + index));
+            }
+            Path dataPath = temporaryFolder.resolve("long-feedback-data.json");
+            StorageManager storage = new StorageManager(new JsonCoordiMateStorage(dataPath),
+                    new JsonUserPrefsStorage(temporaryFolder.resolve("long-feedback-prefs.json")));
+            storage.saveCoordiMate(model.getCoordiMate());
+            MainWindow window = new MainWindow(stage, new LogicManager(model, storage), dataPath);
+            try {
+                window.fillInnerParts();
+                window.show();
+
+                TextField input = (TextField) stage.getScene().lookup("#commandTextField");
+                Button submit = (Button) stage.getScene().lookup("#submitButton");
+                Label feedback = (Label) stage.getScene().lookup("#resultDisplay");
+                ScrollPane feedbackScroll = (ScrollPane) stage.getScene().lookup("#feedbackMessageScroll");
+                TabPane views = (TabPane) stage.getScene().lookup("#views");
+
+                String keyword = "a".repeat(3000);
+                input.setText("search " + keyword);
+                submit.fire();
+                stage.getScene().getRoot().applyCss();
+                stage.getScene().getRoot().layout();
+                assertEquals("No contacts found matching \"" + keyword + "\".", feedback.getText());
+                assertLongFeedbackFitsWindow(stage, input, feedbackScroll, views);
+
+                input.setText("listtags");
+                submit.fire();
+                stage.getScene().getRoot().applyCss();
+                stage.getScene().getRoot().layout();
+                assertTrue(feedback.getText().startsWith("Here is the list of all existing tags."));
+                assertTrue(feedback.getText().contains("Custom86"));
+                assertEquals(90, ((ListView<?>) stage.getScene().lookup("#tagListView")).getItems().size());
+                assertLongFeedbackFitsWindow(stage, input, feedbackScroll, views);
+                assertTrue(stage.getScene().lookup("#tagListView").getBoundsInLocal().getHeight() > 30);
+
+                input.setText("list");
+                submit.fire();
+                stage.getScene().getRoot().applyCss();
+                stage.getScene().getRoot().layout();
+                assertEquals("Listed all contacts.", feedback.getText());
+                assertTrue(feedbackScroll.getHeight() < 84);
+                assertFalse(stage.getScene().lookup("#feedbackScrollHint").isVisible());
+            } finally {
+                window.stop();
+                stage.close();
+            }
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(20, TimeUnit.SECONDS);
+    }
+
+    private static void assertLongFeedbackFitsWindow(Stage stage, TextField input, ScrollPane feedbackScroll,
+                                                     TabPane views) {
+        assertTrue(feedbackScroll.getHeight() <= 84);
+        assertTrue(feedbackScroll.getContent().getLayoutBounds().getHeight()
+                > feedbackScroll.getViewportBounds().getHeight());
+        assertTrue(stage.getScene().lookup("#feedbackScrollHint").isVisible());
+        assertTrue(feedbackScroll.lookup(".scroll-bar:vertical").isVisible());
+        assertTrue(views.getHeight() > 100);
+        Bounds inputBounds = input.localToScene(input.getBoundsInLocal());
+        assertTrue(inputBounds.getMaxY() <= stage.getScene().getHeight());
     }
 
     @Test

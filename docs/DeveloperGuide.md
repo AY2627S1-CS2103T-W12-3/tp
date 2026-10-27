@@ -104,6 +104,9 @@ entries. While `Logic` awaits delete confirmation, arrow-key navigation is pause
 to history. Inserting a command from the sidebar resets history navigation.
 
 The `UI` component uses the JavaFX UI framework. The layouts of these UI parts are defined in matching `.fxml` files in `src/main/resources/view`. For example, [`MainWindow.fxml`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/resources/view/MainWindow.fxml) specifies the layout of [`MainWindow`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/ui/MainWindow.java).
+`ResultDisplay` keeps the full command message in a height-limited vertical scroll pane so long feedback cannot displace
+the workspace or command box. Its icon and status label stay outside the scroll pane. An overflow hint appears when the
+message is taller than the visible viewport.
 
 At launch, `MainWindow` obtains the saved size, position, and maximized state from `GuiSettings`. It selects the screen
 containing the saved position, or the primary screen if that display is no longer connected. `WindowBounds` then clamps

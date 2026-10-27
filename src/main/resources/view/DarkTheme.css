@@ -332,7 +332,14 @@
 }
 .feedback-band:command-success { -fx-border-color: #10b981 transparent; }
 .feedback-band:command-error { -fx-background-color: #2b171b; -fx-border-color: #ef4444 transparent; }
+.feedback-message-scroll, .feedback-message-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+.feedback-message-scroll { -fx-background-insets: 0; -fx-padding: 0; }
+.feedback-message-scroll .scroll-bar:vertical .thumb { -fx-background-color: #8b949e; }
+.feedback-message-scroll .scroll-bar:vertical .thumb:hover { -fx-background-color: #cbd5e1; }
 .result-display { -fx-text-fill: #f0f6fc; }
+.feedback-scroll-hint { -fx-font-size: 11px; -fx-text-fill: #cbd5e1; }
 .feedback-status {
     -fx-text-fill: #34d399;
     -fx-font-family: "JetBrains Mono", "Consolas", monospace;

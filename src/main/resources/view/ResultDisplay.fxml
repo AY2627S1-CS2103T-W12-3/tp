@@ -1,13 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
 
 <HBox fx:id="feedbackPane" styleClass="feedback-band" spacing="10" alignment="CENTER_LEFT"
       xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
   <ImageView fx:id="feedbackIcon" fitWidth="18" fitHeight="18" preserveRatio="true" />
-  <Label fx:id="resultDisplay" wrapText="true" styleClass="result-display"
-         HBox.hgrow="ALWAYS" minWidth="0" minHeight="-Infinity" maxWidth="Infinity" />
-  <Label fx:id="feedbackStatus" text="Ready" styleClass="feedback-status" minWidth="-Infinity" />
+  <ScrollPane fx:id="feedbackMessageScroll" fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
+              minWidth="0" minHeight="0" maxWidth="Infinity" maxHeight="84"
+              HBox.hgrow="ALWAYS" styleClass="feedback-message-scroll">
+    <Label fx:id="resultDisplay" wrapText="true" styleClass="result-display"
+           minWidth="0" maxWidth="Infinity" />
+  </ScrollPane>
+  <VBox alignment="CENTER_RIGHT" spacing="3">
+    <Label fx:id="feedbackStatus" text="Ready" styleClass="feedback-status" minWidth="-Infinity" />
+    <Label fx:id="feedbackScrollHint" text="Scroll to read more ↓" styleClass="feedback-scroll-hint"
+           visible="false" managed="false" minWidth="-Infinity" />
+  </VBox>
 </HBox>
