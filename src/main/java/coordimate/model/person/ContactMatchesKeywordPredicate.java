@@ -31,7 +31,6 @@ public class ContactMatchesKeywordPredicate implements Predicate<Person> {
     @Override
     public boolean test(Person person) {
         return containsIgnoreCase(person.getName().getFullName(), keyword)
-                || containsIgnoreCase(person.getPhone().getValue(), keyword)
                 || containsPhoneDigits(person.getPhone(), keyword)
                 || containsIgnoreCase(person.getEmail().getValue(), keyword)
                 || person.getAddress().map(address -> containsIgnoreCase(address.getValue(), keyword))
