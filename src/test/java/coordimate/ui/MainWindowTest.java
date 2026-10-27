@@ -9,6 +9,7 @@ import java.awt.GraphicsEnvironment;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
@@ -31,6 +32,7 @@ import coordimate.storage.JsonUserPrefsStorage;
 import coordimate.storage.StorageManager;
 import coordimate.testutil.PersonBuilder;
 import coordimate.testutil.TypicalPersons;
+import javafx.animation.AnimationTimer;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -971,6 +973,91 @@ public class MainWindowTest {
         assertTrue(views.getHeight() > 100);
         Bounds inputBounds = input.localToScene(input.getBoundsInLocal());
         assertTrue(inputBounds.getMaxY() <= stage.getScene().getHeight());
+    }
+
+    @Test
+    public void feedbackLayout_longSentenceAndRepeatedMediumMessage_staysConsistent() throws Exception {
+        MainWindow window = runOnJavaFxThread(() -> {
+            Stage stage = new Stage();
+            ModelManager model = new ModelManager();
+            model.setGuiSettings(new GuiSettings(WindowBounds.PREFERRED_MIN_WIDTH,
+                    WindowBounds.PREFERRED_MIN_HEIGHT, 0, 0, false));
+            Path dataPath = temporaryFolder.resolve("feedback-layout-data.json");
+            StorageManager storage = new StorageManager(new JsonCoordiMateStorage(dataPath),
+                    new JsonUserPrefsStorage(temporaryFolder.resolve("feedback-layout-prefs.json")));
+            storage.saveCoordiMate(model.getCoordiMate());
+            MainWindow mainWindow = new MainWindow(stage, new LogicManager(model, storage), dataPath);
+            mainWindow.fillInnerParts();
+            mainWindow.show();
+            return mainWindow;
+        });
+        Stage stage = window.getPrimaryStage();
+        String mediumSearch = "search " + "a".repeat(130);
+        try {
+            submitFeedbackCommand(stage, "list");
+            submitFeedbackCommand(stage, mediumSearch);
+            double mediumWidth = runOnJavaFxThread(() -> {
+                ScrollPane scroll = (ScrollPane) stage.getScene().lookup("#feedbackMessageScroll");
+                assertFalse(stage.getScene().lookup("#feedbackScrollHint").isVisible());
+                return scroll.getWidth();
+            });
+
+            submitFeedbackCommand(stage, "search " + "a".repeat(3000));
+            runOnJavaFxThread(() -> {
+                ScrollPane scroll = (ScrollPane) stage.getScene().lookup("#feedbackMessageScroll");
+                assertTrue(scroll.getHeight() >= 60);
+                assertTrue(scroll.getHeight() <= 84);
+                assertTrue(stage.getScene().lookup("#feedbackScrollHint").isVisible());
+                return null;
+            });
+
+            submitFeedbackCommand(stage, mediumSearch);
+            runOnJavaFxThread(() -> {
+                ScrollPane scroll = (ScrollPane) stage.getScene().lookup("#feedbackMessageScroll");
+                assertFalse(stage.getScene().lookup("#feedbackScrollHint").isVisible());
+                assertEquals(mediumWidth, scroll.getWidth(), 1);
+                return null;
+            });
+        } finally {
+            runOnJavaFxThread(() -> {
+                window.stop();
+                stage.close();
+                return null;
+            });
+        }
+    }
+
+    private static void submitFeedbackCommand(Stage stage, String command) throws Exception {
+        runOnJavaFxThread(() -> {
+            TextField input = (TextField) stage.getScene().lookup("#commandTextField");
+            Button submit = (Button) stage.getScene().lookup("#submitButton");
+            input.setText(command);
+            submit.fire();
+            return null;
+        });
+        waitForJavaFxPulses();
+    }
+
+    private static void waitForJavaFxPulses() throws InterruptedException {
+        CountDownLatch completed = new CountDownLatch(1);
+        Platform.runLater(() -> new AnimationTimer() {
+            private int pulseCount;
+
+            @Override
+            public void handle(long now) {
+                if (++pulseCount == 3) {
+                    stop();
+                    completed.countDown();
+                }
+            }
+        }.start());
+        assertTrue(completed.await(10, TimeUnit.SECONDS));
+    }
+
+    private static <T> T runOnJavaFxThread(Callable<T> action) throws Exception {
+        FutureTask<T> task = new FutureTask<>(action);
+        Platform.runLater(task);
+        return task.get(10, TimeUnit.SECONDS);
     }
 
     @Test

@@ -11,6 +11,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 
 /**
  * A UI component that displays the result of a command execution.
@@ -42,6 +43,9 @@ public class ResultDisplay extends UiPart<Region> {
     @FXML
     private Label feedbackScrollHint;
 
+    @FXML
+    private VBox feedbackStatusPane;
+
     /**
      * Starts with neutral feedback until a command succeeds or fails.
      */
@@ -49,6 +53,14 @@ public class ResultDisplay extends UiPart<Region> {
         super(FXML);
         feedbackIcon.setImage(infoIcon);
         resultDisplay.setText("Ready. Choose Contacts, Events, or Tags, then enter a command.");
+        feedbackStatusPane.minWidthProperty().bind(Bindings.createDoubleBinding(() ->
+                feedbackScrollHint.prefWidth(-1),
+                feedbackScrollHint.textProperty(), feedbackScrollHint.fontProperty()));
+        feedbackMessageScroll.prefHeightProperty().bind(Bindings.createDoubleBinding(() ->
+                Math.min(feedbackMessageScroll.getMaxHeight(),
+                        resultDisplay.prefHeight(feedbackMessageScroll.getWidth())),
+                resultDisplay.textProperty(), resultDisplay.fontProperty(),
+                feedbackMessageScroll.widthProperty(), feedbackMessageScroll.maxHeightProperty()));
         feedbackScrollHint.visibleProperty().bind(Bindings.createBooleanBinding(() ->
                 resultDisplay.getLayoutBounds().getHeight()
                         > feedbackMessageScroll.getViewportBounds().getHeight() + 1,

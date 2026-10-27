@@ -36,7 +36,8 @@
    Click a command name to put only the command word in the input and show its format and an example below the input.
    Complete the command by typing its arguments after the command word.
    The main workspace shows a list beside its details, and the command box, feedback, and prefix hints stay at the bottom.
-   Scroll within the feedback band to read the full message when a command produces long feedback.
+   Long feedback shows several lines before scrolling; use the scrollbar or mouse wheel to read the full message.
+   The scroll hint appears only when the current message extends beyond the visible feedback area.
    After a successful command, CoordiMate opens the view for its result: contact commands open Contacts, event
    commands open Events, and tag commands open Tags. `assign` and `unassign` keep the current view and refresh its
    related contact or event details. Failed commands keep the current view. A valid `delete` request opens Contacts
