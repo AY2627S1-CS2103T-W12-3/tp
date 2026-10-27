@@ -225,7 +225,8 @@ public class LogicManagerTest {
         assertTrue(helpResult.shouldShowHelp());
         assertEquals(0, saveAttempts[0]);
     }
-  
+
+    @Test
     public void execute_readOnlyCommand_doesNotSave() throws Exception {
         useStorageThatFailsNextSave();
         assertEquals(ListCommand.MESSAGE_SUCCESS, logic.execute("list").getFeedbackToUser());
