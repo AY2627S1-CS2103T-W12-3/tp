@@ -69,6 +69,8 @@ public class UiManagerTest {
             closeButton.fire();
             assertTrue(logic.hasSeenTutorial());
             assertFalse(tutorialOverlay.isVisible());
+            assertTrue(logic.getPersonList().isEmpty());
+            assertTrue(logic.getEventList().isEmpty());
             assertTrue(contactsView.isSelected());
             assertFalse(primaryStage.getScene().lookup("#commandTextField").isDisabled());
             uiManager.stop();
