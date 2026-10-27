@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -33,6 +34,30 @@ public class JsonCoordiMateStorage {
 
     public Path getCoordiMateFilePath() {
         return filePath;
+    }
+
+    /**
+     * Deletes legacy year-zero events at startup, after validating all remaining data.
+     * Returns the deleted names only after the cleaned file is saved successfully.
+     */
+    public List<String> removeYearZeroEvents() throws DataLoadingException, IOException {
+        Optional<JsonSerializableCoordiMate> savedData = JsonUtil.readJsonFile(
+                filePath, JsonSerializableCoordiMate.class);
+        if (savedData.isEmpty()) {
+            return List.of();
+        }
+        List<String> removedNames = savedData.get().removeYearZeroEvents();
+        if (removedNames.isEmpty()) {
+            return List.of();
+        }
+        ReadOnlyCoordiMate cleanedData;
+        try {
+            cleanedData = savedData.get().toModelType();
+        } catch (IllegalValueException | IllegalArgumentException | NullPointerException e) {
+            throw new DataLoadingException(e);
+        }
+        saveCoordiMate(cleanedData);
+        return List.copyOf(removedNames);
     }
 
     /**

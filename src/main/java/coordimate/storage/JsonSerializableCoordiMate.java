@@ -94,6 +94,21 @@ class JsonSerializableCoordiMate {
     }
 
     /**
+     * Removes legacy events using year zero and returns their names for the startup notification.
+     */
+    List<String> removeYearZeroEvents() {
+        List<String> removedNames = new ArrayList<>();
+        events.removeIf(event -> {
+            if (event != null && event.hasYearZero()) {
+                removedNames.add(event.getName() == null ? "(unnamed event)" : event.getName());
+                return true;
+            }
+            return false;
+        });
+        return removedNames;
+    }
+
+    /**
      * Converts this CoordiMate into the model's {@code CoordiMate} object.
      *
      * @throws IllegalValueException if there were any data constraints violated.

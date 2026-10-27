@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import coordimate.logic.LogicManager;
 import coordimate.model.ModelManager;
 import javafx.application.Platform;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ToggleButton;
@@ -36,6 +37,36 @@ public class UiManagerTest {
         }
         assertTrue(started.await(10, TimeUnit.SECONDS));
         Platform.setImplicitExit(false);
+    }
+
+    @Test
+    public void start_startupWarning_notifiesAfterWindowIsShown() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            ModelManager model = new ModelManager();
+            model.setHasSeenTutorial(true);
+            Stage primaryStage = new Stage();
+            String warning = "Deleted events with year 0000: Year Zero";
+            boolean[] notified = {false};
+            UiManager manager = new UiManager(new LogicManager(model, null), Path.of("data.json"), warning) {
+                @Override
+                void showAlertDialogAndWait(Alert.AlertType type, String title, String header, String content) {
+                    assertTrue(primaryStage.isShowing());
+                    assertEquals(Alert.AlertType.WARNING, type);
+                    assertEquals(warning, content);
+                    notified[0] = true;
+                }
+            };
+            try {
+                manager.start(primaryStage);
+                assertTrue(notified[0]);
+            } finally {
+                manager.stop();
+                primaryStage.close();
+            }
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
