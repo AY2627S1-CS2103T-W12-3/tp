@@ -124,6 +124,62 @@ public class EventListPanelTest {
     }
 
     @Test
+    public void selectEvent_durationRefreshesWhenSwitchingEvents() throws Exception {
+        runOnJavaFxThread(() -> {
+            String[][] cases = {
+                {"27-10-2026", "29-10-2026", "3 days"},
+                {"27-10-2026 09:00", "29-10-2026 10:30", "2 days 1 hour 30 minutes"},
+                {"27-10-2026", "29-10-2026 10:30", "Unknown (start time not specified)"},
+                {"27-10-2026 09:00", "29-10-2026", "Unknown (end time not specified)"}
+            };
+            ObservableList<Event> events = FXCollections.observableArrayList();
+            for (int i = 0; i < cases.length; i++) {
+                events.add(new Event("Event " + i, new EventTime(cases[i][0]), new EventTime(cases[i][1])));
+            }
+            Region root = new EventListPanel(events).getRoot();
+            new Scene(root);
+            root.applyCss();
+            ListView<Event> list = getEventList(root);
+
+            for (int i = 0; i < cases.length; i++) {
+                list.getSelectionModel().select(i);
+                assertDurationDetails(root, events.get(i), cases[i][2]);
+            }
+            list.getSelectionModel().selectFirst();
+            assertDurationDetails(root, events.getFirst(), "3 days");
+        });
+    }
+
+    @Test
+    public void replaceSelectedEvent_durationRefreshesWhenTimesChange() throws Exception {
+        runOnJavaFxThread(() -> {
+            Event original = new Event("Concert", new EventTime("27-10-2026"), new EventTime("29-10-2026"));
+            ObservableList<Event> events = FXCollections.observableArrayList(original);
+            Region root = new EventListPanel(events).getRoot();
+            new Scene(root);
+            root.applyCss();
+            ListView<Event> list = getEventList(root);
+            list.getSelectionModel().selectFirst();
+            assertDurationDetails(root, original, "3 days");
+
+            String[][] edits = {
+                {"27-10-2026 09:00", "29-10-2026", "Unknown (end time not specified)"},
+                {"27-10-2026 09:00", "29-10-2026 10:30", "2 days 1 hour 30 minutes"},
+                {"27-10-2026", "29-10-2026 10:30", "Unknown (start time not specified)"},
+                {"27-10-2026", "29-10-2026", "3 days"},
+                {"27-10-2026 09:00", "27-10-2026 09:00", "0 minutes"}
+            };
+            for (String[] edit : edits) {
+                Event updated = new Event(original.getName(), new EventTime(edit[0]), new EventTime(edit[1]));
+                events.set(0, updated);
+
+                assertSame(updated, list.getSelectionModel().getSelectedItem());
+                assertDurationDetails(root, updated, edit[2]);
+            }
+        });
+    }
+
+    @Test
     public void memberIds_ignoreContactFilteringAndFollowRosterReorderingAndEdits() throws Exception {
         runOnJavaFxThread(() -> {
             Person alice = new PersonBuilder(TypicalPersons.ALICE).withMemberId(12)
@@ -675,9 +731,15 @@ public class EventListPanelTest {
         root.applyCss();
         getEventList(root).getSelectionModel().selectFirst();
 
-        assertEquals(expected, getLabel(root, "duration").getText(), start + " to " + end);
-        assertEquals(start, getLabel(root, "startTime").getText());
-        assertEquals(end, getLabel(root, "endTime").getText());
+        assertDurationDetails(root, event, expected);
+    }
+
+    private static void assertDurationDetails(Region root, Event event, String expected) {
+        assertEquals(expected, getLabel(root, "duration").getText(),
+                event.getStartTime() + " to " + event.getEndTime());
+        assertEquals(event.getName(), getLabel(root, "selectedName").getText());
+        assertEquals(event.getStartTime().toString(), getLabel(root, "startTime").getText());
+        assertEquals(event.getEndTime().toString(), getLabel(root, "endTime").getText());
     }
 
     private static Event event(List<Name> members, Map<Name, AttendanceStatus> attendance) {
