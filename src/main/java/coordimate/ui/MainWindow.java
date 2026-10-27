@@ -272,6 +272,8 @@ public class MainWindow extends UiPart<Stage> {
         primaryStage.addEventHandler(WindowEvent.WINDOW_SHOWN, event -> {
             if (reminderPanel != null) {
                 logic.refreshReminders();
+                personListPanel.refreshIfDateChanged();
+                eventListPanel.refreshIfDateChanged();
                 reminderTimer.play();
             }
         });
