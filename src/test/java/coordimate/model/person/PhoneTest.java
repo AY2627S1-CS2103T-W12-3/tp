@@ -40,6 +40,7 @@ public class PhoneTest {
         // valid phone numbers
         assertTrue(Phone.isValidPhone("1234567")); // minimum digit count
         assertTrue(Phone.isValidPhone("123")); // previously valid stored phone number
+        assertTrue(Phone.isValidPhone(" 123 ")); // previously valid number with surrounding spaces
         assertTrue(Phone.isValidPhone("1234567890123456")); // previously valid digit-only phone number
         assertTrue(Phone.isValidPhone("93121534"));
         assertTrue(Phone.isValidPhone("124293842033123")); // maximum digit count
