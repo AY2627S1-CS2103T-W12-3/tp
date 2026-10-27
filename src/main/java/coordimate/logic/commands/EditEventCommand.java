@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.Objects;
 
+import coordimate.commons.util.StringUtil;
 import coordimate.logic.Messages;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.Model;
@@ -89,7 +90,7 @@ public class EditEventCommand extends Command {
      * Returns true if this command gives a new name to the event named {@code name}, ignoring case.
      */
     public boolean renamesEvent(String name) {
-        return newName != null && eventName.equalsIgnoreCase(name.strip());
+        return newName != null && eventName.equalsIgnoreCase(StringUtil.normalizeWhitespace(name));
     }
 
     /**

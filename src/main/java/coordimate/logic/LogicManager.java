@@ -37,6 +37,7 @@ import coordimate.model.event.Event;
 import coordimate.model.event.EventMembersPredicate;
 import coordimate.model.person.Person;
 import coordimate.model.tag.Tag;
+import coordimate.storage.DataConflictException;
 import coordimate.storage.Storage;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.collections.ObservableList;
@@ -150,7 +151,9 @@ public class LogicManager implements Logic {
         candidate.updateFilteredPersonList(model.getFilteredPersonList()::contains);
         CommandResult result = command.execute(candidate);
         try {
-            storage.saveCoordiMate(candidate.getCoordiMate());
+            storage.saveCoordiMateIfUnchanged(candidate.getCoordiMate());
+        } catch (DataConflictException e) {
+            throw new CommandException(DataConflictException.MESSAGE, e);
         } catch (IOException e) {
             logContactOperationFailure(command, "save contact data", e);
             String message = switch (command) {

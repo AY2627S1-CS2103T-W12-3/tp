@@ -60,7 +60,7 @@ public class DeleteEventIntegrationTest {
         String beforeFile = Files.readString(storage.getCoordiMateFilePath());
         CoordiMate before = new CoordiMate(model.getCoordiMate());
         Logic logic = newLogic(model, storage);
-        for (String name : new String[] {"Missing", "Final", "Final  Concert"}) {
+        for (String name : new String[] {"Missing", "Final", "Final Concerts"}) {
             assertEquals(Messages.withUsage("Event " + name + " does not exist. Use a saved event name.",
                     DeleteEventCommand.MESSAGE_USAGE), assertThrows(
                     CommandException.class, () -> logic.execute("deleteevent evn/" + name)).getMessage());

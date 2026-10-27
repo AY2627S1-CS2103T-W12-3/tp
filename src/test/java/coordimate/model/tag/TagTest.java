@@ -3,7 +3,10 @@ package coordimate.model.tag;
 import static coordimate.testutil.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -65,6 +68,21 @@ public class TagTest {
         assertTrue(tag.isSameTag(new Tag("exco")));
         assertFalse(tag.isSameTag(new Tag("Sponsor")));
         assertFalse(tag.isSameTag(null));
+    }
+
+    @Test
+    public void findSavedTag() {
+        List<Tag> savedTags = List.of(new Tag("EXCO"), new Tag("Sponsor"));
+
+        // saved tag typed in different case -> saved tag
+        assertEquals(new Tag("EXCO"), new Tag("exco").findSavedTag(savedTags));
+
+        // no saved match -> typed tag
+        Tag newTag = new Tag("publicity");
+        assertSame(newTag, newTag.findSavedTag(savedTags));
+        assertSame(newTag, newTag.findSavedTag(List.of()));
+
+        assertThrows(NullPointerException.class, () -> newTag.findSavedTag(null));
     }
 
 }

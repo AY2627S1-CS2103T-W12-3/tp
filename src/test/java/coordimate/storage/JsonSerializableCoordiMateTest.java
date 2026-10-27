@@ -18,9 +18,11 @@ import org.junit.jupiter.api.Test;
 import coordimate.commons.exceptions.IllegalValueException;
 import coordimate.commons.util.JsonUtil;
 import coordimate.model.CoordiMate;
+import coordimate.model.event.AttendanceStatus;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
 import coordimate.model.person.MemberId;
+import coordimate.model.person.Name;
 import coordimate.model.person.Person;
 import coordimate.model.tag.Tag;
 import coordimate.testutil.PersonBuilder;
@@ -34,6 +36,11 @@ public class JsonSerializableCoordiMateTest {
     private static final Path DUPLICATE_PERSON_FILE = TEST_DATA_FOLDER.resolve("duplicatePersonCoordiMate.json");
     private static final Path EVENT_MEMBERS_FILE = TEST_DATA_FOLDER.resolve("eventMembersCoordiMate.json");
     private static final Path UNKNOWN_MEMBER_FILE = TEST_DATA_FOLDER.resolve("unknownMemberCoordiMate.json");
+    private static final Path INTERNAL_SPACING_FILE = TEST_DATA_FOLDER.resolve("internalSpacingCoordiMate.json");
+    private static final Path INTERNAL_SPACING_DUPLICATE_PERSON_FILE =
+            TEST_DATA_FOLDER.resolve("internalSpacingDuplicatePersonCoordiMate.json");
+    private static final Path INTERNAL_SPACING_DUPLICATE_EVENT_FILE =
+            TEST_DATA_FOLDER.resolve("internalSpacingDuplicateEventCoordiMate.json");
 
     @Test
     public void toModelType_typicalPersonsFile_success() throws Exception {
@@ -104,6 +111,31 @@ public class JsonSerializableCoordiMateTest {
 
         assertThrows(IllegalValueException.class, JsonSerializableCoordiMate.MESSAGE_DUPLICATE_PERSON,
                 data::toModelType);
+    }
+
+    @Test
+    public void toModelType_namesWithExtraInternalSpaces_loadedCollapsedWithMatchingMembers() throws Exception {
+        CoordiMate coordiMate = JsonUtil.readJsonFile(INTERNAL_SPACING_FILE, JsonSerializableCoordiMate.class)
+                .get().toModelType();
+        Name alice = new Name("Alice Pauline");
+        assertEquals("Alice Pauline", coordiMate.getPersonList().getFirst().getName().getFullName());
+        Event concert = coordiMate.getEventList().getFirst();
+        assertEquals("Final Concert", concert.getName());
+        assertEquals(List.of(alice), concert.getMembers());
+        assertEquals(AttendanceStatus.PRESENT, concert.getAttendance(alice).orElseThrow());
+    }
+
+    @Test
+    public void toModelType_namesDifferingOnlyInInternalSpacing_throwsIllegalValueException() throws Exception {
+        JsonSerializableCoordiMate duplicatePersons = JsonUtil.readJsonFile(INTERNAL_SPACING_DUPLICATE_PERSON_FILE,
+                JsonSerializableCoordiMate.class).get();
+        assertThrows(IllegalValueException.class, JsonSerializableCoordiMate.MESSAGE_DUPLICATE_PERSON,
+                duplicatePersons::toModelType);
+
+        JsonSerializableCoordiMate duplicateEvents = JsonUtil.readJsonFile(INTERNAL_SPACING_DUPLICATE_EVENT_FILE,
+                JsonSerializableCoordiMate.class).get();
+        assertThrows(IllegalValueException.class, JsonSerializableCoordiMate.MESSAGE_DUPLICATE_EVENT,
+                duplicateEvents::toModelType);
     }
 
     @Test

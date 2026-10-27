@@ -3,8 +3,12 @@ package coordimate.model.person;
 import static coordimate.commons.util.AppUtil.checkArgument;
 import static java.util.Objects.requireNonNull;
 
+import coordimate.commons.util.StringUtil;
+
 /**
  * Represents a Person's name in the CoordiMate.
+ * Surrounding spaces are removed and each run of internal spaces is collapsed to one, so names that differ
+ * only in spacing are stored identically.
  * Guarantees: immutable; is valid as declared in {@link #isValidName(String)}
  */
 public class Name {
@@ -24,7 +28,7 @@ public class Name {
     public Name(String name) {
         requireNonNull(name);
         checkArgument(isValidName(name), MESSAGE_CONSTRAINTS);
-        fullName = name.strip();
+        fullName = StringUtil.normalizeWhitespace(name);
     }
 
     public String getFullName() {
@@ -32,11 +36,11 @@ public class Name {
     }
 
     /**
-     * Returns true if a given string is a valid name.
+     * Returns true if a given string is a valid name. The length limit applies after spacing is normalised.
      */
     public static boolean isValidName(String test) {
         requireNonNull(test);
-        String trimmedName = test.strip();
+        String trimmedName = StringUtil.normalizeWhitespace(test);
         int length = trimmedName.codePointCount(0, trimmedName.length());
         return length > 0 && length <= MAX_LENGTH
                 && trimmedName.codePoints().anyMatch(Character::isLetter)

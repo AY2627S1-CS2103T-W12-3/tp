@@ -83,7 +83,7 @@ public class MainWindow extends UiPart<Stage> {
                     + "Example: delete e/aisha@example.com"),
             Map.entry("search", "Format: search KEYWORD\nExample: search jurong west"),
             Map.entry("filter", "Format: filter FIELD/VALUE [FIELD/VALUE]...\n"
-                    + "Example: filter tag/friend organisation/NUS"),
+                    + "Example: filter tag/EXCO organisation/NUS Student Affairs"),
             Map.entry("list", "Format: list [archived]\nExample: list archived"),
             Map.entry("archive", "Format: archive MEMBER_ID\nExample: archive 2"),
             Map.entry("unarchive", "Format: unarchive MEMBER_ID\nExample: unarchive 2"),

@@ -225,6 +225,14 @@ public class LogicManagerTest {
         assertTrue(helpResult.shouldShowHelp());
         assertEquals(0, saveAttempts[0]);
     }
+  
+    public void execute_readOnlyCommand_doesNotSave() throws Exception {
+        useStorageThatFailsNextSave();
+        assertEquals(ListCommand.MESSAGE_SUCCESS, logic.execute("list").getFeedbackToUser());
+        assertThrows(CommandException.class, Messages.withUsage(AddCommand.MESSAGE_SAVE_ERROR,
+                AddCommand.MESSAGE_USAGE), () -> logic.execute(AddCommand.COMMAND_WORD + NAME_DESC_AMY
+                        + PHONE_DESC_AMY + EMAIL_DESC_AMY + " r/NA" + ADDRESS_DESC_AMY));
+    }
 
     @Test
     public void getFilteredPersonList_modifyList_throwsUnsupportedOperationException() {
