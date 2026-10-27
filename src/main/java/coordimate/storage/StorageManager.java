@@ -69,7 +69,7 @@ public class StorageManager implements Storage {
 
     /**
      * Deletes legacy events with embedded parameters at startup, validating the remaining data before saving.
-     * Returns deleted names only after the atomic save succeeds, with the original revision still current.
+     * Leaves the initial model load responsible for capturing its own matching file revision.
      */
     public List<String> removeEventsWithEmbeddedParameters() throws DataLoadingException, IOException {
         Optional<String> originalRevision = dataRevision();
@@ -80,9 +80,10 @@ public class StorageManager implements Storage {
         if (isDataRevisionInitialized && !expectedDataRevision.equals(originalRevision)) {
             throw new DataConflictException();
         }
-        expectedDataRevision = originalRevision;
-        isDataRevisionInitialized = true;
-        saveCoordiMateIfUnchanged(cleanup.get().data());
+        Optional<String> savedRevision = saveCoordiMateIfUnchanged(cleanup.get().data(), originalRevision);
+        if (isDataRevisionInitialized) {
+            expectedDataRevision = savedRevision;
+        }
         return cleanup.get().deletedNames();
     }
 
@@ -128,22 +129,27 @@ public class StorageManager implements Storage {
 
     @Override
     public void saveCoordiMateIfUnchanged(ReadOnlyCoordiMate coordiMate) throws IOException {
+        if (!isDataRevisionInitialized) {
+            throw new IOException("Data file has not been loaded.");
+        }
+        expectedDataRevision = saveCoordiMateIfUnchanged(coordiMate, expectedDataRevision);
+    }
+
+    private Optional<String> saveCoordiMateIfUnchanged(ReadOnlyCoordiMate coordiMate, Optional<String> expectedRevision)
+            throws IOException {
         Path dataPath = getCoordiMateFilePath().toAbsolutePath();
         Files.createDirectories(dataPath.getParent());
         Path lockPath = dataPath.resolveSibling(dataPath.getFileName() + ".lock");
         try (FileChannel channel = FileChannel.open(lockPath, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
                 FileLock ignored = channel.lock()) {
-            if (!isDataRevisionInitialized) {
-                throw new IOException("Data file has not been loaded.");
-            }
-            if (!expectedDataRevision.equals(dataRevision())) {
+            if (!expectedRevision.equals(dataRevision())) {
                 throw new DataConflictException();
             }
             Optional<String> savedRevision = Optional.of(revisionOf(
                     JsonUtil.toJsonString(new JsonSerializableCoordiMate(coordiMate))
                             .getBytes(StandardCharsets.UTF_8)));
             coordiMateStorage.saveCoordiMate(coordiMate);
-            expectedDataRevision = savedRevision;
+            return savedRevision;
         } catch (OverlappingFileLockException e) {
             throw new IOException("The data file is being saved by another window. Try again.", e);
         }

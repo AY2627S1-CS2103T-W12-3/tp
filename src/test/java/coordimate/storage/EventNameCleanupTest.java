@@ -206,6 +206,70 @@ public class EventNameCleanupTest {
     }
 
     @Test
+    public void cleanup_concurrentSaveBeforeInitialLoad_pairsLoadedModelWithLatestRevision() throws Exception {
+        Path path = testFolder.resolve("data.json");
+        JsonCoordiMateStorage jsonStorage = new JsonCoordiMateStorage(path);
+        writeLegacyData(path, new CoordiMate(), List.of("Bad\u2003c/review"));
+        StorageManager storage = storage(jsonStorage);
+        storage.removeEventsWithEmbeddedParameters();
+        StorageManager otherWindow = storage(new JsonCoordiMateStorage(path));
+        otherWindow.readCoordiMate();
+        CoordiMate concurrentData = getTypicalCoordiMate();
+        otherWindow.saveCoordiMateIfUnchanged(concurrentData);
+
+        ReadOnlyCoordiMate loaded = storage.readCoordiMate().orElseThrow();
+
+        assertEquals(concurrentData, loaded);
+        storage.saveCoordiMateIfUnchanged(loaded);
+        assertEquals(concurrentData, jsonStorage.readCoordiMate().orElseThrow());
+    }
+
+    @Test
+    public void cleanup_fileChangesDuringInitialLoad_retriesWithLatestRevision() throws Exception {
+        Path path = testFolder.resolve("data.json");
+        writeLegacyData(path, new CoordiMate(), List.of("Bad\u2003c/review"));
+        CoordiMate concurrentData = getTypicalCoordiMate();
+        JsonCoordiMateStorage changingStorage = new JsonCoordiMateStorage(path) {
+            private boolean isFirstRead = true;
+
+            @Override
+            public Optional<ReadOnlyCoordiMate> readCoordiMate() throws DataLoadingException {
+                if (isFirstRead) {
+                    isFirstRead = false;
+                    try {
+                        new JsonCoordiMateStorage(path).saveCoordiMate(concurrentData);
+                    } catch (IOException e) {
+                        throw new DataLoadingException(e);
+                    }
+                }
+                return super.readCoordiMate();
+            }
+        };
+        StorageManager storage = storage(changingStorage);
+        storage.removeEventsWithEmbeddedParameters();
+
+        ReadOnlyCoordiMate loaded = storage.readCoordiMate().orElseThrow();
+
+        assertEquals(concurrentData, loaded);
+        storage.saveCoordiMateIfUnchanged(loaded);
+    }
+
+    @Test
+    public void cleanup_storageAlreadyLoaded_updatesRevisionAfterSuccessfulCleanup() throws Exception {
+        Path path = testFolder.resolve("data.json");
+        writeLegacyData(path, new CoordiMate(), List.of("Bad\u2003c/review"));
+        StorageManager storage = storage(new JsonCoordiMateStorage(path));
+        storage.readCoordiMate();
+
+        assertEquals(List.of("Bad\u2003c/review"), storage.removeEventsWithEmbeddedParameters());
+
+        storage.saveCoordiMateIfUnchanged(storage.readCoordiMate().orElseThrow());
+        new JsonCoordiMateStorage(path).saveCoordiMate(getTypicalCoordiMate());
+        assertThrows(DataConflictException.class, () ->
+                storage.saveCoordiMateIfUnchanged(storage.readCoordiMate().orElseThrow()));
+    }
+
+    @Test
     public void cleanup_storageAlreadyLoaded_rejectsChangedRevision() throws Exception {
         Path path = testFolder.resolve("data.json");
         JsonCoordiMateStorage jsonStorage = new JsonCoordiMateStorage(path);
