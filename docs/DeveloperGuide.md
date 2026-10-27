@@ -147,7 +147,7 @@ Here's a (partial) class diagram of the `Logic` component:
 
 <puml src="diagrams/LogicClassDiagram.puml" width="550"/>
 
-The sequence diagram below follows `execute("delete 1")` and the subsequent confirmation response. The first call resolves and stores the contact without deleting it. If the response is `y` or `Y`, the confirmed command deletes the contact on a candidate model through the atomic save path; any other response cancels the deletion without changing data.
+The sequence diagram below follows `execute("delete 1")` and the subsequent confirmation response. The first call resolves and stores the contact without deleting it. If the response is `y` or `Y` after removing surrounding whitespace, the confirmed command deletes the contact on a candidate model through the atomic save path; any other response cancels the deletion without changing data.
 
 <puml src="diagrams/DeleteSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `delete 1` Command" />
 
@@ -160,7 +160,7 @@ How the `Logic` component works:
 
 1. When `Logic` is called upon to execute a command, the command is passed to a `CoordiMateParser` object, which in turn creates a parser that matches the command (e.g., `DeleteCommandParser`) and uses it to parse the command.
 1. This results in a `Command` object (more precisely, an object of one of its subclasses e.g., `DeleteCommand`). For `delete`, `LogicManager` first calls `resolvePerson` and returns a confirmation prompt without executing the deletion.
-1. If the next input is `y` or `Y`, `LogicManager` creates a command for the resolved `Person` and executes it on a candidate model. That command deletes the contact from the candidate, which is saved before the live model changes. Any other input cancels the deletion.
+1. If the next input is `y` or `Y` after removing surrounding whitespace, `LogicManager` creates a command for the resolved `Person` and executes it on a candidate model. That command deletes the contact from the candidate, which is saved before the live model changes. Any other input cancels the deletion.
 1. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
 
 Here are the other classes in `Logic` (omitted from the class diagram above) that are used for parsing a user command:
@@ -1347,7 +1347,7 @@ testers are expected to do more *exploratory* testing.
    1. Test case: `delete 1`, then `n`<br>
       Expected: `ID: 1` and Alex Yeoh's name, phone, email, and role are shown, followed by `Confirm deletion? [y/N]`. After `n`, the status message shows `Deletion cancelled. No changes were made.` and no contact is deleted.
 
-   1. Test case: `delete 1`, then `y`<br>
+   1. Test case: `delete 1`, then `y ` (with a trailing space)<br>
       Expected: Alex Yeoh (member ID `1`) is deleted. Other contacts keep their IDs. The status message shows `Contact deleted successfully: ` followed by the contact's name.
 
    1. Test case: `delete 0`<br>

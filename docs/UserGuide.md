@@ -104,9 +104,9 @@ For `dismiss`, data-loading and saving failures instead produce the session-only
 * Parameters can be in any order.<br>
   For example, if the command specifies `n/NAME p/PHONE_NUMBER`, `p/PHONE_NUMBER n/NAME` is also acceptable.
 
-* Extraneous parameters for commands that take no parameters, such as `help`, `tutorial`, `exit`, and `clear`, are
-  ignored.<br>
-  For example, `help 123` is interpreted as `help`.
+* Commands that take no parameters, such as `help`, `tutorial`, `exit`, and `clear`, reject extraneous
+  parameters.<br>
+  For example, `help 123` is invalid; use `help` instead.
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
 </box>
@@ -332,6 +332,24 @@ organisation, tags, notes, and attendance status. A successful `addevent` opens 
 the new event. Each event card shows its member count and attendance summary. At narrower window
 sizes, the list appears above the details. The list and details divider can be dragged, but the
 details pane keeps a minimum width while the panes are side by side.
+
+The duration depends on whether the start and end include a time of day:
+
+* **Both date-only:** count calendar dates inclusively, including both the start and end dates.
+  An event on a single date lasts `1 day`.
+* **Both timed:** show elapsed time in days, hours, and minutes, with each day representing 24 hours.
+  Omit zero-value units and use singular or plural as appropriate. Identical timestamps show `0 minutes`.
+* **One date-only and one timed:** the event remains valid, but its duration is
+  `Unknown (start time not specified)` or `Unknown (end time not specified)`, identifying the missing time.
+
+| Start | End | Duration |
+|---|---|---|
+| `27-10-2026` | `27-10-2026` | `1 day` |
+| `27-10-2026` | `29-10-2026` | `3 days` |
+| `27-10-2026 09:00` | `29-10-2026 10:30` | `2 days 1 hour 30 minutes` |
+| `27-10-2026 09:00` | `29-10-2026 09:00` | `2 days` |
+| `27-10-2026` | `29-10-2026 10:30` | `Unknown (start time not specified)` |
+| `27-10-2026 09:00` | `29-10-2026` | `Unknown (end time not specified)` |
 
 Command feedback appears above the input at the bottom of the window. Rejected commands
 show a red feedback band and input border. The command stays in the input so you can
@@ -1015,9 +1033,9 @@ Formats: `delete MEMBER_ID` · `delete n/NAME` · `delete p/PHONE` · `delete e/
 * Name matching is exact apart from letter case and extra spaces. Phone matching ignores spaces, hyphens, and
   brackets. Email matching ignores letter case and surrounding spaces. These identifiers search all saved contacts,
   including those hidden by a search or filter.
-* CoordiMate shows the contact's `ID: <number>`, name, phone, email, and role, followed by `Confirm deletion? [y/N]`. Type exactly `y`
-  or `Y` to delete. `n`, `N`, Enter, or any other input cancels. A cancelling input is **not** run as a command; enter it
-  again if that was your intention.
+* CoordiMate shows the contact's `ID: <number>`, name, phone, email, and role, followed by `Confirm deletion? [y/N]`.
+  Type `y` or `Y` to delete; surrounding whitespace is ignored. `n`, `N`, Enter, or any other input cancels. A
+  cancelling input is **not** run as a command; enter it again if that was your intention.
 * A confirmed deletion removes the contact from all event member lists, including past events. The events and other
   contacts remain saved. A cancelled deletion makes no changes.
 * A confirmed deletion is saved before it appears in the contact list. A corrupt data file or failed write leaves the
