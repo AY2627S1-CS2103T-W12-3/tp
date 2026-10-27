@@ -24,6 +24,7 @@ import coordimate.model.UserPrefs;
 import coordimate.storage.JsonCoordiMateStorage;
 import coordimate.storage.JsonUserPrefsStorage;
 import coordimate.storage.StorageManager;
+import coordimate.testutil.PersonBuilder;
 
 public class AssignIntegrationTest {
     private static final String ADD = "addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00";
@@ -58,6 +59,48 @@ public class AssignIntegrationTest {
                 99), AssignCommand.MESSAGE_USAGE),
                 assertThrows(CommandException.class, () -> logic.execute("assign evn/Final Concert c/99"))
                         .getMessage());
+    }
+
+    @Test
+    public void execute_batchContainsContactOnLeave_modelAndFileUnchanged() throws Exception {
+        ModelManager model = new ModelManager(getTypicalCoordiMate(), new UserPrefs());
+        model.setPerson(ALICE, new PersonBuilder(ALICE).withLeaveDate("08-08-2026").build());
+        Path path = temporaryFolder.resolve("data.json");
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path);
+        Logic logic = newLogic(model, storage);
+        logic.execute(ADD);
+        logic.execute("assign evn/Final Concert c/2");
+        logic.execute("markattendance evn/Final Concert mem/Benson Meier att/present");
+        model.updateFilteredPersonList(person -> person.equals(CARL));
+        CoordiMate before = new CoordiMate(model.getCoordiMate());
+        String beforeFile = Files.readString(path);
+
+        assertEquals(Messages.withUsage(String.format(AssignCommand.MESSAGE_CONTACT_ON_LEAVE,
+                ALICE.getName(), "08-08-2026", "Final Concert"), AssignCommand.MESSAGE_USAGE),
+                assertThrows(CommandException.class, () -> logic.execute("assign evn/Final Concert c/3 1"))
+                        .getMessage());
+        assertEquals(before, model.getCoordiMate());
+        assertEquals(beforeFile, Files.readString(path));
+        assertEquals(List.of(CARL), model.getFilteredPersonList());
+        assertEquals(before, storage.readCoordiMate().orElseThrow());
+    }
+
+    @Test
+    public void execute_reloadedLeaveComparedWithEventEnd() throws Exception {
+        ModelManager model = new ModelManager(getTypicalCoordiMate(), new UserPrefs());
+        model.setPerson(ALICE, new PersonBuilder(ALICE).withLeaveDate("08-08-2026").build());
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(temporaryFolder.resolve("data.json"));
+        newLogic(model, storage).execute(ADD);
+        ModelManager reloaded = new ModelManager(storage.readCoordiMate().orElseThrow(), new UserPrefs());
+        Logic logic = newLogic(reloaded, storage);
+
+        assertThrows(CommandException.class, () -> logic.execute("assign evn/Final Concert c/1"));
+        logic.execute("editevent evn/Final Concert et/09-08-2026 00:00");
+        assertEquals("Assigned 1 member(s) to Final Concert.",
+                logic.execute("assign evn/Final Concert c/1").getFeedbackToUser());
+        ReadOnlyCoordiMate saved = storage.readCoordiMate().orElseThrow();
+        assertEquals(reloaded.getCoordiMate(), saved);
+        assertEquals(List.of(ALICE.getName()), saved.getEventList().getFirst().getMembers());
     }
 
     @Test
