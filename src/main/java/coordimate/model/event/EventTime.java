@@ -15,7 +15,8 @@ import java.util.Optional;
 public final class EventTime {
     public static final String MESSAGE_EMPTY = "Event time must not be empty. Example: st/17-09-2026 16:30";
     public static final String MESSAGE_CONSTRAINTS =
-            "Invalid event time. Use dd-MM-yyyy with an optional time in HH:mm format. "
+            "Invalid event time. Use dd-MM-yyyy with a year from 0001 to 9999 "
+            + "and an optional time in HH:mm format. "
             + "Example: st/17-09-2026 16:30";
 
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd-MM-uuuu")
@@ -47,13 +48,12 @@ public final class EventTime {
         requireNonNull(value);
         try {
             if (value.matches("[0-9]{2}-[0-9]{2}-[0-9]{4}")) {
-                LocalDate.parse(value, DATE_FORMAT);
+                return LocalDate.parse(value, DATE_FORMAT).getYear() > 0;
             } else if (value.matches("[0-9]{2}-[0-9]{2}-[0-9]{4} [0-9]{2}:[0-9]{2}")) {
-                LocalDateTime.parse(value, TIME_FORMAT);
+                return LocalDateTime.parse(value, TIME_FORMAT).getYear() > 0;
             } else {
                 return false;
             }
-            return true;
         } catch (DateTimeParseException e) {
             return false;
         }
