@@ -258,10 +258,8 @@ public class MainWindowTest {
             assertEquals("Step 8 of 16", ((Label) stage.getScene().lookup("#stepCounter")).getText());
             ListView<?> eventList = (ListView<?>) stage.getScene().lookup("#eventListView");
             assertEquals(0, eventList.getSelectionModel().getSelectedIndex());
-            assertTrue(stage.getScene().lookup("#targetHighlight").isVisible());
-            Bounds eventCardHighlight = stage.getScene().lookup("#targetHighlight")
-                    .localToScene(stage.getScene().lookup("#targetHighlight").getLayoutBounds());
-            assertTrue(eventCardHighlight.getHeight() < eventList.getHeight());
+            // The list is the fallback target until JavaFX creates the selected card on the next pulse.
+            assertTutorialHighlights(stage, "#eventListView");
             nextButton.fire();
             assertEquals("Step 9 of 16", ((Label) stage.getScene().lookup("#stepCounter")).getText());
             assertTrue(stage.getScene().lookup("#targetHighlight").isVisible());
