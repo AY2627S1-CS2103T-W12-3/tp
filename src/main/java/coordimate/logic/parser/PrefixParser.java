@@ -8,14 +8,16 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import coordimate.commons.util.StringUtil;
 import coordimate.logic.parser.exceptions.ParseException;
 
 /**
  * Scans command parameters while preserving each command's accepted prefix syntax.
  */
 final class PrefixParser {
-    static final Pattern CONTACT_PARAMETER_PATTERN = Pattern.compile("(?<!\\S)([A-Za-z]+/)");
-    static final Pattern EVENT_PARAMETER_PATTERN = Pattern.compile("(?<!\\S)([A-Za-z]+/|/[A-Za-z]+)");
+    static final String PARAMETER_BOUNDARY = "(?<![^" + StringUtil.WHITESPACE_CHARACTERS + "])";
+    static final Pattern CONTACT_PARAMETER_PATTERN = Pattern.compile(PARAMETER_BOUNDARY + "([A-Za-z]+/)");
+    static final Pattern EVENT_PARAMETER_PATTERN = Pattern.compile(PARAMETER_BOUNDARY + "([A-Za-z]+/|/[A-Za-z]+)");
 
     private PrefixParser() {}
 
@@ -46,11 +48,11 @@ final class PrefixParser {
         String previousPrefix = null;
         int valueStart = 0;
         while (matcher.find()) {
-            if (previousPrefix == null && !args.substring(0, matcher.start()).isBlank()) {
+            if (previousPrefix == null && !StringUtil.stripWhitespace(args.substring(0, matcher.start())).isEmpty()) {
                 throw ParserUtil.createInvalidFormatException(usage);
             }
             if (previousPrefix != null) {
-                values.put(previousPrefix, args.substring(valueStart, matcher.start()).strip());
+                values.put(previousPrefix, StringUtil.stripWhitespace(args.substring(valueStart, matcher.start())));
             }
             String prefix = matcher.group();
             if (!allowedPrefixes.contains(prefix)) {
@@ -63,7 +65,7 @@ final class PrefixParser {
             valueStart = matcher.end();
         }
         if (previousPrefix != null) {
-            values.put(previousPrefix, args.substring(valueStart).strip());
+            values.put(previousPrefix, StringUtil.stripWhitespace(args.substring(valueStart)));
         }
         return values;
     }

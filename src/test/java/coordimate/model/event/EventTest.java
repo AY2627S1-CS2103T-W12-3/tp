@@ -14,12 +14,32 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 import coordimate.model.person.Name;
+import coordimate.testutil.UnicodeWhitespace;
 
 public class EventTest {
     private final EventTime date = new EventTime("08-08-2026");
     private final EventTime time = new EventTime("08-08-2026 15:00");
     private final Name alex = new Name("Alex Yeoh");
     private final Name bernice = new Name("Bernice Yu");
+
+    @Test
+    public void constructor_unicodeWhitespace_normalizesSpacesButRejectsEmbeddedControls() {
+        for (String space : UnicodeWhitespace.ALL) {
+            assertEquals("Final Concert", new Event(space + "Final Concert" + space, date, time).getName());
+            assertFalse(Event.isValidName(space));
+            String name = "Final" + space.repeat(2) + "Concert";
+            int type = Character.getType(space.codePointAt(0));
+            if (type == Character.CONTROL || type == Character.LINE_SEPARATOR
+                    || type == Character.PARAGRAPH_SEPARATOR) {
+                assertFalse(Event.isValidName(name));
+                assertThrows(IllegalArgumentException.class, () -> new Event(name, date, time));
+            } else {
+                assertEquals("Final Concert", new Event(name, date, time).getName());
+                assertTrue(Event.isValidName("A".repeat(49) + space.repeat(3) + "B".repeat(50)));
+                assertFalse(Event.isValidName("A".repeat(50) + space.repeat(3) + "B".repeat(50)));
+            }
+        }
+    }
 
     @Test
     public void constructor_noMembers_emptyMemberList() {

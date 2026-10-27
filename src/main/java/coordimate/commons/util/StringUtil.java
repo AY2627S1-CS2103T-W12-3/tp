@@ -13,7 +13,12 @@ import java.util.regex.Pattern;
  */
 public class StringUtil {
 
-    private static final Pattern WHITESPACE_RUN = Pattern.compile("\\p{javaWhitespace}+");
+    /** Regex character-class contents covering Java whitespace and Unicode White_Space. */
+    public static final String WHITESPACE_CHARACTERS = "\\p{javaWhitespace}\\p{IsWhite_Space}";
+
+    private static final Pattern WHITESPACE_RUN = Pattern.compile("[" + WHITESPACE_CHARACTERS + "]+");
+    private static final Pattern SURROUNDING_WHITESPACE = Pattern.compile(
+            "^[" + WHITESPACE_CHARACTERS + "]+|[" + WHITESPACE_CHARACTERS + "]+$");
 
     /**
      * Returns true if the {@code sentence} contains the {@code word}.
@@ -44,7 +49,7 @@ public class StringUtil {
 
     /**
      * Returns {@code s} without surrounding whitespace and with each internal run of whitespace replaced by
-     * a single space. Uses the same definition of whitespace as {@link String#strip()}.
+     * a single space. Includes Java whitespace and Unicode White_Space, including non-breaking spaces.
      *   <br>examples:<pre>
      *       normalizeWhitespace("  Alex   Yeoh ") == "Alex Yeoh"
      *       normalizeWhitespace("Final \t Concert") == "Final Concert"
@@ -54,7 +59,16 @@ public class StringUtil {
      */
     public static String normalizeWhitespace(String s) {
         requireNonNull(s);
-        return WHITESPACE_RUN.matcher(s.strip()).replaceAll(" ");
+        return WHITESPACE_RUN.matcher(s).replaceAll(" ").strip();
+    }
+
+    /**
+     * Removes surrounding whitespace using the same definition as {@link #normalizeWhitespace(String)},
+     * preserving internal characters so field validation can reject embedded controls and line breaks.
+     */
+    public static String stripWhitespace(String s) {
+        requireNonNull(s);
+        return SURROUNDING_WHITESPACE.matcher(s).replaceAll("");
     }
 
     /**
