@@ -120,7 +120,7 @@ A command that breaks a constraint is rejected and makes no changes.
 
 | Parameter | Prefix | Constraints |
 |---|---|---|
-| `NAME`, `MEMBER_NAME` | `n/`, `mem/` | 1 to 80 characters. Letters, spaces, hyphens (`-`), apostrophes (`'`), and periods (`.`) only, with at least one letter. Digits are not allowed. Several spaces in a row count as one. Contact names are unique, ignoring case and extra spaces. |
+| `NAME`, `MEMBER_NAME` | `n/`, `mem/` | 1 to 80 characters. Letters, spaces, hyphens (`-`), apostrophes (`'`), and periods (`.`) only, with at least one letter. The words `s/o` and `d/o` (any capitalization) are also allowed, e.g. `Rajesh s/o Kumar`. Digits are not allowed. Several spaces in a row count as one. Contact names are unique, ignoring case and extra spaces. |
 | `PHONE` | `p/` | 7 to 15 digits. May start with `+`, and may contain spaces, hyphens, and brackets. Unique among contacts once spaces, hyphens, and brackets are removed. |
 | `EMAIL` | `e/` | `local-part@domain`. The local part uses letters, digits, and `_`, `%`, `+`, `-`, `.`; it cannot start or end with a period or contain two periods in a row. The domain is made of labels separated by periods; each label uses letters, digits, and hyphens and cannot start or end with a hyphen. The last label has at least 2 letters. Unique among contacts, ignoring case. |
 | `ROLE` | `r/` | 1 to 50 characters. Letters, digits, spaces, hyphens, and `/` only, with at least one letter or digit. |
@@ -143,7 +143,8 @@ a value that looks like another parameter—a space followed by letters and `/`�
 another parameter.
 For example, `addevent evn/Planning tag/review ...` is rejected with an unknown-parameter error, and in
 `m/Check a/v setup` the text after `a/` is read as the address. Write such text without the space before it,
-or without the `/`, e.g. `m/Check AV setup`.
+or without the `/`, e.g. `m/Check AV setup`. The exception is `s/o` and `d/o` followed by a space or the end of the
+input, which are read as part of a name, e.g. `n/Rajesh s/o Kumar`.
 
 Commands parse their arguments differently. For example, `search` treats the entire remainder as its keyword,
 while tag commands tokenize only their recognised `t/` prefix.
@@ -236,7 +237,7 @@ Name, phone, email, and role are required. Each field accepts the following valu
 
 | Field | Constraints |
 |---|---|
-| `NAME` | 1 to 80 characters: letters, spaces, hyphens (`-`), apostrophes (`'`), and periods (`.`), with at least one letter. |
+| `NAME` | 1 to 80 characters: letters, spaces, hyphens (`-`), apostrophes (`'`), and periods (`.`), with at least one letter. The words `s/o` and `d/o` are also allowed. |
 | `PHONE` | 7 to 15 digits, optionally starting with `+`, with optional spaces, hyphens, and brackets. |
 | `EMAIL` | `local-part@domain`, at most 254 characters, with a local part of at most 64 characters. |
 | `ROLE` | 1 to 50 characters: letters, digits, spaces, hyphens, and slashes (`/`), with at least one letter or digit. |
@@ -268,6 +269,7 @@ values are shown as `— (not specified)` in the details pane, but remain unset 
 Examples:
 * `add n/Aisha Tan p/+6591234567 e/aisha@example.com r/Logistics t/EXCO m/Handles venue bookings`
 * `add n/Mr Lim p/90801110 e/lim@example.com o/NUS Student Affairs r/University Staff t/UniversityStaff`
+* `add n/Rajesh s/o Kumar p/90000001 e/rajesh@example.com r/Member` adds a contact whose name includes `s/o`.
 * `add n/Ben Ong p/91112222 e/ben@example.com r/Publicity lv/30-11-2026` adds a contact who is on leave until
   30 November 2026. See [Marking a contact as on leave](#marking-a-contact-as-on-leave).
 
@@ -280,7 +282,7 @@ Examples:
 | The phone number is empty or contains only whitespace. | `Phone number must not be empty. Example: p/+6591234567` |
 | The email is empty or contains only whitespace. | `Email must not be empty. Example: e/aish@example.com` |
 | The role is empty or contains only whitespace. | `Role must not be empty. Example: r/Logistics Lead` |
-| The name violates its constraints. | `Invalid name. Use 1 to 80 characters: letters, spaces, hyphens, apostrophes, and periods, with at least one letter. Example: n/Aisha Tan` |
+| The name violates its constraints. | `Invalid name. Use 1 to 80 characters: letters, spaces, hyphens, apostrophes, periods, and s/o or d/o, with at least one letter. Example: n/Aisha Tan` |
 | The phone number violates its constraints. | `Invalid phone number. Use 7 to 15 digits, optionally starting with +, with optional spaces, hyphens, and brackets. Example: p/+6591234567` |
 | The email violates its constraints. | `Invalid email. Use local-part@domain, at most 254 characters, with a local part of at most 64 characters. Example: e/aish@example.com` |
 | The role violates its constraints. | `Invalid role. Use 1 to 50 characters: letters, digits, spaces, hyphens, and slashes, with at least one letter or digit. Example: r/Logistics Lead` |
@@ -665,7 +667,7 @@ Format: `markattendance evn/EVENT_NAME mem/MEMBER_NAME att/STATUS`
 * `EVENT_NAME` and `MEMBER_NAME` must match saved values, ignoring case and extra spaces between words.
 * `MEMBER_NAME` must be assigned to the event.
 * `MEMBER_NAME` must be at most 80 characters, contain at least one letter, and use only letters, spaces,
-  hyphens, apostrophes, or periods.
+  hyphens, apostrophes, periods, or the words `s/o` and `d/o`.
 * `STATUS` must be `present` or `absent`, ignoring case.
 * Marking a member again replaces their previous attendance status.
 
@@ -683,7 +685,7 @@ If the member already has the requested status, no changes are made:
 |---|---|
 | No saved event has the supplied name, ignoring case. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
 | The supplied member is not assigned to the event, ignoring case. | `{MEMBER_NAME} is not assigned to event {EVENT_NAME}. Assign the contact to the event before marking attendance.` |
-| The member name violates the constraints above. | `Invalid name. Use 1 to 80 characters: letters, spaces, hyphens, apostrophes, and periods, with at least one letter. Example: mem/Aisha Tan` |
+| The member name violates the constraints above. | `Invalid name. Use 1 to 80 characters: letters, spaces, hyphens, apostrophes, periods, and s/o or d/o, with at least one letter. Example: mem/Aisha Tan` |
 | `STATUS` is not `present` or `absent`, ignoring case. | `Invalid attendance status. Use present or absent. Example: att/present` |
 | The event name is empty. | `Event name must not be empty. Example: evn/Final Concert` |
 | The event name is longer than 100 characters. | `Event name must not exceed 100 characters. Example: evn/Final Concert` |
