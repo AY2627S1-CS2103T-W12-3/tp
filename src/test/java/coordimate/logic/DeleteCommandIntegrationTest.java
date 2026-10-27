@@ -73,8 +73,25 @@ public class DeleteCommandIntegrationTest {
     }
 
     @Test
+    public void execute_confirmationWithSurroundingWhitespace_deletesContact() throws Exception {
+        for (String input : List.of("y ", " y", "\ty\t", " Y ")) {
+            ModelManager model = modelWithEvent();
+            Path path = temporaryFolder.resolve("padded-confirmation.json");
+            JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path);
+            storage.saveCoordiMate(model.getCoordiMate());
+            Logic logic = newLogic(model, storage);
+
+            logic.execute("delete 1");
+            assertEquals("Contact deleted successfully: Alice Pauline.", logic.execute(input).getFeedbackToUser());
+            assertFalse(logic.isAwaitingDeleteConfirmation());
+            assertEquals(List.of(BENSON), model.getCoordiMate().getPersonList());
+            assertEquals(model.getCoordiMate(), storage.readCoordiMate().orElseThrow());
+        }
+    }
+
+    @Test
     public void execute_otherConfirmationInput_cancelsWithoutExecutingInput() throws Exception {
-        String[] cancellations = {"n", "N", "", "list", "delete 2", " y "};
+        String[] cancellations = {"n", "N", "", "   ", "list", "delete 2", "yes", "y n"};
         for (String input : cancellations) {
             ModelManager model = modelWithEvent();
             Path path = temporaryFolder.resolve("cancel.json");
