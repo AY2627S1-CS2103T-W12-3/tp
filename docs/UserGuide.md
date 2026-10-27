@@ -330,6 +330,24 @@ the new event. Each event card shows its member count and attendance summary. At
 sizes, the list appears above the details. The list and details divider can be dragged, but the
 details pane keeps a minimum width while the panes are side by side.
 
+The duration depends on whether the start and end include a time of day:
+
+* **Both date-only:** count calendar dates inclusively, including both the start and end dates.
+  An event on a single date lasts `1 day`.
+* **Both timed:** show elapsed time in days, hours, and minutes, with each day representing 24 hours.
+  Omit zero-value units and use singular or plural as appropriate. Identical timestamps show `0 minutes`.
+* **One date-only and one timed:** the event remains valid, but its duration is
+  `Unknown (start time not specified)` or `Unknown (end time not specified)`, identifying the missing time.
+
+| Start | End | Duration |
+|---|---|---|
+| `27-10-2026` | `27-10-2026` | `1 day` |
+| `27-10-2026` | `29-10-2026` | `3 days` |
+| `27-10-2026 09:00` | `29-10-2026 10:30` | `2 days 1 hour 30 minutes` |
+| `27-10-2026 09:00` | `29-10-2026 09:00` | `2 days` |
+| `27-10-2026` | `29-10-2026 10:30` | `Unknown (start time not specified)` |
+| `27-10-2026 09:00` | `29-10-2026` | `Unknown (end time not specified)` |
+
 Command feedback appears above the input at the bottom of the window. Rejected commands
 show a red feedback band and input border. The command stays in the input so you can
 correct it, then press Enter or click **Retry**.
