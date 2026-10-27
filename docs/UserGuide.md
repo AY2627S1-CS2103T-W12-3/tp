@@ -551,6 +551,11 @@ Format: `assign evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]...`
   does not prevent assignment.
 * New members are added after the existing members, in the order given.
 
+At startup, CoordiMate also removes saved assignments whose members' leave covers the entire event, including
+assignments in archived events. It removes those members' attendance records for the affected events and saves
+the cleaned data. A **Saved event data** warning lists the affected events and members. Assignments with only
+partial leave overlap are kept.
+
 Selecting the event in the **Events** tab shows its members under **Members**.
 
 Examples:
@@ -929,7 +934,9 @@ Format: `edit MEMBER_ID lv/LEAVE_END_DATE` or `edit target/IDENTIFIER lv/LEAVE_E
 * Setting a new date replaces the previous one. `edit MEMBER_ID lv/` with no date ends the leave immediately.
 * A contact cannot be newly [assigned to an event](#assigning-members-to-an-event-assign) if their leave covers
   the entire event. They can be assigned if their leave ends before the event or they return during it.
-* Changing leave retains existing event assignments and attendance records. Attendance can still be marked.
+* Changing leave does not immediately change existing assignments or attendance records. At the next startup,
+  CoordiMate removes assignments whose leave covers the entire event, along with their attendance records,
+  and shows a warning listing the affected events and members. Attendance can still be marked before cleanup.
 
 Examples:
 
@@ -1192,6 +1199,11 @@ The newer data file is preserved. Close and reopen the stale window before makin
 ### Editing the data file
 
 CoordiMate data is saved automatically as a JSON file `[JAR file location]/data/coordimate.json`. Advanced users are welcome to update data directly by editing that data file.
+
+When loading saved data, CoordiMate cleans up assignments whose members are on leave for the entire event and
+shows a **Saved event data** warning describing the removals. Associated attendance records are removed too.
+If cleanup cannot be validated or saved, the original file stays unchanged and CoordiMate shows its recovery
+warning and closes. Repair the data or resolve the save failure before restarting.
 
 <box type="warning" seamless>
 
