@@ -51,6 +51,22 @@ public class NameTest {
     }
 
     @Test
+    public void constructor_internalSpaces_collapsedToOne() {
+        assertEquals("Alice Tan Mei", new Name("Alice   Tan  Mei").getFullName());
+        assertEquals(new Name("Alice Tan"), new Name(" Alice    Tan "));
+        assertEquals(new Name("Alice Tan").hashCode(), new Name("Alice    Tan").hashCode());
+    }
+
+    @Test
+    public void isValidName_internalSpaces_lengthCountedAfterCollapsing() {
+        String eightyCharacters = "A".repeat(39) + " " + "B".repeat(40);
+        String withExtraSpaces = "A".repeat(39) + "     " + "B".repeat(40);
+        assertTrue(Name.isValidName(withExtraSpaces));
+        assertEquals(eightyCharacters, new Name(withExtraSpaces).getFullName());
+        assertFalse(Name.isValidName("A".repeat(40) + "  " + "B".repeat(40)));
+    }
+
+    @Test
     public void equals() {
         Name name = new Name("Valid Name");
 

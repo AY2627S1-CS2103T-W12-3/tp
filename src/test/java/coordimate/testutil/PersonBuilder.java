@@ -39,6 +39,7 @@ public class PersonBuilder {
     private Note note;
     private LeaveDate leaveDate;
     private Set<Tag> tags;
+    private boolean archived;
 
     /**
      * Creates a {@code PersonBuilder} with the default details.
@@ -67,6 +68,7 @@ public class PersonBuilder {
         note = personToCopy.getNote().orElse(null);
         leaveDate = personToCopy.getLeaveDate().orElse(null);
         tags = new HashSet<>(personToCopy.getTags());
+        archived = personToCopy.isArchived();
     }
 
     /**
@@ -197,8 +199,20 @@ public class PersonBuilder {
         return this;
     }
 
+    /**
+     * Sets whether the {@code Person} that we are building is archived.
+     */
+    public PersonBuilder withArchived(boolean archived) {
+        this.archived = archived;
+        return this;
+    }
+
+    /**
+     * Builds the {@code Person} with the details set so far.
+     */
     public Person build() {
-        return new Person(memberId, name, phone, email, role, birthday, address, organisation, note, leaveDate, tags);
+        return new Person(memberId, name, phone, email, role, birthday, address, organisation, note, leaveDate, tags,
+                archived);
     }
 
 }

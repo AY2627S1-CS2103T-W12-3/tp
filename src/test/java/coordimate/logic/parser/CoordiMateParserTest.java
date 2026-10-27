@@ -13,6 +13,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import coordimate.commons.core.index.Index;
+import coordimate.logic.Messages;
 import coordimate.logic.commands.AddCommand;
 import coordimate.logic.commands.AssignCommand;
 import coordimate.logic.commands.ClearCommand;
@@ -31,6 +32,7 @@ import coordimate.logic.commands.ListTagsCommand;
 import coordimate.logic.commands.MarkAttendanceCommand;
 import coordimate.logic.commands.MembersCommand;
 import coordimate.logic.commands.SearchCommand;
+import coordimate.logic.commands.TutorialCommand;
 import coordimate.logic.commands.UnassignCommand;
 import coordimate.logic.parser.exceptions.ParseException;
 import coordimate.logic.reminder.ReminderService;
@@ -181,9 +183,23 @@ public class CoordiMateParserTest {
     }
 
     @Test
+    public void parseCommand_tutorial() throws Exception {
+        assertTrue(parser.parseCommand(TutorialCommand.COMMAND_WORD) instanceof TutorialCommand);
+        assertTrue(parser.parseCommand(TutorialCommand.COMMAND_WORD + " 3") instanceof TutorialCommand);
+        assertEquals(TutorialCommand.MESSAGE_USAGE, CoordiMateParser.getUsage(TutorialCommand.COMMAND_WORD));
+    }
+
+    @Test
     public void parseCommand_list() throws Exception {
         assertTrue(parser.parseCommand(ListCommand.COMMAND_WORD) instanceof ListCommand);
-        assertTrue(parser.parseCommand(ListCommand.COMMAND_WORD + " 3") instanceof ListCommand);
+        assertEquals(new ListCommand(false), parser.parseCommand("list  "));
+        assertEquals(new ListCommand(true), parser.parseCommand("list archived"));
+        assertEquals(new ListCommand(true), parser.parseCommand("list  ARCHIVED "));
+        for (String option : List.of("3", "archive")) {
+            assertThrows(ParseException.class, Messages.withUsage(
+                    String.format(ListCommandParser.MESSAGE_UNKNOWN_OPTION, option), ListCommand.MESSAGE_USAGE), () ->
+                    parser.parseCommand("list " + option));
+        }
     }
 
     @Test

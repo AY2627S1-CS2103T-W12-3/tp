@@ -81,6 +81,7 @@ public class EventTest {
         assertFalse(Event.isValidName("🎵".repeat(Event.MAX_NAME_LENGTH + 1)));
         assertFalse(Event.isValidName("Final\nConcert")); // line break inside the name
         assertFalse(Event.isValidName("Final\u0007Concert")); // control character
+        assertFalse(Event.isValidName("Final\tConcert")); // tab inside the name is not collapsed into a space
 
         assertTrue(Event.isValidName("E"));
         assertTrue(Event.isValidName("E".repeat(Event.MAX_NAME_LENGTH))); // at the limit
@@ -124,6 +125,17 @@ public class EventTest {
             assertEquals(name, duplicate.getName());
         }
         assertEquals("Fair", event.getName());
+    }
+
+    @Test
+    public void identity_nameDifferingOnlyInInternalSpacing_isDuplicateAndStoredCollapsed() {
+        Event event = new Event("Final Concert", date, time);
+        Event spaced = new Event("  final   Concert ", date, date);
+        assertEquals("final Concert", spaced.getName());
+        assertTrue(event.isSameEvent(spaced));
+        assertTrue(spaced.isSameEvent(event));
+        assertEquals(new Event("Final Concert", date, time), new Event("Final  Concert", date, time));
+        assertTrue(Event.isValidName("Final" + " ".repeat(10) + "x".repeat(94)));
     }
 
     @Test
@@ -252,5 +264,27 @@ public class EventTest {
         assertNotEquals(event, withAttendance);
         assertEquals(withAttendance, new Event("Concert", date, time, List.of(alex))
                 .withAttendance(alex, AttendanceStatus.PRESENT));
+    }
+
+    @Test
+    public void withArchived_keepsDetailsAndIsPreservedByOtherCopies() {
+        Event event = new Event("Concert", date, time, List.of(alex), Map.of(alex, AttendanceStatus.PRESENT))
+                .withReminderDismissed();
+        Event archived = event.withArchived(true);
+
+        assertFalse(event.isArchived());
+        assertTrue(archived.isArchived());
+        assertNotEquals(event, archived);
+        assertNotEquals(event.hashCode(), archived.hashCode());
+        assertTrue(event.isSameEvent(archived));
+        assertEquals(event, archived.withArchived(false));
+        assertEquals(event.getMembers(), archived.getMembers());
+        assertEquals(event.getAttendanceRecord(), archived.getAttendanceRecord());
+        assertEquals(event.getDismissedReminderStarts(), archived.getDismissedReminderStarts());
+
+        assertTrue(archived.withAttendance(alex, AttendanceStatus.ABSENT).isArchived());
+        assertTrue(archived.withDetails("Gala", date, time).isArchived());
+        assertTrue(archived.withMembersAndAttendance(List.of(), Map.of()).isArchived());
+        assertTrue(archived.withReminderDismissed().isArchived());
     }
 }

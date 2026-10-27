@@ -85,6 +85,7 @@ public class ReminderHistoryIntegrationTest {
         Event revised = model.getCoordiMate().getEventList().getFirst();
         model.setEvent(revised, revised.withReminderDismissed());
         storage.saveCoordiMate(model.getCoordiMate());
+        logic = newLogic(model);
 
         logic.execute("editevent evn/Concert st/20-10-2026 15:00");
 
@@ -100,6 +101,7 @@ public class ReminderHistoryIntegrationTest {
         Event dateOnly = model.getCoordiMate().getEventList().getFirst();
         model.setEvent(dateOnly, dateOnly.withReminderDismissed());
         storage.saveCoordiMate(model.getCoordiMate());
+        logic = newLogic(model);
 
         logic.execute("editevent evn/Concert st/20-10-2026 00:00");
         assertFalse(savedEvent().isReminderDismissed());

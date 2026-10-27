@@ -10,11 +10,13 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import coordimate.commons.util.StringUtil;
 import coordimate.model.person.Name;
 import coordimate.model.person.PrintableText;
 
 /**
- * An event's identity is its trimmed, case-insensitive name.
+ * An event's identity is its case-insensitive name, stored without surrounding spaces and with each run of
+ * internal spaces collapsed to one.
  */
 public final class Event {
     public static final int MAX_NAME_LENGTH = 100;
@@ -35,6 +37,7 @@ public final class Event {
     private final List<Name> members;
     private final Map<Name, AttendanceStatus> attendance;
     private final Set<EventTime> dismissedReminderStarts;
+    private final boolean archived;
 
     /**
      * Creates an event with no members.
@@ -46,7 +49,7 @@ public final class Event {
     /**
      * Creates an event with a trimmed, non-empty name, a start time no later than its end time,
      * and distinct members kept in assignment order. No member has a recorded attendance status.
-     * Preserves the name's internal spacing and capitalisation.
+     * Collapses runs of internal spaces in the name to one space and preserves its capitalisation.
      */
     public Event(String name, EventTime startTime, EventTime endTime, List<Name> members) {
         this(name, startTime, endTime, members, Map.of());
@@ -67,14 +70,23 @@ public final class Event {
      */
     public Event(String name, EventTime startTime, EventTime endTime, List<Name> members,
                  Map<Name, AttendanceStatus> attendance, Set<EventTime> dismissedReminderStarts) {
-        this.name = requireNonNull(name).strip();
+        this(name, startTime, endTime, members, attendance, dismissedReminderStarts, false);
+    }
+
+    /**
+     * Creates an event with all saved details, including whether it is archived.
+     * An archived event keeps its members, attendance and dismissal history.
+     */
+    public Event(String name, EventTime startTime, EventTime endTime, List<Name> members,
+                 Map<Name, AttendanceStatus> attendance, Set<EventTime> dismissedReminderStarts, boolean archived) {
+        this.name = StringUtil.normalizeWhitespace(requireNonNull(name));
         if (this.name.isEmpty()) {
             throw new IllegalArgumentException(MESSAGE_EMPTY_NAME);
         }
         if (this.name.codePointCount(0, this.name.length()) > MAX_NAME_LENGTH) {
             throw new IllegalArgumentException(MESSAGE_NAME_LENGTH_CONSTRAINTS);
         }
-        if (!isValidName(this.name)) {
+        if (!isValidName(name)) {
             throw new IllegalArgumentException(MESSAGE_NAME_CONSTRAINTS);
         }
         this.startTime = requireNonNull(startTime);
@@ -92,6 +104,7 @@ public final class Event {
         }
         this.attendance = Map.copyOf(attendance);
         this.dismissedReminderStarts = Set.copyOf(dismissedReminderStarts);
+        this.archived = archived;
     }
 
     public String getName() {
@@ -99,12 +112,15 @@ public final class Event {
     }
 
     /**
-     * Returns true if {@code test}, ignoring surrounding whitespace, is a valid event name of 1 to
-     * {@value #MAX_NAME_LENGTH} printable characters.
+     * Returns true if {@code test} contains only printable characters and, ignoring surrounding whitespace and
+     * counting each run of internal whitespace as one space, has 1 to {@value #MAX_NAME_LENGTH} characters.
      */
     public static boolean isValidName(String test) {
         requireNonNull(test);
-        return PrintableText.isValid(test.strip(), MAX_NAME_LENGTH);
+        String trimmedName = test.strip();
+        // Characters are checked before collapsing so that line breaks and tabs inside the name stay invalid.
+        return PrintableText.isValid(trimmedName, trimmedName.length())
+                && PrintableText.isValid(StringUtil.normalizeWhitespace(trimmedName), MAX_NAME_LENGTH);
     }
 
     public EventTime getStartTime() {
@@ -159,12 +175,26 @@ public final class Event {
     }
 
     /**
+     * Returns whether the event is archived, which hides it from the event list and its reminders.
+     */
+    public boolean isArchived() {
+        return archived;
+    }
+
+    /**
+     * Returns a copy with the given archive status, preserving all other details.
+     */
+    public Event withArchived(boolean archived) {
+        return new Event(name, startTime, endTime, members, attendance, dismissedReminderStarts, archived);
+    }
+
+    /**
      * Returns a copy with the current start value added to its dismissal history.
      */
     public Event withReminderDismissed() {
         Set<EventTime> updated = new HashSet<>(dismissedReminderStarts);
         updated.add(startTime);
-        return new Event(name, startTime, endTime, members, attendance, updated);
+        return new Event(name, startTime, endTime, members, attendance, updated, archived);
     }
 
     /**
@@ -173,14 +203,14 @@ public final class Event {
      */
     public Event withDetails(String name, EventTime startTime, EventTime endTime) {
         Set<EventTime> history = this.startTime.equals(startTime) ? dismissedReminderStarts : Set.of();
-        return new Event(name, startTime, endTime, members, attendance, history);
+        return new Event(name, startTime, endTime, members, attendance, history, archived);
     }
 
     /**
      * Returns a copy with the given members and attendance, preserving event details and dismissal history.
      */
     public Event withMembersAndAttendance(List<Name> members, Map<Name, AttendanceStatus> attendance) {
-        return new Event(name, startTime, endTime, members, attendance, dismissedReminderStarts);
+        return new Event(name, startTime, endTime, members, attendance, dismissedReminderStarts, archived);
     }
 
     /**
@@ -210,11 +240,12 @@ public final class Event {
         return other instanceof Event otherEvent && name.equals(otherEvent.name)
                 && startTime.equals(otherEvent.startTime) && endTime.equals(otherEvent.endTime)
                 && members.equals(otherEvent.members) && attendance.equals(otherEvent.attendance)
-                && dismissedReminderStarts.equals(otherEvent.dismissedReminderStarts);
+                && dismissedReminderStarts.equals(otherEvent.dismissedReminderStarts)
+                && archived == otherEvent.archived;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, startTime, endTime, members, attendance, dismissedReminderStarts);
+        return Objects.hash(name, startTime, endTime, members, attendance, dismissedReminderStarts, archived);
     }
 }

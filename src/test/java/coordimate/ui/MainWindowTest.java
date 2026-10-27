@@ -187,7 +187,12 @@ public class MainWindowTest {
             helpStage.hide();
             javafx.event.Event.fireEvent(stage.getScene().getRoot(), keyEvent(KeyCode.F1));
             assertTrue(helpStage.isShowing());
-            helpStage.hide();
+
+            // F2 pressed while the Help window is in front opens the tutorial on the main window.
+            javafx.event.Event.fireEvent(helpStage.getScene().getRoot(), keyEvent(KeyCode.F2));
+            assertFalse(helpStage.isShowing());
+            assertTrue(stage.getScene().lookup("#tutorialOverlay").isVisible());
+            window.stop();
             stage.close();
             return null;
         });
@@ -359,6 +364,56 @@ public class MainWindowTest {
             assertTrue(commandInput.isDisabled());
             window.stop();
             stage.close();
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void tutorialCommandAndShortcut_openTutorialFromFirstStep() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            MainWindow window = null;
+            try {
+                StorageManager storage = new StorageManager(
+                        new JsonCoordiMateStorage(temporaryFolder.resolve("tutorial-data.json")),
+                        new JsonUserPrefsStorage(temporaryFolder.resolve("tutorial-prefs.json")));
+                LogicManager logic = new LogicManager(new ModelManager(), storage);
+                window = new MainWindow(stage, logic, temporaryFolder.resolve("tutorial-data.json"));
+                window.fillInnerParts();
+                window.show();
+                Node overlay = stage.getScene().lookup("#tutorialOverlay");
+                Label counter = (Label) stage.getScene().lookup("#stepCounter");
+                Label tutorialLabel = (Label) stage.getScene().lookup("#tutorialLabel");
+                TextField commandInput = (TextField) stage.getScene().lookup("#commandTextField");
+                Button submitButton = (Button) stage.getScene().lookup("#submitButton");
+                Button nextButton = (Button) stage.getScene().lookup("#nextButton");
+                assertTrue(tutorialLabel.getTooltip().getText().contains(TutorialWindow.TUTORIAL_SHORTCUT));
+
+                commandInput.setText("tutorial");
+                submitButton.fire();
+                assertTrue(overlay.isVisible());
+                assertEquals("Step 1 of 16", counter.getText());
+                assertTrue(commandInput.isDisabled());
+                assertTrue(commandInput.getText().isEmpty());
+
+                nextButton.fire();
+                assertFalse(keyReachesTarget(commandInput, keyEvent(KeyCode.F2)));
+                assertEquals("Step 2 of 16", counter.getText());
+                assertFalse(keyReachesTarget(commandInput, keyEvent(KeyCode.ESCAPE)));
+                assertFalse(overlay.isVisible());
+                assertFalse(commandInput.isDisabled());
+
+                assertFalse(keyReachesTarget(commandInput, keyEvent(KeyCode.F2)));
+                assertTrue(overlay.isVisible());
+                assertEquals("Step 1 of 16", counter.getText());
+            } finally {
+                if (window != null) {
+                    window.stop();
+                }
+                stage.close();
+            }
             return null;
         });
         Platform.runLater(task);
@@ -828,6 +883,17 @@ public class MainWindowTest {
         assertTrue(views.getSelectionModel().getSelectedItem().getText().startsWith("Contacts"));
         assertEquals("Listed all contacts.", feedback.getText());
 
+        input.setText("list archived");
+        submit.fire();
+        assertTrue(contacts.isSelected());
+        assertEquals("Archived events (0)", events.getText());
+        assertEquals("Archived contacts (0)", contacts.getText());
+
+        input.setText("list");
+        submit.fire();
+        assertEquals("Events (0)", events.getText());
+        assertEquals("Contacts (0)", contacts.getText());
+
         events.fire();
         input.setText("search");
         submit.fire();
@@ -1110,6 +1176,32 @@ public class MainWindowTest {
     }
 
     @Test
+    public void clickFilterCommandRow_showsExampleWithFullOrganisationName() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            MainWindow window = new MainWindow(stage, new LogicManager(new ModelManager(), null),
+                    Path.of("data", "coordimate.json"));
+            window.fillInnerParts();
+            stage.getScene().getRoot().applyCss();
+
+            HBox filterRow = (HBox) stage.getScene().getRoot().lookupAll(".cheat-row").stream()
+                    .filter(row -> "filter".equals(((Label) row.lookup(".cheat-name")).getText()))
+                    .findFirst().orElseThrow();
+            filterRow.getOnMouseClicked().handle(null);
+            TextField commandInput = (TextField) stage.getScene().getRoot().lookup(".text-field");
+            TextFlow prefixHelp = (TextFlow) stage.getScene().getRoot().lookup("#prefixHelp");
+            assertEquals("filter", commandInput.getText());
+            assertEquals("Format: filter FIELD/VALUE [FIELD/VALUE]...\n"
+                    + "Example: filter tag/EXCO organisation/NUS Student Affairs", getPrefixHelpText(prefixHelp));
+
+            stage.close();
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
     public void tagMembers_showRolesOrganisationsAndTagColors() throws Exception {
         FutureTask<Void> task = new FutureTask<>(() -> {
             Stage stage = new Stage();
@@ -1258,5 +1350,152 @@ public class MainWindowTest {
 
     private static String getPrefixHelpText(TextFlow prefixHelp) {
         return ((Text) prefixHelp.getChildren().getFirst()).getText();
+    }
+
+    @Test
+    public void archivedContacts_markedInTagsViewAndCommandPanelListsArchiveCommands() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            ModelManager model = new ModelManager();
+            model.addPerson(TypicalPersons.ALICE);
+            model.addPerson(TypicalPersons.BENSON);
+            model.setPerson(TypicalPersons.ALICE, TypicalPersons.ALICE.withArchived(true));
+            MainWindow window = new MainWindow(stage, new LogicManager(model, null),
+                    Path.of("data", "coordimate.json"));
+            try {
+                window.fillInnerParts();
+                window.show();
+                stage.getScene().getRoot().applyCss();
+
+                assertEquals(List.of("add", "edit", "delete", "archive", "unarchive", "search", "filter", "list"),
+                        commandNames(stage, "#contactsCommands"));
+                assertTrue(commandNames(stage, "#eventsCommands").containsAll(
+                        List.of("deleteevent", "archiveevent", "unarchiveevent")));
+
+                ToggleButton tagsView = (ToggleButton) stage.getScene().getRoot().lookup("#tagsView");
+                tagsView.fire();
+                @SuppressWarnings("unchecked")
+                ListView<String> tagList = (ListView<String>) stage.getScene().getRoot().lookup("#tagListView");
+                tagList.getSelectionModel().select("friends");
+                stage.getScene().getRoot().applyCss();
+                stage.getScene().getRoot().layout();
+
+                assertEquals(List.of("Alice Pauline (archived)", "Benson Meier"),
+                        stage.getScene().getRoot().lookupAll(".tag-member-row .event-member-name").stream()
+                                .map(node -> ((Label) node).getText()).sorted().toList());
+            } finally {
+                window.stop();
+                stage.close();
+            }
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void listArchived_showsArchivedMessagesHeaderAndCommands() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            Path dataPath = temporaryFolder.resolve("archived-empty-data.json");
+            StorageManager storage = new StorageManager(new JsonCoordiMateStorage(dataPath),
+                    new JsonUserPrefsStorage(temporaryFolder.resolve("archived-empty-prefs.json")));
+            MainWindow window = new MainWindow(stage, new LogicManager(new ModelManager(), storage), dataPath);
+            try {
+                window.fillInnerParts();
+                stage.getScene().getRoot().applyCss();
+                @SuppressWarnings("unchecked")
+                ListView<Person> contacts = (ListView<Person>) stage.getScene().getRoot().lookup("#personListView");
+                @SuppressWarnings("unchecked")
+                ListView<Event> events = (ListView<Event>) stage.getScene().getRoot().lookup("#eventListView");
+                TextField input = (TextField) stage.getScene().getRoot().lookup("#commandTextField");
+                Button submit = (Button) stage.getScene().getRoot().lookup("#submitButton");
+
+                assertEquals(PersonListPanel.MESSAGE_NO_CONTACTS, placeholderText(contacts));
+                assertEquals(EventListPanel.MESSAGE_NO_EVENTS, placeholderText(events));
+
+                ToggleButton eventsView = (ToggleButton) stage.getScene().getRoot().lookup("#eventsView");
+                Label eventCount = (Label) stage.getScene().getRoot().lookup("#eventCount");
+                List<String> contactCommands = visibleCommandNames(stage);
+                assertTrue(contactCommands.containsAll(List.of("add", "archive", "unarchive", "list")));
+                assertEquals("Events (0)", eventCount.getText());
+
+                input.setText("list archived");
+                submit.fire();
+                assertEquals(PersonListPanel.MESSAGE_NO_ARCHIVED_CONTACTS, placeholderText(contacts));
+                assertEquals(EventListPanel.MESSAGE_NO_ARCHIVED_EVENTS, placeholderText(events));
+                assertEquals("Archived events (0)", eventCount.getText());
+                assertEquals(List.of("unarchive", "list"), visibleCommandNames(stage));
+                eventsView.fire();
+                assertEquals(List.of("unarchiveevent", "list"), visibleCommandNames(stage));
+
+                input.setText("list");
+                submit.fire();
+                assertEquals(PersonListPanel.MESSAGE_NO_CONTACTS, placeholderText(contacts));
+                assertEquals(EventListPanel.MESSAGE_NO_EVENTS, placeholderText(events));
+                assertEquals("Events (0)", eventCount.getText());
+                assertEquals(contactCommands, visibleCommandNames(stage));
+                eventsView.fire();
+                assertTrue(visibleCommandNames(stage).containsAll(List.of("addevent", "archiveevent", "assign")));
+            } finally {
+                window.stop();
+                stage.close();
+            }
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void openingTutorialInArchivedView_returnsToActiveView() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            ModelManager model = new ModelManager();
+            model.addPerson(TypicalPersons.ALICE);
+            model.addPerson(TypicalPersons.BENSON);
+            model.setPerson(TypicalPersons.ALICE, TypicalPersons.ALICE.withArchived(true));
+            model.setShowingArchived(true);
+            LogicManager logic = new LogicManager(model, null);
+            MainWindow window = new MainWindow(stage, logic, Path.of("data", "coordimate.json"));
+            try {
+                window.fillInnerParts();
+                window.show();
+                stage.getScene().getRoot().applyCss();
+                assertEquals(List.of("unarchive", "list"), visibleCommandNames(stage));
+
+                Label tutorialLabel = (Label) stage.getScene().lookup("#tutorialLabel");
+                javafx.event.Event.fireEvent(tutorialLabel, mouseClickEvent());
+                stage.getScene().getRoot().applyCss();
+
+                assertTrue(stage.getScene().lookup("#tutorialOverlay").isVisible());
+                assertFalse(logic.showingArchivedProperty().get());
+                assertEquals(List.of(TypicalPersons.BENSON), logic.getFilteredPersonList());
+                assertTrue(visibleCommandNames(stage).containsAll(List.of("add", "archive", "list")));
+                assertTrue(stage.getScene().lookup("#contactsCommands").isVisible());
+            } finally {
+                window.stop();
+                stage.close();
+            }
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    private static List<String> visibleCommandNames(Stage stage) {
+        return stage.getScene().getRoot().lookupAll(".command-cheatsheet").stream()
+                .filter(Node::isVisible)
+                .flatMap(list -> list.lookupAll(".cheat-name").stream())
+                .map(node -> ((Label) node).getText()).toList();
+    }
+
+    private static String placeholderText(ListView<?> list) {
+        return ((Label) list.getPlaceholder()).getText();
+    }
+
+    private static List<String> commandNames(Stage stage, String commandListId) {
+        return stage.getScene().getRoot().lookup(commandListId).lookupAll(".cheat-name").stream()
+                .map(node -> ((Label) node).getText()).toList();
     }
 }

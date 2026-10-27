@@ -56,4 +56,12 @@ public interface Storage {
      */
     void saveCoordiMate(ReadOnlyCoordiMate coordiMate) throws IOException;
 
+    /**
+     * Saves data only if the file still matches the version this storage instance loaded or last saved.
+     *
+     * @throws DataConflictException if the file has changed.
+     * @throws IOException if the file cannot be checked or saved.
+     */
+    void saveCoordiMateIfUnchanged(ReadOnlyCoordiMate coordiMate) throws IOException;
+
 }

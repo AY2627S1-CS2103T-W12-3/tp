@@ -1,11 +1,14 @@
 package coordimate.ui;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.Logger;
 
 import coordimate.commons.core.LogsCenter;
 import coordimate.logic.commands.AddCommand;
 import coordimate.logic.commands.AddEventCommand;
+import coordimate.logic.commands.ArchiveCommand;
+import coordimate.logic.commands.ArchiveEventCommand;
 import coordimate.logic.commands.AssignCommand;
 import coordimate.logic.commands.ClearCommand;
 import coordimate.logic.commands.CreateTagCommand;
@@ -24,6 +27,7 @@ import coordimate.logic.commands.ListTagsCommand;
 import coordimate.logic.commands.MarkAttendanceCommand;
 import coordimate.logic.commands.MembersCommand;
 import coordimate.logic.commands.SearchCommand;
+import coordimate.logic.commands.TutorialCommand;
 import coordimate.logic.commands.UnassignCommand;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ReadOnlyStringWrapper;
@@ -36,6 +40,8 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.KeyCombination;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Region;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
@@ -47,8 +53,8 @@ public class HelpWindow extends UiPart<Stage> {
 
     public static final String USERGUIDE_URL = "https://ay2627s1-cs2103t-w12-3.github.io/tp/";
     public static final String HELP_SHORTCUT = "Fn + F1";
-    public static final String HELP_MESSAGE = "Keyboard shortcut: " + HELP_SHORTCUT
-            + ". Refer to the user guide: " + USERGUIDE_URL;
+    public static final String HELP_MESSAGE = "Keyboard shortcuts: " + HELP_SHORTCUT + " for Help, "
+            + TutorialWindow.TUTORIAL_SHORTCUT + " for the tutorial. Refer to the user guide: " + USERGUIDE_URL;
 
     static final List<CommandUsage> COMMAND_USAGES = List.of(
             commandUsage(AddCommand.COMMAND_WORD,
@@ -56,6 +62,8 @@ public class HelpWindow extends UiPart<Stage> {
                             + "[t/TAG]... [m/NOTE]"),
             commandUsage(AddEventCommand.COMMAND_WORD, "evn/EVENT_NAME st/START_TIME et/END_TIME"),
             commandUsage(CreateTagCommand.COMMAND_WORD, "t/TAG"),
+            commandUsage(ArchiveCommand.COMMAND_WORD, "MEMBER_ID"),
+            commandUsage(ArchiveEventCommand.COMMAND_WORD, "evn/EVENT_NAME"),
             commandUsage(AssignCommand.COMMAND_WORD,
                     "evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]..."),
             commandUsage(ClearCommand.COMMAND_WORD, ""),
@@ -74,17 +82,23 @@ public class HelpWindow extends UiPart<Stage> {
             commandUsage(ExitCommand.COMMAND_WORD, ""),
             commandUsage(FilterCommand.COMMAND_WORD, "FIELD/VALUE [FIELD/VALUE]..."),
             commandUsage(HelpCommand.COMMAND_WORD, ""),
-            commandUsage(ListCommand.COMMAND_WORD, ""),
+            commandUsage(ListCommand.COMMAND_WORD, "[archived]"),
             commandUsage(ListTagsCommand.COMMAND_WORD, ""),
             commandUsage(MarkAttendanceCommand.COMMAND_WORD,
                     "evn/EVENT_NAME mem/MEMBER_NAME att/STATUS"),
             commandUsage(MembersCommand.COMMAND_WORD, "evn/EVENT_NAME"),
             commandUsage(SearchCommand.COMMAND_WORD, "KEYWORD"),
+            commandUsage(TutorialCommand.COMMAND_WORD, ""),
             commandUsage(UnassignCommand.COMMAND_WORD,
-                    "evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]..."));
+                    "evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]..."),
+            commandUsage(ArchiveCommand.UNARCHIVE_COMMAND_WORD, "MEMBER_ID"),
+            commandUsage(ArchiveEventCommand.UNARCHIVE_COMMAND_WORD, "evn/EVENT_NAME"));
 
     private static final Logger logger = LogsCenter.getLogger(HelpWindow.class);
     private static final String FXML = "HelpWindow.fxml";
+    private static final KeyCombination TUTORIAL_KEY = KeyCombination.valueOf("F2");
+
+    private Runnable tutorialShortcutHandler = () -> { };
 
     @FXML
     private Button copyButton;
@@ -111,6 +125,12 @@ public class HelpWindow extends UiPart<Stage> {
      */
     public HelpWindow(Stage root) {
         super(FXML, root);
+        root.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+            if (TUTORIAL_KEY.match(event)) {
+                tutorialShortcutHandler.run();
+                event.consume();
+            }
+        });
         helpMessage.setText(HELP_MESSAGE);
         copyButton.setMinWidth(Region.USE_PREF_SIZE);
         closeButton.setMinWidth(Region.USE_PREF_SIZE);
@@ -126,6 +146,11 @@ public class HelpWindow extends UiPart<Stage> {
      */
     public HelpWindow() {
         this(new Stage());
+    }
+
+    /** Sets the action to run when the tutorial shortcut is pressed while the help window is in front. */
+    public void setTutorialShortcutHandler(Runnable handler) {
+        tutorialShortcutHandler = Objects.requireNonNull(handler);
     }
 
     /**

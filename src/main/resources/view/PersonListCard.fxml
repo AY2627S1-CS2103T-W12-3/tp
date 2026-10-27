@@ -21,5 +21,6 @@
     <Label fx:id="phone" wrapText="true" styleClass="cell_small_label" />
     <Label fx:id="email" wrapText="true" styleClass="cell_small_label" />
     <Label fx:id="address" wrapText="true" styleClass="cell_small_label" />
+    <Label fx:id="archived" id="archived" text="Archived" styleClass="archived-badge" />
   </VBox>
 </HBox>

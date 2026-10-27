@@ -13,6 +13,8 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import coordimate.commons.core.GuiSettings;
+import coordimate.model.event.Event;
+import coordimate.model.event.EventTime;
 import coordimate.model.person.ContactMatchesKeywordPredicate;
 import coordimate.model.tag.Tag;
 import coordimate.testutil.CoordiMateBuilder;
@@ -146,5 +148,64 @@ public class ModelManagerTest {
         UserPrefs differentUserPrefs = new UserPrefs();
         differentUserPrefs.setGuiSettings(new GuiSettings(1, 2, 3, 4));
         assertFalse(modelManager.equals(new ModelManager(coordiMate, differentUserPrefs)));
+    }
+
+    @Test
+    public void getFilteredEventList_hidesArchivedEventsAndFollowsChanges() {
+        Event concert = new Event("Concert", new EventTime("08-08-2026"), new EventTime("09-08-2026"));
+        Event fair = new Event("Fair", new EventTime("09-10-2026"), new EventTime("10-10-2026"));
+        modelManager.addEvent(concert);
+        modelManager.addEvent(fair.withArchived(true));
+        List<Event> shown = modelManager.getFilteredEventList();
+
+        assertEquals(List.of(concert), shown);
+        modelManager.setEvent(concert, concert.withArchived(true));
+        assertEquals(List.of(), shown);
+        modelManager.setEvent(fair.withArchived(true), fair);
+        assertEquals(List.of(fair), shown);
+        assertThrows(UnsupportedOperationException.class, () -> modelManager.getFilteredEventList().remove(0));
+    }
+
+    @Test
+    public void setShowingArchived_switchesContactsAndKeepsLatestFilter() {
+        modelManager.addPerson(ALICE);
+        modelManager.addPerson(BENSON);
+        modelManager.setPerson(BENSON, BENSON.withArchived(true));
+        List<coordimate.model.person.Person> shown = modelManager.getFilteredPersonList();
+        assertEquals(List.of(ALICE), shown);
+
+        modelManager.setShowingArchived(true);
+        assertTrue(modelManager.isShowingArchived());
+        assertEquals(List.of(BENSON.withArchived(true)), shown);
+
+        ContactMatchesKeywordPredicate predicate = new ContactMatchesKeywordPredicate("Alice");
+        modelManager.updateFilteredPersonList(predicate);
+        assertEquals(predicate, modelManager.getFilteredPersonPredicate());
+        assertEquals(List.of(), shown);
+        modelManager.setShowingArchived(false);
+        assertFalse(modelManager.isShowingArchived());
+        assertEquals(List.of(ALICE), shown);
+
+        ModelManager other = new ModelManager(modelManager.getCoordiMate(), modelManager.getUserPrefs());
+        other.updateFilteredPersonList(predicate);
+        assertEquals(modelManager, other);
+        other.setShowingArchived(true);
+        assertFalse(modelManager.equals(other));
+    }
+
+    @Test
+    public void setShowingArchived_switchesEventsAndNotifiesListeners() {
+        Event concert = new Event("Concert", new EventTime("08-08-2026"), new EventTime("09-08-2026"));
+        Event fair = new Event("Fair", new EventTime("09-10-2026"), new EventTime("10-10-2026")).withArchived(true);
+        modelManager.addEvent(concert);
+        modelManager.addEvent(fair);
+        List<Boolean> changes = new java.util.ArrayList<>();
+        modelManager.showingArchivedProperty().addListener((observable, oldValue, newValue) -> changes.add(newValue));
+
+        modelManager.setShowingArchived(true);
+        assertEquals(List.of(fair), modelManager.getFilteredEventList());
+        modelManager.setShowingArchived(false);
+        assertEquals(List.of(concert), modelManager.getFilteredEventList());
+        assertEquals(List.of(true, false), changes);
     }
 }

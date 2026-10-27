@@ -5,6 +5,8 @@ import static coordimate.testutil.TypicalPersons.ALICE;
 import static coordimate.testutil.TypicalPersons.BENSON;
 import static coordimate.testutil.TypicalPersons.CARL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -16,9 +18,11 @@ import org.junit.jupiter.api.Test;
 import coordimate.commons.exceptions.IllegalValueException;
 import coordimate.commons.util.JsonUtil;
 import coordimate.model.CoordiMate;
+import coordimate.model.event.AttendanceStatus;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
 import coordimate.model.person.MemberId;
+import coordimate.model.person.Name;
 import coordimate.model.person.Person;
 import coordimate.model.tag.Tag;
 import coordimate.testutil.PersonBuilder;
@@ -32,6 +36,11 @@ public class JsonSerializableCoordiMateTest {
     private static final Path DUPLICATE_PERSON_FILE = TEST_DATA_FOLDER.resolve("duplicatePersonCoordiMate.json");
     private static final Path EVENT_MEMBERS_FILE = TEST_DATA_FOLDER.resolve("eventMembersCoordiMate.json");
     private static final Path UNKNOWN_MEMBER_FILE = TEST_DATA_FOLDER.resolve("unknownMemberCoordiMate.json");
+    private static final Path INTERNAL_SPACING_FILE = TEST_DATA_FOLDER.resolve("internalSpacingCoordiMate.json");
+    private static final Path INTERNAL_SPACING_DUPLICATE_PERSON_FILE =
+            TEST_DATA_FOLDER.resolve("internalSpacingDuplicatePersonCoordiMate.json");
+    private static final Path INTERNAL_SPACING_DUPLICATE_EVENT_FILE =
+            TEST_DATA_FOLDER.resolve("internalSpacingDuplicateEventCoordiMate.json");
 
     @Test
     public void toModelType_typicalPersonsFile_success() throws Exception {
@@ -102,6 +111,31 @@ public class JsonSerializableCoordiMateTest {
 
         assertThrows(IllegalValueException.class, JsonSerializableCoordiMate.MESSAGE_DUPLICATE_PERSON,
                 data::toModelType);
+    }
+
+    @Test
+    public void toModelType_namesWithExtraInternalSpaces_loadedCollapsedWithMatchingMembers() throws Exception {
+        CoordiMate coordiMate = JsonUtil.readJsonFile(INTERNAL_SPACING_FILE, JsonSerializableCoordiMate.class)
+                .get().toModelType();
+        Name alice = new Name("Alice Pauline");
+        assertEquals("Alice Pauline", coordiMate.getPersonList().getFirst().getName().getFullName());
+        Event concert = coordiMate.getEventList().getFirst();
+        assertEquals("Final Concert", concert.getName());
+        assertEquals(List.of(alice), concert.getMembers());
+        assertEquals(AttendanceStatus.PRESENT, concert.getAttendance(alice).orElseThrow());
+    }
+
+    @Test
+    public void toModelType_namesDifferingOnlyInInternalSpacing_throwsIllegalValueException() throws Exception {
+        JsonSerializableCoordiMate duplicatePersons = JsonUtil.readJsonFile(INTERNAL_SPACING_DUPLICATE_PERSON_FILE,
+                JsonSerializableCoordiMate.class).get();
+        assertThrows(IllegalValueException.class, JsonSerializableCoordiMate.MESSAGE_DUPLICATE_PERSON,
+                duplicatePersons::toModelType);
+
+        JsonSerializableCoordiMate duplicateEvents = JsonUtil.readJsonFile(INTERNAL_SPACING_DUPLICATE_EVENT_FILE,
+                JsonSerializableCoordiMate.class).get();
+        assertThrows(IllegalValueException.class, JsonSerializableCoordiMate.MESSAGE_DUPLICATE_EVENT,
+                duplicateEvents::toModelType);
     }
 
     @Test
@@ -265,4 +299,32 @@ public class JsonSerializableCoordiMateTest {
         assertThrows(IllegalArgumentException.class, message, () -> new JsonSerializableCoordiMate(null, List.of()));
     }
 
+    @Test
+    public void toModelType_legacyContactsWithoutIds_keepArchiveStatus() throws Exception {
+        String json = """
+                {"persons": [
+                  {"name": "Alice Tan", "phone": "91234567", "email": "alice@example.com", "role": "Member",
+                   "archived": true},
+                  {"name": "Bob Lim", "phone": "98765432", "email": "bob@example.com", "role": "Member"}],
+                 "events": [
+                  {"name": "Orientation", "startTime": "25-10-2026", "endTime": "25-10-2026",
+                   "members": ["Alice Tan"], "archived": true}]}
+                """;
+
+        CoordiMate data = JsonUtil.fromJsonString(json, JsonSerializableCoordiMate.class).toModelType();
+
+        Person alice = data.getPersonList().get(0);
+        Person bob = data.getPersonList().get(1);
+        assertEquals(new MemberId(1), alice.getMemberId().orElseThrow());
+        assertEquals(new MemberId(2), bob.getMemberId().orElseThrow());
+        assertTrue(alice.isArchived());
+        assertFalse(bob.isArchived());
+        assertTrue(data.getEventList().getFirst().isArchived());
+
+        CoordiMate reloaded = JsonUtil.fromJsonString(
+                JsonUtil.toJsonString(new JsonSerializableCoordiMate(data)), JsonSerializableCoordiMate.class)
+                .toModelType();
+        assertEquals(data.getPersonList(), reloaded.getPersonList());
+        assertEquals(data.getEventList(), reloaded.getEventList());
+    }
 }

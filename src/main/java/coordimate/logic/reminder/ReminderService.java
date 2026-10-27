@@ -14,6 +14,7 @@ import coordimate.model.Model;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
 import coordimate.model.reminder.UpcomingEventFinder;
+import coordimate.storage.DataConflictException;
 import coordimate.storage.Storage;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -55,7 +56,7 @@ public class ReminderService {
     }
 
     /**
-     * Replaces reminders with the eligible, undismissed events in chronological order.
+     * Replaces reminders with the eligible, unarchived, undismissed events in chronological order.
      * Forgets temporary dismissals when their event is deleted or its start value changes.
      */
     public void refreshReminders() {
@@ -64,6 +65,7 @@ public class ReminderService {
                 .noneMatch(event -> event.getName().equalsIgnoreCase(entry.getKey())
                         && event.getStartTime().equals(entry.getValue())));
         List<Event> updated = finder.findUpcomingEvents(events).stream()
+                .filter(event -> !event.isArchived())
                 .filter(event -> !event.isReminderDismissed())
                 .filter(event -> !event.getStartTime().equals(sessionDismissals.get(event.getName())))
                 .toList();
@@ -89,7 +91,12 @@ public class ReminderService {
         candidate.setEvent(reminder, dismissed);
         try {
             storage.readCoordiMate();
-            storage.saveCoordiMate(candidate);
+            storage.saveCoordiMateIfUnchanged(candidate);
+        } catch (DataConflictException e) {
+            sessionDismissals.put(reminder.getName(), reminder.getStartTime());
+            refreshReminders();
+            throw new ReminderDismissalException("The data file changed in another window. "
+                    + "Reopen this window before saving reminder dismissals.", e);
         } catch (DataLoadingException | IOException e) {
             sessionDismissals.put(reminder.getName(), reminder.getStartTime());
             refreshReminders();

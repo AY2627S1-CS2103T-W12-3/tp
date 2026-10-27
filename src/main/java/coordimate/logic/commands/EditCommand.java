@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 
 import coordimate.commons.core.LogsCenter;
 import coordimate.commons.util.CollectionUtil;
+import coordimate.commons.util.StringUtil;
 import coordimate.commons.util.ToStringBuilder;
 import coordimate.logic.Messages;
 import coordimate.logic.commands.exceptions.CommandException;
@@ -182,8 +183,9 @@ public class EditCommand extends Command {
         String trimmedIdentifier = identifier.strip();
         String normalizedPhone = trimmedIdentifier.replace(" ", "").replace("-", "")
                 .replace("(", "").replace(")", "");
+        String normalizedName = StringUtil.normalizeWhitespace(identifier);
         List<Person> matches = savedPersons.stream().filter(person ->
-                person.getName().getFullName().equalsIgnoreCase(trimmedIdentifier)
+                person.getName().getFullName().equalsIgnoreCase(normalizedName)
                 || person.getEmail().getValue().equalsIgnoreCase(trimmedIdentifier)
                 || person.getPhone().getNormalizedValue().equals(normalizedPhone)).toList();
         if (matches.isEmpty()) {
@@ -222,7 +224,8 @@ public class EditCommand extends Command {
         Set<Tag> updatedTags = createUpdatedTags(personToEdit, editPersonDescriptor, savedTags);
 
         return new Person(personToEdit.getMemberId().orElse(null), updatedName, updatedPhone, updatedEmail, updatedRole,
-                updatedBirthday, updatedAddress, updatedOrganisation, updatedNote, updatedLeaveDate, updatedTags);
+                updatedBirthday, updatedAddress, updatedOrganisation, updatedNote, updatedLeaveDate, updatedTags,
+                personToEdit.isArchived());
     }
 
     private static Set<Tag> createUpdatedTags(Person personToEdit, EditPersonDescriptor descriptor,
@@ -230,7 +233,7 @@ public class EditCommand extends Command {
         Set<Tag> updatedTags = new HashSet<>();
         if (descriptor.getTags().isPresent()) {
             for (Tag tag : descriptor.getTags().orElseThrow()) {
-                Tag canonicalTag = findSavedTag(tag, savedTags);
+                Tag canonicalTag = tag.findSavedTag(savedTags);
                 if (updatedTags.stream().noneMatch(canonicalTag::isSameTag)) {
                     updatedTags.add(canonicalTag);
                 }
@@ -242,17 +245,13 @@ public class EditCommand extends Command {
             Tag tag = operation.tag();
             if (operation.type() == TagOperationType.ADD) {
                 if (updatedTags.stream().noneMatch(tag::isSameTag)) {
-                    updatedTags.add(findSavedTag(tag, savedTags));
+                    updatedTags.add(tag.findSavedTag(savedTags));
                 }
             } else {
                 updatedTags.removeIf(tag::isSameTag);
             }
         }
         return updatedTags;
-    }
-
-    private static Tag findSavedTag(Tag requested, List<Tag> savedTags) {
-        return savedTags.stream().filter(requested::isSameTag).findFirst().orElse(requested);
     }
 
     /** The effect of an {@code at/} or {@code rt/} argument. */

@@ -375,7 +375,7 @@ public class CoordiMate implements ReadOnlyCoordiMate {
                 person.getRole(),
                 person.getBirthday().orElse(null), person.getAddress().orElse(null),
                 person.getOrganisation().orElse(null), person.getNote().orElse(null),
-                person.getLeaveDate().orElse(null), editedTags);
+                person.getLeaveDate().orElse(null), editedTags, person.isArchived());
     }
 
     /**
@@ -392,7 +392,7 @@ public class CoordiMate implements ReadOnlyCoordiMate {
                 person.getRole(),
                 person.getBirthday().orElse(null), person.getAddress().orElse(null),
                 person.getOrganisation().orElse(null), person.getNote().orElse(null),
-                person.getLeaveDate().orElse(null), remainingTags);
+                person.getLeaveDate().orElse(null), remainingTags, person.isArchived());
     }
 
     /**

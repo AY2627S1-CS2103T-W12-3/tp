@@ -6,6 +6,7 @@ import coordimate.commons.core.GuiSettings;
 import coordimate.model.event.Event;
 import coordimate.model.person.Person;
 import coordimate.model.tag.Tag;
+import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.collections.ObservableList;
 
 /**
@@ -106,7 +107,7 @@ public interface Model {
     void deletePerson(Person target);
 
     /**
-     * Adds the given person.
+     * Adds the given person and shows all active contacts, so that the new contact is visible.
      * {@code person} must not already exist in the CoordiMate.
      */
     void addPerson(Person person);
@@ -134,4 +135,25 @@ public interface Model {
      * Returns the predicate the filtered person list currently filters by, or null if it has never been filtered.
      */
     Predicate<? super Person> getFilteredPersonPredicate();
+
+    /**
+     * Shows only archived contacts and events if {@code isShowingArchived} is true, or only active ones
+     * otherwise. The latest contact filter still applies within the chosen view.
+     */
+    void setShowingArchived(boolean isShowingArchived);
+
+    /**
+     * Returns true if the filtered contact and event lists show archived items instead of active ones.
+     */
+    boolean isShowingArchived();
+
+    /**
+     * Returns an observable value that is true while archived contacts and events are shown.
+     */
+    ReadOnlyBooleanProperty showingArchivedProperty();
+
+    /**
+     * Returns an unmodifiable view of the events in the current archive view, in insertion order.
+     */
+    ObservableList<Event> getFilteredEventList();
 }

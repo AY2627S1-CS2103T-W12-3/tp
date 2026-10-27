@@ -11,6 +11,8 @@ import coordimate.commons.core.LogsCenter;
 import coordimate.model.event.Event;
 import coordimate.model.person.Person;
 import coordimate.model.tag.Tag;
+import javafx.beans.property.ReadOnlyBooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 
@@ -23,6 +25,9 @@ public class ModelManager implements Model {
     private final CoordiMate coordiMate;
     private final UserPrefs userPrefs;
     private final FilteredList<Person> filteredPersons;
+    private final FilteredList<Event> filteredEvents;
+    private Predicate<Person> personPredicate;
+    private final SimpleBooleanProperty showingArchived = new SimpleBooleanProperty(false);
 
     /**
      * Initializes a ModelManager with the given coordiMate and userPrefs.
@@ -34,7 +39,8 @@ public class ModelManager implements Model {
 
         this.coordiMate = new CoordiMate(coordiMate);
         this.userPrefs = new UserPrefs(userPrefs);
-        filteredPersons = new FilteredList<>(this.coordiMate.getPersonList());
+        filteredPersons = new FilteredList<>(this.coordiMate.getPersonList(), this::isShownPerson);
+        filteredEvents = new FilteredList<>(this.coordiMate.getEventList(), this::isShownEvent);
     }
 
     /**
@@ -155,6 +161,8 @@ public class ModelManager implements Model {
     @Override
     public void addPerson(Person person) {
         coordiMate.addPerson(person);
+        // A new contact is active, so return to the active view to show it.
+        setShowingArchived(false);
         updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
     }
 
@@ -179,12 +187,49 @@ public class ModelManager implements Model {
     @Override
     public void updateFilteredPersonList(Predicate<Person> predicate) {
         requireNonNull(predicate);
-        filteredPersons.setPredicate(predicate);
+        personPredicate = predicate;
+        filteredPersons.setPredicate(this::isShownPerson);
     }
 
     @Override
     public Predicate<? super Person> getFilteredPersonPredicate() {
-        return filteredPersons.getPredicate();
+        return personPredicate;
+    }
+
+    @Override
+    public void setShowingArchived(boolean isShowingArchived) {
+        showingArchived.set(isShowingArchived);
+        filteredPersons.setPredicate(this::isShownPerson);
+        filteredEvents.setPredicate(this::isShownEvent);
+    }
+
+    @Override
+    public boolean isShowingArchived() {
+        return showingArchived.get();
+    }
+
+    @Override
+    public ReadOnlyBooleanProperty showingArchivedProperty() {
+        return showingArchived;
+    }
+
+    /**
+     * Shows only contacts in the current archive view that also match the latest filter, if any.
+     */
+    private boolean isShownPerson(Person person) {
+        return person.isArchived() == isShowingArchived()
+                && (personPredicate == null || personPredicate.test(person));
+    }
+
+    private boolean isShownEvent(Event event) {
+        return event.isArchived() == isShowingArchived();
+    }
+
+    //=========== Filtered Event List Accessors ==============================================================
+
+    @Override
+    public ObservableList<Event> getFilteredEventList() {
+        return filteredEvents;
     }
 
     @Override
@@ -200,6 +245,7 @@ public class ModelManager implements Model {
 
         return coordiMate.equals(otherModelManager.coordiMate)
                 && userPrefs.equals(otherModelManager.userPrefs)
+                && isShowingArchived() == otherModelManager.isShowingArchived()
                 && filteredPersons.equals(otherModelManager.filteredPersons);
     }
 

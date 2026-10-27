@@ -34,6 +34,7 @@ public class Person {
     private final Note note;
     private final LeaveDate leaveDate;
     private final Set<Tag> tags = new HashSet<>();
+    private final boolean archived;
 
     /**
      * Creates a person with the given non-null details and a defensive copy of the tags.
@@ -62,14 +63,15 @@ public class Person {
      */
     public Person(Name name, Phone phone, Email email, Role role, Birthday birthday, Address address,
             Organisation organisation, Note note, LeaveDate leaveDate, Set<Tag> tags) {
-        this(null, name, phone, email, role, birthday, address, organisation, note, leaveDate, tags);
+        this(null, name, phone, email, role, birthday, address, organisation, note, leaveDate, tags, false);
     }
 
     /**
-     * Creates a person with the given ID, or no ID for a contact not yet accepted by the model.
+     * Creates a person with the given ID, or no ID for a contact not yet accepted by the model, and archive status.
+     * Code that copies an existing contact must use this constructor, so that it passes the archive status on.
      */
     public Person(MemberId memberId, Name name, Phone phone, Email email, Role role, Birthday birthday, Address address,
-            Organisation organisation, Note note, LeaveDate leaveDate, Set<Tag> tags) {
+            Organisation organisation, Note note, LeaveDate leaveDate, Set<Tag> tags, boolean archived) {
         requireAllNonNull(name, phone, email, role, tags);
         this.memberId = memberId;
         this.name = name;
@@ -82,6 +84,7 @@ public class Person {
         this.note = note;
         this.leaveDate = leaveDate;
         this.tags.addAll(tags);
+        this.archived = archived;
     }
 
     /**
@@ -102,7 +105,8 @@ public class Person {
             }
             return this;
         }
-        return new Person(id, name, phone, email, role, birthday, address, organisation, note, leaveDate, tags);
+        return new Person(id, name, phone, email, role, birthday, address, organisation, note, leaveDate, tags,
+                archived);
     }
 
     public Name getName() {
@@ -154,6 +158,25 @@ public class Person {
     }
 
     /**
+     * Returns whether the contact is archived, which hides it from the contact list but keeps its details
+     * and event history.
+     */
+    public boolean isArchived() {
+        return archived;
+    }
+
+    /**
+     * Returns a copy of this contact with the given archive status, preserving all other details.
+     */
+    public Person withArchived(boolean archived) {
+        if (archived == this.archived) {
+            return this;
+        }
+        return new Person(memberId, name, phone, email, role, birthday, address, organisation, note, leaveDate, tags,
+                archived);
+    }
+
+    /**
      * Returns an immutable tag set, which throws {@code UnsupportedOperationException}
      * if modification is attempted.
      */
@@ -201,14 +224,15 @@ public class Person {
                 && Objects.equals(organisation, otherPerson.organisation)
                 && Objects.equals(note, otherPerson.note)
                 && Objects.equals(leaveDate, otherPerson.leaveDate)
-                && tags.equals(otherPerson.tags);
+                && tags.equals(otherPerson.tags)
+                && archived == otherPerson.archived;
     }
 
     @Override
     public int hashCode() {
         // use this method for custom fields hashing instead of implementing your own
         return Objects.hash(memberId, name, phone, email, role, birthday, address, organisation, note, leaveDate,
-                tags);
+                tags, archived);
     }
 
     @Override
@@ -225,6 +249,7 @@ public class Person {
                 .add("note", note)
                 .add("leaveDate", leaveDate)
                 .add("tags", tags)
+                .add("archived", archived)
                 .toString();
     }
 

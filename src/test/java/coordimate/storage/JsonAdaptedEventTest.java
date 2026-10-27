@@ -1,6 +1,7 @@
 package coordimate.storage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Arrays;
@@ -67,6 +68,28 @@ public class JsonAdaptedEventTest {
             Event loaded = JsonUtil.fromJsonString(json, JsonAdaptedEvent.class).toModelType();
             assertEquals(Set.of(), loaded.getDismissedReminderStarts());
             assertEquals(new Event("Concert", new EventTime("08-08-2026"), new EventTime("09-08-2026")), loaded);
+        }
+    }
+
+    @Test
+    public void toModelType_archivedEvent_roundTripsArchiveStatus() throws Exception {
+        Event archived = new Event("Concert", new EventTime("08-08-2026"), new EventTime("09-08-2026"))
+                .withArchived(true);
+        String json = JsonUtil.toJsonString(new JsonAdaptedEvent(archived));
+
+        assertEquals(archived, JsonUtil.fromJsonString(json, JsonAdaptedEvent.class).toModelType());
+    }
+
+    @Test
+    public void toModelType_missingOrNullArchiveStatus_loadsAsNotArchived() throws Exception {
+        String legacyJson = """
+                {"name":"Concert","startTime":"08-08-2026","endTime":"09-08-2026"}
+                """;
+        String nullJson = """
+                {"name":"Concert","startTime":"08-08-2026","endTime":"09-08-2026","archived":null}
+                """;
+        for (String json : List.of(legacyJson, nullJson)) {
+            assertFalse(JsonUtil.fromJsonString(json, JsonAdaptedEvent.class).toModelType().isArchived());
         }
     }
 

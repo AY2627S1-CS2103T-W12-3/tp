@@ -452,6 +452,28 @@ public class PersonListPanelTest {
         });
     }
 
+    @Test
+    public void archivedItems_showBadgeOnCardAndMarkerInEventHistory() throws Exception {
+        runOnJavaFxThread(() -> {
+            EventTime date = new EventTime("25-10-2026");
+            Event briefing = new Event("Briefing", date, date, List.of(ALICE.getName()));
+            Event orientation = new Event("Orientation", date, date, List.of(ALICE.getName())).withArchived(true);
+            Person archived = ALICE.withArchived(true);
+            Region root = new PersonListPanel(FXCollections.observableArrayList(archived, BENSON),
+                    FXCollections.observableArrayList(briefing, orientation)).getRoot();
+            new Scene(root, 1100, 700);
+            root.applyCss();
+            root.layout();
+
+            assertEquals(1, root.lookupAll(".archived-badge").stream().filter(node -> node.isVisible()).count());
+            getList(root).getSelectionModel().select(archived);
+            root.applyCss();
+            root.layout();
+            assertEquals(List.of("1. Briefing", "2. Orientation (archived)"),
+                    root.lookupAll(".assigned-event-name").stream().map(node -> ((Label) node).getText()).toList());
+        });
+    }
+
     private static void assertContactLayoutAtWidth(double width, Orientation expectedOrientation) {
         SplitPane pane = (SplitPane) new PersonListPanel(FXCollections.observableArrayList(ALICE)).getRoot();
         StackPane container = new StackPane(pane);

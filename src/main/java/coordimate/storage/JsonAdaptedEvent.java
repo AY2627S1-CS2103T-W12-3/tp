@@ -21,6 +21,7 @@ import coordimate.model.person.Name;
  * Stores attendance as member-name to status-text pairs; files saved before attendance existed
  * load with no attendance recorded.
  * Missing dismissal history loads as an empty history for older files.
+ * A missing archive status loads as not archived for older files.
  */
 class JsonAdaptedEvent {
     public static final String MESSAGE_NULL_MEMBER = "Event members must not contain null entries.";
@@ -37,16 +38,19 @@ class JsonAdaptedEvent {
     private final List<String> members = new ArrayList<>();
     private final Map<String, String> attendance = new LinkedHashMap<>();
     private final List<String> dismissedReminderStarts = new ArrayList<>();
+    private final boolean archived;
 
     /**
-     * Creates a JSON event record with the given details, attendance and dismissed reminder starts.
+     * Creates a JSON event record with the given details, attendance, dismissed reminder starts and
+     * archive status.
      */
     @JsonCreator
     public JsonAdaptedEvent(@JsonProperty("name") String name,
                             @JsonProperty("startTime") String startTime, @JsonProperty("endTime") String endTime,
                             @JsonProperty("members") List<String> members,
                             @JsonProperty("attendance") Map<String, String> attendance,
-                            @JsonProperty("dismissedReminderStarts") List<String> dismissedReminderStarts) {
+                            @JsonProperty("dismissedReminderStarts") List<String> dismissedReminderStarts,
+                            @JsonProperty("archived") Boolean archived) {
         this.name = name;
         this.startTime = startTime;
         this.endTime = endTime;
@@ -59,6 +63,15 @@ class JsonAdaptedEvent {
         if (dismissedReminderStarts != null) {
             this.dismissedReminderStarts.addAll(dismissedReminderStarts);
         }
+        this.archived = Boolean.TRUE.equals(archived);
+    }
+
+    /**
+     * Creates a JSON event record with attendance and dismissed reminder starts, which is not archived.
+     */
+    public JsonAdaptedEvent(String name, String startTime, String endTime, List<String> members,
+                            Map<String, String> attendance, List<String> dismissedReminderStarts) {
+        this(name, startTime, endTime, members, attendance, dismissedReminderStarts, null);
     }
 
     /**
@@ -84,13 +97,14 @@ class JsonAdaptedEvent {
     }
 
     /**
-     * Copies an event's details, attendance and dismissal history into a JSON event record.
+     * Copies an event's details, attendance, dismissal history and archive status into a JSON event record.
      */
     public JsonAdaptedEvent(Event source) {
         this(source.getName(), source.getStartTime().toString(), source.getEndTime().toString(),
                 source.getMembers().stream().map(Name::toString).toList(),
                 toAttendanceStrings(source),
-                source.getDismissedReminderStarts().stream().map(EventTime::toString).sorted().toList());
+                source.getDismissedReminderStarts().stream().map(EventTime::toString).sorted().toList(),
+                source.isArchived());
     }
 
     private static Map<String, String> toAttendanceStrings(Event source) {
@@ -141,7 +155,8 @@ class JsonAdaptedEvent {
                 attendanceRecord.put(new Name(entry.getKey()), parseStatus(entry.getValue()));
             }
             return new Event(name, new EventTime(startTime), new EventTime(endTime), memberNames,
-                    attendanceRecord, dismissedReminderStarts.stream().map(EventTime::new).collect(Collectors.toSet()));
+                    attendanceRecord, dismissedReminderStarts.stream().map(EventTime::new).collect(Collectors.toSet()),
+                    archived);
         } catch (IllegalArgumentException e) {
             throw new IllegalValueException(e.getMessage());
         }

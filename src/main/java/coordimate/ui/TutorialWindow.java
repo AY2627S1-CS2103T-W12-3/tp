@@ -2,6 +2,7 @@ package coordimate.ui;
 
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -24,6 +25,8 @@ import javafx.scene.text.TextFlow;
 
 /** A guided introduction shown as an overlay on the main window. */
 public class TutorialWindow extends UiPart<StackPane> {
+
+    public static final String TUTORIAL_SHORTCUT = "Fn + F2";
 
     private static final String FXML = "TutorialWindow.fxml";
     private static final double CARD_MAX_WIDTH = 620;
@@ -86,10 +89,12 @@ public class TutorialWindow extends UiPart<StackPane> {
                             + "in the current tab. Press I to return to Command mode and focus the command box.",
                     TutorialPlacement.CENTER, TutorialTarget.NONE),
             new TutorialStep("Get help anytime",
-                    "Select Help in the top bar to see command formats and keyboard shortcuts.",
+                    "Select Help in the top bar, type help in the command box, or press "
+                            + HelpWindow.HELP_SHORTCUT + " to see command formats and keyboard shortcuts.",
                     TutorialPlacement.BESIDE_TARGET, TutorialTarget.HELP),
             new TutorialStep("Take the tour again",
-                    "Select Tutorial in the top bar whenever you need a reminder.",
+                    "Select Tutorial in the top bar, type tutorial in the command box, or press "
+                            + TUTORIAL_SHORTCUT + " whenever you need a reminder.",
                     TutorialPlacement.CENTER, TutorialTarget.TUTORIAL));
 
     @FXML
@@ -127,6 +132,9 @@ public class TutorialWindow extends UiPart<StackPane> {
 
     @FXML
     private TextFlow stepDescription;
+
+    @FXML
+    private Button closeButton;
 
     @FXML
     private Button backButton;
@@ -240,8 +248,16 @@ public class TutorialWindow extends UiPart<StackPane> {
 
     /** Handles tutorial shortcuts before keys can reach the application beneath the overlay. */
     boolean handleShortcut(KeyEvent event) {
-        if (!isShowing() || event.getEventType() != KeyEvent.KEY_PRESSED
-                || event.isAltDown() || event.isControlDown() || event.isMetaDown()) {
+        if (!isShowing() || event.getEventType() != KeyEvent.KEY_PRESSED) {
+            return false;
+        }
+        // Ctrl+Tab is handled with Tab because JavaFX also moves focus on Ctrl+Tab.
+        // Alt+Tab and Meta+Tab do not move focus, so they are left alone.
+        if (event.getCode() == KeyCode.TAB && !event.isAltDown() && !event.isMetaDown()) {
+            moveFocusWithinCard(!event.isShiftDown());
+            return true;
+        }
+        if (event.isAltDown() || event.isControlDown() || event.isMetaDown()) {
             return false;
         }
         KeyCode code = event.getCode();
@@ -255,6 +271,30 @@ public class TutorialWindow extends UiPart<StackPane> {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Moves focus to the next or previous enabled card button, wrapping around so that focus never leaves the card.
+     * If focus is outside the card, moves it to the first or last button.
+     */
+    private void moveFocusWithinCard(boolean isForward) {
+        List<Button> buttons = Stream.of(closeButton, backButton, nextButton)
+                .filter(button -> !button.isDisabled())
+                .toList();
+        int focusedIndex = buttons.indexOf(getFocusOwner());
+        int targetIndex;
+        if (focusedIndex < 0) {
+            targetIndex = isForward ? 0 : buttons.size() - 1;
+        } else {
+            targetIndex = Math.floorMod(focusedIndex + (isForward ? 1 : -1), buttons.size());
+        }
+        buttons.get(targetIndex).requestFocus();
+    }
+
+    /** Returns the node that has keyboard focus in the tutorial's scene, or null if it has no scene. */
+    private Node getFocusOwner() {
+        Scene scene = getRoot().getScene();
+        return scene == null ? null : scene.getFocusOwner();
     }
 
     private void dismiss() {
@@ -272,6 +312,10 @@ public class TutorialWindow extends UiPart<StackPane> {
         description.getStyleClass().add("tutorial-body-text");
         stepDescription.getChildren().setAll(description);
         stepDescription.setAccessibleText(step.description());
+        if (stepIndex == 0 && getFocusOwner() == backButton) {
+            // A disabled button cannot keep focus, so keep it in the card instead of leaving it to JavaFX.
+            nextButton.requestFocus();
+        }
         backButton.setDisable(stepIndex == 0);
         boolean isLastStep = stepIndex == STEPS.size() - 1;
         nextButton.setText(isLastStep ? "Finish →" : "Next →");

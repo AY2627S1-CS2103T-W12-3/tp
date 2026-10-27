@@ -581,6 +581,37 @@ public class EventListPanelTest {
                 .map(row -> ((Label) ((HBox) row).getChildren().getFirst()).getText()).toList();
     }
 
+    @Test
+    public void setShowingArchived_marksArchivedMembersAndRelabelsList() throws Exception {
+        runOnJavaFxThread(() -> {
+            Person archived = new PersonBuilder().withMemberId(1).withName(ALICE.getFullName()).build()
+                    .withArchived(true);
+            Person active = new PersonBuilder().withMemberId(2).withName(BOB.getFullName())
+                    .withPhone("98765432").withEmail("bob@example.com").build();
+            ObservableList<Event> events = FXCollections.observableArrayList(event(List.of(ALICE, BOB), Map.of()));
+            EventListPanel panel = new EventListPanel(events, FXCollections.observableArrayList(archived, active));
+            Region root = panel.getRoot();
+            new Scene(root);
+            root.applyCss();
+            getEventList(root).getSelectionModel().selectFirst();
+
+            assertEquals(List.of("Alice Tan (archived)", "Bob Lim"), root.lookupAll(".event-member-name").stream()
+                    .map(node -> ((Label) node).getText()).toList());
+
+            Label count = (Label) root.lookup("#eventCount");
+            assertEquals("Events (1)", count.getText());
+            panel.setShowingArchived(true);
+            assertEquals("Archived events (1)", count.getText());
+            events.clear();
+            assertEquals("Archived events (0)", count.getText());
+            Label placeholder = (Label) getEventList(root).getPlaceholder();
+            assertEquals(EventListPanel.MESSAGE_NO_ARCHIVED_EVENTS, placeholder.getText());
+            panel.setShowingArchived(false);
+            assertEquals("Events (0)", count.getText());
+            assertEquals(EventListPanel.MESSAGE_NO_EVENTS, placeholder.getText());
+        });
+    }
+
     private static Event event(List<Name> members, Map<Name, AttendanceStatus> attendance) {
         return new Event("Team Dinner", DATE, DATE, members, attendance);
     }

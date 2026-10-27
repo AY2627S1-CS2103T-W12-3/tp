@@ -3,6 +3,8 @@ package coordimate.model.tag;
 import static coordimate.commons.util.AppUtil.checkArgument;
 import static java.util.Objects.requireNonNull;
 
+import java.util.Collection;
+
 /**
  * Represents a Tag in the CoordiMate.
  * Guarantees: immutable; name is valid as declared in {@link #isValidTagName(String)}
@@ -42,6 +44,15 @@ public class Tag {
         }
 
         return otherTag != null && tagName.equalsIgnoreCase(otherTag.tagName);
+    }
+
+    /**
+     * Returns the tag in {@code savedTags} with the same name as this tag, ignoring case,
+     * or this tag if no saved tag matches.
+     */
+    public Tag findSavedTag(Collection<Tag> savedTags) {
+        requireNonNull(savedTags);
+        return savedTags.stream().filter(this::isSameTag).findFirst().orElse(this);
     }
 
     /**

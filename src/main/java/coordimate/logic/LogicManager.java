@@ -3,7 +3,6 @@ package coordimate.logic;
 import static coordimate.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 
 import java.io.IOException;
-import java.nio.file.AccessDeniedException;
 import java.time.Clock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -13,6 +12,8 @@ import coordimate.commons.core.LogsCenter;
 import coordimate.commons.exceptions.DataLoadingException;
 import coordimate.logic.commands.AddCommand;
 import coordimate.logic.commands.AddEventCommand;
+import coordimate.logic.commands.ArchiveCommand;
+import coordimate.logic.commands.ArchiveEventCommand;
 import coordimate.logic.commands.AssignCommand;
 import coordimate.logic.commands.ClearCommand;
 import coordimate.logic.commands.Command;
@@ -36,19 +37,15 @@ import coordimate.model.event.Event;
 import coordimate.model.event.EventMembersPredicate;
 import coordimate.model.person.Person;
 import coordimate.model.tag.Tag;
+import coordimate.storage.DataConflictException;
 import coordimate.storage.Storage;
+import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.collections.ObservableList;
 
 /**
  * The main LogicManager of the app.
  */
 public class LogicManager implements Logic {
-    public static final String FILE_OPS_ERROR_FORMAT =
-            "Data could not be saved. Check the local data file. Details: %s";
-
-    public static final String FILE_OPS_PERMISSION_ERROR_FORMAT =
-            "Data could not be saved to %s. Check write permissions for the file and its folder.";
-
     public static final String MESSAGE_DELETE_CANCELLED = "Deletion cancelled. No changes were made.";
 
     private final Logger logger = LogsCenter.getLogger(LogicManager.class);
@@ -119,23 +116,14 @@ public class LogicManager implements Logic {
 
         if (command instanceof AddCommand || command instanceof EditCommand || command instanceof ClearCommand
                 || command instanceof MutatingTagCommand
-                || command instanceof AddEventCommand
+                || command instanceof AddEventCommand || command instanceof ArchiveEventCommand
+                || command instanceof ArchiveCommand
                 || command instanceof EditEventCommand || command instanceof AssignCommand
                 || command instanceof DeleteEventCommand || command instanceof MarkAttendanceCommand
                 || command instanceof UnassignCommand) {
             return executeAtomicCommand(command);
         }
-        CommandResult commandResult = command.execute(model);
-
-        try {
-            storage.saveCoordiMate(model.getCoordiMate());
-        } catch (AccessDeniedException e) {
-            throw new CommandException(String.format(FILE_OPS_PERMISSION_ERROR_FORMAT, e.getMessage()), e);
-        } catch (IOException ioe) {
-            throw new CommandException(String.format(FILE_OPS_ERROR_FORMAT, ioe.getMessage()), ioe);
-        }
-
-        return commandResult;
+        return command.execute(model);
     }
 
     /**
@@ -159,10 +147,13 @@ public class LogicManager implements Logic {
             throw new CommandException(message, e);
         }
         Model candidate = new ModelManager(model.getCoordiMate(), model.getUserPrefs());
+        candidate.setShowingArchived(model.isShowingArchived());
         candidate.updateFilteredPersonList(model.getFilteredPersonList()::contains);
         CommandResult result = command.execute(candidate);
         try {
-            storage.saveCoordiMate(candidate.getCoordiMate());
+            storage.saveCoordiMateIfUnchanged(candidate.getCoordiMate());
+        } catch (DataConflictException e) {
+            throw new CommandException(DataConflictException.MESSAGE, e);
         } catch (IOException e) {
             logContactOperationFailure(command, "save contact data", e);
             String message = switch (command) {
@@ -172,6 +163,8 @@ public class LogicManager implements Logic {
                 case EditEventCommand _ -> EditEventCommand.MESSAGE_SAVE_ERROR;
                 case AssignCommand _ -> AssignCommand.MESSAGE_SAVE_ERROR;
                 case DeleteEventCommand _ -> DeleteEventCommand.MESSAGE_SAVE_ERROR;
+                case ArchiveEventCommand _ -> ArchiveEventCommand.MESSAGE_SAVE_ERROR;
+                case ArchiveCommand _ -> ArchiveCommand.MESSAGE_SAVE_ERROR;
                 case ClearCommand _ -> ClearCommand.MESSAGE_SAVE_ERROR;
                 case MarkAttendanceCommand _ -> MarkAttendanceCommand.MESSAGE_SAVE_ERROR;
                 case UnassignCommand _ -> UnassignCommand.MESSAGE_SAVE_ERROR;
@@ -182,6 +175,10 @@ public class LogicManager implements Logic {
         }
         keepReminderDismissalAfterRename(command);
         model.setCoordiMate(candidate.getCoordiMate());
+        if (command instanceof AddCommand || command instanceof AddEventCommand) {
+            // Return to active items so that the new contact or event is visible.
+            model.setShowingArchived(false);
+        }
         if (command instanceof AddCommand || command instanceof EditCommand) {
             model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
         }
@@ -253,6 +250,21 @@ public class LogicManager implements Logic {
     @Override
     public ObservableList<Event> getEventList() {
         return model.getCoordiMate().getEventList();
+    }
+
+    @Override
+    public ObservableList<Event> getFilteredEventList() {
+        return model.getFilteredEventList();
+    }
+
+    @Override
+    public ReadOnlyBooleanProperty showingArchivedProperty() {
+        return model.showingArchivedProperty();
+    }
+
+    @Override
+    public void showActiveItems() {
+        model.setShowingArchived(false);
     }
 
     @Override

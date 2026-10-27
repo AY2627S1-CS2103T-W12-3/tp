@@ -71,7 +71,11 @@ The **API** of this component is specified in [`Ui.java`](https://github.com/AY2
 
 <puml src="diagrams/UiClassDiagram.puml" alt="Structure of the UI Component"/>
 
-The UI consists of a `MainWindow` and its parts, such as `CommandBox`, `ResultDisplay`, `PersonListPanel`, and `StatusBarFooter`. All of these, including `MainWindow`, inherit from the abstract `UiPart` class, which captures common behavior among classes that represent visible GUI parts.
+The first diagram shows the parts created or used by `MainWindow`, including `CommandBox`, `ResultDisplay`, `PersonListPanel`, `EventListPanel`, `ReminderPanel`, `StatusBarFooter`, and `TutorialWindow`. `MainWindow` also uses `TagListViewModel` to keep the Tags view synchronized with contact and tag data.
+
+The inheritance diagram shows all ten subclasses of the abstract `UiPart`, which captures behavior shared by visible GUI parts. Each `UiPart` box represents the same superclass, repeated to keep the arrows clear. `TagListViewModel` and `WindowBounds` are helpers rather than `UiPart` subclasses.
+
+<puml src="diagrams/UiPartInheritanceDiagram.puml" alt="UI component inheritance from UiPart"/>
 
 The `HelpWindow` provides an in-app command quick reference. Its read-only, scrollable command table is populated by
 `HelpWindow` using the command words defined by the corresponding command classes, while its FXML file controls the
@@ -85,9 +89,12 @@ changing saved data; empty lists show their existing hints.
 The event details pane scrolls to the member list for its step, and highlights inside a scroll pane are clipped to the
 visible viewport. The dim backdrop leaves the highlighted area clear while a transparent blocker and disabled command
 box prevent commands from running during the tour. `UiManager` opens the overlay on first launch. `MainWindow` records
-the tutorial preference when the user closes or finishes it; the Tutorial item beside Help in the top bar can open the
-overlay again at any time. The overlay handles Left and Right Arrow navigation and Escape dismissal before key events
-can reach the command box or the main window's navigation shortcuts.
+the tutorial preference when the user closes or finishes it. The `tutorial` command, the Tutorial item beside Help in
+the top bar, and the <kbd>F2</kbd> shortcut can open the overlay again at any time. `TutorialCommand` returns a
+`CommandResult` whose `shouldShowTutorial()` flag asks `MainWindow` to open the overlay, in the same way that
+`shouldShowHelp()` opens the Help window. The overlay handles Left and Right Arrow navigation, Escape dismissal, and
+Tab focus movement before key events can reach the command box or the main window's navigation shortcuts. Tab and
+Shift+Tab cycle through the card's enabled buttons so that keyboard focus cannot leave the card.
 
 `CommandBox` keeps submitted, nonblank commands in a session-only list. The list has no configured cap or eviction;
 its practical limit is the JVM heap, and it is discarded when the app closes. It records an attempt before execution
@@ -140,30 +147,20 @@ Here's a (partial) class diagram of the `Logic` component:
 
 <puml src="diagrams/LogicClassDiagram.puml" width="550"/>
 
-The sequence diagram below illustrates the interactions within the `Logic` component, taking `execute("delete 1")` API call as an example.
+The sequence diagram below follows `execute("delete 1")` and the subsequent confirmation response. The first call resolves and stores the contact without deleting it. If the response is `y` or `Y`, the confirmed command deletes the contact on a candidate model through the atomic save path; any other response cancels the deletion without changing data.
 
 <puml src="diagrams/DeleteSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `delete 1` Command" />
 
-<box type="info" seamless>
-
-**Note:** The lifeline for `DeleteCommandParser` should end at the destroy marker (X), but due to a limitation of PlantUML, the lifeline continues till the end of diagram.
-</box>
-
-<box type="info" seamless>
-
-**Note:** This diagram and the architecture sequence diagram above are simplified to show the general flow of a
-command. In the actual implementation, `delete` first asks the user for confirmation, and commands that change data
-are executed on a copy of the model and saved before the change is applied. Both are described in
-[Saving data atomically](#saving-data-atomically).
-</box>
+Both delete diagrams use a reference to the detailed atomic-save sequence in
+[Saving data atomically](#saving-data-atomically). The confirmed command deletes the resolved contact from a candidate
+model; `LogicManager` replaces the live data only after saving the candidate succeeds.
 
 
 How the `Logic` component works:
 
 1. When `Logic` is called upon to execute a command, the command is passed to a `CoordiMateParser` object, which in turn creates a parser that matches the command (e.g., `DeleteCommandParser`) and uses it to parse the command.
-1. This results in a `Command` object (more precisely, an object of one of its subclasses e.g., `DeleteCommand`) which is executed by the `LogicManager`.
-1. The command can communicate with the `Model` when it is executed (e.g. to delete a person).<br>
-   Note that although this is shown as a single step in the diagram above for simplicity, the code can require several interactions between the command object and the `Model` to complete the operation.
+1. This results in a `Command` object (more precisely, an object of one of its subclasses e.g., `DeleteCommand`). For `delete`, `LogicManager` first calls `resolvePerson` and returns a confirmation prompt without executing the deletion.
+1. If the next input is `y` or `Y`, `LogicManager` creates a command for the resolved `Person` and executes it on a candidate model. That command deletes the contact from the candidate, which is saved before the live model changes. Any other input cancels the deletion.
 1. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
 
 Here are the other classes in `Logic` (omitted from the class diagram above) that are used for parsing a user command:
@@ -194,7 +191,7 @@ Command error messages follow these conventions:
 ### Model component
 **API** : [`Model.java`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/Model.java)
 
-<puml src="diagrams/ModelClassDiagram.puml" width="450" />
+<puml src="diagrams/ModelClassDiagram.puml" width="575" />
 
 
 The `Model` component,
@@ -206,6 +203,7 @@ The `Model` component,
   adding, editing, or replacing contacts registers any missing tags while preserving existing unused tags.
 * stores all `Event` objects. Each `Event` records its assigned members as an ordered list of contact `Name`s. `CoordiMate` keeps these lists in sync with the contacts: deleting a contact removes their name from every event, and renaming a contact updates it.
 * stores the `Person` objects selected by the current filter, such as search results, in a separate _filtered_ list. It exposes this list as an unmodifiable `ObservableList<Person>` that the UI can observe and bind to, so the UI updates when the list changes.
+* keeps an archive view, which decides whether the filtered contact list and the filtered event list show active or [archived](#archiving-contacts-and-events) items.
 * stores a `UserPrefs` object that represents the user’s preferences, including window size and position, maximized
   state, and whether the first-launch tutorial has been completed or dismissed. This is exposed to the outside as a
   `ReadOnlyUserPrefs` object.
@@ -214,7 +212,7 @@ The `Model` component,
 
 <box type="info" seamless>
 
-**Note:** The alternative, arguably more object-oriented, design below keeps a unique list of tags in `CoordiMate`, and each `Person` references tags from that list. This lets `CoordiMate` maintain one `Tag` object per unique tag instead of each `Person` holding its own `Tag` objects.<br>
+**Note:** `CoordiMate` already keeps a global `UniqueTagList`, but each `Person` holds its own `Tag` objects, which are compared with those in the list by value and are not necessarily the same objects. The alternative, arguably more object-oriented, design below has each `Person` reference the `Tag` objects in that list instead, so `CoordiMate` maintains exactly one `Tag` object per unique tag.<br>
 
 <puml src="diagrams/BetterModelClassDiagram.puml" width="450" />
 </box>
@@ -224,11 +222,12 @@ The `Model` component,
 
 **API** : [`Storage.java`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/storage/Storage.java)
 
-<puml src="diagrams/StorageClassDiagram.puml" width="550" />
+<puml src="diagrams/StorageClassDiagram.puml" width="700" />
 
 The `Storage` component,
 * can save both CoordiMate data and user preference data in JSON format, and read them back into corresponding objects.
 * is implemented by `StorageManager`, which delegates the actual JSON file access to `JsonCoordiMateStorage` and `JsonUserPrefsStorage` (one class per data file).
+* converts CoordiMate data through `JsonSerializableCoordiMate`, which stores contacts (`JsonAdaptedPerson`), events (`JsonAdaptedEvent`), and the global tag list (`JsonAdaptedTag`) as separate lists. Each contact also stores its own tags, and each event records its members by contact name rather than by member ID.
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
 
 The tutorial flag is saved with the other user preferences. Preference files without that field are read with the
@@ -336,14 +335,16 @@ These are `AddCommand`, `EditCommand`,
    IDs and allocation state. Its filtered contact list initially shows the same contacts as the live view.
    Commands resolve member IDs against the complete saved contact list in either model.
 1. It executes the command on the candidate. If the command fails, the candidate is discarded.
-1. It saves the candidate's data with `Storage#saveCoordiMate`. If saving fails, the command is rejected with a
-   save error such as `Event could not be saved. No changes were made.` and the candidate is discarded.
+1. It saves the candidate's data with `Storage#saveCoordiMateIfUnchanged`. This compares the file with the revision
+   loaded at startup or last saved by this window while holding a lock shared by CoordiMate instances. If another
+   window changed the file, the command is rejected and the candidate is discarded. Other save failures still
+   report an error such as `Event could not be saved. No changes were made.`
 1. Only then does it call `Model#setCoordiMate` to replace the live model's data with the candidate's data,
    which updates the UI.
 
 The live model is not touched until step 5, so a failure at any earlier step leaves the app exactly as it was.
 
-The sequence diagram below shows these steps for an `addevent` command that succeeds. Parsing is omitted.
+The sequence diagram below shows a successful call to `executeAtomicCommand(c)` with an `AddEventCommand` as `c`. Parsing is omitted.
 
 <puml src="diagrams/AtomicCommandSequenceDiagram.puml" alt="Interactions when a command that changes data is executed" />
 
@@ -367,11 +368,9 @@ The next input is treated as the answer, not as a command: `y` or `Y` runs the d
 `executeAtomicCommand`, and any other input cancels it.
 
 **Commands that do not change data**, such as `list`, `search`, `filter`, `members`, and `listtags`, are executed
-directly on the live model. As in AddressBook-Level3, `LogicManager` still saves the model afterwards. This has two
-consequences that developers should be aware of:
-
-* If the data file is invalid, such a command replaces it with the data currently in the app.
-* If the data file cannot be written, such a command reports a save error even though it changed no data.
+directly on the live model without saving. They cannot overwrite a newer or invalid data file. A window that has
+become stale can still show its loaded data, but its next save is rejected until it is reopened. Reminder dismissal
+uses the same conditional save and retains its session-only fallback when saving fails.
 
 `CommandResult.View` carries one requested view, or `NONE` when a command does not request a view change.
 `MainWindow` applies a requested view through the same view controls used by the sidebar.
@@ -551,7 +550,8 @@ To add a filter field, add a constant to `FilterField`, add a case to `FilterCom
 `FilterCommandParser.MESSAGE_INVALID_FIELD`.
 
 The `search` command is implemented separately. `SearchCommand` uses `ContactMatchesKeywordPredicate`, which tests
-whether a contact's name, phone, email, address, or organisation contains the keyword, ignoring case.
+whether a contact's name, phone, email, address, or organisation contains the keyword, ignoring case. It compares
+substrings with `String#regionMatches(true, ...)`, using the same case comparison as duplicate-name detection.
 
 #### Design considerations
 
@@ -718,6 +718,120 @@ cleared.
 * **Alternative 2:** A separate command, such as `leave MEMBER_ID until/DATE`.
   * Pros: Easier to discover.
   * Cons: Duplicates the contact lookup and validation already in `edit`, and adds a second way to change a contact.
+
+### Archiving contacts and events
+
+`archive`, `unarchive`, `archiveevent`, and `unarchiveevent` hide a contact or an event from the normal lists without
+deleting it. `list archived` shows only archived items, and `list` returns to the active ones.
+
+#### Implementation
+
+**The archive flag.** [`Person`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/person/Person.java)
+and [`Event`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/event/Event.java)
+each have a boolean `archived` field, which is part of `equals` and `hashCode`. Both are immutable, so archiving
+returns a copy from `withArchived(boolean)`:
+
+* `Event#withArchived` builds the copy through the full constructor. Every other `Event` copy method, such as
+  `withAttendance` and `withDetails`, passes the flag on.
+* `Person` takes `archived` as the last parameter of its full constructor, the one that also takes a member ID.
+  Every copy of an existing contact uses that constructor, so the compiler makes each copy pass the flag on:
+  `Person#withArchived`, `Person#withMemberId`, `EditCommand#createEditedPerson`, and the tag updates in
+  `CoordiMate#setTag` and `CoordiMate#deleteTag`. The shorter constructors create new contacts, which are never
+  archived. `withMemberId` matters when loading a data file saved before member IDs existed: `CoordiMate#addPerson`
+  gives each contact an ID, and the contact must stay archived.
+
+Archiving changes nothing else: an archived contact keeps its name in event member lists, and an archived event
+keeps its members and attendance.
+
+**Hiding archived items.** [`ModelManager`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/ModelManager.java)
+keeps the archive view, a `BooleanProperty` that is true while archived items are shown, separately from the
+contact filter set by commands:
+
+* The filtered contact list shows a contact only if its `archived` value matches the view **and** it matches the
+  latest predicate passed to `updateFilteredPersonList`. `getFilteredPersonPredicate` still returns that predicate,
+  so code such as `LogicManager#keepMembersViewAfterRename` sees the command's filter and not the combined test.
+* A filtered event list, `Model#getFilteredEventList`, shows the events whose `archived` value matches the view.
+  The **Events** tab and its count use this list. A contact's details pane uses the full event list instead, so that
+  archived events still appear in the contact's history.
+* `Model#setShowingArchived` switches both lists. `MainWindow` observes `showingArchivedProperty` to:
+  * change the tab titles to **Archived contacts** and **Archived events**,
+  * tell `PersonListPanel` and `EventListPanel` to show `No archived contacts.` or `No archived events.` for an empty
+    list, and the event list heading to read **Archived events**, and
+  * show short sidebar command lists, `archivedContactsCommands` and `archivedEventsCommands` in `MainWindow.fxml`,
+    which list only the restore command and `list`, in place of the full lists for the **Contacts** and **Events**
+    tabs.
+
+Because the view is applied inside the model, `search`, `filter`, and `members` hide archived contacts without any
+change to those commands.
+
+The sequence diagram below shows `archive 12`. `ArchiveCommand` finds the contact by its permanent member ID with
+`MemberIdResolver`, which searches all saved contacts, so the command works whatever the displayed list shows. Like
+`edit`, it is one of the commands that `LogicManager` executes on a copy of the model, as described in
+[Saving data atomically](#saving-data-atomically). `LogicManager` copies the current archive view onto that copy, so
+that commands which read the displayed list see the same contacts on the copy as on the screen.
+
+<puml src="diagrams/ArchiveSequenceDiagram.puml" width="700" />
+
+**Effects on other features.**
+
+* `ReminderService#refreshReminders` skips archived events, so archiving an event removes its reminder at once.
+* `ReadOnlyCoordiMate#findEvent(String)` returns the saved event with a given name, ignoring case and including
+  archived events. `ArchiveEventCommand`, `AddEventCommand`, and `EventMembersCommand` use it.
+* The instance method `EventMembersCommand#findEvent`, used by `assign` and `unassign`, rejects an archived event.
+  `MembersCommand`, `MarkAttendanceCommand`, `EditEventCommand`, and `DeleteEventCommand` search the full event list,
+  so they still work on archived events.
+* `AssignCommand` resolves its member IDs with `EventMembersCommand#resolvePersons` and rejects the whole command if
+  any of the contacts is archived. `UnassignCommand` does not check, so an archived contact can still be removed from
+  an event.
+* The **Tags** member list in `MainWindow` and the event member list in `EventListPanel` mark archived contacts as
+  `(archived)`, and `PersonListPanel` marks archived events in a contact's event list.
+* `AddEventCommand` reports an archived duplicate with a hint to unarchive it, since the user cannot see the
+  existing event.
+* `ModelManager#addPerson` sets the view back to active, like the filter it already clears, and `LogicManager` does
+  the same on the displayed model after `add` and `addevent`, so that the new item is visible. The first is needed
+  because `AddCommand` looks up the new contact in the displayed list of the model copy to select it.
+
+**Storage.** [`JsonAdaptedEvent`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/storage/JsonAdaptedEvent.java)
+and
+[`JsonAdaptedPerson`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/storage/JsonAdaptedPerson.java)
+both read `archived` as a `Boolean` creator parameter. A missing or `null` value is read as `false`, so data files
+saved before archiving existed still load.
+
+#### Design considerations
+
+**Aspect: How archived items are hidden**
+
+* **Alternative 1 (current choice):** The model combines the archive view with every contact filter.
+  * Pros: Every command that filters contacts respects the view without changes. Future filters also respect it.
+  * Cons: The filtered list's predicate is no longer exactly the one a command set, so `ModelManager` must keep the
+    command's predicate separately for `getFilteredPersonPredicate`.
+
+* **Alternative 2:** Each command adds `!person.isArchived()` to its own predicate.
+  * Pros: The model stays unchanged.
+  * Cons: Easy to forget in a new command, and `list archived` would have to change every command's behaviour.
+
+**Aspect: How `archive` and `unarchive` identify a contact**
+
+* **Alternative 1 (current choice):** By permanent member ID, as `edit`, `delete`, and `assign` do.
+  * Pros: Consistent with the other contact commands. A contact can be restored from any view, and a search or
+    filter cannot change which contact an ID refers to.
+  * Cons: The user needs to know the ID, which is shown on each contact card.
+
+* **Alternative 2:** By index in the displayed list.
+  * Pros: Easy to use right after a search.
+  * Cons: Restoring a contact would first need `list archived`, and indexes shift when the list changes.
+
+**Aspect: Where archived items are stored**
+
+* **Alternative 1 (current choice):** In the same lists, with an `archived` flag.
+  * Pros: Names stay unique across active and archived items, events keep referring to archived contacts by name,
+    and unarchiving only flips the flag.
+  * Cons: Every list that should hide archived items must filter them out.
+
+* **Alternative 2:** In separate archive lists.
+  * Pros: The normal lists never contain archived items.
+  * Cons: Duplicate checks, event member lookups, and the data file format would all have to handle two lists, and
+    moving an item between lists could break the links between events and contacts.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -1641,6 +1755,77 @@ and `PAST_DATE` is any date before today, such as `01-01-2020`.
 
    1. Other incorrect tag commands to try: `addtag`, `addtag Publicity`, `edittag EXCO`, `deletetag EXCO`, `listtags 1`<br>
       Expected: No change. The status message shows error details.
+
+### Archiving contacts and events
+
+1. Archiving and restoring a contact
+
+   1. Prerequisites: The sample contacts are loaded. Run `list`. Note the member ID shown on the 2nd contact; the steps
+      below assume it is `2`.
+
+   1. Test case: `archive 2`<br>
+      Expected: The contact disappears from the contact list, and the **Contacts** tab count drops by 1. The status
+      message shows `Archived contact: {NAME}.`
+
+   1. Test case: `list archived`<br>
+      Expected: The tabs are titled **Archived contacts (1)** and **Archived events (0)**. Only the archived contact
+      is shown, with an **Archived** badge. The sidebar lists only `unarchive` and `list`.
+
+   1. Test case: `unarchive 2`<br>
+      Expected: The contact leaves the archived view, which shows `No archived contacts.` After `list`, the contact is
+      back in the contact list and the sidebar shows all contact commands again.
+
+   1. Test case: `search` for another contact, then `archive 2` and `unarchive 2`<br>
+      Expected: Both succeed although the contact is not displayed.
+
+   1. Other incorrect commands to try: `archive`, `archive 0`, `archive x`, `archive 999`, `unarchive 2` on an active
+      contact, `list archive`<br>
+      Expected: No change. The status message shows error details.
+
+1. Archiving and restoring an event
+
+   1. Prerequisites: Run `addevent evn/Orientation st/DATE et/DATE`, where `DATE` is tomorrow in `dd-MM-yyyy`
+      format. Assign the 1st contact with `assign evn/Orientation c/ID`, using its member ID. A reminder for
+      `Orientation` is shown.
+
+   1. Test case: `archiveevent evn/orientation`<br>
+      Expected: The event disappears from the **Events** tab, and its reminder disappears. The status message shows
+      `Archived Event Orientation.` The contact's details still list `Orientation (archived)`.
+
+   1. Test case: `assign evn/Orientation c/ID` with another contact's ID<br>
+      Expected: No change. The status message says the event is archived and suggests `unarchiveevent`.
+
+   1. Test case: `addevent evn/Orientation st/DATE et/DATE`<br>
+      Expected: No event is added. The status message says an archived event with that name already exists.
+
+   1. Test case: `list archived`, then open the **Events** tab<br>
+      Expected: The tab and list heading read **Archived events (1)**. The sidebar lists only `unarchiveevent` and
+      `list`.
+
+   1. Test case: `unarchiveevent evn/Orientation`<br>
+      Expected: The archived events list shows `No archived events.` After `list`, the event is back in the **Events**
+      tab with its members, and its reminder reappears.
+
+1. Archived contacts in events and tags
+
+   1. Prerequisites: The 1st contact is a member of `Orientation`, and has the tag `friends`. Archive the contact with
+      `archive ID`.
+
+   1. Test case: Select `Orientation` in the **Events** tab, then the `friends` tag in the **Tags** tab<br>
+      Expected: Both member lists show the contact's name followed by `(archived)`.
+
+   1. Test case: `assign evn/Orientation c/ID`, using the archived contact's ID<br>
+      Expected: No change. The status message says the contact is archived and suggests `unarchive`.
+
+   1. Test case: `unassign evn/Orientation c/ID`<br>
+      Expected: The archived contact is removed from the event.
+
+1. Keeping the archive status after restarting
+
+   1. Prerequisites: Archive a contact and an event as above.
+
+   1. Test case: Close and relaunch the app.<br>
+      Expected: The contact and event are still hidden from the normal lists, and appear in `list archived`.
 
 ### Saving data
 
