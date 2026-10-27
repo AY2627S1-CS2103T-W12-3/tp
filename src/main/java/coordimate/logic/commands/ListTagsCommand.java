@@ -18,7 +18,7 @@ public class ListTagsCommand extends Command {
             + "Example: " + COMMAND_WORD;
 
     public static final String MESSAGE_SUCCESS = "Here is the list of all existing tags.%nTags: %s.";
-    public static final String MESSAGE_NO_TAGS = "There are no tags. Create one with addtag.";
+    public static final String MESSAGE_NO_TAGS = "No tags yet. Create one with addtag.";
 
     @Override
     public CommandResult execute(Model model) {
