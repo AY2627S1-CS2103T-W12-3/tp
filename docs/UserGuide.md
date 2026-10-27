@@ -1006,9 +1006,9 @@ Formats: `delete MEMBER_ID` · `delete n/NAME` · `delete p/PHONE` · `delete e/
 * Name matching is exact apart from letter case and surrounding spaces. Phone matching ignores spaces, hyphens, and
   brackets. Email matching ignores letter case and surrounding spaces. These identifiers search all saved contacts,
   including those hidden by a search or filter.
-* CoordiMate shows the contact's `ID: <number>`, name, phone, email, and role, followed by `Confirm deletion? [y/N]`. Type exactly `y`
-  or `Y` to delete. `n`, `N`, Enter, or any other input cancels. A cancelling input is **not** run as a command; enter it
-  again if that was your intention.
+* CoordiMate shows the contact's `ID: <number>`, name, phone, email, and role, followed by `Confirm deletion? [y/N]`.
+  Type `y` or `Y` to delete; surrounding whitespace is ignored. `n`, `N`, Enter, or any other input cancels. A
+  cancelling input is **not** run as a command; enter it again if that was your intention.
 * A confirmed deletion removes the contact from all event member lists, including past events. The events and other
   contacts remain saved. A cancelled deletion makes no changes.
 * A confirmed deletion is saved before it appears in the contact list. A corrupt data file or failed write leaves the

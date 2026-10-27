@@ -99,7 +99,7 @@ public class LogicManager implements Logic {
         if (pendingDelete != null) {
             Person target = pendingDelete;
             pendingDelete = null;
-            return commandText.equals("y") || commandText.equals("Y")
+            return "y".equalsIgnoreCase(commandText.strip())
                     ? executeAtomicCommand(DeleteCommand.forResolvedPerson(target))
                     : new CommandResult(MESSAGE_DELETE_CANCELLED);
         }
