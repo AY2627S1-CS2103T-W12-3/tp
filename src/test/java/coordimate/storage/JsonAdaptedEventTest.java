@@ -22,24 +22,37 @@ import coordimate.model.person.Name;
 
 public class JsonAdaptedEventTest {
     @Test
-    public void hasYearZero_yearZeroInDatesOrHistory_returnsTrue() {
+    public void hasYearZeroEventDate_yearZeroInDatesOnly_returnsTrue() {
         for (String value : List.of("01-01-0000", "01-01-0000 00:00", " 01-01-0000 12:30 ")) {
-            assertTrue(new JsonAdaptedEvent("Concert", value, "02-01-2026").hasYearZero());
-            assertTrue(new JsonAdaptedEvent("Concert", "01-01-2026", value).hasYearZero());
-            assertTrue(new JsonAdaptedEvent("Concert", "01-01-2026", "02-01-2026", List.of(), Map.of(),
-                    List.of("01-01-2026", value)).hasYearZero());
+            assertTrue(new JsonAdaptedEvent("Concert", value, "02-01-2026").hasYearZeroEventDate());
+            assertTrue(new JsonAdaptedEvent("Concert", "01-01-2026", value).hasYearZeroEventDate());
+            assertFalse(new JsonAdaptedEvent("Concert", "01-01-2026", "02-01-2026", List.of(), Map.of(),
+                    List.of("01-01-2026", value)).hasYearZeroEventDate());
         }
     }
 
     @Test
-    public void hasYearZero_nullPositiveYearOrMalformedDates_returnsFalse() {
+    public void hasYearZeroEventDate_nullPositiveYearOrMalformedDates_returnsFalse() {
         for (String value : Arrays.asList(null, "", "01-01-0001", "31-12-9999 23:59", "0000-01-01",
                 "01-01-0000 24:00:00")) {
             JsonAdaptedEvent event = new JsonAdaptedEvent("Concert", value, value, List.of(), Map.of(),
                     Arrays.asList(value));
 
-            assertFalse(event.hasYearZero());
+            assertFalse(event.hasYearZeroEventDate());
         }
+    }
+
+    @Test
+    public void removeYearZeroReminderStarts_keepsValidHistoryAndEventDetails() throws Exception {
+        JsonAdaptedEvent event = new JsonAdaptedEvent("Concert", "08-08-2026", "09-08-2026",
+                List.of("Alex Yeoh"), Map.of("Alex Yeoh", "present"),
+                List.of("08-08-2026", "01-01-0000", " 02-01-0000 12:30 "));
+
+        assertTrue(event.removeYearZeroReminderStarts());
+        assertFalse(event.removeYearZeroReminderStarts());
+        assertEquals(new Event("Concert", new EventTime("08-08-2026"), new EventTime("09-08-2026"),
+                List.of(new Name("Alex Yeoh")), Map.of(new Name("Alex Yeoh"), AttendanceStatus.PRESENT),
+                Set.of(new EventTime("08-08-2026"))), event.toModelType());
     }
 
     @Test

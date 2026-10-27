@@ -99,13 +99,26 @@ class JsonSerializableCoordiMate {
     List<String> removeYearZeroEvents() {
         List<String> removedNames = new ArrayList<>();
         events.removeIf(event -> {
-            if (event != null && event.hasYearZero()) {
+            if (event != null && event.hasYearZeroEventDate()) {
                 removedNames.add(event.getName() == null ? "(unnamed event)" : event.getName());
                 return true;
             }
             return false;
         });
         return removedNames;
+    }
+
+    /**
+     * Removes year-zero dismissal history from events that remain after cleanup.
+     */
+    boolean removeYearZeroReminderStarts() {
+        boolean removed = false;
+        for (JsonAdaptedEvent event : events) {
+            if (event != null && event.removeYearZeroReminderStarts()) {
+                removed = true;
+            }
+        }
+        return removed;
     }
 
     /**

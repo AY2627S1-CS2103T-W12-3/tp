@@ -68,15 +68,39 @@ public class JsonCoordiMateStorageTest {
         Path path = writeLegacyEvents(expected,
                 new JsonAdaptedEvent("Zero Start", " 01-01-0000 ", "02-01-0001"),
                 new JsonAdaptedEvent("Zero End", "01-01-0001", "02-01-0000 12:30"),
-                new JsonAdaptedEvent("Zero History", "01-01-0001", "02-01-0001", List.of(), Map.of(),
-                        List.of("01-01-0000 00:00")),
+                new JsonAdaptedEvent("Zero History", "01-01-0001", "02-01-0001",
+                        List.of(ALICE.getName().toString()), Map.of(ALICE.getName().toString(), "absent"),
+                        List.of("01-01-0001", "01-01-0000 00:00"), true),
                 new JsonAdaptedEvent(null, "01-01-0000", "02-01-0000"));
+        expected.addEvent(new Event("Zero History", start, new EventTime("02-01-0001"),
+                List.of(ALICE.getName()), Map.of(ALICE.getName(), AttendanceStatus.ABSENT), Set.of(start))
+                .withArchived(true));
         JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path);
 
-        assertEquals(List.of("Zero Start", "Zero End", "Zero History", "(unnamed event)"),
+        assertEquals(List.of("Zero Start", "Zero End", "(unnamed event)"),
                 storage.removeYearZeroEvents());
         assertEquals(expected, storage.readCoordiMate().orElseThrow());
         String cleaned = Files.readString(path);
+        assertEquals(List.of(), storage.removeYearZeroEvents());
+        assertEquals(cleaned, Files.readString(path));
+    }
+
+    @Test
+    public void removeYearZeroEvents_historyOnly_preservesEventAndSavesCleanedHistory() throws Exception {
+        CoordiMate expected = getTypicalCoordiMate();
+        EventTime start = new EventTime("08-08-2026");
+        expected.addEvent(new Event("Concert", start, new EventTime("09-08-2026"),
+                List.of(ALICE.getName()), Map.of(ALICE.getName(), AttendanceStatus.PRESENT), Set.of(start)));
+        Path path = writeLegacyEvents(getTypicalCoordiMate(),
+                new JsonAdaptedEvent("Concert", "08-08-2026", "09-08-2026",
+                        List.of(ALICE.getName().toString()), Map.of(ALICE.getName().toString(), "present"),
+                        List.of("08-08-2026", "01-01-0000")));
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path);
+
+        assertEquals(List.of(), storage.removeYearZeroEvents());
+        assertEquals(expected, storage.readCoordiMate().orElseThrow());
+        String cleaned = Files.readString(path);
+        assertFalse(cleaned.contains("01-01-0000"));
         assertEquals(List.of(), storage.removeYearZeroEvents());
         assertEquals(cleaned, Files.readString(path));
     }

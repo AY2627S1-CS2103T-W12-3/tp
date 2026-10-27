@@ -119,11 +119,17 @@ class JsonAdaptedEvent {
     }
 
     /**
-     * Identifies legacy event dates, including reminder history, that use year zero.
+     * Identifies legacy event start or end dates that use year zero.
      */
-    boolean hasYearZero() {
-        return isYearZero(startTime) || isYearZero(endTime)
-                || dismissedReminderStarts.stream().anyMatch(JsonAdaptedEvent::isYearZero);
+    boolean hasYearZeroEventDate() {
+        return isYearZero(startTime) || isYearZero(endTime);
+    }
+
+    /**
+     * Removes year-zero reminder history from an event whose dates are otherwise valid.
+     */
+    boolean removeYearZeroReminderStarts() {
+        return dismissedReminderStarts.removeIf(JsonAdaptedEvent::isYearZero);
     }
 
     private static boolean isYearZero(String value) {

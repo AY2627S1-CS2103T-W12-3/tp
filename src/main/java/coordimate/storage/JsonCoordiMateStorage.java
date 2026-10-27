@@ -37,7 +37,8 @@ public class JsonCoordiMateStorage {
     }
 
     /**
-     * Deletes legacy year-zero events at startup, after validating all remaining data.
+     * Deletes events with year-zero dates and removes year-zero reminder history at startup,
+     * after validating all remaining data.
      * Returns the deleted names only after the cleaned file is saved successfully.
      */
     public List<String> removeYearZeroEvents() throws DataLoadingException, IOException {
@@ -47,7 +48,8 @@ public class JsonCoordiMateStorage {
             return List.of();
         }
         List<String> removedNames = savedData.get().removeYearZeroEvents();
-        if (removedNames.isEmpty()) {
+        boolean removedHistory = savedData.get().removeYearZeroReminderStarts();
+        if (removedNames.isEmpty() && !removedHistory) {
             return List.of();
         }
         ReadOnlyCoordiMate cleanedData;
