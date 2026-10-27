@@ -1,6 +1,8 @@
 package coordimate.storage;
 
 import static coordimate.testutil.TypicalPersons.ALICE;
+import static coordimate.testutil.TypicalPersons.BENSON;
+import static coordimate.testutil.TypicalPersons.CARL;
 import static coordimate.testutil.TypicalPersons.HOON;
 import static coordimate.testutil.TypicalPersons.IDA;
 import static coordimate.testutil.TypicalPersons.getTypicalCoordiMate;
@@ -34,6 +36,7 @@ import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
 import coordimate.model.person.Person;
 import coordimate.model.tag.Tag;
+import coordimate.testutil.PersonBuilder;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
@@ -44,23 +47,23 @@ public class JsonCoordiMateStorageTest {
     public Path testFolder;
 
     @Test
-    public void removeYearZeroEvents_missingFile_doesNotCreateFile() throws Exception {
+    public void recoverSavedData_missingFile_doesNotCreateFile() throws Exception {
         Path path = testFolder.resolve("missing.json");
-        assertEquals(List.of(), new JsonCoordiMateStorage(path).removeYearZeroEvents());
+        assertEquals("", new JsonCoordiMateStorage(path).recoverSavedData().getWarning());
         assertFalse(Files.exists(path));
     }
 
     @Test
-    public void removeYearZeroEvents_noYearZero_doesNotRewriteFile() throws Exception {
+    public void recoverSavedData_noRepairs_doesNotRewriteFile() throws Exception {
         Path path = testFolder.resolve("data.json");
         String original = "{\"persons\":[], \"events\":[]}";
         Files.writeString(path, original);
-        assertEquals(List.of(), new JsonCoordiMateStorage(path).removeYearZeroEvents());
+        assertEquals("", new JsonCoordiMateStorage(path).recoverSavedData().getWarning());
         assertEquals(original, Files.readString(path));
     }
 
     @Test
-    public void removeYearZeroEvents_mixedData_preservesValidDataAndDeletesOnlyOnce() throws Exception {
+    public void recoverSavedData_yearZeroEvents_preservesValidDataAndDeletesOnlyOnce() throws Exception {
         CoordiMate expected = getTypicalCoordiMate();
         EventTime start = new EventTime("01-01-0001");
         expected.addEvent(new Event("Keep", start, new EventTime("31-12-9999 23:59"),
@@ -78,15 +81,15 @@ public class JsonCoordiMateStorageTest {
         JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path);
 
         assertEquals(List.of("Zero Start", "Zero End", "(unnamed event)"),
-                storage.removeYearZeroEvents());
+                storage.recoverSavedData().deletedEvents());
         assertEquals(expected, storage.readCoordiMate().orElseThrow());
         String cleaned = Files.readString(path);
-        assertEquals(List.of(), storage.removeYearZeroEvents());
+        assertEquals("", storage.recoverSavedData().getWarning());
         assertEquals(cleaned, Files.readString(path));
     }
 
     @Test
-    public void removeYearZeroEvents_historyOnly_preservesEventAndSavesCleanedHistory() throws Exception {
+    public void recoverSavedData_historyOnly_preservesEventAndSavesCleanedHistory() throws Exception {
         CoordiMate expected = getTypicalCoordiMate();
         EventTime start = new EventTime("08-08-2026");
         expected.addEvent(new Event("Concert", start, new EventTime("09-08-2026"),
@@ -97,26 +100,26 @@ public class JsonCoordiMateStorageTest {
                         List.of("08-08-2026", "01-01-0000")));
         JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path);
 
-        assertEquals(List.of(), storage.removeYearZeroEvents());
+        assertEquals("", storage.recoverSavedData().getWarning());
         assertEquals(expected, storage.readCoordiMate().orElseThrow());
         String cleaned = Files.readString(path);
         assertFalse(cleaned.contains("01-01-0000"));
-        assertEquals(List.of(), storage.removeYearZeroEvents());
+        assertEquals("", storage.recoverSavedData().getWarning());
         assertEquals(cleaned, Files.readString(path));
     }
 
     @Test
-    public void removeYearZeroEvents_otherInvalidData_doesNotRewriteFile() throws Exception {
+    public void recoverSavedData_otherInvalidData_doesNotRewriteFile() throws Exception {
         Path path = writeLegacyEvents(new CoordiMate(),
                 new JsonAdaptedEvent("Zero", "01-01-0000", "02-01-0000"),
                 new JsonAdaptedEvent("Invalid", "31-02-2026", "01-03-2026"));
         String original = Files.readString(path);
-        assertThrows(DataLoadingException.class, () -> new JsonCoordiMateStorage(path).removeYearZeroEvents());
+        assertThrows(DataLoadingException.class, () -> new JsonCoordiMateStorage(path).recoverSavedData());
         assertEquals(original, Files.readString(path));
     }
 
     @Test
-    public void removeYearZeroEvents_saveFailure_doesNotRewriteFile() throws Exception {
+    public void recoverSavedData_saveFailure_doesNotRewriteFile() throws Exception {
         Path path = writeLegacyEvents(new CoordiMate(),
                 new JsonAdaptedEvent("Zero", "01-01-0000", "02-01-0000"));
         String original = Files.readString(path);
@@ -126,8 +129,119 @@ public class JsonCoordiMateStorageTest {
                 throw new IOException("Disk full");
             }
         };
-        assertThrows(IOException.class, storage::removeYearZeroEvents);
+        assertThrows(IOException.class, storage::recoverSavedData);
         assertEquals(original, Files.readString(path));
+    }
+
+    @Test
+    public void recoverSavedData_leaveAssignments_removesMembersAndAttendanceOnlyOnce() throws Exception {
+        CoordiMate original = getTypicalCoordiMate();
+        original.setPerson(ALICE, new PersonBuilder(ALICE).withLeaveDate("08-08-2026").build());
+        original.setPerson(BENSON, new PersonBuilder(BENSON).withLeaveDate("09-08-2026").build());
+        EventTime start = new EventTime("08-08-2026 15:00");
+        Event concert = new Event("Concert", start, new EventTime("08-08-2026 23:59"),
+                List.of(CARL.getName(), ALICE.getName(), BENSON.getName()),
+                Map.of(CARL.getName(), AttendanceStatus.PRESENT, ALICE.getName(), AttendanceStatus.ABSENT),
+                Set.of(start));
+        Event archived = new Event("Archived", new EventTime("07-08-2026"), new EventTime("08-08-2026"),
+                List.of(ALICE.getName()), Map.of(ALICE.getName(), AttendanceStatus.PRESENT)).withArchived(true);
+        original.addEvent(concert);
+        original.addEvent(archived);
+        Path path = testFolder.resolve("data.json");
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path);
+        storage.saveCoordiMate(original);
+        CoordiMate expected = new CoordiMate(original);
+        expected.setEvent(concert, concert.withMembersAndAttendance(List.of(CARL.getName()),
+                Map.of(CARL.getName(), AttendanceStatus.PRESENT)));
+        expected.setEvent(archived, archived.withMembersAndAttendance(List.of(), Map.of()));
+
+        JsonCoordiMateStorage.RecoveryResult result = storage.recoverSavedData();
+
+        assertEquals(List.of(), result.deletedEvents());
+        assertEquals(List.of("Concert: Alice Pauline, Benson Meier", "Archived: Alice Pauline"),
+                result.removedAssignments());
+        assertEquals("Removed the following event assignments because the members are on leave for the entire event. "
+                + "Any associated attendance records were also removed:\n\n"
+                + "Concert: Alice Pauline, Benson Meier\nArchived: Alice Pauline", result.getWarning());
+        assertEquals(expected, storage.readCoordiMate().orElseThrow());
+        String cleaned = Files.readString(path);
+        assertEquals("", storage.recoverSavedData().getWarning());
+        assertEquals(cleaned, Files.readString(path));
+    }
+
+    @Test
+    public void recoverSavedData_partialOverlapAndEndedLeave_preservesAssignmentsAndFile() throws Exception {
+        CoordiMate original = getTypicalCoordiMate();
+        original.setPerson(ALICE, new PersonBuilder(ALICE).withLeaveDate("08-08-2026").build());
+        original.setPerson(BENSON, new PersonBuilder(BENSON).withLeaveDate("07-08-2026").build());
+        Event overnight = new Event("Overnight", new EventTime("08-08-2026 15:00"),
+                new EventTime("09-08-2026 00:00"), List.of(ALICE.getName(), BENSON.getName(), CARL.getName()),
+                Map.of(ALICE.getName(), AttendanceStatus.PRESENT, BENSON.getName(), AttendanceStatus.ABSENT));
+        original.addEvent(overnight);
+        original.addEvent(overnight.withDetails("Date Only", new EventTime("08-08-2026"),
+                new EventTime("09-08-2026")));
+        Path path = testFolder.resolve("data.json");
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path);
+        storage.saveCoordiMate(original);
+        String before = Files.readString(path);
+
+        assertEquals("", storage.recoverSavedData().getWarning());
+        assertEquals(original, storage.readCoordiMate().orElseThrow());
+        assertEquals(before, Files.readString(path));
+    }
+
+    @Test
+    public void recoverSavedData_yearZeroAndLeave_combinesRepairsAndWarnings() throws Exception {
+        CoordiMate original = getTypicalCoordiMate();
+        original.setPerson(ALICE, new PersonBuilder(ALICE).withLeaveDate("08-08-2026").build());
+        Event concert = new Event("Concert", new EventTime("08-08-2026"), new EventTime("08-08-2026"),
+                List.of(ALICE.getName()));
+        original.addEvent(concert);
+        Path path = writeLegacyEvents(original, new JsonAdaptedEvent("Year Zero", "01-01-0000", "02-01-0000"));
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path);
+
+        JsonCoordiMateStorage.RecoveryResult result = storage.recoverSavedData();
+
+        assertEquals(List.of("Year Zero"), result.deletedEvents());
+        assertEquals(List.of("Concert: Alice Pauline"), result.removedAssignments());
+        assertTrue(result.getWarning().startsWith("Deleted the following events"));
+        assertTrue(result.getWarning().contains("Year Zero\n\nRemoved the following event assignments"));
+        original.setEvent(concert, concert.withMembersAndAttendance(List.of(), Map.of()));
+        assertEquals(original, storage.readCoordiMate().orElseThrow());
+    }
+
+    @Test
+    public void recoverSavedData_leaveAndInvalidData_doesNotRewriteFile() throws Exception {
+        CoordiMate original = getTypicalCoordiMate();
+        original.setPerson(ALICE, new PersonBuilder(ALICE).withLeaveDate("08-08-2026").build());
+        original.addEvent(new Event("Concert", new EventTime("08-08-2026"), new EventTime("08-08-2026"),
+                List.of(ALICE.getName())));
+        Path path = writeLegacyEvents(original, new JsonAdaptedEvent("Unknown Member", "08-08-2026", "08-08-2026",
+                List.of("Missing Contact")));
+        String before = Files.readString(path);
+
+        assertThrows(DataLoadingException.class, () -> new JsonCoordiMateStorage(path).recoverSavedData());
+        assertEquals(before, Files.readString(path));
+    }
+
+    @Test
+    public void recoverSavedData_leaveSaveFailure_doesNotRewriteFile() throws Exception {
+        CoordiMate original = getTypicalCoordiMate();
+        original.setPerson(ALICE, new PersonBuilder(ALICE).withLeaveDate("08-08-2026").build());
+        original.addEvent(new Event("Concert", new EventTime("08-08-2026"), new EventTime("08-08-2026"),
+                List.of(ALICE.getName()), Map.of(ALICE.getName(), AttendanceStatus.PRESENT)));
+        Path path = testFolder.resolve("data.json");
+        new JsonCoordiMateStorage(path).saveCoordiMate(original);
+        String before = Files.readString(path);
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path) {
+            @Override
+            public void saveCoordiMate(ReadOnlyCoordiMate data) throws IOException {
+                throw new IOException("Disk full");
+            }
+        };
+
+        assertThrows(IOException.class, storage::recoverSavedData);
+        assertEquals(before, Files.readString(path));
     }
 
     private Path writeLegacyEvents(CoordiMate validData, JsonAdaptedEvent... legacyEvents) throws Exception {

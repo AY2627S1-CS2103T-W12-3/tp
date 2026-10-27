@@ -1,11 +1,15 @@
 package coordimate.ui;
 
+import static coordimate.testutil.TypicalPersons.ALICE;
+import static coordimate.testutil.TypicalPersons.getTypicalCoordiMate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.awt.GraphicsEnvironment;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
@@ -13,9 +17,17 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import coordimate.logic.LogicManager;
+import coordimate.model.CoordiMate;
 import coordimate.model.ModelManager;
+import coordimate.model.UserPrefs;
+import coordimate.model.event.AttendanceStatus;
+import coordimate.model.event.Event;
+import coordimate.model.event.EventTime;
+import coordimate.storage.JsonCoordiMateStorage;
+import coordimate.testutil.PersonBuilder;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -25,6 +37,9 @@ import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
 public class UiManagerTest {
+
+    @TempDir
+    public Path testFolder;
 
     @BeforeAll
     public static void startJavaFx() throws InterruptedException {
@@ -59,6 +74,49 @@ public class UiManagerTest {
             try {
                 manager.start(primaryStage);
                 assertTrue(notified[0]);
+            } finally {
+                manager.stop();
+                primaryStage.close();
+            }
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void start_recoveredLeaveAssignments_showsCleanupWarning() throws Exception {
+        CoordiMate data = getTypicalCoordiMate();
+        data.setPerson(ALICE, new PersonBuilder(ALICE).withLeaveDate("08-08-2026").build());
+        data.addEvent(new Event("Concert", new EventTime("08-08-2026"), new EventTime("08-08-2026"),
+                List.of(ALICE.getName()), Map.of(ALICE.getName(), AttendanceStatus.PRESENT)));
+        Path dataFile = testFolder.resolve("coordimate.json");
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(dataFile);
+        storage.saveCoordiMate(data);
+        String warning = storage.recoverSavedData().getWarning();
+        ModelManager model = new ModelManager(storage.readCoordiMate().orElseThrow(), new UserPrefs());
+        model.setHasSeenTutorial(true);
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Stage primaryStage = new Stage();
+            boolean[] notified = {false};
+            UiManager manager = new UiManager(new LogicManager(model, null), dataFile, warning) {
+                @Override
+                void showAlertDialogAndWait(Alert.AlertType type, String title, String header, String content) {
+                    assertTrue(primaryStage.isShowing());
+                    assertEquals(Alert.AlertType.WARNING, type);
+                    assertEquals("Saved event data", title);
+                    assertEquals("Saved event data needs attention", header);
+                    assertTrue(content.contains("on leave for the entire event"));
+                    assertTrue(content.contains("attendance records were also removed"));
+                    assertTrue(content.contains("Concert: Alice Pauline"));
+                    notified[0] = true;
+                }
+            };
+            try {
+                manager.start(primaryStage);
+                assertTrue(notified[0]);
+                assertTrue(model.getCoordiMate().getEventList().getFirst().getMembers().isEmpty());
+                assertTrue(model.getCoordiMate().getEventList().getFirst().getAttendanceRecord().isEmpty());
             } finally {
                 manager.stop();
                 primaryStage.close();
