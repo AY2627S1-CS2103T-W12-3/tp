@@ -24,6 +24,7 @@ import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
 import coordimate.model.person.MemberId;
 import coordimate.model.person.Name;
+import coordimate.testutil.PersonBuilder;
 
 public class AssignCommandTest {
     private final Event concert = new Event("Final Concert",
@@ -115,6 +116,90 @@ public class AssignCommandTest {
                 assertThrows(CommandException.class, () ->
                         assign("Final Concert", 1, unknownId, 2).execute(model)).getMessage());
         assertEquals(List.of(concert, fair), model.getCoordiMate().getEventList());
+    }
+
+    @Test
+    public void execute_leaveEndsAfterEvent_noChanges() {
+        model.setPerson(ALICE, new PersonBuilder(ALICE).withLeaveDate("09-08-2026").build());
+
+        assertEquals("Alice Pauline is on leave until 09-08-2026, covering the entire event Final Concert. "
+                + "No changes were made.",
+                assertThrows(CommandException.class, () -> assign("Final Concert", 1).execute(model)).getMessage());
+        assertEquals(List.of(concert, fair), model.getCoordiMate().getEventList());
+    }
+
+    @Test
+    public void execute_leaveEndsOnTimedEventEndDate_noChanges() {
+        model.setPerson(ALICE, new PersonBuilder(ALICE).withLeaveDate("08-08-2026").build());
+
+        assertEquals(String.format(AssignCommand.MESSAGE_CONTACT_ON_LEAVE, ALICE.getName(),
+                "08-08-2026", concert.getName()),
+                assertThrows(CommandException.class, () -> assign("Final Concert", 1).execute(model)).getMessage());
+        assertEquals(List.of(concert, fair), model.getCoordiMate().getEventList());
+    }
+
+    @Test
+    public void execute_leaveEndsOnDateOnlyEventEndDate_noChanges() {
+        model.setPerson(ALICE, new PersonBuilder(ALICE).withLeaveDate("10-10-2026").build());
+
+        assertEquals(String.format(AssignCommand.MESSAGE_CONTACT_ON_LEAVE, ALICE.getName(),
+                "10-10-2026", fair.getName()),
+                assertThrows(CommandException.class, () -> assign("Fair", 1).execute(model)).getMessage());
+        assertEquals(List.of(concert, fair), model.getCoordiMate().getEventList());
+    }
+
+    @Test
+    public void execute_leaveEndsBeforeEvent_success() throws Exception {
+        model.setPerson(ALICE, new PersonBuilder(ALICE).withLeaveDate("07-08-2026").build());
+
+        assertEquals("Assigned 1 member(s) to Final Concert.",
+                assign("Final Concert", 1).execute(model).getFeedbackToUser());
+        assertEquals(withMembers(concert, ALICE.getName()), model.getCoordiMate().getEventList().getFirst());
+    }
+
+    @Test
+    public void execute_leaveEndsDuringDateOnlyEvent_success() throws Exception {
+        model.setPerson(ALICE, new PersonBuilder(ALICE).withLeaveDate("09-10-2026").build());
+
+        assertEquals("Assigned 1 member(s) to Fair.", assign("Fair", 1).execute(model).getFeedbackToUser());
+        assertEquals(List.of(concert, withMembers(fair, ALICE.getName())), model.getCoordiMate().getEventList());
+    }
+
+    @Test
+    public void execute_eventEndsAtMidnightAfterLeave_success() throws Exception {
+        model.setPerson(ALICE, new PersonBuilder(ALICE).withLeaveDate("08-08-2026").build());
+        Event overnight = concert.withDetails(concert.getName(), concert.getStartTime(),
+                new EventTime("09-08-2026 00:00"));
+        model.setEvent(concert, overnight);
+
+        assertEquals("Assigned 1 member(s) to Final Concert.",
+                assign("Final Concert", 1).execute(model).getFeedbackToUser());
+        assertEquals(withMembers(overnight, ALICE.getName()), model.getCoordiMate().getEventList().getFirst());
+    }
+
+    @Test
+    public void execute_batchContainsContactOnLeave_noChanges() throws Exception {
+        assign("Final Concert", 2).execute(model);
+        new MarkAttendanceCommand("Final Concert", BENSON.getName(), AttendanceStatus.PRESENT).execute(model);
+        model.setPerson(ALICE, new PersonBuilder(ALICE).withLeaveDate("08-08-2026").build());
+        List<Event> before = List.copyOf(model.getCoordiMate().getEventList());
+
+        assertEquals(String.format(AssignCommand.MESSAGE_CONTACT_ON_LEAVE, ALICE.getName(),
+                "08-08-2026", concert.getName()),
+                assertThrows(CommandException.class, () -> assign("Final Concert", 3, 1, 4).execute(model))
+                        .getMessage());
+        assertEquals(before, model.getCoordiMate().getEventList());
+    }
+
+    @Test
+    public void execute_alreadyAssignedContactOnLeave_skipsContact() throws Exception {
+        assign("Final Concert", 1).execute(model);
+        model.setPerson(ALICE, new PersonBuilder(ALICE).withLeaveDate("08-08-2026").build());
+
+        assertEquals("Assigned 1 member(s) to Final Concert. 1 contact(s) were already assigned.",
+                assign("Final Concert", 1, 2).execute(model).getFeedbackToUser());
+        assertEquals(withMembers(concert, ALICE.getName(), BENSON.getName()),
+                model.getCoordiMate().getEventList().getFirst());
     }
 
     @Test
