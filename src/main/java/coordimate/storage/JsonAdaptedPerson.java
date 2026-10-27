@@ -32,7 +32,7 @@ import coordimate.model.tag.Tag;
 class JsonAdaptedPerson {
 
     public static final String MISSING_FIELD_MESSAGE_FORMAT = "Person's %s field is missing!";
-    public static final String MESSAGE_INVALID_ARCHIVED = "Person's archived field must be a boolean.";
+    public static final String MESSAGE_INVALID_ARCHIVED = "archived must be true or false.";
 
     private final JsonNode memberId;
     private final String name;
@@ -135,7 +135,9 @@ class JsonAdaptedPerson {
      */
     public Person toModelType() throws IllegalValueException {
         if (archived != null && !archived.isNull() && !archived.isBoolean()) {
-            throw new IllegalValueException(MESSAGE_INVALID_ARCHIVED);
+            String contact = name != null && Name.isValidName(name)
+                    ? "Contact \"" + name + "\"" : "Contact with no valid name";
+            throw new IllegalValueException(contact + ": " + MESSAGE_INVALID_ARCHIVED);
         }
         MemberId modelMemberId = null;
         if (memberId != null && !memberId.isNull()) {

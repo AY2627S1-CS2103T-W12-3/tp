@@ -1189,7 +1189,8 @@ CoordiMate data is saved automatically as a JSON file `[JAR file location]/data/
 **Caution:**
 If your changes make the data file invalid, CoordiMate shows a warning at the next launch and leaves the original file
 unchanged. Select **OK** to close CoordiMate, repair or restore the file path shown in the warning, then restart the
-app. CoordiMate does not open its normal interface or accept commands until the file can be loaded.<br>
+app. When a saved value fails validation, the warning also shows the reason and identifies the contact or event when
+possible. CoordiMate does not open its normal interface or accept commands until the file can be loaded.<br>
 Each name in an event's `members` list must exactly match the name of a saved contact, or the data file is invalid.<br>
 Contact and event names are read with several spaces in a row treated as one. If two contacts, or two events, have
 names that differ only in letter case or spacing (e.g. `Alex Yeoh` and `Alex  Yeoh`), they are duplicates and the data
@@ -1197,8 +1198,9 @@ file is invalid; rename or remove one of them.<br>
 Each contact's `memberId` must be a unique integer from `1` to `2147483647`. Keep existing IDs unchanged.
 Keep the top-level `nextMemberId` field: it must exceed every saved ID, must not be reduced after deleting contacts,
 and cannot exceed `2147483648`.<br>
-Each contact and event has an `archived` value of `true` or `false`. A missing or `null` value is read as `false`;
-any other value makes the data file invalid.<br>
+Each contact and event has an `archived` value of the JSON boolean `true` or `false`, without quotes. A missing or
+`null` value is read as `false`; quoted strings such as `"false"`, numbers such as `17`, and other values make the
+data file invalid.<br>
 If a contact uses a tag that is missing from the top-level `tags` list, CoordiMate adds it to the global tag list when
 the file is loaded. Existing top-level tags, including unused tags, retain their saved order and capitalization.<br>
 Furthermore, certain edits can cause CoordiMate to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.

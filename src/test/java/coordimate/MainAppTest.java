@@ -98,6 +98,7 @@ public class MainAppTest {
         assertEquals(new CoordiMate(), app.model.getCoordiMate());
         assertTrue(app.logic.getReminders().isEmpty());
         assertTrue(app.isDataRecoveryMode);
+        assertEquals("", app.dataRecoveryDetail);
         assertEquals("not valid JSON", Files.readString(dataFile));
     }
 
@@ -113,12 +114,13 @@ public class MainAppTest {
         Files.writeString(dataFile, invalidJson);
         DataLoadingException loadError = assertThrows(DataLoadingException.class, () ->
                 new JsonCoordiMateStorage(dataFile).readCoordiMate());
-        assertEquals("Person's archived field must be a boolean.", loadError.getCause().getMessage());
+        assertEquals("Contact \"Alex Yeoh\": archived must be true or false.", loadError.getCause().getMessage());
         MainApp app = new MainApp(testFolder.resolve("preferences.json"), dataFile);
 
         app.init();
 
         assertTrue(app.isDataRecoveryMode);
+        assertEquals(loadError.getCause().getMessage(), app.dataRecoveryDetail);
         assertEquals(new CoordiMate(), app.model.getCoordiMate());
         assertEquals(invalidJson, Files.readString(dataFile));
     }

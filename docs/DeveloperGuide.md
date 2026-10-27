@@ -231,9 +231,10 @@ The `Storage` component,
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
 
 If the data file cannot be loaded during startup, `MainApp` creates an empty in-memory model only for initialization
-and passes a recovery flag to `UiManager`. After the main window is ready, `UiManager` shows a warning that names the
-unchanged data file and asks the user to repair or restore it. Dismissing the warning requests a normal JavaFX
-shutdown before the tutorial or command interface can be used.
+and passes a recovery flag to `UiManager`. If model conversion raised `IllegalValueException`, it also passes the
+validation message. After the main window is ready, `UiManager` shows a warning that names the unchanged data file,
+includes any available validation message, and asks the user to repair or restore it. Dismissing the warning requests
+a normal JavaFX shutdown before the tutorial or command interface can be used.
 
 The tutorial flag is saved with the other user preferences. Preference files without that field are read with the
 tutorial flag set to `false`, so the tutorial is offered until the user closes or finishes it.
@@ -800,7 +801,9 @@ that commands which read the displayed list see the same contacts on the copy as
 and
 [`JsonAdaptedPerson`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/storage/JsonAdaptedPerson.java)
 both read `archived` as a `JsonNode` creator parameter and reject non-boolean values during model conversion.
-A missing or `null` value is read as `false`, so data files saved before archiving existed still load.
+The rejection message names the contact or event when its saved name is valid and uses a fallback otherwise. Quoted
+boolean strings are rejected. A missing or `null` value is read as `false`, so files saved before archiving existed
+still load.
 
 #### Design considerations
 

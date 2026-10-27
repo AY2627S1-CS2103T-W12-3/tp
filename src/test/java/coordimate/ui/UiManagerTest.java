@@ -164,6 +164,30 @@ public class UiManagerTest {
     }
 
     @Test
+    public void start_dataRecoveryModeWithDetail_showsReasonAndExits() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            LogicManager logic = new LogicManager(new ModelManager(), null);
+            Path dataFilePath = Path.of("data", "coordimate.json");
+            String detail = "Contact \"Alex Yeoh\": archived must be true or false.";
+            boolean[] isExitRequested = {false};
+            RecordingUiManager uiManager = new RecordingUiManager(logic, dataFilePath, true, detail, () ->
+                    isExitRequested[0] = true);
+            Stage primaryStage = new Stage();
+
+            uiManager.start(primaryStage);
+
+            assertTrue(uiManager.alertContent.contains("Problem: " + detail));
+            assertTrue(uiManager.alertContent.contains(dataFilePath.toAbsolutePath().toString()));
+            assertTrue(isExitRequested[0]);
+            uiManager.stop();
+            primaryStage.close();
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
     public void finishingTutorial_recordsPreferenceAndClosesOverlay() throws Exception {
         FutureTask<Void> task = new FutureTask<>(() -> {
             LogicManager logic = new LogicManager(new ModelManager(), null);
@@ -199,6 +223,11 @@ public class UiManagerTest {
 
         RecordingUiManager(LogicManager logic, Path dataFilePath, boolean isDataRecoveryMode, Runnable exitAction) {
             super(logic, dataFilePath, isDataRecoveryMode, exitAction);
+        }
+
+        RecordingUiManager(LogicManager logic, Path dataFilePath, boolean isDataRecoveryMode,
+                String dataRecoveryDetail, Runnable exitAction) {
+            super(logic, dataFilePath, isDataRecoveryMode, dataRecoveryDetail, exitAction);
         }
 
         @Override

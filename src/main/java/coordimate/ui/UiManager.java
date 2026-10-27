@@ -22,7 +22,7 @@ public class UiManager implements Ui {
     public static final String DATA_RECOVERY_ALERT_TITLE = "Saved data could not be loaded";
     public static final String DATA_RECOVERY_ALERT_HEADER = "CoordiMate cannot start with the saved data";
     public static final String DATA_RECOVERY_ALERT_CONTENT = "The original data file has not been changed. "
-            + "CoordiMate will now close.\n\nRepair or restore this file, then restart CoordiMate:\n%s";
+            + "CoordiMate will now close.\n\n%sRepair or restore this file, then restart CoordiMate:\n%s";
 
     private static final Logger logger = LogsCenter.getLogger(UiManager.class);
     private static final String ICON_APPLICATION = "/images/coordimate_32.png";
@@ -30,6 +30,7 @@ public class UiManager implements Ui {
     private Logic logic;
     private Path dataFilePath;
     private final boolean isDataRecoveryMode;
+    private final String dataRecoveryDetail;
     private final Runnable exitAction;
     private MainWindow mainWindow;
     private final String startupWarning;
@@ -39,33 +40,47 @@ public class UiManager implements Ui {
      * to show in the status bar.
      */
     public UiManager(Logic logic, Path dataFilePath) {
-        this(logic, dataFilePath, "", false, Platform::exit);
+        this(logic, dataFilePath, "", false, "", Platform::exit);
     }
 
     UiManager(Logic logic, Path dataFilePath, boolean isDataRecoveryMode, Runnable exitAction) {
-        this(logic, dataFilePath, "", isDataRecoveryMode, exitAction);
+        this(logic, dataFilePath, "", isDataRecoveryMode, "", exitAction);
+    }
+
+    UiManager(Logic logic, Path dataFilePath, boolean isDataRecoveryMode, String dataRecoveryDetail,
+            Runnable exitAction) {
+        this(logic, dataFilePath, "", isDataRecoveryMode, dataRecoveryDetail, exitAction);
     }
 
     /**
      * Creates the UI with a warning to show after startup, without asking for confirmation.
      */
     public UiManager(Logic logic, Path dataFilePath, String startupWarning) {
-        this(logic, dataFilePath, startupWarning, false, Platform::exit);
+        this(logic, dataFilePath, startupWarning, false, "", Platform::exit);
     }
 
     /**
      * Creates the UI with a startup warning and recovery state.
      */
     public UiManager(Logic logic, Path dataFilePath, String startupWarning, boolean isDataRecoveryMode) {
-        this(logic, dataFilePath, startupWarning, isDataRecoveryMode, Platform::exit);
+        this(logic, dataFilePath, startupWarning, isDataRecoveryMode, "", Platform::exit);
+    }
+
+    /**
+     * Creates the UI with a startup warning and an optional reason for data recovery.
+     */
+    public UiManager(Logic logic, Path dataFilePath, String startupWarning, boolean isDataRecoveryMode,
+            String dataRecoveryDetail) {
+        this(logic, dataFilePath, startupWarning, isDataRecoveryMode, dataRecoveryDetail, Platform::exit);
     }
 
     UiManager(Logic logic, Path dataFilePath, String startupWarning, boolean isDataRecoveryMode,
-            Runnable exitAction) {
+            String dataRecoveryDetail, Runnable exitAction) {
         this.logic = logic;
         this.dataFilePath = dataFilePath;
         this.startupWarning = startupWarning;
         this.isDataRecoveryMode = isDataRecoveryMode;
+        this.dataRecoveryDetail = dataRecoveryDetail;
         this.exitAction = exitAction;
     }
 
@@ -83,7 +98,7 @@ public class UiManager implements Ui {
             if (isDataRecoveryMode) {
                 showAlertDialogAndWait(Alert.AlertType.WARNING, DATA_RECOVERY_ALERT_TITLE,
                         DATA_RECOVERY_ALERT_HEADER,
-                        String.format(DATA_RECOVERY_ALERT_CONTENT, dataFilePath.toAbsolutePath()));
+                        recoveryAlertContent());
                 exitAction.run();
                 return;
             } else if (!startupWarning.isEmpty()) {
@@ -96,6 +111,11 @@ public class UiManager implements Ui {
             logger.severe(StringUtil.getDetails(e));
             showFatalErrorDialogAndShutdown("Fatal error during initializing", e);
         }
+    }
+
+    private String recoveryAlertContent() {
+        String detail = dataRecoveryDetail.isEmpty() ? "" : "Problem: " + dataRecoveryDetail + "\n\n";
+        return String.format(DATA_RECOVERY_ALERT_CONTENT, detail, dataFilePath.toAbsolutePath());
     }
 
     @Override

@@ -33,7 +33,7 @@ class JsonAdaptedEvent {
             "Event attendance statuses must be either \"present\" or \"absent\".";
     public static final String MESSAGE_NULL_DISMISSED_REMINDER_START =
             "Dismissed reminder starts must not contain null entries.";
-    public static final String MESSAGE_INVALID_ARCHIVED = "Event's archived field must be a boolean.";
+    public static final String MESSAGE_INVALID_ARCHIVED = "archived must be true or false.";
 
     private final String name;
     private final String startTime;
@@ -146,7 +146,9 @@ class JsonAdaptedEvent {
      */
     public Event toModelType() throws IllegalValueException {
         if (archived != null && !archived.isNull() && !archived.isBoolean()) {
-            throw new IllegalValueException(MESSAGE_INVALID_ARCHIVED);
+            String event = name != null && Event.isValidName(name)
+                    ? "Event \"" + name + "\"" : "Event with no valid name";
+            throw new IllegalValueException(event + ": " + MESSAGE_INVALID_ARCHIVED);
         }
         if (name == null || startTime == null || endTime == null) {
             throw new IllegalValueException("Event name, start time and end time must be present.");

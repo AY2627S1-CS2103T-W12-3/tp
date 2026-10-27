@@ -4,11 +4,13 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Logger;
 
 import coordimate.commons.core.LogsCenter;
 import coordimate.commons.exceptions.DataLoadingException;
+import coordimate.commons.exceptions.IllegalValueException;
 import coordimate.commons.util.StringUtil;
 import coordimate.logic.Logic;
 import coordimate.logic.LogicManager;
@@ -44,6 +46,7 @@ public class MainApp extends Application {
     protected Storage storage;
     protected Model model;
     protected boolean isDataRecoveryMode;
+    protected String dataRecoveryDetail = "";
 
     private final Path userPrefsFilePath;
     private final Path coordiMateFilePath;
@@ -91,7 +94,8 @@ public class MainApp extends Application {
 
         logic = new LogicManager(model, storage);
 
-        ui = new UiManager(logic, storage.getCoordiMateFilePath(), startupWarning, isDataRecoveryMode);
+        ui = new UiManager(logic, storage.getCoordiMateFilePath(), startupWarning, isDataRecoveryMode,
+                dataRecoveryDetail);
     }
 
     /**
@@ -101,6 +105,8 @@ public class MainApp extends Application {
      */
     private Model initModelManager(Storage storage, ReadOnlyUserPrefs userPrefs) {
         logger.info("Using data file : " + storage.getCoordiMateFilePath());
+        isDataRecoveryMode = false;
+        dataRecoveryDetail = "";
 
         ReadOnlyCoordiMate initialData;
         try {
@@ -114,6 +120,9 @@ public class MainApp extends Application {
             logger.warning("Data file at " + storage.getCoordiMateFilePath() + " could not be loaded."
                     + " Will be starting with an empty CoordiMate.");
             isDataRecoveryMode = true;
+            if (e.getCause() instanceof IllegalValueException invalidValue) {
+                dataRecoveryDetail = Objects.toString(invalidValue.getMessage(), "");
+            }
             initialData = new CoordiMate();
         }
 

@@ -336,11 +336,23 @@ public class JsonAdaptedPersonTest {
     @Test
     public void toModelType_nonBooleanArchiveStatus_throwsIllegalValueException() throws Exception {
         String validJson = JsonUtil.toJsonString(new JsonAdaptedPerson(BENSON));
+        String expectedMessage = "Contact \"Benson Meier\": " + JsonAdaptedPerson.MESSAGE_INVALID_ARCHIVED;
         for (String invalidValue : List.of("17", "\"true\"", "{}", "[]")) {
             String json = validJson.replace("\"archived\" : false", "\"archived\" : " + invalidValue);
             JsonAdaptedPerson person = JsonUtil.fromJsonString(json, JsonAdaptedPerson.class);
 
-            assertThrows(IllegalValueException.class, JsonAdaptedPerson.MESSAGE_INVALID_ARCHIVED, person::toModelType);
+            assertThrows(IllegalValueException.class, expectedMessage, person::toModelType);
+        }
+    }
+
+    @Test
+    public void toModelType_invalidArchiveStatusWithoutValidName_identifiesContact() throws Exception {
+        for (String savedName : List.of("null", "\"\"")) {
+            String json = "{\"name\":" + savedName + ",\"archived\":17}";
+            JsonAdaptedPerson person = JsonUtil.fromJsonString(json, JsonAdaptedPerson.class);
+
+            assertThrows(IllegalValueException.class,
+                    "Contact with no valid name: " + JsonAdaptedPerson.MESSAGE_INVALID_ARCHIVED, person::toModelType);
         }
     }
 
