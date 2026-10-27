@@ -123,7 +123,7 @@ public class EventListPanel extends UiPart<Region> {
         this.persons.addListener((ListChangeListener<Person>) change ->
                 showDetails(eventListView.getSelectionModel().getSelectedItem()));
         eventSplitPane.widthProperty().addListener((observable, oldWidth, width) ->
-                eventSplitPane.setOrientation(width.doubleValue() < 760
+                eventSplitPane.setOrientation(width.doubleValue() < 900
                 ? Orientation.VERTICAL : Orientation.HORIZONTAL));
         showDetails(null);
     }

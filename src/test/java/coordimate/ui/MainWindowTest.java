@@ -908,7 +908,8 @@ public class MainWindowTest {
         FutureTask<Void> task = new FutureTask<>(() -> {
             Stage stage = new Stage();
             ModelManager model = new ModelManager();
-            model.setGuiSettings(new GuiSettings(830, 650, 0, 0, false));
+            model.setGuiSettings(new GuiSettings(WindowBounds.PREFERRED_MIN_WIDTH,
+                    WindowBounds.PREFERRED_MIN_HEIGHT, 0, 0, false));
             for (int index = 1; index <= 86; index++) {
                 model.addTag(new Tag("Custom" + index));
             }
@@ -972,6 +973,68 @@ public class MainWindowTest {
         assertTrue(views.getHeight() > 100);
         Bounds inputBounds = input.localToScene(input.getBoundsInLocal());
         assertTrue(inputBounds.getMaxY() <= stage.getScene().getHeight());
+    }
+
+    @Test
+    public void minimumWindowSize_keepsDetailsBesideListsAndEventTimingVisible() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            if (Screen.getPrimary().getVisualBounds().getWidth() < WindowBounds.PREFERRED_MIN_WIDTH
+                    || Screen.getPrimary().getVisualBounds().getHeight() < WindowBounds.PREFERRED_MIN_HEIGHT) {
+                return null;
+            }
+            Stage stage = new Stage();
+            ModelManager model = new ModelManager();
+            model.setGuiSettings(new GuiSettings(WindowBounds.PREFERRED_MIN_WIDTH,
+                    WindowBounds.PREFERRED_MIN_HEIGHT, 0, 0, false));
+            model.addPerson(TypicalPersons.ALICE);
+            EventTime start = new EventTime("01-10-2026 18:00");
+            EventTime end = new EventTime("01-10-2026 21:00");
+            model.addEvent(new Event("Final Concert", start, end));
+            MainWindow window = new MainWindow(stage, new LogicManager(model, null),
+                    Path.of("data", "coordimate.json"));
+            try {
+                window.fillInnerParts();
+                window.show();
+                stage.getScene().getRoot().applyCss();
+                stage.getScene().getRoot().layout();
+
+                SplitPane contacts = (SplitPane) stage.getScene().lookup("#contactSplitPane");
+                assertEquals(Orientation.HORIZONTAL, contacts.getOrientation());
+                assertTrue(contacts.getItems().get(1).getBoundsInParent().getWidth() >= 460);
+
+                ToggleButton eventsView = (ToggleButton) stage.getScene().lookup("#eventsView");
+                eventsView.fire();
+                ListView<?> eventList = (ListView<?>) stage.getScene().lookup("#eventListView");
+                eventList.getSelectionModel().select(0);
+                stage.getScene().getRoot().applyCss();
+                stage.getScene().getRoot().layout();
+                SplitPane events = (SplitPane) stage.getScene().lookup("#eventSplitPane");
+                assertEquals(Orientation.HORIZONTAL, events.getOrientation());
+                ScrollPane eventDetails = (ScrollPane) events.getItems().get(1);
+                Node viewport = eventDetails.lookup(".viewport");
+                Bounds visibleBounds = viewport.localToScene(viewport.getBoundsInLocal());
+                var timeTiles = eventDetails.lookupAll(".time-tile");
+                assertEquals(2, timeTiles.size());
+                for (Node tile : timeTiles) {
+                    Bounds tileBounds = tile.localToScene(tile.getBoundsInLocal());
+                    assertTrue(tileBounds.getMaxX() <= visibleBounds.getMaxX() + 1);
+                }
+
+                ToggleButton tagsView = (ToggleButton) stage.getScene().lookup("#tagsView");
+                tagsView.fire();
+                stage.getScene().getRoot().applyCss();
+                stage.getScene().getRoot().layout();
+                SplitPane tags = (SplitPane) stage.getScene().lookup("#tagSplitPane");
+                assertEquals(Orientation.HORIZONTAL, tags.getOrientation());
+                assertTrue(stage.getScene().lookup("#tagMemberListView").getBoundsInLocal().getHeight() > 100);
+            } finally {
+                window.stop();
+                stage.close();
+            }
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(20, TimeUnit.SECONDS);
     }
 
     @Test

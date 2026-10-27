@@ -25,7 +25,7 @@ public class WindowBoundsTest {
     public void fitToScreen_offScreenCoordinates_movesWindowInsideScreen() {
         GuiSettings guiSettings = new GuiSettings(1000, 650, -2000, 2000);
 
-        Rectangle2D expected = new Rectangle2D(1920, 70, 1000, 650);
+        Rectangle2D expected = new Rectangle2D(1920, 0, 1200, 720);
         assertEquals(expected, WindowBounds.fitToScreen(guiSettings, SECOND_SCREEN));
     }
 
@@ -41,7 +41,7 @@ public class WindowBoundsTest {
     public void fitToScreen_windowBelowPreferredMinimum_enlargesWindow() {
         GuiSettings guiSettings = new GuiSettings(400, 300, 2000, 50);
 
-        Rectangle2D expected = new Rectangle2D(2000, 50, 830, 650);
+        Rectangle2D expected = new Rectangle2D(2000, 0, 1200, 720);
         assertEquals(expected, WindowBounds.fitToScreen(guiSettings, SECOND_SCREEN));
     }
 
@@ -49,9 +49,9 @@ public class WindowBoundsTest {
     public void moveToScreen_normalBounds_preservesSizeAndRelativePosition() {
         Rectangle2D sourceScreen = new Rectangle2D(0, 20, 1920, 1040);
         Rectangle2D targetScreen = new Rectangle2D(1920, 40, 1600, 900);
-        Rectangle2D windowBounds = new Rectangle2D(120, 100, 1000, 700);
+        Rectangle2D windowBounds = new Rectangle2D(120, 100, 1250, 820);
 
-        Rectangle2D expected = new Rectangle2D(2040, 120, 1000, 700);
+        Rectangle2D expected = new Rectangle2D(2040, 120, 1250, 820);
         assertEquals(expected, WindowBounds.moveToScreen(windowBounds, sourceScreen, targetScreen));
     }
 

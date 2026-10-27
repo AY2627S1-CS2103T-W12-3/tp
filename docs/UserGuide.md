@@ -29,6 +29,8 @@
    On subsequent launches, CoordiMate restores whether the window was maximized, together with its most recent
    non-maximized size and position. If those saved bounds do not fit the current display, such as after disconnecting
    a secondary screen or changing the display resolution, CoordiMate adjusts the window to remain fully visible.<br>
+   On displays large enough, the minimum window size is 1200 × 800 pixels. On smaller displays, CoordiMate fits the
+   available screen and stacks narrow list and details panes; scroll within a pane to read content below its viewport.<br>
 
    The left sidebar switches between Contacts, Events, and Tags and shows commands for the selected view.
    Click a command name to put only the command word in the input and show its format and an example below the input.
