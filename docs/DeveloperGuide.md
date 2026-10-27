@@ -799,8 +799,8 @@ that commands which read the displayed list see the same contacts on the copy as
 **Storage.** [`JsonAdaptedEvent`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/storage/JsonAdaptedEvent.java)
 and
 [`JsonAdaptedPerson`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/storage/JsonAdaptedPerson.java)
-both read `archived` as a `Boolean` creator parameter. A missing or `null` value is read as `false`, so data files
-saved before archiving existed still load.
+both read `archived` as a `JsonNode` creator parameter and reject non-boolean values during model conversion.
+A missing or `null` value is read as `false`, so data files saved before archiving existed still load.
 
 #### Design considerations
 

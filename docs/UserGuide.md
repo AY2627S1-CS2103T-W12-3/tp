@@ -1197,7 +1197,8 @@ file is invalid; rename or remove one of them.<br>
 Each contact's `memberId` must be a unique integer from `1` to `2147483647`. Keep existing IDs unchanged.
 Keep the top-level `nextMemberId` field: it must exceed every saved ID, must not be reduced after deleting contacts,
 and cannot exceed `2147483648`.<br>
-Each contact and event has an `archived` value of `true` or `false`. A missing value is read as `false`.<br>
+Each contact and event has an `archived` value of `true` or `false`. A missing or `null` value is read as `false`;
+any other value makes the data file invalid.<br>
 If a contact uses a tag that is missing from the top-level `tags` list, CoordiMate adds it to the global tag list when
 the file is loaded. Existing top-level tags, including unused tags, retain their saved order and capitalization.<br>
 Furthermore, certain edits can cause CoordiMate to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.

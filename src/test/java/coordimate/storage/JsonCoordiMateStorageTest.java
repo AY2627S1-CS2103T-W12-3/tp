@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.BooleanNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import coordimate.commons.exceptions.DataLoadingException;
@@ -70,7 +71,7 @@ public class JsonCoordiMateStorageTest {
                 new JsonAdaptedEvent("Zero End", "01-01-0001", "02-01-0000 12:30"),
                 new JsonAdaptedEvent("Zero History", "01-01-0001", "02-01-0001",
                         List.of(ALICE.getName().toString()), Map.of(ALICE.getName().toString(), "absent"),
-                        List.of("01-01-0001", "01-01-0000 00:00"), true),
+                        List.of("01-01-0001", "01-01-0000 00:00"), BooleanNode.TRUE),
                 new JsonAdaptedEvent(null, "01-01-0000", "02-01-0000"));
         expected.addEvent(new Event("Zero History", start, new EventTime("02-01-0001"),
                 List.of(ALICE.getName()), Map.of(ALICE.getName(), AttendanceStatus.ABSENT), Set.of(start))

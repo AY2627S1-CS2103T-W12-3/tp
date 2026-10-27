@@ -8,6 +8,8 @@ import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.BooleanNode;
 
 import coordimate.commons.exceptions.IllegalValueException;
 import coordimate.model.event.AttendanceStatus;
@@ -31,6 +33,7 @@ class JsonAdaptedEvent {
             "Event attendance statuses must be either \"present\" or \"absent\".";
     public static final String MESSAGE_NULL_DISMISSED_REMINDER_START =
             "Dismissed reminder starts must not contain null entries.";
+    public static final String MESSAGE_INVALID_ARCHIVED = "Event's archived field must be a boolean.";
 
     private final String name;
     private final String startTime;
@@ -38,7 +41,7 @@ class JsonAdaptedEvent {
     private final List<String> members = new ArrayList<>();
     private final Map<String, String> attendance = new LinkedHashMap<>();
     private final List<String> dismissedReminderStarts = new ArrayList<>();
-    private final boolean archived;
+    private final JsonNode archived;
 
     /**
      * Creates a JSON event record with the given details, attendance, dismissed reminder starts and
@@ -50,7 +53,7 @@ class JsonAdaptedEvent {
                             @JsonProperty("members") List<String> members,
                             @JsonProperty("attendance") Map<String, String> attendance,
                             @JsonProperty("dismissedReminderStarts") List<String> dismissedReminderStarts,
-                            @JsonProperty("archived") Boolean archived) {
+                            @JsonProperty("archived") JsonNode archived) {
         this.name = name;
         this.startTime = startTime;
         this.endTime = endTime;
@@ -63,7 +66,7 @@ class JsonAdaptedEvent {
         if (dismissedReminderStarts != null) {
             this.dismissedReminderStarts.addAll(dismissedReminderStarts);
         }
-        this.archived = Boolean.TRUE.equals(archived);
+        this.archived = archived;
     }
 
     /**
@@ -104,7 +107,7 @@ class JsonAdaptedEvent {
                 source.getMembers().stream().map(Name::toString).toList(),
                 toAttendanceStrings(source),
                 source.getDismissedReminderStarts().stream().map(EventTime::toString).sorted().toList(),
-                source.isArchived());
+                BooleanNode.valueOf(source.isArchived()));
     }
 
     private static Map<String, String> toAttendanceStrings(Event source) {
@@ -142,6 +145,9 @@ class JsonAdaptedEvent {
      * @throws IllegalValueException If required fields are missing or violate event constraints.
      */
     public Event toModelType() throws IllegalValueException {
+        if (archived != null && !archived.isNull() && !archived.isBoolean()) {
+            throw new IllegalValueException(MESSAGE_INVALID_ARCHIVED);
+        }
         if (name == null || startTime == null || endTime == null) {
             throw new IllegalValueException("Event name, start time and end time must be present.");
         }
@@ -162,7 +168,7 @@ class JsonAdaptedEvent {
             }
             return new Event(name, new EventTime(startTime), new EventTime(endTime), memberNames,
                     attendanceRecord, dismissedReminderStarts.stream().map(EventTime::new).collect(Collectors.toSet()),
-                    archived);
+                    archived != null && archived.asBoolean());
         } catch (IllegalArgumentException e) {
             throw new IllegalValueException(e.getMessage());
         }

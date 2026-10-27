@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.BooleanNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 
 import coordimate.commons.exceptions.IllegalValueException;
@@ -31,6 +32,7 @@ import coordimate.model.tag.Tag;
 class JsonAdaptedPerson {
 
     public static final String MISSING_FIELD_MESSAGE_FORMAT = "Person's %s field is missing!";
+    public static final String MESSAGE_INVALID_ARCHIVED = "Person's archived field must be a boolean.";
 
     private final JsonNode memberId;
     private final String name;
@@ -43,7 +45,7 @@ class JsonAdaptedPerson {
     private final String note;
     private final String leaveUntil;
     private final List<JsonAdaptedTag> tags = new ArrayList<>();
-    private final boolean archived;
+    private final JsonNode archived;
 
     /**
      * Constructs a {@code JsonAdaptedPerson} with the given person details.
@@ -57,7 +59,7 @@ class JsonAdaptedPerson {
             @JsonProperty("role") String role, @JsonProperty("birthday") String birthday,
             @JsonProperty("organisation") String organisation, @JsonProperty("note") String note,
             @JsonProperty("leaveUntil") String leaveUntil, @JsonProperty("tags") List<JsonAdaptedTag> tags,
-            @JsonProperty("memberId") JsonNode memberId, @JsonProperty("archived") Boolean archived) {
+            @JsonProperty("memberId") JsonNode memberId, @JsonProperty("archived") JsonNode archived) {
         this.memberId = memberId;
         this.name = name;
         this.phone = phone;
@@ -71,7 +73,7 @@ class JsonAdaptedPerson {
         if (tags != null) {
             this.tags.addAll(tags);
         }
-        this.archived = Boolean.TRUE.equals(archived);
+        this.archived = archived;
     }
 
     /**
@@ -123,7 +125,7 @@ class JsonAdaptedPerson {
         tags.addAll(source.getTags().stream()
                 .map(JsonAdaptedTag::new)
                 .collect(Collectors.toList()));
-        archived = source.isArchived();
+        archived = BooleanNode.valueOf(source.isArchived());
     }
 
     /**
@@ -132,6 +134,9 @@ class JsonAdaptedPerson {
      * @throws IllegalValueException if there were any data constraints violated in the adapted person.
      */
     public Person toModelType() throws IllegalValueException {
+        if (archived != null && !archived.isNull() && !archived.isBoolean()) {
+            throw new IllegalValueException(MESSAGE_INVALID_ARCHIVED);
+        }
         MemberId modelMemberId = null;
         if (memberId != null && !memberId.isNull()) {
             if (!memberId.isIntegralNumber() || !memberId.canConvertToInt() || memberId.intValue() <= 0) {
@@ -202,7 +207,7 @@ class JsonAdaptedPerson {
 
         final Set<Tag> modelTags = new HashSet<>(personTags);
         return new Person(modelMemberId, modelName, modelPhone, modelEmail, modelRole, modelBirthday, modelAddress,
-                modelOrganisation, modelNote, modelLeaveDate, modelTags, archived);
+                modelOrganisation, modelNote, modelLeaveDate, modelTags, archived != null && archived.asBoolean());
     }
 
 }

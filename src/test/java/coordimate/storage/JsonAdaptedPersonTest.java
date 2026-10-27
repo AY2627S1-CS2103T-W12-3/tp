@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.BooleanNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import coordimate.commons.exceptions.IllegalValueException;
@@ -333,9 +334,20 @@ public class JsonAdaptedPersonTest {
     }
 
     @Test
+    public void toModelType_nonBooleanArchiveStatus_throwsIllegalValueException() throws Exception {
+        String validJson = JsonUtil.toJsonString(new JsonAdaptedPerson(BENSON));
+        for (String invalidValue : List.of("17", "\"true\"", "{}", "[]")) {
+            String json = validJson.replace("\"archived\" : false", "\"archived\" : " + invalidValue);
+            JsonAdaptedPerson person = JsonUtil.fromJsonString(json, JsonAdaptedPerson.class);
+
+            assertThrows(IllegalValueException.class, JsonAdaptedPerson.MESSAGE_INVALID_ARCHIVED, person::toModelType);
+        }
+    }
+
+    @Test
     public void toModelType_archivedCreatorArgument_loadsArchivedContact() throws Exception {
         JsonAdaptedPerson archived = new JsonAdaptedPerson("Alice Tan", "91234567", "alice@example.com", null,
-                "Member", null, null, null, null, List.of(), null, true);
+                "Member", null, null, null, null, List.of(), null, BooleanNode.TRUE);
         JsonAdaptedPerson notArchived = new JsonAdaptedPerson("Alice Tan", "91234567", "alice@example.com", null,
                 "Member", null, null, null, null, List.of(), null, null);
 

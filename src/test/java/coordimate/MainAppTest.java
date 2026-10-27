@@ -3,7 +3,9 @@ package coordimate;
 import static coordimate.testutil.TypicalPersons.getTypicalCoordiMate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
@@ -15,12 +17,14 @@ import org.junit.jupiter.api.io.TempDir;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import coordimate.commons.exceptions.DataLoadingException;
 import coordimate.commons.util.JsonUtil;
 import coordimate.model.CoordiMate;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
 import coordimate.model.util.SampleDataUtil;
 import coordimate.storage.JsonCoordiMateStorage;
+import coordimate.testutil.PersonBuilder;
 import coordimate.ui.Ui;
 import javafx.stage.Stage;
 
@@ -95,6 +99,28 @@ public class MainAppTest {
         assertTrue(app.logic.getReminders().isEmpty());
         assertTrue(app.isDataRecoveryMode);
         assertEquals("not valid JSON", Files.readString(dataFile));
+    }
+
+    @Test
+    public void init_numericArchivedStatus_entersRecoveryModeAndLeavesFileUnchanged() throws Exception {
+        Path dataFile = testFolder.resolve("coordimate.json");
+        CoordiMate savedData = new CoordiMate();
+        savedData.addPerson(new PersonBuilder().withName("Alex Yeoh").build());
+        new JsonCoordiMateStorage(dataFile).saveCoordiMate(savedData);
+        String validJson = Files.readString(dataFile);
+        String invalidJson = validJson.replaceFirst("\"archived\" : false", "\"archived\" : 17");
+        assertNotEquals(validJson, invalidJson);
+        Files.writeString(dataFile, invalidJson);
+        DataLoadingException loadError = assertThrows(DataLoadingException.class, () ->
+                new JsonCoordiMateStorage(dataFile).readCoordiMate());
+        assertEquals("Person's archived field must be a boolean.", loadError.getCause().getMessage());
+        MainApp app = new MainApp(testFolder.resolve("preferences.json"), dataFile);
+
+        app.init();
+
+        assertTrue(app.isDataRecoveryMode);
+        assertEquals(new CoordiMate(), app.model.getCoordiMate());
+        assertEquals(invalidJson, Files.readString(dataFile));
     }
 
     @Test
