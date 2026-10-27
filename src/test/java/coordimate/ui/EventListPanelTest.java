@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.awt.GraphicsEnvironment;
 import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
@@ -22,6 +23,7 @@ import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import coordimate.model.ModelManager;
 import coordimate.model.event.AttendanceStatus;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
@@ -776,6 +778,78 @@ public class EventListPanelTest {
         });
     }
 
+    @Test
+    public void refreshIfDateChanged_handlesDifferentExpiryDatesAndClockMovingBackward() throws Exception {
+        runOnJavaFxThread(() -> {
+            MutableClock clock = new MutableClock(LocalDate.of(2026, 11, 30));
+            Person alice = new PersonBuilder(TypicalPersons.ALICE).withName(ALICE.getFullName())
+                    .withLeaveDate("30-11-2026").build();
+            Person bob = new PersonBuilder(TypicalPersons.BENSON).withName(BOB.getFullName())
+                    .withLeaveDate("15-12-2026").build();
+            Event event = event(List.of(ALICE, BOB), Map.of(ALICE, AttendanceStatus.PRESENT));
+            EventListPanel panel = new EventListPanel(FXCollections.observableArrayList(event),
+                    FXCollections.observableArrayList(alice, bob), clock);
+            Region root = panel.getRoot();
+            new Scene(root);
+            root.applyCss();
+            getEventList(root).getSelectionModel().selectFirst();
+            var originalRow = getMembers(root).getChildren().getFirst();
+            panel.refreshIfDateChanged();
+            assertSame(originalRow, getMembers(root).getChildren().getFirst());
+
+            clock.setDate(LocalDate.of(2026, 12, 1));
+            panel.refreshIfDateChanged();
+            assertEquals(List.of("On leave until 15-12-2026"), leaveBadges(root));
+            assertCounts(root, "1 Present", "0 Absent", "1 Not marked");
+            assertSame(event, getEventList(root).getSelectionModel().getSelectedItem());
+
+            clock.setDate(LocalDate.of(2026, 11, 30));
+            panel.refreshIfDateChanged();
+            assertEquals(List.of("On leave until 30-11-2026", "On leave until 15-12-2026"), leaveBadges(root));
+
+            clock.setDate(LocalDate.of(2027, 1, 1));
+            panel.refreshIfDateChanged();
+            assertEquals(List.of(), leaveBadges(root));
+            assertMembers(root, "Alice Tan", "● present", "Bob Lim", "● unmarked");
+        });
+    }
+
+    @Test
+    public void archivedEvent_showsAndRefreshesLeaveForContactsHiddenByArchiveAndFilter() throws Exception {
+        runOnJavaFxThread(() -> {
+            ModelManager model = new ModelManager();
+            Person alice = new PersonBuilder(TypicalPersons.ALICE).withName(ALICE.getFullName())
+                    .withLeaveDate("30-11-2026").withArchived(true).build();
+            Person bob = new PersonBuilder(TypicalPersons.BENSON).withName(BOB.getFullName())
+                    .withLeaveDate("15-12-2026").build();
+            model.addPerson(alice);
+            model.addPerson(bob);
+            Event archived = event(List.of(ALICE, BOB), Map.of(BOB, AttendanceStatus.ABSENT)).withArchived(true);
+            model.addEvent(archived);
+            model.setShowingArchived(true);
+            model.updateFilteredPersonList(person -> false);
+            MutableClock clock = new MutableClock(LocalDate.of(2026, 11, 30));
+            EventListPanel panel = new EventListPanel(model.getFilteredEventList(),
+                    model.getFilteredPersonList(), clock);
+            Region root = panel.getRoot();
+            new Scene(root);
+            root.applyCss();
+            getEventList(root).getSelectionModel().selectFirst();
+
+            assertTrue(model.getFilteredPersonList().isEmpty());
+            assertEquals(List.of("On leave until 30-11-2026", "On leave until 15-12-2026"), leaveBadges(root));
+            assertMembers(root, "Alice Tan (archived)", "● unmarked", "Bob Lim", "● absent");
+
+            clock.setDate(LocalDate.of(2026, 12, 1));
+            panel.refreshIfDateChanged();
+            assertEquals(List.of("On leave until 15-12-2026"), leaveBadges(root));
+            model.setPerson(bob, new PersonBuilder(bob).withoutLeaveDate().build());
+            assertEquals(List.of(), leaveBadges(root));
+            assertSame(archived, getEventList(root).getSelectionModel().getSelectedItem());
+            assertCounts(root, "0 Present", "1 Absent", "1 Not marked");
+        });
+    }
+
     private static List<String> leaveBadges(Region root) {
         return getMembers(root).getChildren().stream()
                 .flatMap(row -> row.lookupAll(".leave-badge").stream())
@@ -884,5 +958,33 @@ public class EventListPanelTest {
         });
         Platform.runLater(task);
         task.get(10, TimeUnit.SECONDS);
+    }
+
+    /** Supplies a controllable local date for leave-expiry tests. */
+    private static class MutableClock extends Clock {
+        private Instant current;
+
+        MutableClock(LocalDate date) {
+            setDate(date);
+        }
+
+        void setDate(LocalDate date) {
+            current = date.atStartOfDay(CLOCK.getZone()).toInstant();
+        }
+
+        @Override
+        public ZoneId getZone() {
+            return CLOCK.getZone();
+        }
+
+        @Override
+        public Clock withZone(ZoneId zone) {
+            return Clock.fixed(current, zone);
+        }
+
+        @Override
+        public Instant instant() {
+            return current;
+        }
     }
 }
