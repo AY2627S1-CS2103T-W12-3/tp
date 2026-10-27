@@ -68,6 +68,27 @@ public class EventListPanelTest {
     }
 
     @Test
+    public void selectEvent_dateOnlyDuration_countsDatesInclusively() throws Exception {
+        runOnJavaFxThread(() -> {
+            assertDuration("27-10-2026", "27-10-2026", "1 day");
+            assertDuration("27-10-2026", "29-10-2026", "3 days");
+            assertDuration("31-10-2026", "01-11-2026", "2 days");
+            assertDuration("31-12-2026", "02-01-2027", "3 days");
+            assertDuration("28-02-2028", "01-03-2028", "3 days");
+        });
+    }
+
+    @Test
+    public void selectEvent_mixedTimesDuration_identifiesMissingTime() throws Exception {
+        runOnJavaFxThread(() -> {
+            assertDuration("27-10-2026", "29-10-2026 10:30", "Unknown (start time not specified)");
+            assertDuration("27-10-2026 09:00", "29-10-2026", "Unknown (end time not specified)");
+            assertDuration("27-10-2026", "27-10-2026 00:00", "Unknown (start time not specified)");
+            assertDuration("27-10-2026 23:59", "27-10-2026", "Unknown (end time not specified)");
+        });
+    }
+
+    @Test
     public void memberIds_ignoreContactFilteringAndFollowRosterReorderingAndEdits() throws Exception {
         runOnJavaFxThread(() -> {
             Person alice = new PersonBuilder(TypicalPersons.ALICE).withMemberId(12)
@@ -610,6 +631,18 @@ public class EventListPanelTest {
             assertEquals("Events (0)", count.getText());
             assertEquals(EventListPanel.MESSAGE_NO_EVENTS, placeholder.getText());
         });
+    }
+
+    private static void assertDuration(String start, String end, String expected) {
+        Event event = new Event("Duration test", new EventTime(start), new EventTime(end));
+        Region root = new EventListPanel(FXCollections.observableArrayList(event)).getRoot();
+        new Scene(root);
+        root.applyCss();
+        getEventList(root).getSelectionModel().selectFirst();
+
+        assertEquals(expected, getLabel(root, "duration").getText(), start + " to " + end);
+        assertEquals(start, getLabel(root, "startTime").getText());
+        assertEquals(end, getLabel(root, "endTime").getText());
     }
 
     private static Event event(List<Name> members, Map<Name, AttendanceStatus> attendance) {

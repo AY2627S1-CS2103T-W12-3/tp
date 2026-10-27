@@ -1,13 +1,13 @@
 package coordimate.ui;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 import java.util.Objects;
 
 import coordimate.model.event.AttendanceStatus;
 import coordimate.model.event.Event;
+import coordimate.model.event.EventTime;
 import coordimate.model.person.Name;
 import coordimate.model.person.Person;
 import coordimate.model.tag.Tag;
@@ -42,7 +42,6 @@ public class EventListPanel extends UiPart<Region> {
     static final String MESSAGE_NO_EVENTS = "No events yet. Create one with addevent.";
     static final String MESSAGE_NO_ARCHIVED_EVENTS = "No archived events.";
     private static final String FXML = "EventListPanel.fxml";
-    private static final DateTimeFormatter DATE_TIME_FORMAT = DateTimeFormatter.ofPattern("dd-MM-uuuu HH:mm");
 
     @FXML
     private SplitPane eventSplitPane;
@@ -430,17 +429,25 @@ public class EventListPanel extends UiPart<Region> {
     }
 
     /**
-     * Returns the event's duration in hours and minutes when both times of day are specified.
-     * Returns a placeholder message for date-only times.
+     * Counts date-only events inclusively, measures timed events in hours and minutes,
+     * and identifies the missing time for mixed inputs.
      */
     private String formatDuration(Event event) {
-        String start = event.getStartTime().toString();
-        String end = event.getEndTime().toString();
-        if (start.length() == 10 || end.length() == 10) {
-            return "Time of day not specified";
+        EventTime start = event.getStartTime();
+        EventTime end = event.getEndTime();
+        var startDateTime = start.getDateTime();
+        var endDateTime = end.getDateTime();
+        if (startDateTime.isEmpty() && endDateTime.isEmpty()) {
+            long days = ChronoUnit.DAYS.between(start.getDate(), end.getDate()) + 1;
+            return days + (days == 1 ? " day" : " days");
         }
-        long minutes = Duration.between(LocalDateTime.parse(start, DATE_TIME_FORMAT),
-                LocalDateTime.parse(end, DATE_TIME_FORMAT)).toMinutes();
+        if (startDateTime.isEmpty()) {
+            return "Unknown (start time not specified)";
+        }
+        if (endDateTime.isEmpty()) {
+            return "Unknown (end time not specified)";
+        }
+        long minutes = Duration.between(startDateTime.orElseThrow(), endDateTime.orElseThrow()).toMinutes();
         long hours = minutes / 60;
         long remainder = minutes % 60;
         return hours + (hours == 1 ? " hour" : " hours")
