@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.Optional;
 
+import coordimate.commons.util.StringUtil;
 import coordimate.model.event.Event;
 import coordimate.model.person.Person;
 import coordimate.model.tag.Tag;
@@ -38,11 +39,13 @@ public interface ReadOnlyCoordiMate {
     ObservableList<Event> getEventList();
 
     /**
-     * Returns the saved event whose name matches {@code eventName}, ignoring case, including an archived event.
+     * Returns the saved event whose name matches {@code eventName}, ignoring case and differences in spacing,
+     * including an archived event.
      */
     default Optional<Event> findEvent(String eventName) {
         requireNonNull(eventName);
-        return getEventList().stream().filter(event -> event.getName().equalsIgnoreCase(eventName)).findFirst();
+        String normalizedName = StringUtil.normalizeWhitespace(eventName);
+        return getEventList().stream().filter(event -> event.getName().equalsIgnoreCase(normalizedName)).findFirst();
     }
 
 }

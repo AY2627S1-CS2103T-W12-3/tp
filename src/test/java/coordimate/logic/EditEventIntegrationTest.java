@@ -13,6 +13,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import coordimate.logic.commands.EditEventCommand;
 import coordimate.logic.commands.exceptions.CommandException;
+import coordimate.logic.parser.exceptions.ParseException;
 import coordimate.model.CoordiMate;
 import coordimate.model.ModelManager;
 import coordimate.model.ReadOnlyCoordiMate;
@@ -73,6 +74,24 @@ public class EditEventIntegrationTest {
                 assertThrows(CommandException.class, () -> logic.execute(EDIT)).getMessage());
         assertEquals(before, model.getCoordiMate());
         assertEquals(beforeFile, Files.readString(storage.getCoordiMateFilePath()));
+    }
+
+    @Test
+    public void execute_yearZero_modelAndFileUnchanged() throws Exception {
+        ModelManager model = new ModelManager();
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(temporaryFolder.resolve("data.json"));
+        Logic logic = newLogic(model, storage);
+        logic.execute(ADD);
+        CoordiMate beforeModel = new CoordiMate(model.getCoordiMate());
+        String beforeFile = Files.readString(storage.getCoordiMateFilePath());
+        for (String value : new String[] {"01-01-0000", "01-01-0000 00:00"}) {
+            for (String prefix : new String[] {"st/", "et/"}) {
+                String command = "editevent evn/Student Life Fair " + prefix + value;
+                assertThrows(ParseException.class, () -> logic.execute(command));
+                assertEquals(beforeModel, model.getCoordiMate());
+                assertEquals(beforeFile, Files.readString(storage.getCoordiMateFilePath()));
+            }
+        }
     }
 
     @Test

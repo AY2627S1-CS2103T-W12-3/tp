@@ -26,14 +26,23 @@ public class UiManager implements Ui {
     private Logic logic;
     private Path dataFilePath;
     private MainWindow mainWindow;
+    private final String startupWarning;
 
     /**
      * Creates a {@code UiManager} with the given {@code Logic} and the data file path
      * to show in the status bar.
      */
     public UiManager(Logic logic, Path dataFilePath) {
+        this(logic, dataFilePath, "");
+    }
+
+    /**
+     * Creates the UI with a warning to show after startup, without asking for confirmation.
+     */
+    public UiManager(Logic logic, Path dataFilePath, String startupWarning) {
         this.logic = logic;
         this.dataFilePath = dataFilePath;
+        this.startupWarning = startupWarning;
     }
 
     @Override
@@ -47,6 +56,10 @@ public class UiManager implements Ui {
             mainWindow = new MainWindow(primaryStage, logic, dataFilePath);
             mainWindow.show(); //This should be called before creating other UI parts
             mainWindow.fillInnerParts();
+            if (!startupWarning.isEmpty()) {
+                showAlertDialogAndWait(AlertType.WARNING, "Saved event data", "Saved event data needs attention",
+                        startupWarning);
+            }
             mainWindow.showTutorialOnFirstLaunch();
 
         } catch (Throwable e) {

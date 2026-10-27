@@ -52,6 +52,15 @@ public class AddEventCommandParserTest {
     }
 
     @Test
+    public void parse_yearZero_rejected() {
+        for (String value : new String[] {"01-01-0000", "01-01-0000 00:00"}) {
+            assertError(" evn/Fair st/" + value + " et/10-10-2026", EventTime.MESSAGE_CONSTRAINTS);
+            assertError(" evn/Fair st/01-01-0001 et/" + value,
+                    EventTime.MESSAGE_CONSTRAINTS.replace("Example: st/", "Example: et/"));
+        }
+    }
+
+    @Test
     public void parse_startAfterEnd_timeOrderError() {
         assertError(" evn/Fair st/10-10-2026 et/09-10-2026", Event.MESSAGE_INVALID_TIME_ORDER);
         assertError(" evn/Concert st/08-08-2026 18:00 et/08-08-2026 15:00", Event.MESSAGE_INVALID_TIME_ORDER);

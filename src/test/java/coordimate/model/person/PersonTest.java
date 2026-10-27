@@ -90,6 +90,11 @@ public class PersonTest {
                 .withPhone(VALID_PHONE_BOB).withEmail(VALID_EMAIL_BOB).build();
         assertTrue(ALICE.isSamePerson(editedAlice));
 
+        // name matching ignores differences in internal spacing
+        editedAlice = new PersonBuilder(ALICE).withName("Alice   Pauline")
+                .withPhone(VALID_PHONE_BOB).withEmail(VALID_EMAIL_BOB).build();
+        assertTrue(ALICE.isSamePerson(editedAlice));
+
         // different name, same phone and email -> returns true
         editedAlice = new PersonBuilder(ALICE).withName(VALID_NAME_BOB).build();
         assertTrue(ALICE.isSamePerson(editedAlice));

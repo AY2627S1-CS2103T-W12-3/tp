@@ -104,9 +104,9 @@ For `dismiss`, data-loading and saving failures instead produce the session-only
 * Parameters can be in any order.<br>
   For example, if the command specifies `n/NAME p/PHONE_NUMBER`, `p/PHONE_NUMBER n/NAME` is also acceptable.
 
-* Extraneous parameters for commands that take no parameters, such as `help`, `tutorial`, `exit`, and `clear`, are
-  ignored.<br>
-  For example, `help 123` is interpreted as `help`.
+* Commands that take no parameters, such as `help`, `tutorial`, `exit`, and `clear`, reject extraneous
+  parameters.<br>
+  For example, `help 123` is invalid; use `help` instead.
 
 * If you are using a PDF version of this document, be careful when copying and pasting commands that span multiple lines as space characters surrounding line-breaks may be omitted when copied over to the application.
 </box>
@@ -114,11 +114,13 @@ For `dismiss`, data-loading and saving failures instead produce the session-only
 ### Parameter constraints
 
 The table below lists the values each parameter accepts. Leading and trailing spaces are ignored for every parameter.
+In contact names and event names, several spaces in a row are saved as one space, so `Alex  Yeoh` is saved and
+matched as `Alex Yeoh`.
 A command that breaks a constraint is rejected and makes no changes.
 
 | Parameter | Prefix | Constraints |
 |---|---|---|
-| `NAME`, `MEMBER_NAME` | `n/`, `mem/` | 1 to 80 characters. Letters, spaces, hyphens (`-`), apostrophes (`'`), and periods (`.`) only, with at least one letter. Digits are not allowed. Contact names are unique, ignoring case. |
+| `NAME`, `MEMBER_NAME` | `n/`, `mem/` | 1 to 80 characters. Letters, spaces, hyphens (`-`), apostrophes (`'`), and periods (`.`) only, with at least one letter. Digits are not allowed. Several spaces in a row count as one. Contact names are unique, ignoring case and extra spaces. |
 | `PHONE` | `p/` | 7 to 15 digits. May start with `+`, and may contain spaces, hyphens, and brackets. Unique among contacts once spaces, hyphens, and brackets are removed. |
 | `EMAIL` | `e/` | `local-part@domain`. The local part uses letters, digits, and `_`, `%`, `+`, `-`, `.`; it cannot start or end with a period or contain two periods in a row. The domain is made of labels separated by periods; each label uses letters, digits, and hyphens and cannot start or end with a hyphen. The last label has at least 2 letters. Unique among contacts, ignoring case. |
 | `ROLE` | `r/` | 1 to 50 characters. Letters, digits, spaces, hyphens, and `/` only, with at least one letter or digit. |
@@ -128,7 +130,7 @@ A command that breaks a constraint is rejected and makes no changes.
 | `ORGANISATION` | `o/` | 1 to 80 characters. Letters, digits, spaces, hyphens, and `&` only, with at least one letter or digit. |
 | `NOTE` | `m/` | 1 to 500 printable characters, including at least one visible character. |
 | `TAG`, `NEW_TAG` | `t/`, `at/`, `rt/` | 1 to 30 characters. English letters and digits only, with no spaces. Tags are unique, ignoring case. |
-| `EVENT_NAME`, `NEW_EVENT_NAME` | `evn/`, `nevn/` | At least one visible character. Any printable characters are allowed, subject to the note below. Event names are unique, ignoring case. |
+| `EVENT_NAME`, `NEW_EVENT_NAME` | `evn/`, `nevn/` | At least one visible character. Any printable characters are allowed, subject to the note below. Several spaces in a row count as one. Event names are unique, ignoring case and extra spaces. |
 | `START_TIME`, `END_TIME` | `st/`, `et/` | A real date in `dd-MM-yyyy` format, optionally followed by a 24-hour time in `HH:mm` format, e.g. `17-09-2026` or `17-09-2026 16:30`. The start must not be after the end. |
 | `STATUS` | `att/` | `present` or `absent`, ignoring case. |
 | `MEMBER_ID` | `c/` for `assign` and `unassign`; none for `edit`, `delete`, `archive`, and `unarchive` | A permanent positive integer from 1 to 2147483647 identifying a saved contact, independent of the displayed list. |
@@ -220,7 +222,8 @@ Format: `tutorial`
 
 Adds a contact to CoordiMate.
 
-Contact names must be unique after trimming surrounding spaces and ignoring case.
+Contact names must be unique, ignoring case and extra spaces. Surrounding spaces are removed and several spaces in a
+row are saved as one, so `n/Alex  Yeoh` is saved as `Alex Yeoh` and is a duplicate of an existing `Alex Yeoh`.
 An add is also rejected if its phone number or email address is already used by another contact.
 Phone numbers are compared without spaces, hyphens, or brackets; email addresses are compared without regard to case.
 For any duplicate, CoordiMate reports `A contact with this name, phone number, or email already exists.`
@@ -250,7 +253,9 @@ message stating the field's constraints, such as
 Birthday, address, organisation, leave end date, and note are optional. An empty `b/`, `a/`, `o/`, `lv/`, or
 `m/` leaves that field unset,
 as does omitting it. Non-tag fields may appear only once; `t/TAG` may repeat. An empty `t/` clears the
-tags collected so far. A valid new tag is saved as a custom tag. Successful feedback is
+tags collected so far. A tag that matches a saved tag, ignoring capitalization, uses the saved tag's
+capitalization; for example, `t/exco` gives the contact the default `EXCO` tag. A valid new tag keeps its typed
+capitalization and is saved as a custom tag. Successful feedback is
 `Contact saved successfully: NAME`.
 After a successful `add`, CoordiMate selects and reveals the new contact so its details are shown. Unset optional
 values are shown as `— (not specified)` in the details pane, but remain unset in storage.
@@ -296,9 +301,11 @@ Creates an event and saves it to the local data file.
 
 Format: `addevent evn/EVENT_NAME st/START_TIME et/END_TIME`
 
-Each parameter must appear once. Leading and trailing whitespace is removed before an event name is checked.
+Each parameter must appear once. Leading and trailing whitespace is removed before an event name is checked, and
+several spaces in a row are saved as one, so `evn/Final  Concert` is saved as `Final Concert`.
 The resulting name must contain 1 to 100 printable characters, including at least one visible character;
-line breaks and other control characters within the name are rejected. Names must be unique, ignoring case.
+line breaks and other control characters within the name are rejected. Names must be unique, ignoring case and
+extra spaces.
 An overlong name reports `Event name must not exceed 100 characters. Example: evn/Final Concert`.
 An invalid character reports `Invalid event name. Use letters, digits, spaces, or punctuation. Example: evn/Final-Concert`.
 Different events may share the same start and end times.
@@ -323,6 +330,24 @@ organisation, tags, notes, and attendance status. A successful `addevent` opens 
 the new event. Each event card shows its member count and attendance summary. At narrower window
 sizes, the list appears above the details. The list and details divider can be dragged, but the
 details pane keeps a minimum width while the panes are side by side.
+
+The duration depends on whether the start and end include a time of day:
+
+* **Both date-only:** count calendar dates inclusively, including both the start and end dates.
+  An event on a single date lasts `1 day`.
+* **Both timed:** show elapsed time in days, hours, and minutes, with each day representing 24 hours.
+  Omit zero-value units and use singular or plural as appropriate. Identical timestamps show `0 minutes`.
+* **One date-only and one timed:** the event remains valid, but its duration is
+  `Unknown (start time not specified)` or `Unknown (end time not specified)`, identifying the missing time.
+
+| Start | End | Duration |
+|---|---|---|
+| `27-10-2026` | `27-10-2026` | `1 day` |
+| `27-10-2026` | `29-10-2026` | `3 days` |
+| `27-10-2026 09:00` | `29-10-2026 10:30` | `2 days 1 hour 30 minutes` |
+| `27-10-2026 09:00` | `29-10-2026 09:00` | `2 days` |
+| `27-10-2026` | `29-10-2026 10:30` | `Unknown (start time not specified)` |
+| `27-10-2026 09:00` | `29-10-2026` | `Unknown (end time not specified)` |
 
 Command feedback appears above the input at the bottom of the window. Rejected commands
 show a red feedback band and input border. The command stays in the input so you can
@@ -350,8 +375,8 @@ Edits the name, start time, and/or end time of an existing event and saves the c
 
 Format: `editevent evn/EVENT_NAME [nevn/NEW_EVENT_NAME] [st/NEW_START_TIME] [et/NEW_END_TIME]`
 
-`EVENT_NAME` must match the saved name, ignoring case. Leading and trailing whitespace
-is removed. Lookup capitalization does not change the saved display name; `nevn/`
+`EVENT_NAME` must match the saved name, ignoring case and extra spaces between words. Leading and trailing
+whitespace is removed. Several spaces in a row in `nevn/` are saved as one. Lookup capitalization does not change the saved display name; `nevn/`
 sets the new display name using the supplied capitalization.
 Provide at least one field to edit; omitted fields
 keep their existing values. Each parameter may appear only once.
@@ -394,8 +419,7 @@ The event and existing data file remain unchanged.
 
 ### Deleting an event: `deleteevent`
 
-Deletes the event with the supplied name, ignoring capitalization. Internal spacing
-must match the existing event name.
+Deletes the event with the supplied name, ignoring capitalization and extra spaces between words.
 
 Format: `deleteevent evn/EVENT_NAME`
 
@@ -639,7 +663,7 @@ Records whether a member assigned to an event was present or absent.
 
 Format: `markattendance evn/EVENT_NAME mem/MEMBER_NAME att/STATUS`
 
-* `EVENT_NAME` and `MEMBER_NAME` must match saved values, ignoring case.
+* `EVENT_NAME` and `MEMBER_NAME` must match saved values, ignoring case and extra spaces between words.
 * `MEMBER_NAME` must be assigned to the event.
 * `MEMBER_NAME` must be at most 80 characters, contain at least one letter, and use only letters, spaces,
   hyphens, apostrophes, or periods.
@@ -817,7 +841,7 @@ Or: `edit target/IDENTIFIER [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [
 
 * Edits the contact with the specified permanent `MEMBER_ID`, including contacts hidden by a search or filter.
   For example, `edit 12 r/President` always targets member ID `12`, even when that contact is the first search result.
-* Alternatively, `target/IDENTIFIER` finds an exact saved name, phone number, or email address across all contacts, including those hidden by the current search or filter. Names and emails ignore letter case; phone numbers ignore spaces, hyphens, and brackets. Supply either a member ID or `target/`, not both.
+* Alternatively, `target/IDENTIFIER` finds an exact saved name, phone number, or email address across all contacts, including those hidden by the current search or filter. Names ignore letter case and extra spaces, emails ignore letter case; phone numbers ignore spaces, hyphens, and brackets. Supply either a member ID or `target/`, not both.
 * If several contacts match an identifier, the command lists each match's member ID, name, phone, and email, including hidden matches. Retry with a member ID, unique phone number, or email address.
 * If no contact matches `target/`, or the member ID does not exist, the command reports an error without changing any contact.
 * Provide at least one field or tag operation. Omitted fields retain their existing values.
@@ -830,7 +854,7 @@ Or: `edit target/IDENTIFIER [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [
 * `at/TAG` adds a tag without removing other tags, while `rt/TAG` removes only that tag from the contact. These may be repeated or mixed and are applied in command order. Neither may be mixed with `t/`.
 * Tag matching ignores case. Adding an existing tag or removing an absent tag has no effect. A valid new tag named by `t/` or `at/` is saved as a custom tag. Empty `at/` and `rt/` values are invalid.
 * If the contact's name changes, events they are assigned to show the new name.
-* A new name already used by another contact, ignoring case and surrounding spaces, is rejected.
+* A new name already used by another contact, ignoring case and extra spaces, is rejected.
 * An edit is saved to the local data file before it appears in the contact list. If the file cannot be read or written,
   the edit is not applied. A failed write reports `Contact could not be saved. No changes were made.`; invalid stored
   data reports `Saved data could not be loaded. Check the local data file.`
@@ -916,7 +940,8 @@ Lists contacts whose name, phone number, email, address, or organisation contain
 
 Format: `search KEYWORD`
 
-* Matching is case-insensitive across all five fields; for example, `hans` matches `Hans`.
+* Matching is case-insensitive across all five fields; for example, `hans` matches `Hans`, and
+  `search ipek` finds a contact named `İpek`.
 * Partial words match; for example, `Han` matches `Hans`.
 * The entire keyword is matched as one substring within a field. Spaces and word order matter:
   `search Hans Bo` matches `Hans Bo Yang`, but does not match `Bo Hans` or separate contacts named `Hans` and `Bo`.
@@ -1003,12 +1028,12 @@ Formats: `delete MEMBER_ID` · `delete n/NAME` · `delete p/PHONE` · `delete e/
 
 * Supply exactly one identifier. `MEMBER_ID` is the contact's permanent numeric ID and searches all saved contacts,
   independently of the currently displayed list, including empty search or filter results.
-* Name matching is exact apart from letter case and surrounding spaces. Phone matching ignores spaces, hyphens, and
+* Name matching is exact apart from letter case and extra spaces. Phone matching ignores spaces, hyphens, and
   brackets. Email matching ignores letter case and surrounding spaces. These identifiers search all saved contacts,
   including those hidden by a search or filter.
-* CoordiMate shows the contact's `ID: <number>`, name, phone, email, and role, followed by `Confirm deletion? [y/N]`. Type exactly `y`
-  or `Y` to delete. `n`, `N`, Enter, or any other input cancels. A cancelling input is **not** run as a command; enter it
-  again if that was your intention.
+* CoordiMate shows the contact's `ID: <number>`, name, phone, email, and role, followed by `Confirm deletion? [y/N]`.
+  Type `y` or `Y` to delete; surrounding whitespace is ignored. `n`, `N`, Enter, or any other input cancels. A
+  cancelling input is **not** run as a command; enter it again if that was your intention.
 * A confirmed deletion removes the contact from all event member lists, including past events. The events and other
   contacts remain saved. A cancelled deletion makes no changes.
 * A confirmed deletion is saved before it appears in the contact list. A corrupt data file or failed write leaves the
@@ -1150,15 +1175,11 @@ A command that changes your data is saved to the data file **before** the change
 cannot be saved, the command is rejected with an error such as `Event could not be saved. No changes were made.`
 and both the app and the data file stay as they were, so what you see always matches what is saved.
 
-Commands that do not change saved data also attempt to save after running. A save failure reports one of the
-following messages; a command may already have changed the displayed view when this happens.
-
-| Condition | Error message |
-|---|---|
-| Saving is denied by file permissions. | `Data could not be saved to {DETAILS}. Check write permissions for the file and its folder.` |
-| Another file error prevents saving. | `Data could not be saved. Check the local data file. Details: {DETAILS}` |
-
-`{DETAILS}` is supplied by the operating system and can include a file path or an explanation of the failure.
+Commands that only change the displayed view, such as `list`, `search`, and `filter`, do not save the data file.
+If another CoordiMate window changes the data file while this window is open, this window can still display its
+previously loaded data. Its next command that saves data is rejected with
+`The data file changed in another window. Reopen this window before saving. No changes were made.`
+The newer data file is preserved. Close and reopen the stale window before making further changes.
 
 ### Editing the data file
 
@@ -1167,8 +1188,11 @@ CoordiMate data is saved automatically as a JSON file `[JAR file location]/data/
 <box type="warning" seamless>
 
 **Caution:**
-If your changes make the data file invalid, CoordiMate starts with an empty dataset at the next run. While the file is invalid, commands that change data (such as `add`, `addevent`, and `clear`) are rejected with `Saved data could not be loaded. Check the local data file.` and leave the file untouched, so that you can close the app and fix it. Commands such as `list`, `search`, and `filter` save the data currently in the app, which **replaces the invalid file**. We therefore recommend backing up the file before editing it.<br>
+If your changes make the data file invalid, CoordiMate starts with an empty dataset at the next run. While the file is invalid, commands that change data (such as `add`, `addevent`, and `clear`) are rejected with `Saved data could not be loaded. Check the local data file.` and leave the file untouched, so that you can close the app and fix it. Commands such as `list`, `search`, and `filter` do not change the file.<br>
 Each name in an event's `members` list must exactly match the name of a saved contact, or the data file is invalid.<br>
+Contact and event names are read with several spaces in a row treated as one. If two contacts, or two events, have
+names that differ only in letter case or spacing (e.g. `Alex Yeoh` and `Alex  Yeoh`), they are duplicates and the data
+file is invalid; rename or remove one of them.<br>
 Each contact's `memberId` must be a unique integer from `1` to `2147483647`. Keep existing IDs unchanged.
 Keep the top-level `nextMemberId` field: it must exceed every saved ID, must not be reduced after deleting contacts,
 and cannot exceed `2147483648`.<br>

@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Predicate;
 
 import org.junit.jupiter.api.Test;
@@ -46,6 +47,40 @@ public class AddCommandTest {
         assertEquals(new MemberId(1), commandResult.getContactToFocus().orElseThrow().getMemberId().orElseThrow());
         assertTrue(commandResult.getContactIndexToFocus().isEmpty());
         assertEquals(List.of(validPerson.withMemberId(new MemberId(1))), modelStub.personsAdded);
+    }
+
+    @Test
+    public void execute_existingTagInDifferentCase_usesSavedTag() throws Exception {
+        ModelStubAcceptingPersonAdded modelStub = new ModelStubAcceptingPersonAdded(new Tag("EXCO"));
+        Person person = new PersonBuilder().withTags("exco").build();
+
+        CommandResult commandResult = new AddCommand(person).execute(modelStub);
+
+        Person addedPerson = modelStub.personsAdded.getFirst();
+        assertEquals(Set.of(new Tag("EXCO")), addedPerson.getTags());
+        assertEquals(addedPerson, commandResult.getContactToFocus().orElseThrow());
+    }
+
+    @Test
+    public void execute_newTag_keepsTypedCapitalisation() throws Exception {
+        ModelStubAcceptingPersonAdded modelStub = new ModelStubAcceptingPersonAdded(new Tag("EXCO"));
+        Person person = new PersonBuilder().withTags("pUblicity").build();
+
+        new AddCommand(person).execute(modelStub);
+
+        assertEquals(List.of(person.withMemberId(new MemberId(1))), modelStub.personsAdded);
+    }
+
+    @Test
+    public void execute_existingAndNewTags_usesSavedTagsOnly() throws Exception {
+        ModelStubAcceptingPersonAdded modelStub =
+                new ModelStubAcceptingPersonAdded(new Tag("EXCO"), new Tag("Sponsor"));
+        Person person = new PersonBuilder().withTags("exco", "SPONSOR", "Publicity").build();
+
+        new AddCommand(person).execute(modelStub);
+
+        assertEquals(Set.of(new Tag("EXCO"), new Tag("Sponsor"), new Tag("Publicity")),
+                modelStub.personsAdded.getFirst().getTags());
     }
 
     @Test
@@ -254,6 +289,16 @@ public class AddCommandTest {
      */
     private class ModelStubAcceptingPersonAdded extends ModelStub {
         private final ArrayList<Person> personsAdded = new ArrayList<>();
+        private final ObservableList<Tag> savedTags;
+
+        ModelStubAcceptingPersonAdded(Tag... savedTags) {
+            this.savedTags = FXCollections.observableArrayList(savedTags);
+        }
+
+        @Override
+        public ObservableList<Tag> getTagList() {
+            return FXCollections.unmodifiableObservableList(savedTags);
+        }
 
         @Override
         public boolean hasPerson(Person person) {

@@ -23,6 +23,7 @@ public class CommandErrorMessagesTest {
         String contact = "add n/Alice Tan p/+6591234567 e/alice@example.com r/Logistics";
         String[] inputs = {
             "", "unknown", "add", "edit", "delete", "search", "search \"\"", "filter", "filter unknown/value",
+            "help anything", "tutorial 123", "exit extra", "clear garbage",
             "filter tag/", "filter event/\"Concert tag/friend", "addtag", "deletetag", "edittag", "listtags extra",
             "addevent", "editevent", "deleteevent", "assign", "unassign", "members", "markattendance",
             "dismiss", "dismiss 0", "dismiss 1 2",

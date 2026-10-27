@@ -12,15 +12,21 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
+
+import com.fasterxml.jackson.databind.node.LongNode;
 
 import coordimate.commons.exceptions.IllegalValueException;
 import coordimate.commons.util.JsonUtil;
 import coordimate.model.CoordiMate;
+import coordimate.model.event.AttendanceStatus;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
 import coordimate.model.person.MemberId;
+import coordimate.model.person.Name;
 import coordimate.model.person.Person;
 import coordimate.model.tag.Tag;
 import coordimate.testutil.PersonBuilder;
@@ -34,6 +40,52 @@ public class JsonSerializableCoordiMateTest {
     private static final Path DUPLICATE_PERSON_FILE = TEST_DATA_FOLDER.resolve("duplicatePersonCoordiMate.json");
     private static final Path EVENT_MEMBERS_FILE = TEST_DATA_FOLDER.resolve("eventMembersCoordiMate.json");
     private static final Path UNKNOWN_MEMBER_FILE = TEST_DATA_FOLDER.resolve("unknownMemberCoordiMate.json");
+    private static final Path INTERNAL_SPACING_FILE = TEST_DATA_FOLDER.resolve("internalSpacingCoordiMate.json");
+    private static final Path INTERNAL_SPACING_DUPLICATE_PERSON_FILE =
+            TEST_DATA_FOLDER.resolve("internalSpacingDuplicatePersonCoordiMate.json");
+    private static final Path INTERNAL_SPACING_DUPLICATE_EVENT_FILE =
+            TEST_DATA_FOLDER.resolve("internalSpacingDuplicateEventCoordiMate.json");
+
+    @Test
+    public void removeYearZeroEvents_mixedEvents_preservesOtherDataAndRemovesOnlyOnce() throws Exception {
+        EventTime start = new EventTime("01-01-0001");
+        Event kept = new Event("Keep", start, new EventTime("31-12-9999 23:59"), List.of(ALICE.getName()),
+                Map.of(ALICE.getName(), AttendanceStatus.ABSENT), Set.of(start)).withArchived(true);
+        Event cleanedHistory = new Event("Zero History", start, new EventTime("02-01-0001"),
+                List.of(ALICE.getName()), Map.of(ALICE.getName(), AttendanceStatus.PRESENT), Set.of(start));
+        List<JsonAdaptedEvent> events = List.of(
+                new JsonAdaptedEvent("Zero Start", "01-01-0000", "02-01-0001"),
+                new JsonAdaptedEvent(kept),
+                new JsonAdaptedEvent("Zero End", "01-01-0001", "02-01-0000 12:30"),
+                new JsonAdaptedEvent("Zero History", "01-01-0001", "02-01-0001",
+                        List.of(ALICE.getName().toString()), Map.of(ALICE.getName().toString(), "present"),
+                        List.of("01-01-0001", "01-01-0000")),
+                new JsonAdaptedEvent(null, "01-01-0000", "02-01-0001"));
+        JsonSerializableCoordiMate data = new JsonSerializableCoordiMate(List.of(new JsonAdaptedPerson(ALICE)),
+                events, List.of(new JsonAdaptedTag("Unused")), LongNode.valueOf(50));
+        CoordiMate expected = new CoordiMate(50);
+        expected.setTags(List.of(new Tag("Unused")));
+        expected.addPerson(ALICE);
+        expected.addEvent(kept);
+        expected.addEvent(cleanedHistory);
+
+        assertEquals(List.of("Zero Start", "Zero End", "(unnamed event)"),
+                data.removeYearZeroEvents());
+        assertTrue(data.removeYearZeroReminderStarts());
+        assertEquals(expected, data.toModelType());
+        assertEquals(List.of(), data.removeYearZeroEvents());
+        assertFalse(data.removeYearZeroReminderStarts());
+        assertEquals(expected, data.toModelType());
+    }
+
+    @Test
+    public void removeYearZeroEvents_nullEvent_retainsEntryForValidation() {
+        JsonSerializableCoordiMate data = new JsonSerializableCoordiMate(List.of(),
+                Arrays.asList((JsonAdaptedEvent) null));
+
+        assertEquals(List.of(), data.removeYearZeroEvents());
+        assertThrows(IllegalValueException.class, "Events list must not contain null entries.", data::toModelType);
+    }
 
     @Test
     public void toModelType_typicalPersonsFile_success() throws Exception {
@@ -104,6 +156,31 @@ public class JsonSerializableCoordiMateTest {
 
         assertThrows(IllegalValueException.class, JsonSerializableCoordiMate.MESSAGE_DUPLICATE_PERSON,
                 data::toModelType);
+    }
+
+    @Test
+    public void toModelType_namesWithExtraInternalSpaces_loadedCollapsedWithMatchingMembers() throws Exception {
+        CoordiMate coordiMate = JsonUtil.readJsonFile(INTERNAL_SPACING_FILE, JsonSerializableCoordiMate.class)
+                .get().toModelType();
+        Name alice = new Name("Alice Pauline");
+        assertEquals("Alice Pauline", coordiMate.getPersonList().getFirst().getName().getFullName());
+        Event concert = coordiMate.getEventList().getFirst();
+        assertEquals("Final Concert", concert.getName());
+        assertEquals(List.of(alice), concert.getMembers());
+        assertEquals(AttendanceStatus.PRESENT, concert.getAttendance(alice).orElseThrow());
+    }
+
+    @Test
+    public void toModelType_namesDifferingOnlyInInternalSpacing_throwsIllegalValueException() throws Exception {
+        JsonSerializableCoordiMate duplicatePersons = JsonUtil.readJsonFile(INTERNAL_SPACING_DUPLICATE_PERSON_FILE,
+                JsonSerializableCoordiMate.class).get();
+        assertThrows(IllegalValueException.class, JsonSerializableCoordiMate.MESSAGE_DUPLICATE_PERSON,
+                duplicatePersons::toModelType);
+
+        JsonSerializableCoordiMate duplicateEvents = JsonUtil.readJsonFile(INTERNAL_SPACING_DUPLICATE_EVENT_FILE,
+                JsonSerializableCoordiMate.class).get();
+        assertThrows(IllegalValueException.class, JsonSerializableCoordiMate.MESSAGE_DUPLICATE_EVENT,
+                duplicateEvents::toModelType);
     }
 
     @Test

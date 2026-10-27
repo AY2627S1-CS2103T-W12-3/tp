@@ -147,7 +147,7 @@ Here's a (partial) class diagram of the `Logic` component:
 
 <puml src="diagrams/LogicClassDiagram.puml" width="550"/>
 
-The sequence diagram below follows `execute("delete 1")` and the subsequent confirmation response. The first call resolves and stores the contact without deleting it. If the response is `y` or `Y`, the confirmed command deletes the contact on a candidate model through the atomic save path; any other response cancels the deletion without changing data.
+The sequence diagram below follows `execute("delete 1")` and the subsequent confirmation response. The first call resolves and stores the contact without deleting it. If the response is `y` or `Y` after removing surrounding whitespace, the confirmed command deletes the contact on a candidate model through the atomic save path; any other response cancels the deletion without changing data.
 
 <puml src="diagrams/DeleteSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `delete 1` Command" />
 
@@ -160,7 +160,7 @@ How the `Logic` component works:
 
 1. When `Logic` is called upon to execute a command, the command is passed to a `CoordiMateParser` object, which in turn creates a parser that matches the command (e.g., `DeleteCommandParser`) and uses it to parse the command.
 1. This results in a `Command` object (more precisely, an object of one of its subclasses e.g., `DeleteCommand`). For `delete`, `LogicManager` first calls `resolvePerson` and returns a confirmation prompt without executing the deletion.
-1. If the next input is `y` or `Y`, `LogicManager` creates a command for the resolved `Person` and executes it on a candidate model. That command deletes the contact from the candidate, which is saved before the live model changes. Any other input cancels the deletion.
+1. If the next input is `y` or `Y` after removing surrounding whitespace, `LogicManager` creates a command for the resolved `Person` and executes it on a candidate model. That command deletes the contact from the candidate, which is saved before the live model changes. Any other input cancels the deletion.
 1. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
 
 Here are the other classes in `Logic` (omitted from the class diagram above) that are used for parsing a user command:
@@ -335,8 +335,10 @@ These are `AddCommand`, `EditCommand`,
    IDs and allocation state. Its filtered contact list initially shows the same contacts as the live view.
    Commands resolve member IDs against the complete saved contact list in either model.
 1. It executes the command on the candidate. If the command fails, the candidate is discarded.
-1. It saves the candidate's data with `Storage#saveCoordiMate`. If saving fails, the command is rejected with a
-   save error such as `Event could not be saved. No changes were made.` and the candidate is discarded.
+1. It saves the candidate's data with `Storage#saveCoordiMateIfUnchanged`. This compares the file with the revision
+   loaded at startup or last saved by this window while holding a lock shared by CoordiMate instances. If another
+   window changed the file, the command is rejected and the candidate is discarded. Other save failures still
+   report an error such as `Event could not be saved. No changes were made.`
 1. Only then does it call `Model#setCoordiMate` to replace the live model's data with the candidate's data,
    which updates the UI.
 
@@ -366,11 +368,9 @@ The next input is treated as the answer, not as a command: `y` or `Y` runs the d
 `executeAtomicCommand`, and any other input cancels it.
 
 **Commands that do not change data**, such as `list`, `search`, `filter`, `members`, and `listtags`, are executed
-directly on the live model. As in AddressBook-Level3, `LogicManager` still saves the model afterwards. This has two
-consequences that developers should be aware of:
-
-* If the data file is invalid, such a command replaces it with the data currently in the app.
-* If the data file cannot be written, such a command reports a save error even though it changed no data.
+directly on the live model without saving. They cannot overwrite a newer or invalid data file. A window that has
+become stale can still show its loaded data, but its next save is rejected until it is reopened. Reminder dismissal
+uses the same conditional save and retains its session-only fallback when saving fails.
 
 `CommandResult.View` carries one requested view, or `NONE` when a command does not request a view change.
 `MainWindow` applies a requested view through the same view controls used by the sidebar.
@@ -550,7 +550,8 @@ To add a filter field, add a constant to `FilterField`, add a case to `FilterCom
 `FilterCommandParser.MESSAGE_INVALID_FIELD`.
 
 The `search` command is implemented separately. `SearchCommand` uses `ContactMatchesKeywordPredicate`, which tests
-whether a contact's name, phone, email, address, or organisation contains the keyword, ignoring case.
+whether a contact's name, phone, email, address, or organisation contains the keyword, ignoring case. It compares
+substrings with `String#regionMatches(true, ...)`, using the same case comparison as duplicate-name detection.
 
 #### Design considerations
 
@@ -1346,7 +1347,7 @@ testers are expected to do more *exploratory* testing.
    1. Test case: `delete 1`, then `n`<br>
       Expected: `ID: 1` and Alex Yeoh's name, phone, email, and role are shown, followed by `Confirm deletion? [y/N]`. After `n`, the status message shows `Deletion cancelled. No changes were made.` and no contact is deleted.
 
-   1. Test case: `delete 1`, then `y`<br>
+   1. Test case: `delete 1`, then `y ` (with a trailing space)<br>
       Expected: Alex Yeoh (member ID `1`) is deleted. Other contacts keep their IDs. The status message shows `Contact deleted successfully: ` followed by the contact's name.
 
    1. Test case: `delete 0`<br>

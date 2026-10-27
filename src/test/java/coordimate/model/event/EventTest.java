@@ -81,6 +81,7 @@ public class EventTest {
         assertFalse(Event.isValidName("🎵".repeat(Event.MAX_NAME_LENGTH + 1)));
         assertFalse(Event.isValidName("Final\nConcert")); // line break inside the name
         assertFalse(Event.isValidName("Final\u0007Concert")); // control character
+        assertFalse(Event.isValidName("Final\tConcert")); // tab inside the name is not collapsed into a space
         assertFalse(Event.isValidName("\u200B")); // zero-width space
 
         assertTrue(Event.isValidName("E"));
@@ -127,6 +128,17 @@ public class EventTest {
             assertEquals(name, duplicate.getName());
         }
         assertEquals("Fair", event.getName());
+    }
+
+    @Test
+    public void identity_nameDifferingOnlyInInternalSpacing_isDuplicateAndStoredCollapsed() {
+        Event event = new Event("Final Concert", date, time);
+        Event spaced = new Event("  final   Concert ", date, date);
+        assertEquals("final Concert", spaced.getName());
+        assertTrue(event.isSameEvent(spaced));
+        assertTrue(spaced.isSameEvent(event));
+        assertEquals(new Event("Final Concert", date, time), new Event("Final  Concert", date, time));
+        assertTrue(Event.isValidName("Final" + " ".repeat(10) + "x".repeat(94)));
     }
 
     @Test

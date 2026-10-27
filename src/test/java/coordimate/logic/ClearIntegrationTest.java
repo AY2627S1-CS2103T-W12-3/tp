@@ -15,6 +15,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import coordimate.logic.commands.ClearCommand;
 import coordimate.logic.commands.exceptions.CommandException;
+import coordimate.logic.parser.exceptions.ParseException;
 import coordimate.model.CoordiMate;
 import coordimate.model.ModelManager;
 import coordimate.model.ReadOnlyCoordiMate;
@@ -80,6 +81,24 @@ public class ClearIntegrationTest {
                 ClearCommand.MESSAGE_USAGE), exception.getMessage());
         assertEquals(beforeModel, model.getCoordiMate());
         assertEquals(invalidFile, Files.readString(path));
+    }
+
+    @Test
+    public void execute_extraArguments_modelAndFileUnchanged() throws Exception {
+        ModelManager model = newModel();
+        Path path = temporaryFolder.resolve("data.json");
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path);
+        storage.saveCoordiMate(model.getCoordiMate());
+        CoordiMate beforeModel = new CoordiMate(model.getCoordiMate());
+        String beforeFile = Files.readString(path);
+
+        ParseException exception = assertThrows(ParseException.class, () ->
+                newLogic(model, storage).execute("clear garbage"));
+
+        assertEquals(String.format(Messages.MESSAGE_INVALID_COMMAND_FORMAT, ClearCommand.MESSAGE_USAGE),
+                exception.getMessage());
+        assertEquals(beforeModel, model.getCoordiMate());
+        assertEquals(beforeFile, Files.readString(path));
     }
 
     private ModelManager newModel() {

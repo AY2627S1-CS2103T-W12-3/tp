@@ -1176,6 +1176,32 @@ public class MainWindowTest {
     }
 
     @Test
+    public void clickFilterCommandRow_showsExampleWithFullOrganisationName() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            MainWindow window = new MainWindow(stage, new LogicManager(new ModelManager(), null),
+                    Path.of("data", "coordimate.json"));
+            window.fillInnerParts();
+            stage.getScene().getRoot().applyCss();
+
+            HBox filterRow = (HBox) stage.getScene().getRoot().lookupAll(".cheat-row").stream()
+                    .filter(row -> "filter".equals(((Label) row.lookup(".cheat-name")).getText()))
+                    .findFirst().orElseThrow();
+            filterRow.getOnMouseClicked().handle(null);
+            TextField commandInput = (TextField) stage.getScene().getRoot().lookup(".text-field");
+            TextFlow prefixHelp = (TextFlow) stage.getScene().getRoot().lookup("#prefixHelp");
+            assertEquals("filter", commandInput.getText());
+            assertEquals("Format: filter FIELD/VALUE [FIELD/VALUE]...\n"
+                    + "Example: filter tag/EXCO organisation/NUS Student Affairs", getPrefixHelpText(prefixHelp));
+
+            stage.close();
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
     public void tagMembers_showRolesOrganisationsAndTagColors() throws Exception {
         FutureTask<Void> task = new FutureTask<>(() -> {
             Stage stage = new Stage();

@@ -2,7 +2,6 @@ package coordimate.model.person;
 
 import static java.util.Objects.requireNonNull;
 
-import java.util.Locale;
 import java.util.function.Predicate;
 
 import coordimate.commons.util.ToStringBuilder;
@@ -29,16 +28,22 @@ public class ContactMatchesKeywordPredicate implements Predicate<Person> {
      */
     @Override
     public boolean test(Person person) {
-        String lowerKeyword = keyword.toLowerCase(Locale.ROOT);
-        return person.getName().getFullName().toLowerCase(Locale.ROOT).contains(lowerKeyword)
-                || person.getPhone().getValue().toLowerCase(Locale.ROOT).contains(lowerKeyword)
-                || person.getEmail().getValue().toLowerCase(Locale.ROOT).contains(lowerKeyword)
-                || person.getAddress().map(address -> address.getValue().toLowerCase(Locale.ROOT)
-                        .contains(lowerKeyword))
+        return containsIgnoreCase(person.getName().getFullName(), keyword)
+                || containsIgnoreCase(person.getPhone().getValue(), keyword)
+                || containsIgnoreCase(person.getEmail().getValue(), keyword)
+                || person.getAddress().map(address -> containsIgnoreCase(address.getValue(), keyword))
                         .orElse(false)
-                || person.getOrganisation().map(organisation -> organisation.getValue().toLowerCase(Locale.ROOT)
-                        .contains(lowerKeyword))
+                || person.getOrganisation().map(organisation -> containsIgnoreCase(organisation.getValue(), keyword))
                         .orElse(false);
+    }
+
+    private static boolean containsIgnoreCase(String value, String keyword) {
+        for (int index = 0; index <= value.length() - keyword.length(); index++) {
+            if (value.regionMatches(true, index, keyword, 0, keyword.length())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import coordimate.commons.util.StringUtil;
 import coordimate.commons.util.ToStringBuilder;
 import coordimate.logic.Messages;
 import coordimate.logic.commands.exceptions.CommandException;
@@ -105,7 +106,8 @@ public class DeleteCommand extends Command {
 
     private boolean matchesIdentifier(Person person) {
         return switch (identifierType) {
-            case NAME -> person.getName().getFullName().equalsIgnoreCase(identifier);
+            case NAME -> person.getName().getFullName()
+                    .equalsIgnoreCase(StringUtil.normalizeWhitespace(identifier));
             case PHONE -> person.getPhone().getNormalizedValue().equals(normalizePhone(identifier));
             case EMAIL -> person.getEmail().getValue().equalsIgnoreCase(identifier);
         };
