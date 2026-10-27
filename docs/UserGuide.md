@@ -921,7 +921,8 @@ Lists contacts whose name, phone number, email, address, or organisation contain
 
 Format: `search KEYWORD`
 
-* Matching is case-insensitive across all five fields; for example, `hans` matches `Hans`.
+* Matching is case-insensitive across all five fields; for example, `hans` matches `Hans`, and
+  `search ipek` finds a contact named `İpek`.
 * Partial words match; for example, `Han` matches `Hans`.
 * The entire keyword is matched as one substring within a field. Spaces and word order matter:
   `search Hans Bo` matches `Hans Bo Yang`, but does not match `Bo Hans` or separate contacts named `Hans` and `Bo`.

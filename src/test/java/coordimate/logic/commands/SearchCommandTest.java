@@ -17,6 +17,8 @@ import coordimate.model.Model;
 import coordimate.model.ModelManager;
 import coordimate.model.UserPrefs;
 import coordimate.model.person.ContactMatchesKeywordPredicate;
+import coordimate.model.person.Person;
+import coordimate.testutil.PersonBuilder;
 
 public class SearchCommandTest {
 
@@ -32,6 +34,21 @@ public class SearchCommandTest {
 
         assertCommandSuccess(command, model, String.format(SearchCommand.MESSAGE_SUCCESS, 2, keyword), expectedModel);
         assertEquals(List.of(BENSON, DANIEL), model.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_dottedCapitalIName_matchesLowercaseKeyword() {
+        Person ipek = new PersonBuilder().withMemberId(8).withName("İpek")
+                .withPhone("8000001").withEmail("contactx@example.com").build();
+        model.addPerson(ipek);
+        expectedModel.addPerson(ipek);
+        String keyword = "ipek";
+        ContactMatchesKeywordPredicate predicate = new ContactMatchesKeywordPredicate(keyword);
+        expectedModel.updateFilteredPersonList(predicate);
+
+        assertCommandSuccess(new SearchCommand(predicate, keyword), model,
+                String.format(SearchCommand.MESSAGE_SUCCESS, 1, keyword), expectedModel);
+        assertEquals(List.of(ipek), model.getFilteredPersonList());
     }
 
     @Test

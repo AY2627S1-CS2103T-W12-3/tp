@@ -31,6 +31,14 @@ public class ContactMatchesKeywordPredicateTest {
     }
 
     @Test
+    public void test_nameWithDottedCapitalI_matchesIgnoringCase() {
+        Person person = new PersonBuilder().withName("İpek").withEmail("contactx@example.com").build();
+
+        assertTrue(new ContactMatchesKeywordPredicate("ipek").test(person));
+        assertTrue(new ContactMatchesKeywordPredicate("PEK").test(person));
+    }
+
+    @Test
     public void test_phoneContainsKeyword_returnsTrue() {
         Person person = new PersonBuilder().withPhone("94351253").build();
 
