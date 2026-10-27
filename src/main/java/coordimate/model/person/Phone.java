@@ -58,7 +58,7 @@ public class Phone {
      */
     public static boolean isValidPhone(String test) {
         requireNonNull(test);
-        return test.matches(LEGACY_VALIDATION_REGEX) || isValidInputPhone(test)
+        return test.strip().matches(LEGACY_VALIDATION_REGEX) || isValidInputPhone(test)
                 || matchesWithDigitCount(test, PREVIOUS_VALIDATION_REGEX);
     }
 
