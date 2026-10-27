@@ -634,11 +634,12 @@ public class EventListPanelTest {
         for (Name name : List.of(ALICE, BOB, CHARLIE)) {
             persons.add(new PersonBuilder().withMemberId(Integer.MAX_VALUE - persons.size())
                     .withName(name.getFullName()).withRole("Logistics")
-                    .withOrganisation("NUS").withTags("Logistics", "Publicity").withNote(note).build());
+                    .withOrganisation("NUS").withTags("Logistics", "Publicity").withNote(note)
+                    .withLeaveDate("30-11-2026").build());
         }
         Event event = event(List.of(ALICE, BOB, CHARLIE),
                 Map.of(ALICE, AttendanceStatus.PRESENT, BOB, AttendanceStatus.ABSENT));
-        EventListPanel panel = new EventListPanel(FXCollections.observableArrayList(event), persons);
+        EventListPanel panel = new EventListPanel(FXCollections.observableArrayList(event), persons, CLOCK);
         SplitPane root = (SplitPane) panel.getRoot();
         Scene scene = new Scene(root, 1400, 700);
         scene.getStylesheets().add(EventListPanelTest.class.getResource("/view/DarkTheme.css").toExternalForm());
@@ -656,6 +657,7 @@ public class EventListPanelTest {
                 Label badge = (Label) row.getChildren().get(3);
                 Label memberId = (Label) row.getChildren().getFirst();
                 Label noteLabel = (Label) row.lookup(".event-member-note");
+                Label leave = (Label) row.lookup(".leave-badge");
                 VBox details = (VBox) row.getChildren().get(2);
 
                 assertTrue(memberId.getWidth() + 1 >= memberId.prefWidth(-1),
@@ -678,11 +680,18 @@ public class EventListPanelTest {
                 assertEquals("Note: " + note, ((Text) noteLabel.lookup(".text")).getText(),
                         "Rendered note should not be truncated");
                 Bounds noteBounds = noteLabel.localToScene(noteLabel.getLayoutBounds());
+                Bounds leaveBounds = leave.localToScene(leave.getLayoutBounds());
                 Bounds badgeBounds = badge.localToScene(badge.getLayoutBounds());
                 var identityLine = details.getChildren().getFirst();
                 Bounds identityBounds = identityLine.localToScene(identityLine.getLayoutBounds());
                 assertTrue(noteBounds.getMaxX() <= badgeBounds.getMinX(), "Note should not overlap badge");
-                assertTrue(identityBounds.getMaxY() <= noteBounds.getMinY(), "Note should remain below tags");
+                assertTrue(leaveBounds.getMaxX() <= badgeBounds.getMinX(), "Leave should not overlap attendance");
+                assertTrue(identityBounds.getMaxY() <= leaveBounds.getMinY(), "Leave should remain below tags");
+                assertTrue(leaveBounds.getMaxY() <= noteBounds.getMinY(), "Note should remain below leave");
+                assertEquals("On leave until 30-11-2026", ((Text) leave.lookup(".text")).getText(),
+                        "Leave date should not be truncated");
+                assertTrue(leave.getHeight() + 1 >= leave.prefHeight(leave.getWidth()),
+                        "Complete leave date should fit at width " + width);
                 assertTrue(noteLabel.getBoundsInParent().getMaxY() <= details.getHeight(),
                         "Complete note should fit inside the details column");
                 assertTrue(details.getBoundsInParent().getMaxY() <= row.getHeight() - row.getInsets().getBottom(),

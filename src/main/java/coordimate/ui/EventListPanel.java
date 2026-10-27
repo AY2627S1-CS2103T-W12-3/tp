@@ -94,6 +94,7 @@ public class EventListPanel extends UiPart<Region> {
     private int lastSelectedIndex = -1;
     private final ObservableList<Person> persons;
     private final Clock clock;
+    private LocalDate shownDate;
     private final Label emptyListMessage = new Label(MESSAGE_NO_EVENTS);
     private final BooleanProperty showingArchived = new SimpleBooleanProperty(false);
 
@@ -116,6 +117,7 @@ public class EventListPanel extends UiPart<Region> {
         super(FXML);
         this.persons = getPersonSource(persons);
         this.clock = Objects.requireNonNull(clock);
+        shownDate = LocalDate.now(clock);
         eventListView.setItems(events);
         eventListView.setCellFactory(list -> new EventListCell());
         eventListView.setPlaceholder(emptyListMessage);
@@ -188,6 +190,16 @@ public class EventListPanel extends UiPart<Region> {
     private void selectAndReveal(int targetIndex) {
         eventListView.getSelectionModel().select(targetIndex);
         eventListView.scrollTo(targetIndex);
+    }
+
+    /** Refreshes leave indicators when the calendar date changes. */
+    void refreshIfDateChanged() {
+        LocalDate today = LocalDate.now(clock);
+        if (today.equals(shownDate)) {
+            return;
+        }
+        shownDate = today;
+        showDetails(eventListView.getSelectionModel().getSelectedItem());
     }
 
     /** Runs the given action whenever the displayed event list is clicked. */

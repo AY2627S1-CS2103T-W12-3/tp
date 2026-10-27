@@ -17,6 +17,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.FutureTask;
@@ -33,6 +34,7 @@ import coordimate.logic.reminder.ReminderDismissalException;
 import coordimate.model.ModelManager;
 import coordimate.model.ReadOnlyCoordiMate;
 import coordimate.model.UserPrefs;
+import coordimate.model.event.AttendanceStatus;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
 import coordimate.storage.JsonCoordiMateStorage;
@@ -46,6 +48,7 @@ import javafx.event.ActionEvent;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
@@ -563,6 +566,54 @@ public class MainWindowReminderTest {
             } finally {
                 ui.stop();
                 stage.close();
+            }
+            return null;
+        });
+    }
+
+    @Test
+    public void periodicCheck_eventMemberLeaveEnds_preservesAttendanceAndSelection() throws Exception {
+        onJavaFxThread(() -> {
+            ModelManager model = new ModelManager();
+            model.addPerson(new PersonBuilder(ALICE).withoutMemberId().withLeaveDate("19-10-2026")
+                    .withNote("Contact by email while on leave").build());
+            Event event = event("Team Dinner", "25-10-2026", "25-10-2026")
+                    .withMembersAndAttendance(List.of(ALICE.getName()),
+                            Map.of(ALICE.getName(), AttendanceStatus.ABSENT));
+            model.addEvent(event);
+            ControlledStorage storage = new ControlledStorage(temporaryFolder.resolve("data.json"));
+            storage.saveCoordiMate(model.getCoordiMate());
+            Fixture fixture = openWindow(model, storage, new AdjustableClock(), true, 1100, 800);
+            try {
+                Parent root = fixture.stage().getScene().getRoot();
+                ToggleButton eventsView = (ToggleButton) root.lookup("#eventsView");
+                eventsView.fire();
+                ListView<?> events = (ListView<?>) root.lookup("#eventListView");
+                events.getSelectionModel().selectFirst();
+                VBox members = (VBox) root.lookup("#members");
+                assertEquals(List.of("On leave until 19-10-2026"), leaveBadges(members));
+                snapshot(root, "event-member-leave.png");
+
+                var originalRow = members.getChildren().getFirst();
+                fixture.clock().advance(java.time.Duration.ofHours(8));
+                fixture.timer().getKeyFrames().getFirst().getOnFinished().handle(new ActionEvent());
+                assertSame(originalRow, members.getChildren().getFirst());
+                assertEquals(List.of("On leave until 19-10-2026"), leaveBadges(members));
+
+                fixture.clock().advance(java.time.Duration.ofHours(1));
+                fixture.timer().getKeyFrames().getFirst().getOnFinished().handle(new ActionEvent());
+                assertEquals(List.of(), leaveBadges(members));
+                assertSame(event, events.getSelectionModel().getSelectedItem());
+                assertEquals("1 Absent", ((Label) root.lookup("#absentCount")).getText());
+                assertEquals("● absent", ((Label) members.lookup(".attendance-badge")).getText());
+
+                events.getSelectionModel().clearSelection();
+                fixture.clock().advance(java.time.Duration.ofDays(1));
+                fixture.timer().getKeyFrames().getFirst().getOnFinished().handle(new ActionEvent());
+                assertTrue(events.getSelectionModel().isEmpty());
+                assertTrue(root.lookup("#selectionHint").isVisible());
+            } finally {
+                fixture.stage().close();
             }
             return null;
         });
