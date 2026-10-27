@@ -1847,7 +1847,10 @@ want to keep.
       has two assigned contacts, with Alex Yeoh marked present.
 
    1. Test case: Run `list`, then check the `data` folder.<br>
-      Expected: `data/coordimate.json` has been created again.
+      Expected: `data/coordimate.json` has not been created, because commands that do not change data do not save.
+
+   1. Test case: Run `addtag t/Test`, then check the `data` folder.<br>
+      Expected: `data/coordimate.json` has been created again, containing the sample data and the `Test` tag.
 
 1. Migrating legacy member IDs and keeping command targets across restarts
 

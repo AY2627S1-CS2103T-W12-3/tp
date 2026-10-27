@@ -1,14 +1,14 @@
 package coordimate.model.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
 import coordimate.model.ReadOnlyCoordiMate;
+import coordimate.model.event.AttendanceStatus;
 import coordimate.model.event.Event;
 import coordimate.model.person.MemberId;
 import coordimate.model.person.Name;
@@ -40,12 +40,11 @@ public class SampleDataUtilTest {
 
         assertEquals(1, sampleData.getEventList().size());
         Event event = sampleData.getEventList().getFirst();
-        assertFalse(event.getMembers().isEmpty());
-        assertTrue(event.getMembers().size() <= 2);
-        assertTrue(event.getMembers().stream().allMatch(member -> sampleData.getPersonList().stream()
-                .map(Person::getName)
-                .anyMatch(member::equals)));
-        assertTrue(event.getMembers().stream().anyMatch(member -> event.getAttendance(member).isPresent()));
+        Name alex = new Name("Alex Yeoh");
+        Name bernice = new Name("Bernice Yu");
+        assertEquals(List.of(alex, bernice), event.getMembers());
+        assertEquals(Optional.of(AttendanceStatus.PRESENT), event.getAttendance(alex));
+        assertEquals(Optional.empty(), event.getAttendance(bernice));
     }
 
     @Test
