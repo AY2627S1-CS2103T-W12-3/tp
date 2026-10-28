@@ -100,13 +100,16 @@ public class JsonUserPrefsStorageTest {
     }
 
     @Test
-    public void readUserPrefs_nullWindowCoordinates_usesDefaultPosition() throws Exception {
+    public void readUserPrefs_nullOrMissingWindowCoordinates_usesDefaultPosition() throws Exception {
         Path prefsFile = testFolder.resolve("preferences.json");
-        Files.writeString(prefsFile, "{\"guiSettings\":{\"windowCoordinates\":null}}");
+        for (String content : new String[] {"{\"guiSettings\":{\"windowCoordinates\":null}}",
+            "{\"guiSettings\":{}}"}) {
+            Files.writeString(prefsFile, content);
 
-        UserPrefs loaded = new JsonUserPrefsStorage(prefsFile).readUserPrefs().orElseThrow();
+            UserPrefs loaded = new JsonUserPrefsStorage(prefsFile).readUserPrefs().orElseThrow();
 
-        assertNull(loaded.getGuiSettings().getWindowCoordinates());
+            assertNull(loaded.getGuiSettings().getWindowCoordinates());
+        }
     }
 
     private UserPrefs getTypicalUserPrefs() {

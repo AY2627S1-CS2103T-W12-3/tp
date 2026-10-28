@@ -60,14 +60,14 @@ public class UiManager implements Ui {
      * Creates the UI with a warning to show after startup, without asking for confirmation.
      */
     public UiManager(Logic logic, Path dataFilePath, String startupWarning) {
-        this(logic, dataFilePath, startupWarning, false, "", Platform::exit);
+        this(logic, dataFilePath, startupWarning, false);
     }
 
     /**
      * Creates the UI with a startup warning and recovery state.
      */
     public UiManager(Logic logic, Path dataFilePath, String startupWarning, boolean isDataRecoveryMode) {
-        this(logic, dataFilePath, startupWarning, isDataRecoveryMode, "", Platform::exit);
+        this(logic, dataFilePath, startupWarning, isDataRecoveryMode, "");
     }
 
     /**
@@ -75,7 +75,7 @@ public class UiManager implements Ui {
      */
     public UiManager(Logic logic, Path dataFilePath, String startupWarning, boolean isDataRecoveryMode,
             String dataRecoveryDetail) {
-        this(logic, dataFilePath, startupWarning, isDataRecoveryMode, dataRecoveryDetail, "", Platform::exit);
+        this(logic, dataFilePath, startupWarning, isDataRecoveryMode, dataRecoveryDetail, "");
     }
 
     /** Creates the UI with a preference warning to include if saved data also needs recovery. */

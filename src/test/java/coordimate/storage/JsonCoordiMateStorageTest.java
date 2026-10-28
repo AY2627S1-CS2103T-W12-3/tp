@@ -145,6 +145,18 @@ public class JsonCoordiMateStorageTest {
     }
 
     @Test
+    public void readCoordiMate_nullEvents_loadsEmptyEventList() throws Exception {
+        Path path = testFolder.resolve("data.json");
+        String content = "{\"persons\":[],\"events\":null}";
+        Files.writeString(path, content);
+
+        ReadOnlyCoordiMate loaded = new JsonCoordiMateStorage(path).readCoordiMate().orElseThrow();
+
+        assertTrue(loaded.getEventList().isEmpty());
+        assertEquals(content, Files.readString(path));
+    }
+
+    @Test
     public void readCoordiMate_nullMember_keepsExistingValidationError() throws Exception {
         Path path = testFolder.resolve("data.json");
         Files.writeString(path, """

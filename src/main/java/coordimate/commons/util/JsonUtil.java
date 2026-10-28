@@ -69,7 +69,7 @@ public class JsonUtil {
 
         try {
             JsonNode root = objectMapper.readTree(FileUtil.readFromFile(filePath));
-            if (root == null || root.isNull()) {
+            if (root.isNull()) {
                 jsonFile = null;
             } else {
                 validator.validate(root);
