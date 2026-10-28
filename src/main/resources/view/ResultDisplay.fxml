@@ -11,7 +11,7 @@
       xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
   <ImageView fx:id="feedbackIcon" fitWidth="18" fitHeight="18" preserveRatio="true" />
   <ScrollPane fx:id="feedbackMessageScroll" fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
-              minWidth="0" minHeight="0" maxWidth="Infinity" maxHeight="84"
+              minWidth="0" minHeight="0" maxWidth="Infinity" maxHeight="220"
               HBox.hgrow="ALWAYS" styleClass="feedback-message-scroll">
     <Label fx:id="resultDisplay" wrapText="true" styleClass="result-display"
            minWidth="0" maxWidth="Infinity" />

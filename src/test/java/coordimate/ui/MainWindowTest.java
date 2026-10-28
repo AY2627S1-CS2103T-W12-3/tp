@@ -910,8 +910,11 @@ public class MainWindowTest {
             ModelManager model = new ModelManager();
             model.setGuiSettings(new GuiSettings(WindowBounds.PREFERRED_MIN_WIDTH,
                     WindowBounds.PREFERRED_MIN_HEIGHT, 0, 0, false));
+            model.addPerson(new PersonBuilder().withName("Alexandria ".repeat(7).strip())
+                    .withEmail("a".repeat(64) + "@" + "b".repeat(63) + "."
+                            + "c".repeat(60) + "." + "d".repeat(60) + ".com").build());
             for (int index = 1; index <= 86; index++) {
-                model.addTag(new Tag("Custom" + index));
+                model.addTag(new Tag("Custom" + index + "LongNameLongName"));
             }
             Path dataPath = temporaryFolder.resolve("long-feedback-data.json");
             StorageManager storage = new StorageManager(new JsonCoordiMateStorage(dataPath),
@@ -946,6 +949,21 @@ public class MainWindowTest {
                 assertLongFeedbackFitsWindow(stage, input, feedbackScroll, views);
                 assertTrue(stage.getScene().lookup("#tagListView").getBoundsInLocal().getHeight() > 30);
 
+                input.setText("delete 1");
+                submit.fire();
+                stage.getScene().getRoot().applyCss();
+                stage.getScene().getRoot().layout();
+                assertTrue(feedback.getText().contains("Confirm deletion? [y/N]"));
+                assertTrue(feedbackScroll.getHeight() > 84);
+                assertTrue(feedbackScroll.getContent().getLayoutBounds().getHeight()
+                        <= feedbackScroll.getViewportBounds().getHeight() + 1);
+                assertFalse(stage.getScene().lookup("#feedbackScrollHint").isVisible());
+                assertTrue(views.getHeight() > 100);
+                assertTrue(input.localToScene(input.getBoundsInLocal()).getMaxY() <= stage.getScene().getHeight());
+
+                input.setText("n");
+                submit.fire();
+
                 input.setText("list");
                 submit.fire();
                 stage.getScene().getRoot().applyCss();
@@ -965,7 +983,7 @@ public class MainWindowTest {
 
     private static void assertLongFeedbackFitsWindow(Stage stage, TextField input, ScrollPane feedbackScroll,
                                                      TabPane views) {
-        assertTrue(feedbackScroll.getHeight() <= 84);
+        assertTrue(feedbackScroll.getHeight() <= 220);
         assertTrue(feedbackScroll.getContent().getLayoutBounds().getHeight()
                 > feedbackScroll.getViewportBounds().getHeight());
         assertTrue(stage.getScene().lookup("#feedbackScrollHint").isVisible());
@@ -1006,7 +1024,7 @@ public class MainWindowTest {
             runOnJavaFxThread(() -> {
                 ScrollPane scroll = (ScrollPane) stage.getScene().lookup("#feedbackMessageScroll");
                 assertTrue(scroll.getHeight() >= 60);
-                assertTrue(scroll.getHeight() <= 84);
+                assertTrue(scroll.getHeight() <= 220);
                 assertTrue(stage.getScene().lookup("#feedbackScrollHint").isVisible());
                 return null;
             });

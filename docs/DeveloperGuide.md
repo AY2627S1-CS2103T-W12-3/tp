@@ -104,7 +104,8 @@ entries. While `Logic` awaits delete confirmation, arrow-key navigation is pause
 to history. Inserting a command from the sidebar resets history navigation.
 
 The `UI` component uses the JavaFX UI framework. The layouts of these UI parts are defined in matching `.fxml` files in `src/main/resources/view`. For example, [`MainWindow.fxml`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/resources/view/MainWindow.fxml) specifies the layout of [`MainWindow`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/ui/MainWindow.java).
-`ResultDisplay` sizes its scroll pane from the message's wrapped height, capped at 84 pixels, so long feedback shows
+`ResultDisplay` sizes its scroll pane from the message's wrapped height, capped at 220 pixels, so delete confirmation
+details remain visible at the minimum window size while longer feedback shows
 several lines without displacing the workspace or command box. Its icon and status label stay outside the scroll pane.
 The status column reserves space for the overflow hint even while it is hidden, keeping the message width stable.
 The hint appears only when the current message is taller than the visible viewport.
