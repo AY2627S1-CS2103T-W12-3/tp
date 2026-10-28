@@ -129,6 +129,11 @@ public class EditCommand extends Command {
         requireNonNull(model);
         Person personToEdit = resolvePersonToEdit(model);
         Person editedPerson = createEditedPerson(personToEdit, editPersonDescriptor, model.getTagList());
+        // A contact loaded with more tags than the limit may still be edited, as long as it gains no tags.
+        int updatedTagCount = editedPerson.getTags().size();
+        if (updatedTagCount > Person.MAX_TAGS && updatedTagCount > personToEdit.getTags().size()) {
+            throw new CommandException(Person.MESSAGE_TAG_LIMIT);
+        }
 
         boolean duplicatesAnotherPerson = model.getCoordiMate().getPersonList().stream()
                 .anyMatch(person -> !person.equals(personToEdit) && person.isSamePerson(editedPerson));

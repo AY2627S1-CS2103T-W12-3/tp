@@ -19,6 +19,10 @@ import coordimate.model.tag.Tag;
  */
 public class Person {
 
+    /** The most tags a contact may have after command input. Saved data with more tags is still accepted. */
+    public static final int MAX_TAGS = 15;
+    public static final String MESSAGE_TAG_LIMIT = "A contact can have at most " + MAX_TAGS + " tags.";
+
     private final MemberId memberId;
 
     // Contact details used for duplicate checks

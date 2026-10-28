@@ -2,6 +2,7 @@ package coordimate.logic.parser;
 
 import static coordimate.logic.parser.ParserUtil.MESSAGE_INVALID_INDEX;
 import static coordimate.testutil.Assert.assertThrows;
+import static coordimate.testutil.TestUtil.numberedTagNames;
 import static coordimate.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -23,6 +24,7 @@ import coordimate.model.person.MemberId;
 import coordimate.model.person.Name;
 import coordimate.model.person.Note;
 import coordimate.model.person.Organisation;
+import coordimate.model.person.Person;
 import coordimate.model.person.Phone;
 import coordimate.model.person.Role;
 import coordimate.model.tag.Tag;
@@ -216,6 +218,18 @@ public class ParserUtilTest {
         Set<Tag> expectedTagSet = Set.of(new Tag(VALID_TAG_1), new Tag(VALID_TAG_2));
 
         assertEquals(expectedTagSet, actualTagSet);
+    }
+
+    @Test
+    public void parseContactTags_variousValues() throws Exception {
+        assertThrows(NullPointerException.class, () -> ParserUtil.parseContactTags(null));
+        assertEquals(Set.of(new Tag(VALID_TAG_1)), ParserUtil.parseContactTags(
+                List.of(VALID_TAG_1, VALID_TAG_1.toUpperCase())));
+        assertEquals(Set.of(new Tag(VALID_TAG_2)), ParserUtil.parseContactTags(
+                List.of(VALID_TAG_1, "", VALID_TAG_2)));
+        assertEquals(Person.MAX_TAGS, ParserUtil.parseContactTags(List.of(numberedTagNames(Person.MAX_TAGS))).size());
+        assertThrows(ParseException.class, Person.MESSAGE_TAG_LIMIT, () ->
+                ParserUtil.parseContactTags(List.of(numberedTagNames(Person.MAX_TAGS + 1))));
     }
 
     @Test

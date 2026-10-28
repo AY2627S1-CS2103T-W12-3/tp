@@ -383,6 +383,20 @@ public class JsonCoordiMateStorageTest {
     }
 
     @Test
+    public void readAndSaveCoordiMate_legacyManyTags_preservesContactAndTags() throws Exception {
+        ReadOnlyCoordiMate legacyData = readCoordiMate("legacyManyTagsCoordiMate.json").orElseThrow();
+
+        assertEquals(1, legacyData.getPersonList().size());
+        assertTrue(legacyData.getPersonList().getFirst().getTags().size() > Person.MAX_TAGS);
+
+        Path filePath = testFolder.resolve("LegacyManyTags.json");
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(filePath);
+        storage.saveCoordiMate(legacyData);
+
+        assertEquals(legacyData, storage.readCoordiMate().orElseThrow());
+    }
+
+    @Test
     public void saveCoordiMate_existingFile_replacedWithoutTemporaryFiles() throws Exception {
         Path filePath = testFolder.resolve("coordimate.json");
         JsonCoordiMateStorage storage = new JsonCoordiMateStorage(filePath);
