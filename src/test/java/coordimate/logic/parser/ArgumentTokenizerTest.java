@@ -10,6 +10,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import coordimate.logic.parser.ArgumentMultimap.PrefixedValue;
+import coordimate.testutil.UnicodeWhitespace;
 
 public class ArgumentTokenizerTest {
 
@@ -17,6 +18,17 @@ public class ArgumentTokenizerTest {
     private final Prefix pSlash = new Prefix("p/");
     private final Prefix dashT = new Prefix("-t");
     private final Prefix hatQ = new Prefix("^Q");
+
+    @Test
+    public void tokenize_unicodeWhitespace_recognizesPrefixesAndTrimsValues() {
+        for (String space : UnicodeWhitespace.ALL) {
+            ArgumentMultimap arguments = ArgumentTokenizer.tokenize(
+                    space + "p/" + space + "first" + space + "p/second" + space, pSlash);
+            assertPreambleEmpty(arguments);
+            assertArgumentPresent(arguments, pSlash, "first", "second");
+        }
+        assertArgumentPresent(ArgumentTokenizer.tokenize("p/value", pSlash), pSlash, "value");
+    }
 
     @Test
     public void tokenize_emptyArgsString_noValues() {

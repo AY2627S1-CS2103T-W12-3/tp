@@ -9,7 +9,21 @@ import java.io.FileNotFoundException;
 
 import org.junit.jupiter.api.Test;
 
+import coordimate.testutil.UnicodeWhitespace;
+
 public class StringUtilTest {
+
+    @Test
+    public void normalizeWhitespace_allUnicodeWhitespace_collapsedAndTrimmed() {
+        for (String space : UnicodeWhitespace.ALL) {
+            assertEquals("Final Concert", StringUtil.normalizeWhitespace(space + "Final" + space.repeat(2)
+                    + "Concert" + space));
+            assertEquals("", StringUtil.normalizeWhitespace(space.repeat(2)));
+            assertEquals("Final" + space + "Concert",
+                    StringUtil.stripWhitespace(space + "Final" + space + "Concert" + space));
+        }
+        assertThrows(NullPointerException.class, () -> StringUtil.stripWhitespace(null));
+    }
 
     //---------------- Tests for normalizeWhitespace --------------------------------------
 

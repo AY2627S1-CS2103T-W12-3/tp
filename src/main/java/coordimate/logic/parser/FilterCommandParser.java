@@ -8,6 +8,7 @@ import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import coordimate.commons.util.StringUtil;
 import coordimate.logic.Messages;
 import coordimate.logic.commands.FilterCommand;
 import coordimate.logic.parser.exceptions.ParseException;
@@ -21,12 +22,12 @@ public class FilterCommandParser implements Parser<FilterCommand> {
     public static final String MESSAGE_UNKNOWN_PARAMETER =
             Messages.MESSAGE_UNKNOWN_PARAMETER + "\n" + FilterCommand.MESSAGE_USAGE;
 
-    private static final Pattern FIELD_PATTERN = Pattern.compile("(?<!\\S)([A-Za-z]+)/");
+    private static final Pattern FIELD_PATTERN = Pattern.compile(PrefixParser.PARAMETER_BOUNDARY + "([A-Za-z]+)/");
 
     @Override
     public FilterCommand parse(String args) throws ParseException {
         requireNonNull(args);
-        String trimmed = args.strip();
+        String trimmed = StringUtil.stripWhitespace(args);
         if (trimmed.isEmpty()) {
             throw ParserUtil.createInvalidFormatException(FilterCommand.MESSAGE_USAGE);
         }
@@ -45,7 +46,7 @@ public class FilterCommandParser implements Parser<FilterCommand> {
             String fieldName = token.group(1);
             int valueStart = token.end();
             int valueEnd = (i + 1 < fieldTokens.size()) ? fieldTokens.get(i + 1).start() : trimmed.length();
-            String value = stripQuotes(trimmed.substring(valueStart, valueEnd).strip());
+            String value = stripQuotes(StringUtil.stripWhitespace(trimmed.substring(valueStart, valueEnd)));
 
             FilterField field = FilterField.fromFieldName(fieldName)
                     .orElseThrow(() -> new ParseException(String.format(MESSAGE_UNKNOWN_PARAMETER, fieldName + "/")));
@@ -93,7 +94,7 @@ public class FilterCommandParser implements Parser<FilterCommand> {
 
     private String stripQuotes(String value) {
         if (value.length() >= 2 && value.startsWith("\"") && value.endsWith("\"")) {
-            return value.substring(1, value.length() - 1).strip();
+            return StringUtil.stripWhitespace(value.substring(1, value.length() - 1));
         }
         return value;
     }

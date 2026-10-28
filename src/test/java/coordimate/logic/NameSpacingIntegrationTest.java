@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -16,6 +17,7 @@ import coordimate.logic.commands.AddEventCommand;
 import coordimate.logic.commands.EditCommand;
 import coordimate.logic.commands.EditEventCommand;
 import coordimate.logic.commands.exceptions.CommandException;
+import coordimate.logic.parser.exceptions.ParseException;
 import coordimate.model.CoordiMate;
 import coordimate.model.ModelManager;
 import coordimate.model.event.AttendanceStatus;
@@ -25,6 +27,7 @@ import coordimate.model.person.Person;
 import coordimate.storage.JsonCoordiMateStorage;
 import coordimate.storage.JsonUserPrefsStorage;
 import coordimate.storage.StorageManager;
+import coordimate.testutil.UnicodeWhitespace;
 
 /**
  * Checks that contact and event names differing only in internal spacing refer to the same contact or event.
@@ -139,6 +142,65 @@ public class NameSpacingIntegrationTest {
         logic.execute("deleteevent evn/Final   Concert");
         assertEquals(List.of("Open Day"),
                 model.getCoordiMate().getEventList().stream().map(Event::getName).toList());
+    }
+
+    @Test
+    public void eventCommands_unicodeSpaces_savedDisplayNameRemainsUsableAfterReload() throws Exception {
+        for (String space : UnicodeWhitespace.ALL) {
+            if (Character.getType(space.codePointAt(0)) != Character.SPACE_SEPARATOR) {
+                continue;
+            }
+            logic.execute("addevent evn/Planning" + space.repeat(2) + "Meeting st/01-01-2027 et/01-01-2027");
+            assertEquals("Planning Meeting", findEvent("Planning Meeting").getName());
+            assertEquals(model.getCoordiMate(), storage.readCoordiMate().orElseThrow());
+            model.setCoordiMate(storage.readCoordiMate().orElseThrow());
+
+            assertRejected("addevent evn/Planning Meeting st/01-01-2027 et/01-01-2027",
+                    AddEventCommand.MESSAGE_DUPLICATE_EVENT);
+            logic.execute("editevent evn/Planning Meeting nevn/Final" + space + "Review");
+            String displayedName = findEvent("Final Review").getName();
+            assertEquals("Final Review", displayedName);
+            logic.execute("archiveevent evn/" + displayedName);
+            assertTrue(findEvent(displayedName).isArchived());
+            logic.execute("unarchiveevent evn/Final" + space + "Review");
+            logic.execute("deleteevent evn/" + displayedName);
+
+            assertEquals(List.of("Final Concert", "Open Day"),
+                    model.getCoordiMate().getEventList().stream().map(Event::getName).toList());
+            assertEquals(model.getCoordiMate(), storage.readCoordiMate().orElseThrow());
+        }
+    }
+
+    @Test
+    public void eventCommands_formatCharacters_preservedAfterReloadAndUsableInCommands() throws Exception {
+        for (String character : List.of("\u180e", "\u200b", "\u2060", "\ufeff")) {
+            String name = "Planning" + character + "c/review";
+            logic.execute("addevent evn/" + name + " st/01-01-2027 et/01-01-2027");
+            model.setCoordiMate(storage.readCoordiMate().orElseThrow());
+            assertEquals(name, findEvent(name).getName());
+
+            String renamed = "Final" + character + "c/review";
+            logic.execute("editevent evn/" + name + " nevn/" + renamed);
+            logic.execute("archiveevent evn/" + renamed);
+            assertTrue(findEvent(renamed).isArchived());
+            logic.execute("unarchiveevent evn/" + renamed);
+            logic.execute("deleteevent evn/" + renamed);
+            assertEquals(model.getCoordiMate(), storage.readCoordiMate().orElseThrow());
+        }
+    }
+
+    @Test
+    public void eventCommands_hiddenPrefixes_rejectedWithoutChangingModelOrFile() throws Exception {
+        for (String space : UnicodeWhitespace.ALL) {
+            CoordiMate before = new CoordiMate(model.getCoordiMate());
+            String beforeFile = Files.readString(storage.getCoordiMateFilePath());
+            assertThrows(ParseException.class, () -> logic.execute(
+                    "addevent evn/Planning" + space + "c/review st/01-01-2027 et/01-01-2027"));
+            assertThrows(ParseException.class, () -> logic.execute(
+                    "editevent evn/Open Day nevn/Planning" + space + "c/review"));
+            assertEquals(before, model.getCoordiMate());
+            assertEquals(beforeFile, Files.readString(storage.getCoordiMateFilePath()));
+        }
     }
 
     private void assertRejected(String command, String expectedMessage) {

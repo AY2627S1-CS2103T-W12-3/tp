@@ -48,10 +48,23 @@ import coordimate.model.tag.Tag;
 import coordimate.testutil.EditPersonDescriptorBuilder;
 import coordimate.testutil.PersonBuilder;
 import coordimate.testutil.PersonUtil;
+import coordimate.testutil.UnicodeWhitespace;
 
 public class CoordiMateParserTest {
 
     private final CoordiMateParser parser = CommandParserTestUtil.createParser();
+
+    @Test
+    public void parseCommand_unicodeWhitespace_separatesCommandAndParameters() throws Exception {
+        for (String space : UnicodeWhitespace.ALL) {
+            if (space.equals("\n") || space.equals("\r") || space.equals("\u0085")
+                    || space.equals("\u2028") || space.equals("\u2029")) {
+                continue; // Commands occupy one line; embedded line separators remain invalid.
+            }
+            assertEquals(new MembersCommand("Final Concert"),
+                    parser.parseCommand(space + "members" + space + "evn/Final Concert" + space));
+        }
+    }
 
     @Test
     public void parseCommand_dismiss() throws Exception {

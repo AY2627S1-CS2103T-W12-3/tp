@@ -8,6 +8,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import coordimate.commons.core.LogsCenter;
+import coordimate.commons.util.StringUtil;
 import coordimate.logic.Messages;
 import coordimate.logic.commands.AddCommand;
 import coordimate.logic.commands.AddEventCommand;
@@ -45,7 +46,8 @@ public class CoordiMateParser {
     /**
      * Used for initial separation of command word and args.
      */
-    private static final Pattern BASIC_COMMAND_FORMAT = Pattern.compile("(?<commandWord>\\S+)(?<arguments>.*)");
+    private static final Pattern BASIC_COMMAND_FORMAT = Pattern.compile(
+            "(?<commandWord>[^" + StringUtil.WHITESPACE_CHARACTERS + "]+)(?<arguments>.*)");
     private static final Logger logger = LogsCenter.getLogger(CoordiMateParser.class);
     private final ReminderService reminderService;
 
@@ -62,7 +64,7 @@ public class CoordiMateParser {
      * @throws ParseException if the user input does not conform to the expected format.
      */
     public Command parseCommand(String userInput) throws ParseException {
-        final Matcher matcher = BASIC_COMMAND_FORMAT.matcher(userInput.trim());
+        final Matcher matcher = BASIC_COMMAND_FORMAT.matcher(StringUtil.stripWhitespace(userInput));
         if (!matcher.matches()) {
             throw ParserUtil.createInvalidFormatException(HelpCommand.MESSAGE_USAGE);
         }

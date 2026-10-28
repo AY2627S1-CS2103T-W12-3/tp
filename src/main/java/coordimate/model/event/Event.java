@@ -117,7 +117,7 @@ public final class Event {
      */
     public static boolean isValidName(String test) {
         requireNonNull(test);
-        String trimmedName = test.strip();
+        String trimmedName = StringUtil.stripWhitespace(test);
         // Characters are checked before collapsing so that line breaks and tabs inside the name stay invalid.
         return PrintableText.isValid(trimmedName, trimmedName.length())
                 && PrintableText.isValid(StringUtil.normalizeWhitespace(trimmedName), MAX_NAME_LENGTH);

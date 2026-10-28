@@ -121,6 +121,8 @@ For `dismiss`, data-loading and saving failures instead produce the session-only
 The table below lists the values each parameter accepts. Leading and trailing spaces are ignored for every parameter.
 In contact names and event names, several spaces in a row are saved as one space, so `Alex  Yeoh` is saved and
 matched as `Alex Yeoh`.
+Contact names accept only ordinary spaces internally. Event names also accept Unicode space separators,
+including em, thin, ideographic, and non-breaking spaces; these are saved and matched as ordinary spaces.
 A command that breaks a constraint is rejected and makes no changes.
 
 | Parameter | Prefix | Constraints |
@@ -134,8 +136,8 @@ A command that breaks a constraint is rejected and makes no changes.
 | `ADDRESS` | `a/` | 1 to 200 printable characters, including at least one visible character. |
 | `ORGANISATION` | `o/` | 1 to 80 characters. Letters, digits, spaces, hyphens, and `&` only, with at least one letter or digit. Several spaces in a row count as one. |
 | `NOTE` | `m/` | 1 to 500 printable characters, including at least one visible character. |
-| `TAG`, `NEW_TAG` | `t/`, `at/`, `rt/` | 1 to 30 characters. English letters and digits only, with no spaces. Tags are unique, ignoring case. A contact can have at most 15 tags. |
-| `EVENT_NAME`, `NEW_EVENT_NAME` | `evn/`, `nevn/` | At least one visible character. Any printable characters are allowed, subject to the note below. Several spaces in a row count as one. Event names are unique, ignoring case and extra spaces. |
+| `TAG`, `NEW_TAG` | `t/`, `at/`, `rt/` | 1 to 30 characters. English letters and digits only, with no spaces. Tags are unique, ignoring case. |
+| `EVENT_NAME`, `NEW_EVENT_NAME` | `evn/`, `nevn/` | 1 to 100 printable Unicode characters, including at least one visible character. Internal tabs, line breaks, and control characters are rejected. Several spaces in a row count as one. Event names are unique, ignoring case and extra spaces. See the parameter syntax note below. |
 | `START_TIME`, `END_TIME` | `st/`, `et/` | A real date in `dd-MM-yyyy` format, optionally followed by a 24-hour time in `HH:mm` format, e.g. `17-09-2026` or `17-09-2026 16:30`. The start must not be after the end. |
 | `STATUS` | `att/` | `present` or `absent`, ignoring case. |
 | `MEMBER_ID` | `c/` for `assign` and `unassign`; none for `edit`, `delete`, `archive`, and `unarchive` | A permanent positive integer from 1 to 2147483647 identifying a saved contact, independent of the displayed list. |
@@ -145,7 +147,8 @@ A command that breaks a constraint is rejected and makes no changes.
 
 **Note:** In commands that accept multiple prefixed parameters, such as `add` and `addevent`, text within
 a value that looks like another parameter—a space followed by letters and `/`—is read as the start of
-another parameter.
+another parameter. Unicode whitespace, including em and non-breaking spaces, uses the same parameter boundaries
+as ordinary spaces. It cannot be used to hide a parameter inside an event name.
 For example, `addevent evn/Planning tag/review ...` is rejected with an unknown-parameter error, and in
 `m/Check a/v setup` the text after `a/` is read as the address. Write such text without the space before it,
 or without the `/`, e.g. `m/Check AV setup`. The exception is `s/o` and `d/o` followed by a space or the end of the
@@ -1233,6 +1236,16 @@ Each name in an event's `members` list must exactly match the name of a saved co
 Contact and event names are read with several spaces in a row treated as one. If two contacts, or two events, have
 names that differ only in letter case or spacing (e.g. `Alex Yeoh` and `Alex  Yeoh`), they are duplicates and the data
 file is invalid; rename or remove one of them.<br>
+Event names containing Unicode space separators, including em and non-breaking spaces, are normalised to ordinary
+spaces when loaded. At startup, saved events whose names contain whitespace followed by parameter-like text
+(for example, `Planning` followed by an em space and `c/review`) are deleted because those names cannot be used
+in event commands. This also applies to archived events. A warning lists the deleted names, showing non-ordinary
+whitespace as codes such as `\u2003`. If event names were distinct under the older Unicode whitespace rules but
+now normalise to the same name, all events are kept: later collisions receive an available suffix such as ` (2)`.
+Long names are shortened to fit the suffix within the 100-character limit. The warning lists the old and new names;
+members, attendance, reminder dismissal history, and archive status are preserved. These migrations are saved before
+the data is loaded. Other contacts and events are preserved. If the remaining data is invalid or cleanup cannot be
+saved, the file is left unchanged.<br>
 Each contact's `memberId` must be a unique integer from `1` to `2147483647`. Keep existing IDs unchanged.
 Keep the top-level `nextMemberId` field: it must exceed every saved ID, must not be reduced after deleting contacts,
 and cannot exceed `2147483648`.<br>

@@ -37,15 +37,57 @@ public class JsonCoordiMateStorage {
     }
 
     /**
+     * Prepares startup cleanup without writing the file. Unrelated invalid data prevents cleanup.
+     */
+    Optional<EventNameCleanup> readEventNameCleanup() throws DataLoadingException {
+        Optional<JsonSerializableCoordiMate> savedData = JsonUtil.readJsonFile(
+                filePath, JsonSerializableCoordiMate.class, SavedJsonTypeValidator::validateCoordiMate);
+        if (savedData.isEmpty()) {
+            return Optional.empty();
+        }
+        try {
+            savedData.get().validateEventArchiveStatuses();
+            List<String> yearZeroDeletedNames = savedData.get().removeYearZeroEvents();
+            List<String> deletedNames = savedData.get().removeEventsWithEmbeddedParameters();
+            boolean removedHistory = savedData.get().removeYearZeroReminderStarts();
+            List<EventNameCleanupResult.Rename> renamedEvents = savedData.get().renameEventsWithCollidingNames();
+            EventNameCleanupResult changes = new EventNameCleanupResult(
+                    deletedNames, renamedEvents, yearZeroDeletedNames);
+            if (changes.isEmpty() && !removedHistory) {
+                return Optional.empty();
+            }
+            return Optional.of(new EventNameCleanup(savedData.get().toModelType(), changes));
+        } catch (IllegalValueException | IllegalArgumentException | NullPointerException e) {
+            throw new DataLoadingException(e);
+        }
+    }
+
+    record EventNameCleanup(ReadOnlyCoordiMate data, EventNameCleanupResult changes) {}
+
+    /**
      * Deletes events with year-zero dates and removes year-zero reminder history at startup,
      * after validating all remaining data.
      * Returns the deleted names only after the cleaned file is saved successfully.
      */
     public List<String> removeYearZeroEvents() throws DataLoadingException, IOException {
+        try (DataFileGuard guard = new DataFileGuard(filePath)) {
+            Optional<String> originalRevision = DataFileGuard.readRevision(filePath);
+            Optional<YearZeroCleanup> cleanup = readYearZeroCleanup();
+            if (cleanup.isEmpty()) {
+                return List.of();
+            }
+            guard.checkRevision(originalRevision);
+            saveCoordiMate(cleanup.get().data());
+            return cleanup.get().deletedNames();
+        }
+    }
+
+    /** Prepares legacy date cleanup while the caller holds the shared data-file lock. */
+    Optional<YearZeroCleanup> readYearZeroCleanup() throws DataLoadingException {
         Optional<JsonSerializableCoordiMate> savedData = JsonUtil.readJsonFile(
                 filePath, JsonSerializableCoordiMate.class, SavedJsonTypeValidator::validateCoordiMate);
         if (savedData.isEmpty()) {
-            return List.of();
+            return Optional.empty();
         }
         try {
             savedData.get().validateEventArchiveStatuses();
@@ -55,7 +97,7 @@ public class JsonCoordiMateStorage {
         List<String> removedNames = savedData.get().removeYearZeroEvents();
         boolean removedHistory = savedData.get().removeYearZeroReminderStarts();
         if (removedNames.isEmpty() && !removedHistory) {
-            return List.of();
+            return Optional.empty();
         }
         ReadOnlyCoordiMate cleanedData;
         try {
@@ -63,9 +105,10 @@ public class JsonCoordiMateStorage {
         } catch (IllegalValueException | IllegalArgumentException | NullPointerException e) {
             throw new DataLoadingException(e);
         }
-        saveCoordiMate(cleanedData);
-        return List.copyOf(removedNames);
+        return Optional.of(new YearZeroCleanup(cleanedData, List.copyOf(removedNames)));
     }
+
+    record YearZeroCleanup(ReadOnlyCoordiMate data, List<String> deletedNames) {}
 
     /**
      * Returns CoordiMate data as a {@link ReadOnlyCoordiMate}.

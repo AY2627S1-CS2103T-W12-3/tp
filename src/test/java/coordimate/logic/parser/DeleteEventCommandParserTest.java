@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import coordimate.logic.commands.DeleteEventCommand;
 import coordimate.logic.parser.exceptions.ParseException;
 import coordimate.model.event.Event;
+import coordimate.testutil.UnicodeWhitespace;
 
 public class DeleteEventCommandParserTest {
     private final DeleteEventCommandParser parser = new DeleteEventCommandParser();
@@ -21,6 +22,17 @@ public class DeleteEventCommandParserTest {
                 CommandParserTestUtil.createParser().parseCommand("deleteevent evn/Student Life Fair"));
         assertEquals(new DeleteEventCommand("Student Life Fair"),
                 parser.parse("  evn/ Student  Life Fair  "));
+    }
+
+    @Test
+    public void parse_unicodeSpaceSeparators_success() throws Exception {
+        CoordiMateParser commandParser = CommandParserTestUtil.createParser();
+        for (String space : UnicodeWhitespace.ALL) {
+            if (Character.getType(space.codePointAt(0)) == Character.SPACE_SEPARATOR) {
+                assertEquals(new DeleteEventCommand("Final Concert"), commandParser.parseCommand(
+                        "deleteevent" + space + "evn/Final" + space + "Concert"));
+            }
+        }
     }
 
     @Test

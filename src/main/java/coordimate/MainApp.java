@@ -3,6 +3,7 @@ package coordimate;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -22,6 +23,7 @@ import coordimate.model.ReadOnlyCoordiMate;
 import coordimate.model.ReadOnlyUserPrefs;
 import coordimate.model.UserPrefs;
 import coordimate.model.util.SampleDataUtil;
+import coordimate.storage.EventNameCleanupResult;
 import coordimate.storage.JsonCoordiMateStorage;
 import coordimate.storage.JsonUserPrefsStorage;
 import coordimate.storage.Storage;
@@ -77,19 +79,18 @@ public class MainApp extends Application {
         JsonUserPrefsStorage userPrefsStorage = new JsonUserPrefsStorage(userPrefsFilePath);
         UserPrefs userPrefs = initPrefs(userPrefsStorage);
         JsonCoordiMateStorage coordiMateStorage = new JsonCoordiMateStorage(coordiMateFilePath);
-        storage = new StorageManager(coordiMateStorage, userPrefsStorage);
+        StorageManager storageManager = new StorageManager(coordiMateStorage, userPrefsStorage);
+        storage = storageManager;
 
         String startupWarning = "";
         try {
-            List<String> deletedEvents = coordiMateStorage.removeYearZeroEvents();
-            if (!deletedEvents.isEmpty()) {
-                startupWarning = "Deleted the following events because their saved dates use year 0000, "
-                        + "which does not exist in the BC/AD calendar:\n\n"
-                        + String.join("\n", deletedEvents);
+            EventNameCleanupResult cleanup = storageManager.cleanUpEventNames();
+            if (!cleanup.isEmpty()) {
+                startupWarning = formatEventNameCleanup(cleanup);
             }
         } catch (DataLoadingException | IOException e) {
             logger.warning("Could not clean up saved events: " + StringUtil.getDetails(e));
-            startupWarning = "Saved data could not be loaded or cleaned up. No events were deleted. "
+            startupWarning = "Saved data could not be loaded or cleaned up. No events were deleted or renamed. "
                     + "Check the data file: " + coordiMateFilePath;
         }
 
@@ -113,6 +114,53 @@ public class MainApp extends Application {
 
         ui = new UiManager(logic, storage.getCoordiMateFilePath(), startupWarning, isDataRecoveryMode,
                 dataRecoveryDetail, preferencesWarning);
+    }
+
+    static String formatEventNameCleanup(EventNameCleanupResult cleanup) {
+        List<String> warnings = new ArrayList<>();
+        if (!cleanup.deletedNames().isEmpty()) {
+            warnings.add(formatDeletedEvents(cleanup.deletedNames()));
+        }
+        if (!cleanup.renamedEvents().isEmpty()) {
+            String noun = cleanup.renamedEvents().size() == 1 ? "event" : "events";
+            warnings.add("Renamed " + cleanup.renamedEvents().size() + " saved " + noun
+                    + " to keep names unique after Unicode whitespace normalization. "
+                    + "All event details were preserved:\n\n"
+                    + String.join("\n", cleanup.renamedEvents().stream()
+                            .map(rename -> quoteEventName(rename.originalName()) + " -> "
+                                    + quoteEventName(rename.newName()))
+                            .toList()));
+        }
+        if (!cleanup.yearZeroDeletedNames().isEmpty()) {
+            warnings.add("Deleted the following events because their saved dates use year 0000, "
+                    + "which does not exist in the BC/AD calendar:\n\n"
+                    + String.join("\n", cleanup.yearZeroDeletedNames().stream().map(MainApp::quoteEventName).toList()));
+        }
+        return String.join("\n\n", warnings);
+    }
+
+    static String formatDeletedEvents(List<String> names) {
+        String noun = names.size() == 1 ? "event" : "events";
+        return "Deleted " + names.size() + " saved " + noun + " because their names contain parameter-like text "
+                + "after whitespace and cannot be used in event commands:\n\n"
+                + String.join("\n", names.stream().map(MainApp::quoteEventName).toList());
+    }
+
+    private static String quoteEventName(String name) {
+        StringBuilder result = new StringBuilder("\"");
+        name.codePoints().forEach(codePoint -> {
+            int type = Character.getType(codePoint);
+            if (codePoint != ' ' && (Character.isWhitespace(codePoint) || Character.isSpaceChar(codePoint))
+                    || Character.isISOControl(codePoint)
+                    || type == Character.LINE_SEPARATOR || type == Character.PARAGRAPH_SEPARATOR) {
+                result.append(String.format("\\u%04X", codePoint));
+            } else if (codePoint == '"' || codePoint == '\\') {
+                result.append('\\').appendCodePoint(codePoint);
+            } else {
+                result.appendCodePoint(codePoint);
+            }
+        });
+        return result.append('"').toString();
     }
 
     /**

@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.BooleanNode;
 
 import coordimate.commons.exceptions.IllegalValueException;
+import coordimate.commons.util.ParameterSyntax;
 import coordimate.model.event.AttendanceStatus;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
@@ -119,6 +120,10 @@ class JsonAdaptedEvent {
 
     String getName() {
         return name;
+    }
+
+    boolean hasEmbeddedParameterInName() {
+        return name != null && ParameterSyntax.hasEmbeddedEventParameter(name);
     }
 
     /**

@@ -12,11 +12,23 @@ import org.junit.jupiter.api.Test;
 import coordimate.logic.commands.FilterCommand;
 import coordimate.model.person.FilterCriterion;
 import coordimate.model.person.FilterField;
+import coordimate.testutil.UnicodeWhitespace;
 
 public class FilterCommandParserTest {
 
     private final FilterCommandParser parser = new FilterCommandParser();
     private final String invalidFormat = String.format(MESSAGE_INVALID_COMMAND_FORMAT, FilterCommand.MESSAGE_USAGE);
+
+    @Test
+    public void parse_unicodeWhitespace_separatesFieldsAndTrimsQuotedValues() {
+        FilterCommand expected = new FilterCommand(List.of(
+                new FilterCriterion(FilterField.EVENT, "Final Concert"),
+                new FilterCriterion(FilterField.TAG, "friend")));
+        for (String space : UnicodeWhitespace.ALL) {
+            assertParseSuccess(parser, space + "event/\"" + space + "Final Concert" + space + "\""
+                    + space + "tag/friend" + space, expected);
+        }
+    }
 
     @Test
     public void parse_emptyArg_throwsParseException() {

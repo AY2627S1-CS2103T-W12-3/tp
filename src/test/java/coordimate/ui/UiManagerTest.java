@@ -2,6 +2,7 @@ package coordimate.ui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.awt.GraphicsEnvironment;
@@ -30,6 +31,128 @@ import javafx.stage.Stage;
 import javafx.stage.Window;
 
 public class UiManagerTest {
+
+    @Test
+    public void start_startupWarning_showsDeletedNamesAfterWindowOpens() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            ModelManager model = new ModelManager();
+            Stage primaryStage = new Stage();
+            String warning = "Deleted 1 saved event:\n\n\"Planning\\u2003c/review\"";
+            boolean[] shown = {false};
+            UiManager manager = new UiManager(new LogicManager(model, null), Path.of("data.json"), warning) {
+                @Override
+                void showAlertDialogAndWait(Alert.AlertType type, String title, String header, String content) {
+                    assertTrue(primaryStage.isShowing());
+                    assertEquals(Alert.AlertType.WARNING, type);
+                    assertEquals("Saved files", title);
+                    assertEquals("Saved files need attention", header);
+                    assertEquals(warning, content);
+                    assertFalse(primaryStage.getScene().lookup("#tutorialOverlay").isVisible());
+                    shown[0] = true;
+                }
+            };
+            try {
+                manager.start(primaryStage);
+                assertTrue(shown[0]);
+                assertTrue(primaryStage.getScene().lookup("#tutorialOverlay").isVisible());
+            } finally {
+                manager.stop();
+                primaryStage.close();
+            }
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void start_startupWarning_dialogShowsScrollableDeletionList() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            ModelManager model = new ModelManager();
+            model.setHasSeenTutorial(true);
+            Stage primaryStage = new Stage();
+            String warning = "Deleted 40 saved events:\n\n" + "\"Planning\\u2003c/review\"\n".repeat(40);
+            UiManager manager = new UiManager(new LogicManager(model, null), Path.of("data.json"), warning);
+            AtomicReference<Throwable> dialogFailure = new AtomicReference<>();
+            Platform.runLater(() -> {
+                Window dialog = Window.getWindows().stream()
+                        .filter(window -> window != primaryStage && window.isShowing()).findFirst().orElse(null);
+                try {
+                    assertTrue(primaryStage.isShowing());
+                    assertTrue(dialog != null);
+                    DialogPane pane = (DialogPane) dialog.getScene().getRoot();
+                    ScrollPane scrollPane = (ScrollPane) pane.getContent();
+                    Label message = (Label) scrollPane.getContent();
+                    assertEquals(warning, message.getText());
+                    assertTrue(message.isWrapText());
+                    assertTrue(scrollPane.isFitToWidth());
+                    assertTrue(message.getHeight() > scrollPane.getViewportBounds().getHeight());
+                    assertTrue(scrollPane.getViewportBounds().getHeight() <= 340);
+                } catch (Throwable error) {
+                    dialogFailure.set(error);
+                } finally {
+                    if (dialog != null) {
+                        dialog.hide();
+                    }
+                }
+            });
+            try {
+                manager.start(primaryStage);
+                assertNull(dialogFailure.get());
+            } finally {
+                manager.stop();
+                primaryStage.close();
+            }
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void showAlertDialogAndWait_errorMessage_keepsCompleteScrollableContent() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            ModelManager model = new ModelManager();
+            model.setHasSeenTutorial(true);
+            Stage primaryStage = new Stage();
+            UiManager manager = new UiManager(new LogicManager(model, null), Path.of("data.json"));
+            String errorMessage = "Could not load data. ".repeat(100);
+            AtomicReference<Throwable> dialogFailure = new AtomicReference<>();
+            try {
+                manager.start(primaryStage);
+                Platform.runLater(() -> {
+                    Window dialog = Window.getWindows().stream()
+                            .filter(window -> window != primaryStage && window.isShowing()).findFirst().orElse(null);
+                    try {
+                        assertTrue(dialog != null);
+                        DialogPane pane = (DialogPane) dialog.getScene().getRoot();
+                        ScrollPane scrollPane = (ScrollPane) pane.getContent();
+                        Label message = (Label) scrollPane.getContent();
+                        assertEquals(errorMessage, message.getText());
+                        assertTrue(message.isWrapText());
+                        assertTrue(scrollPane.isFitToWidth());
+                        assertTrue(message.getHeight() > scrollPane.getViewportBounds().getHeight());
+                        assertTrue(scrollPane.getViewportBounds().getHeight() <= 340);
+                    } catch (Throwable error) {
+                        dialogFailure.set(error);
+                    } finally {
+                        if (dialog != null) {
+                            dialog.hide();
+                        }
+                    }
+                });
+                manager.showAlertDialogAndWait(Alert.AlertType.ERROR, "Saved event data", "Load failed",
+                        errorMessage);
+                assertNull(dialogFailure.get());
+            } finally {
+                manager.stop();
+                primaryStage.close();
+            }
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
 
     @BeforeAll
     public static void startJavaFx() throws InterruptedException {
