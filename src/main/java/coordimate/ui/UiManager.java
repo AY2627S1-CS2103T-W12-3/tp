@@ -56,7 +56,7 @@ public class UiManager implements Ui {
      * Creates the UI with a warning to show after startup, without asking for confirmation.
      */
     public UiManager(Logic logic, Path dataFilePath, String startupWarning) {
-        this(logic, dataFilePath, startupWarning, false, "", Platform::exit);
+        this(logic, dataFilePath, startupWarning, false);
     }
 
     /**
