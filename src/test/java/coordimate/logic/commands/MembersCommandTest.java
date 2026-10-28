@@ -20,6 +20,9 @@ import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
 import coordimate.model.person.Person;
 
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+
 public class MembersCommandTest {
     private final EventTime date = new EventTime("08-08-2026");
     private ModelManager model;
@@ -131,7 +134,25 @@ public class MembersCommandTest {
         assertThrows(NullPointerException.class, () -> new MembersCommand(null));
     }
 
+    @Test
+    public void execute_moreShownThanSavedMembers_triggersAssertion() {
+        ModelShowingExtraContact brokenModel = new ModelShowingExtraContact();
+        brokenModel.addEvent(new Event("Final Concert", date, date, List.of(CARL.getName(), ALICE.getName())));
+        assertThrows(AssertionError.class, () -> new MembersCommand("Final Concert").execute(brokenModel));
+    }
+
     private void archive(Person person) {
         model.setPerson(person, person.withArchived(true));
+    }
+
+    private static final class ModelShowingExtraContact extends ModelManager {
+        ModelShowingExtraContact() {
+            super(getTypicalCoordiMate(), new UserPrefs());
+    }
+
+    @Override
+    public ObservableList<Person> getFilteredPersonList() {
+        // Simulates a broken model whose displayed list contains contacts that are not saved members.
+        return FXCollections.observableArrayList(ALICE, BENSON, CARL);
     }
 }
