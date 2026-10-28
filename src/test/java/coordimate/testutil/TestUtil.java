@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import coordimate.commons.core.index.Index;
 import coordimate.model.Model;
@@ -51,5 +54,19 @@ public class TestUtil {
      */
     public static Person getPerson(Model model, Index index) {
         return model.getFilteredPersonList().get(index.getZeroBased());
+    }
+
+    /**
+     * Returns {@code count} distinct tag names, from {@code Tag1} to {@code Tag<count>}.
+     */
+    public static String[] numberedTagNames(int count) {
+        return IntStream.rangeClosed(1, count).mapToObj(i -> "Tag" + i).toArray(String[]::new);
+    }
+
+    /**
+     * Returns {@code t/} arguments for each of {@code tagNames}, each preceded by a space.
+     */
+    public static String tagArguments(String... tagNames) {
+        return Arrays.stream(tagNames).map(tagName -> " t/" + tagName).collect(Collectors.joining());
     }
 }

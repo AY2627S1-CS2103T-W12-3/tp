@@ -25,6 +25,8 @@ import static coordimate.logic.commands.CommandTestUtil.VALID_TAG_HUSBAND;
 import static coordimate.logic.parser.CliSyntax.PREFIX_TAG;
 import static coordimate.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static coordimate.logic.parser.CommandParserTestUtil.assertParseSuccess;
+import static coordimate.testutil.TestUtil.numberedTagNames;
+import static coordimate.testutil.TestUtil.tagArguments;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -43,6 +45,7 @@ import coordimate.model.person.MemberId;
 import coordimate.model.person.Name;
 import coordimate.model.person.Note;
 import coordimate.model.person.Organisation;
+import coordimate.model.person.Person;
 import coordimate.model.person.Phone;
 import coordimate.model.person.Role;
 import coordimate.model.tag.Tag;
@@ -340,6 +343,16 @@ public class EditCommandParserTest {
     public void parse_replacementTags_caseInsensitiveDuplicatesIgnored() {
         EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withTags("Friend").build();
         assertParseSuccess(parser, "1 t/Friend t/friend", new EditCommand(new MemberId(1), descriptor));
+    }
+
+    @Test
+    public void parse_replacementTagsAtAndOverLimit_acceptedThenRejected() {
+        String[] maxTags = numberedTagNames(Person.MAX_TAGS);
+        EditPersonDescriptor descriptor = new EditPersonDescriptorBuilder().withTags(maxTags).build();
+
+        assertParseSuccess(parser, "1" + tagArguments(maxTags), new EditCommand(new MemberId(1), descriptor));
+        assertParseFailure(parser, "1" + tagArguments(numberedTagNames(Person.MAX_TAGS + 1)),
+                Person.MESSAGE_TAG_LIMIT);
     }
 
     @Test

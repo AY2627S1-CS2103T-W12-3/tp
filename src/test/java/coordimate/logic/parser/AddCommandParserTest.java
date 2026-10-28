@@ -3,6 +3,8 @@ package coordimate.logic.parser;
 import static coordimate.logic.Messages.MESSAGE_INVALID_COMMAND_FORMAT;
 import static coordimate.logic.parser.CommandParserTestUtil.assertParseFailure;
 import static coordimate.logic.parser.CommandParserTestUtil.assertParseSuccess;
+import static coordimate.testutil.TestUtil.numberedTagNames;
+import static coordimate.testutil.TestUtil.tagArguments;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -18,6 +20,7 @@ import coordimate.model.person.LeaveDate;
 import coordimate.model.person.Name;
 import coordimate.model.person.Note;
 import coordimate.model.person.Organisation;
+import coordimate.model.person.Person;
 import coordimate.model.person.Phone;
 import coordimate.model.person.Role;
 import coordimate.model.tag.Tag;
@@ -66,6 +69,19 @@ public class AddCommandParserTest {
 
         assertParseSuccess(parser, REQUIRED + " t/EXCO t/exco t/Publicity", expected);
         assertParseSuccess(parser, REQUIRED + " t/ t/EXCO t/Publicity", expected);
+    }
+
+    @Test
+    public void parse_tagsAtAndOverLimit_acceptedThenRejected() {
+        String[] maxTags = numberedTagNames(Person.MAX_TAGS);
+        AddCommand expected = new AddCommand(new PersonBuilder().withRole("Logistics").withoutAddress()
+                .withTags(maxTags).build());
+
+        assertParseSuccess(parser, REQUIRED + tagArguments(maxTags), expected);
+        // A case variant of an existing tag does not count towards the limit.
+        assertParseSuccess(parser, REQUIRED + tagArguments(maxTags) + " t/tag1", expected);
+        assertParseFailure(parser, REQUIRED + tagArguments(numberedTagNames(Person.MAX_TAGS + 1)),
+                Person.MESSAGE_TAG_LIMIT);
     }
 
     @Test
