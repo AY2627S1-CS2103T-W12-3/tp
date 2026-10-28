@@ -148,6 +148,7 @@ public class MembersCommandTest {
     private static final class ModelShowingExtraContact extends ModelManager {
         ModelShowingExtraContact() {
             super(getTypicalCoordiMate(), new UserPrefs());
+        }
     }
 
     @Override
