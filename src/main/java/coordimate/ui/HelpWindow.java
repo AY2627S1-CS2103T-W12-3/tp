@@ -23,7 +23,6 @@ import coordimate.logic.commands.ExitCommand;
 import coordimate.logic.commands.FilterCommand;
 import coordimate.logic.commands.HelpCommand;
 import coordimate.logic.commands.ListCommand;
-import coordimate.logic.commands.ListTagsCommand;
 import coordimate.logic.commands.MarkAttendanceCommand;
 import coordimate.logic.commands.MembersCommand;
 import coordimate.logic.commands.SearchCommand;
@@ -83,7 +82,6 @@ public class HelpWindow extends UiPart<Stage> {
             commandUsage(FilterCommand.COMMAND_WORD, "FIELD/VALUE [FIELD/VALUE]..."),
             commandUsage(HelpCommand.COMMAND_WORD, ""),
             commandUsage(ListCommand.COMMAND_WORD, "[archived]"),
-            commandUsage(ListTagsCommand.COMMAND_WORD, ""),
             commandUsage(MarkAttendanceCommand.COMMAND_WORD,
                     "evn/EVENT_NAME mem/MEMBER_NAME att/STATUS\n"
                             + "STATUS must be present or absent (case-insensitive)."),

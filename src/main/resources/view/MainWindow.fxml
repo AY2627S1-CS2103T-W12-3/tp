@@ -102,7 +102,6 @@
             </VBox>
             <VBox fx:id="tagsCommands" spacing="6" styleClass="command-cheatsheet" visible="false" managed="false">
               <HBox alignment="CENTER_LEFT"><Label text="COMMANDS" styleClass="sidebar-caption" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="Purpose" styleClass="sidebar-caption" /></HBox>
-              <HBox styleClass="cheat-row"><Label text="listtags" styleClass="cheat-name, cheat-purple" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="show all" styleClass="cheat-description" /></HBox>
               <HBox styleClass="cheat-row"><Label text="addtag" styleClass="cheat-name, cheat-blue" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="create" styleClass="cheat-description" /></HBox>
               <HBox styleClass="cheat-row"><Label text="edittag" styleClass="cheat-name, cheat-blue" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="rename" styleClass="cheat-description" /></HBox>
               <HBox styleClass="cheat-row"><Label text="deletetag" styleClass="cheat-name, cheat-red" HBox.hgrow="ALWAYS" maxWidth="Infinity" /><Label text="remove" styleClass="cheat-description" /></HBox>

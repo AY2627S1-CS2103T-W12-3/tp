@@ -144,7 +144,7 @@ public class CommandTestUtil {
                 MembersCommand _ -> CommandResult.View.CONTACTS;
             case AddEventCommand _, EditEventCommand _, DeleteEventCommand _, MarkAttendanceCommand _ ->
                 CommandResult.View.EVENTS;
-            case MutatingTagCommand _, ListTagsCommand _ -> CommandResult.View.TAGS;
+            case MutatingTagCommand _ -> CommandResult.View.TAGS;
             default -> CommandResult.View.NONE;
         };
     }

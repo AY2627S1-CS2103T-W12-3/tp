@@ -939,12 +939,11 @@ public class MainWindowTest {
                 assertEquals("No contacts found matching \"" + keyword + "\".", feedback.getText());
                 assertLongFeedbackFitsWindow(stage, input, feedbackScroll, views);
 
-                input.setText("listtags");
-                submit.fire();
+                ToggleButton tagsView = (ToggleButton) stage.getScene().lookup("#tagsView");
+                tagsView.fire();
                 stage.getScene().getRoot().applyCss();
                 stage.getScene().getRoot().layout();
-                assertTrue(feedback.getText().startsWith("Here is the list of all existing tags."));
-                assertTrue(feedback.getText().contains("Custom86"));
+                assertEquals("No contacts found matching \"" + keyword + "\".", feedback.getText());
                 assertEquals(90, ((ListView<?>) stage.getScene().lookup("#tagListView")).getItems().size());
                 assertLongFeedbackFitsWindow(stage, input, feedbackScroll, views);
                 assertTrue(stage.getScene().lookup("#tagListView").getBoundsInLocal().getHeight() > 30);

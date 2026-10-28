@@ -35,7 +35,7 @@ public class HelpWindowTest {
     private static final String EXPECTED_USER_GUIDE_URL = "https://ay2627s1-cs2103t-w12-3.github.io/tp/";
     private static final List<String> COMMAND_WORDS = List.of(
             "add", "addevent", "addtag", "archive", "archiveevent", "assign", "clear", "delete", "deleteevent",
-            "deletetag", "dismiss", "edit", "editevent", "edittag", "exit", "filter", "help", "list", "listtags",
+            "deletetag", "dismiss", "edit", "editevent", "edittag", "exit", "filter", "help", "list",
             "markattendance", "members", "search", "tutorial", "unarchive", "unarchiveevent", "unassign");
 
     @BeforeAll

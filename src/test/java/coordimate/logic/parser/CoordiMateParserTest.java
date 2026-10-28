@@ -28,7 +28,6 @@ import coordimate.logic.commands.ExitCommand;
 import coordimate.logic.commands.FilterCommand;
 import coordimate.logic.commands.HelpCommand;
 import coordimate.logic.commands.ListCommand;
-import coordimate.logic.commands.ListTagsCommand;
 import coordimate.logic.commands.MarkAttendanceCommand;
 import coordimate.logic.commands.MembersCommand;
 import coordimate.logic.commands.SearchCommand;
@@ -168,6 +167,10 @@ public class CoordiMateParserTest {
                 parser.parseCommand("find Alice"));
         assertThrows(ParseException.class, withUsage(MESSAGE_UNKNOWN_COMMAND, HelpCommand.MESSAGE_USAGE), () ->
                 parser.parseCommand("switch events"));
+        assertThrows(ParseException.class, withUsage(MESSAGE_UNKNOWN_COMMAND, HelpCommand.MESSAGE_USAGE), () ->
+                parser.parseCommand("listtags"));
+        assertThrows(ParseException.class, withUsage(MESSAGE_UNKNOWN_COMMAND, HelpCommand.MESSAGE_USAGE), () ->
+                parser.parseCommand("listtags 1"));
     }
 
     @Test
@@ -222,11 +225,6 @@ public class CoordiMateParserTest {
         SearchCommand command = (SearchCommand) parser.parseCommand(
                 SearchCommand.COMMAND_WORD + " Alice");
         assertEquals(new SearchCommand(new ContactMatchesKeywordPredicate("Alice"), "Alice"), command);
-    }
-
-    @Test
-    public void parseCommand_listTags() throws Exception {
-        assertTrue(parser.parseCommand(ListTagsCommand.COMMAND_WORD) instanceof ListTagsCommand);
     }
 
     @Test

@@ -24,7 +24,7 @@ public class CommandErrorMessagesTest {
         String[] inputs = {
             "", "unknown", "add", "edit", "delete", "search", "search \"\"", "filter", "filter unknown/value",
             "help anything", "tutorial 123", "exit extra", "clear garbage",
-            "filter tag/", "filter event/\"Concert tag/friend", "addtag", "deletetag", "edittag", "listtags extra",
+            "filter tag/", "filter event/\"Concert tag/friend", "addtag", "deletetag", "edittag",
             "addevent", "editevent", "deleteevent", "assign", "unassign", "members", "markattendance",
             "dismiss", "dismiss 0", "dismiss 1 2",
             contact + " x/value", "edit 1 x/value", "delete x/value", "addtag x/value", "deletetag x/value",

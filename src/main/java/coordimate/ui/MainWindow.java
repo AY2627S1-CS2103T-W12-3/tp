@@ -109,7 +109,6 @@ public class MainWindow extends UiPart<Stage> {
                     + "STATUS must be present or absent (case-insensitive).\n"
                     + "Example: markattendance evn/Final Concert mem/Alex Yeoh att/present\n"
                     + "Example: markattendance evn/Final Concert mem/Alex Yeoh att/absent"),
-            Map.entry("listtags", "Format: listtags\nExample: listtags"),
             Map.entry("addtag", "Format: addtag t/TAG\nExample: addtag t/ProductionCrew"),
             Map.entry("edittag", "Format: edittag OLD_TAG t/NEW_TAG\n"
                     + "Example: edittag Production t/ProductionCrew"),
