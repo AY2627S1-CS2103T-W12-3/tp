@@ -9,6 +9,7 @@ import static coordimate.logic.commands.CommandTestUtil.VALID_TAG_HUSBAND;
 import static coordimate.logic.commands.CommandTestUtil.assertCommandFailure;
 import static coordimate.logic.commands.CommandTestUtil.assertCommandSuccess;
 import static coordimate.logic.commands.CommandTestUtil.showPersonAtIndex;
+import static coordimate.testutil.TestUtil.numberedTagNames;
 import static coordimate.testutil.TypicalIndexes.INDEX_FIRST_PERSON;
 import static coordimate.testutil.TypicalIndexes.INDEX_SECOND_PERSON;
 import static coordimate.testutil.TypicalPersons.ALICE;
@@ -322,6 +323,61 @@ public class EditCommandTest {
 
         assertCommandSuccess(new EditCommand(new MemberId(1), descriptor), model,
                 EditCommand.successMessage(original), expectedModel);
+    }
+
+    @Test
+    public void execute_addTagBeyondLimit_failure() {
+        Person atLimit = setFirstPersonTags(numberedTagNames(Person.MAX_TAGS));
+        EditPersonDescriptor descriptor = new EditPersonDescriptor();
+        descriptor.addTagOperation(new TagOperation(TagOperationType.ADD, new Tag("Extra")));
+
+        assertCommandFailure(new EditCommand(new MemberId(1), descriptor), model, Person.MESSAGE_TAG_LIMIT);
+        assertEquals(atLimit, model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased()));
+        assertFalse(model.getTagList().stream().anyMatch(tag -> tag.isSameTag(new Tag("Extra"))));
+    }
+
+    @Test
+    public void execute_addExistingTagAtLimit_success() {
+        Person atLimit = setFirstPersonTags(numberedTagNames(Person.MAX_TAGS));
+        EditPersonDescriptor descriptor = new EditPersonDescriptor();
+        descriptor.addTagOperation(new TagOperation(TagOperationType.ADD, new Tag("TAG1")));
+        Model expectedModel = new ModelManager(new CoordiMate(model.getCoordiMate()), new UserPrefs());
+
+        assertCommandSuccess(new EditCommand(new MemberId(1), descriptor), model,
+                EditCommand.successMessage(atLimit), expectedModel);
+    }
+
+    @Test
+    public void execute_savedContactOverLimitGainsNoTags_success() {
+        Person overLimit = setFirstPersonTags(numberedTagNames(Person.MAX_TAGS + 1));
+        EditPersonDescriptor descriptor = new EditPersonDescriptor();
+        descriptor.addTagOperation(new TagOperation(TagOperationType.ADD, new Tag("Extra")));
+        descriptor.addTagOperation(new TagOperation(TagOperationType.REMOVE, new Tag("Tag1")));
+        String[] swappedTags = numberedTagNames(Person.MAX_TAGS + 1);
+        swappedTags[0] = "Extra";
+        Person edited = new PersonBuilder(overLimit).withTags(swappedTags).build();
+        Model expectedModel = new ModelManager(new CoordiMate(model.getCoordiMate()), new UserPrefs());
+        expectedModel.setPerson(overLimit, edited);
+
+        assertCommandSuccess(new EditCommand(new MemberId(1), descriptor), model,
+                EditCommand.successMessage(edited), expectedModel);
+    }
+
+    @Test
+    public void execute_savedContactOverLimitGainsTag_failure() {
+        setFirstPersonTags(numberedTagNames(Person.MAX_TAGS + 1));
+        EditPersonDescriptor descriptor = new EditPersonDescriptor();
+        descriptor.addTagOperation(new TagOperation(TagOperationType.ADD, new Tag("Extra")));
+
+        assertCommandFailure(new EditCommand(new MemberId(1), descriptor), model, Person.MESSAGE_TAG_LIMIT);
+    }
+
+    /** Replaces the tags of the first contact in {@code model} and returns the updated contact. */
+    private Person setFirstPersonTags(String... tagNames) {
+        Person original = model.getFilteredPersonList().get(INDEX_FIRST_PERSON.getZeroBased());
+        Person updated = new PersonBuilder(original).withTags(tagNames).build();
+        model.setPerson(original, updated);
+        return updated;
     }
 
     @Test

@@ -12,7 +12,6 @@ import static coordimate.logic.parser.CliSyntax.PREFIX_ROLE;
 import static coordimate.logic.parser.CliSyntax.PREFIX_TAG;
 import static java.util.Objects.requireNonNull;
 
-import java.util.HashSet;
 import java.util.Set;
 
 import coordimate.logic.Messages;
@@ -110,17 +109,6 @@ public class AddCommandParser implements Parser<AddCommand> {
     }
 
     private static Set<Tag> parseTags(ArgumentMultimap arguments) throws ParseException {
-        Set<Tag> tags = new HashSet<>();
-        for (String value : arguments.getAllValues(PREFIX_TAG)) {
-            if (value.isEmpty()) {
-                tags.clear();
-                continue;
-            }
-            Tag tag = ParserUtil.parseTag(value);
-            if (tags.stream().noneMatch(tag::isSameTag)) {
-                tags.add(tag);
-            }
-        }
-        return tags;
+        return ParserUtil.parseContactTags(arguments.getAllValues(PREFIX_TAG));
     }
 }

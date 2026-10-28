@@ -254,7 +254,7 @@ Name, phone, email, and role are required. Each field accepts the following valu
 | `ADDRESS` | 1 to 200 printable characters, including at least one visible character. |
 | `ORGANISATION` | 1 to 80 characters: letters, digits, spaces, and `-` `&` `.` `,` `'` `(` `)` `/`, with at least one letter or digit, e.g. `St. John's Ambulance`. Several spaces in a row are saved as one, so `o/NUS  Student Affairs` is saved as `NUS Student Affairs`. |
 | `NOTE` | 1 to 500 printable characters, including at least one visible character. |
-| `TAG` | 1 to 30 letters or digits with no spaces. |
+| `TAG` | 1 to 30 letters or digits with no spaces. At most 15 tags per contact. |
 
 "Printable" excludes line breaks and other control characters. "Visible" excludes spaces, zero-width and formatting
 characters, accent marks on their own, and blank filler characters such as `U+3164` Hangul Filler.
@@ -273,7 +273,7 @@ values are shown as `— (not specified)` in the details pane, but remain unset 
 
 <box type="tip" seamless>
 
-**Tip:** A contact can have any number of tags, including zero. Parameters can be supplied in any order.
+**Tip:** A contact can have up to 15 tags, including zero. Tags that differ only in capitalization count as one. Parameters can be supplied in any order.
 </box>
 
 Examples:
@@ -303,6 +303,7 @@ Examples:
 | A non-empty note exceeds 500 characters, has no visible characters, or contains a control character. | `Invalid note. Use 1 to 500 printable characters. Example: m/Handles venue bookings` |
 | A non-empty tag contains spaces, symbols, or punctuation. | `Invalid tag name. Use letters and numbers without spaces. Example: t/Publicity` |
 | A tag exceeds 30 characters. | `Tag name must not exceed 30 characters. Example: t/Publicity` |
+| More than 15 different tags are supplied, ignoring case. | `A contact can have at most 15 tags.` |
 | Another contact has the same name, phone number, or email. | `A contact with this name, phone number, or email already exists.` |
 
 If saving fails, the command reports `Contact could not be saved. No changes were made.`
@@ -881,6 +882,7 @@ Or: `edit target/IDENTIFIER [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [
 * `t/TAG` replaces all existing tags; repeat it to specify several replacement tags. `t/` with no value clears the tag set.
 * `at/TAG` adds a tag without removing other tags, while `rt/TAG` removes only that tag from the contact. These may be repeated or mixed and are applied in command order. Neither may be mixed with `t/`.
 * Tag matching ignores case. Adding an existing tag or removing an absent tag has no effect. A valid new tag named by `t/` or `at/` is saved as a custom tag. Empty `at/` and `rt/` values are invalid.
+* `t/` replacements may contain at most 15 tags, and `at/` cannot give a contact more than 15 tags. A contact saved with more than 15 tags can still be edited with `at/` and `rt/`, or without changing its tags, as long as the edit does not increase its number of tags.
 * If the contact's name changes, events they are assigned to show the new name.
 * A new name already used by another contact, ignoring case and extra spaces, is rejected.
 * An edit is saved to the local data file before it appears in the contact list. If the file cannot be read or written,
@@ -931,6 +933,7 @@ Additional errors are listed below.
 | An `rt/` tag contains spaces, symbols, or punctuation. | `Invalid tag name. Use letters and numbers without spaces. Example: rt/Publicity` |
 | An `at/` tag exceeds 30 characters. | `Tag name must not exceed 30 characters. Example: at/Publicity` |
 | An `rt/` tag exceeds 30 characters. | `Tag name must not exceed 30 characters. Example: rt/Publicity` |
+| `t/` supplies more than 15 different tags, or `at/` would give the contact more than 15 tags. | `A contact can have at most 15 tags.` |
 | The updated name, phone number, or email conflicts with another saved contact. | `This update conflicts with another saved contact. No changes were made.` |
 | Renaming the contact would duplicate a member name in an event. | `Cannot rename this contact because an event already has a member with that name. No changes were made.` |
 
@@ -1254,6 +1257,7 @@ when it contains only digits; event attendance values must be strings. Numbers o
 booleans in boolean fields, make the file invalid. The warning identifies the affected field when possible.<br>
 If a contact uses a tag that is missing from the top-level `tags` list, CoordiMate adds it to the global tag list when
 the file is loaded. Existing top-level tags, including unused tags, retain their saved order and capitalization.<br>
+A contact saved with more than 15 tags still loads with all of its tags, but commands cannot give it more tags.<br>
 Furthermore, certain edits can cause CoordiMate to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </box>
 

@@ -15,7 +15,6 @@ import static coordimate.logic.parser.CliSyntax.PREFIX_TAG;
 import static coordimate.logic.parser.CliSyntax.PREFIX_TARGET;
 import static java.util.Objects.requireNonNull;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -27,7 +26,6 @@ import coordimate.logic.commands.EditCommand.TagOperationType;
 import coordimate.logic.parser.ArgumentMultimap.PrefixedValue;
 import coordimate.logic.parser.exceptions.ParseException;
 import coordimate.model.person.MemberId;
-import coordimate.model.tag.Tag;
 
 /**
  * Parses input arguments and creates a new EditCommand object.
@@ -152,18 +150,7 @@ public class EditCommandParser implements Parser<EditCommand> {
             throw new ParseException(MESSAGE_CONFLICTING_TAG_OPERATIONS);
         }
         if (!replacements.isEmpty()) {
-            Set<Tag> replacementTags = new HashSet<>();
-            for (String value : replacements) {
-                if (value.isEmpty()) {
-                    replacementTags.clear();
-                    continue;
-                }
-                Tag tag = ParserUtil.parseTag(value);
-                if (replacementTags.stream().noneMatch(tag::isSameTag)) {
-                    replacementTags.add(tag);
-                }
-            }
-            descriptor.setTags(replacementTags);
+            descriptor.setTags(ParserUtil.parseContactTags(replacements));
         }
         for (PrefixedValue argument : arguments.getArgumentsInOrder()) {
             if (argument.prefix().equals(PREFIX_ADD_TAG)) {

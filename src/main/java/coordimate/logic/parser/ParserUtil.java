@@ -22,6 +22,7 @@ import coordimate.model.person.MemberId;
 import coordimate.model.person.Name;
 import coordimate.model.person.Note;
 import coordimate.model.person.Organisation;
+import coordimate.model.person.Person;
 import coordimate.model.person.Phone;
 import coordimate.model.person.Role;
 import coordimate.model.tag.Tag;
@@ -316,5 +317,30 @@ public class ParserUtil {
             parsedTags.add(parseTag(tagName));
         }
         return parsedTags;
+    }
+
+    /**
+     * Parses the {@code t/} values of a contact command into tags that are unique, ignoring case.
+     * An empty value clears the tags parsed before it.
+     *
+     * @throws ParseException if a tag is invalid or the contact would have more than {@link Person#MAX_TAGS} tags.
+     */
+    public static Set<Tag> parseContactTags(Collection<String> values) throws ParseException {
+        requireNonNull(values);
+        Set<Tag> tags = new HashSet<>();
+        for (String value : values) {
+            if (value.isEmpty()) {
+                tags.clear();
+                continue;
+            }
+            Tag tag = parseTag(value);
+            if (tags.stream().noneMatch(tag::isSameTag)) {
+                tags.add(tag);
+            }
+        }
+        if (tags.size() > Person.MAX_TAGS) {
+            throw new ParseException(Person.MESSAGE_TAG_LIMIT);
+        }
+        return tags;
     }
 }
