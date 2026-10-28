@@ -1120,7 +1120,9 @@ Formats:
 * `archiveevent evn/EVENT_NAME` archives the event with the supplied name, ignoring capitalization.
 * `unarchiveevent evn/EVENT_NAME` restores the event with the supplied name.
 
-All four commands work from any view. `MEMBER_ID` is the permanent ID shown on each contact, as in `edit` and
+All four commands work from any view. `archive` and `unarchive` then open the **Contacts** tab, and `archiveevent`
+and `unarchiveevent` open the **Events** tab, so you can see the change. `unarchive` also selects and reveals the
+restored contact when it is in the displayed list. `MEMBER_ID` is the permanent ID shown on each contact, as in `edit` and
 `delete`, so it does not depend on the displayed list. A contact hidden by a search, a filter, or the archived view can
 still be archived or restored.
 

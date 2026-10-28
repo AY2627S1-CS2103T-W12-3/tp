@@ -49,9 +49,13 @@ public class ArchiveCommand extends Command {
             throw new CommandException(String.format(archive ? MESSAGE_ALREADY_ARCHIVED : MESSAGE_NOT_ARCHIVED,
                     target.getName()));
         }
-        model.setPerson(target, target.withArchived(archive));
-        return new CommandResult(String.format(archive ? MESSAGE_ARCHIVE_SUCCESS : MESSAGE_UNARCHIVE_SUCCESS,
-                target.getName()));
+        Person updated = target.withArchived(archive);
+        model.setPerson(target, updated);
+        String message = String.format(archive ? MESSAGE_ARCHIVE_SUCCESS : MESSAGE_UNARCHIVE_SUCCESS,
+                target.getName());
+        return archive
+                ? new CommandResult(message, CommandResult.View.CONTACTS)
+                : CommandResult.withContactToFocus(message, CommandResult.View.CONTACTS, updated);
     }
 
     @Override

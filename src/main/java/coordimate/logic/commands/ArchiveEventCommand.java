@@ -52,7 +52,7 @@ public class ArchiveEventCommand extends Command {
         }
         model.setEvent(target, target.withArchived(archive));
         return new CommandResult(String.format(archive ? MESSAGE_ARCHIVE_SUCCESS : MESSAGE_UNARCHIVE_SUCCESS,
-                target.getName()));
+                target.getName()), CommandResult.View.EVENTS);
     }
 
     @Override

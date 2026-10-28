@@ -73,6 +73,14 @@ public class ArchiveEventCommandTest {
     }
 
     @Test
+    public void execute_archiveOrUnarchive_opensEvents() throws Exception {
+        assertEquals(CommandResult.View.EVENTS,
+                new ArchiveEventCommand("Fair", true).execute(model).getViewToShow());
+        assertEquals(CommandResult.View.EVENTS,
+                new ArchiveEventCommand("Fair", false).execute(model).getViewToShow());
+    }
+
+    @Test
     public void execute_unknownEvent_rejected() {
         for (boolean archive : new boolean[] {true, false}) {
             assertEquals(String.format(ArchiveEventCommand.MESSAGE_EVENT_NOT_FOUND, "Gala"),
