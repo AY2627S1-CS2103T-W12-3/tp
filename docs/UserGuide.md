@@ -127,7 +127,7 @@ A command that breaks a constraint is rejected and makes no changes.
 | `BIRTHDAY` | `b/` | A real date in `dd-MM-yyyy` format that is not in the future, e.g. `18-06-2004`. |
 | `LEAVE_END_DATE` | `lv/` | A real date in `dd-MM-yyyy` format that is not in the past, e.g. `30-11-2026`. Today's date is allowed. |
 | `ADDRESS` | `a/` | 1 to 200 printable characters, including at least one visible character. |
-| `ORGANISATION` | `o/` | 1 to 80 characters. Letters, digits, spaces, hyphens, and `&` only, with at least one letter or digit. |
+| `ORGANISATION` | `o/` | 1 to 80 characters. Letters, digits, spaces, hyphens, and `&` only, with at least one letter or digit. Several spaces in a row count as one. |
 | `NOTE` | `m/` | 1 to 500 printable characters, including at least one visible character. |
 | `TAG`, `NEW_TAG` | `t/`, `at/`, `rt/` | 1 to 30 characters. English letters and digits only, with no spaces. Tags are unique, ignoring case. |
 | `EVENT_NAME`, `NEW_EVENT_NAME` | `evn/`, `nevn/` | At least one visible character. Any printable characters are allowed, subject to the note below. Several spaces in a row count as one. Event names are unique, ignoring case and extra spaces. |
@@ -244,7 +244,7 @@ Name, phone, email, and role are required. Each field accepts the following valu
 | `BIRTHDAY` | A real date in `dd-MM-yyyy` format that is not in the future. |
 | `LEAVE_END_DATE` | A real date in `dd-MM-yyyy` format that is not in the past. |
 | `ADDRESS` | 1 to 200 printable characters, including at least one visible character. |
-| `ORGANISATION` | 1 to 80 characters: letters, digits, spaces, and `-` `&` `.` `,` `'` `(` `)` `/`, with at least one letter or digit, e.g. `St. John's Ambulance`. |
+| `ORGANISATION` | 1 to 80 characters: letters, digits, spaces, and `-` `&` `.` `,` `'` `(` `)` `/`, with at least one letter or digit, e.g. `St. John's Ambulance`. Several spaces in a row are saved as one, so `o/NUS  Student Affairs` is saved as `NUS Student Affairs`. |
 | `NOTE` | 1 to 500 printable characters, including at least one visible character. |
 | `TAG` | 1 to 30 letters or digits with no spaces. |
 
@@ -966,6 +966,8 @@ Format: `search KEYWORD`
 * Partial words match; for example, `Han` matches `Hans`.
 * The entire keyword is matched as one substring within a field. Spaces and word order matter:
   `search Hans Bo` matches `Hans Bo Yang`, but does not match `Bo Hans` or separate contacts named `Hans` and `Bo`.
+* Several spaces in a row count as one, in both the keyword and the saved values. For example, `search Kent  Ridge`
+  matches an address containing `Kent Ridge`. Addresses are still saved and displayed as entered.
 * Phone numbers are also matched ignoring spaces, hyphens, and brackets, so `search 91234567` finds `9123 4567`,
   and `search 9123 4567` finds `91234567`.
 * Surrounding quotation marks are optional: `search "Jurong West"` and `search Jurong West` give the same results.
@@ -1004,6 +1006,7 @@ Format: `filter FIELD/VALUE [FIELD/VALUE]...`
   * `tag/VALUE` lists contacts that have the tag. The tag must be in the tag list shown by `listtags`.
   * `event/VALUE` lists the members of the event with that name.
   * `organisation/VALUE` lists contacts whose organisation is that value. At least one contact must have it.
+    Several spaces in a row count as one, so `organisation/NUS  Student Affairs` matches `NUS Student Affairs`.
 * When several filters are given, a contact must match **all** of them.
 * Filter checks all saved contacts, including those hidden by the current search or filter.
 * Results replace the displayed contact list. Permanent member IDs remain unchanged; `edit`, `delete`, `assign`, and `unassign` accept those IDs even for hidden contacts. Use `list` to show everyone.
