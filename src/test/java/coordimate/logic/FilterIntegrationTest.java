@@ -29,6 +29,7 @@ import coordimate.model.ModelManager;
 import coordimate.model.ReadOnlyCoordiMate;
 import coordimate.model.UserPrefs;
 import coordimate.model.person.Person;
+import coordimate.storage.DataConflictException;
 import coordimate.storage.JsonCoordiMateStorage;
 import coordimate.storage.JsonUserPrefsStorage;
 import coordimate.storage.StorageManager;
@@ -52,6 +53,60 @@ public class FilterIntegrationTest {
         logic.execute("addevent evn/Final Concert st/08-08-2027 et/08-08-2027");
         logic.execute("addevent evn/Fair st/09-10-2027 et/10-10-2027");
         logic.execute("assign evn/Final Concert c/1 2");
+    }
+
+    @Test
+    public void filteredEventCaseOnlyRename_membershipChangesStillUpdateFilter() throws Exception {
+        logic.execute("filter event/Final Concert tag/friends");
+        logic.execute("editevent evn/Final Concert nevn/FINAL CONCERT");
+        assertEquals(List.of(ALICE, BENSON), model.getFilteredPersonList());
+
+        logic.execute("assign evn/FINAL CONCERT c/3 4");
+        logic.execute("unassign evn/FINAL CONCERT c/1");
+        assertEquals(List.of(BENSON, DANIEL), model.getFilteredPersonList());
+    }
+
+    @Test
+    public void filteredEventDuplicateRename_rejectedWithoutChangingFilter() throws Exception {
+        logic.execute("filter event/Final Concert");
+        Predicate<? super Person> originalFilter = model.getFilteredPersonPredicate();
+        CoordiMate originalData = new CoordiMate(model.getCoordiMate());
+        Path dataPath = temporaryFolder.resolve("data.json");
+        String originalFile = Files.readString(dataPath);
+
+        assertThrows(CommandException.class, () -> logic.execute("editevent evn/Final Concert nevn/Fair"));
+
+        assertSame(originalFilter, model.getFilteredPersonPredicate());
+        assertEquals(List.of(ALICE, BENSON), model.getFilteredPersonList());
+        assertEquals(originalData, model.getCoordiMate());
+        assertEquals(originalFile, Files.readString(dataPath));
+        logic.execute("unassign evn/Final Concert c/1");
+        assertEquals(List.of(BENSON), model.getFilteredPersonList());
+    }
+
+    @Test
+    public void filteredEventRename_concurrentSave_preservesFilterAndOtherWritersData() throws Exception {
+        logic.execute("filter event/Final Concert tag/friends");
+        Predicate<? super Person> originalFilter = model.getFilteredPersonPredicate();
+        CoordiMate originalData = new CoordiMate(model.getCoordiMate());
+        Path dataPath = temporaryFolder.resolve("data.json");
+        JsonCoordiMateStorage otherStorage = new JsonCoordiMateStorage(dataPath);
+        ModelManager otherModel = new ModelManager(otherStorage.readCoordiMate().orElseThrow(), new UserPrefs());
+        Logic otherLogic = new LogicManager(otherModel, new StorageManager(otherStorage,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("other-prefs.json"))));
+        otherLogic.execute("assign evn/Final Concert c/3");
+        String otherWritersFile = Files.readString(dataPath);
+
+        CommandException exception = assertThrows(CommandException.class, () ->
+                logic.execute("editevent evn/Final Concert nevn/Grand Concert"));
+
+        assertEquals(Messages.withUsage(DataConflictException.MESSAGE, EditEventCommand.MESSAGE_USAGE),
+                exception.getMessage());
+        assertSame(originalFilter, model.getFilteredPersonPredicate());
+        assertEquals(List.of(ALICE, BENSON), model.getFilteredPersonList());
+        assertEquals(originalData, model.getCoordiMate());
+        assertEquals(otherWritersFile, Files.readString(dataPath));
+        assertEquals(otherModel.getCoordiMate(), otherStorage.readCoordiMate().orElseThrow());
     }
 
     @Test

@@ -8,6 +8,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Predicate;
 
@@ -17,6 +19,40 @@ public class ContactFilterPredicateTest {
     private static final Predicate<Person> IS_ALICE = ALICE::equals;
     private static final Predicate<Person> HAS_FRIENDS_TAG = person -> person.getTags().stream()
             .anyMatch(tag -> tag.getTagName().equals("friends"));
+
+    @Test
+    public void constructor_invalidCriteria_rejected() {
+        assertThrows(AssertionError.class, () -> new ContactFilterPredicate(List.of()));
+        assertThrows(NullPointerException.class, () -> new ContactFilterPredicate(Arrays.asList(IS_ALICE, null)));
+    }
+
+    @Test
+    public void constructor_copiesCriteria_subsequentChangesDoNotAffectFilter() {
+        List<Predicate<Person>> criteria = new ArrayList<>(List.of(IS_ALICE));
+        ContactFilterPredicate predicate = new ContactFilterPredicate(criteria);
+
+        criteria.clear();
+        criteria.add(BENSON::equals);
+
+        assertTrue(predicate.test(ALICE));
+        assertFalse(predicate.test(BENSON));
+    }
+
+    @Test
+    public void withCriteriaReplaced_invalidReplacement_rejectedWithoutChangingOriginal() {
+        ContactFilterPredicate predicate = new ContactFilterPredicate(List.of(IS_ALICE));
+        assertThrows(NullPointerException.class, () -> predicate.withCriteriaReplaced(null));
+        assertThrows(NullPointerException.class, () -> predicate.withCriteriaReplaced(criterion -> null));
+        assertTrue(predicate.test(ALICE));
+        assertFalse(predicate.test(BENSON));
+    }
+
+    @Test
+    public void toString_includesCriteria() {
+        ContactFilterPredicate predicate = new ContactFilterPredicate(List.of(IS_ALICE));
+        assertEquals(ContactFilterPredicate.class.getCanonicalName() + "{criteria=" + List.of(IS_ALICE) + "}",
+                predicate.toString());
+    }
 
     @Test
     public void test_requiresEveryCriterion() {
@@ -36,6 +72,8 @@ public class ContactFilterPredicateTest {
         assertEquals(new ContactFilterPredicate(List.of(HAS_FRIENDS_TAG, isBenson)), replaced);
         assertTrue(replaced.test(BENSON));
         assertFalse(replaced.test(ALICE));
+        assertTrue(predicate.test(ALICE));
+        assertFalse(predicate.test(BENSON));
         assertEquals(predicate, predicate.withCriteriaReplaced(criterion -> criterion));
     }
 
