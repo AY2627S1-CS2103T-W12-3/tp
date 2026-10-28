@@ -34,6 +34,9 @@ public class EditEventCommandParserTest {
     public void parse_emptyOrMissingFields_rejected() {
         assertError(" evn/Fair", EditEventCommand.MESSAGE_NOT_EDITED);
         assertError(" evn/Fair nevn/  ", EditEventCommand.MESSAGE_EMPTY_NEW_NAME);
+        assertError(" evn/\u200B st/09-10-2026", Event.MESSAGE_NAME_CONSTRAINTS);
+        assertError(" evn/Fair nevn/\u200B",
+                Event.MESSAGE_NAME_CONSTRAINTS.replace("Example: evn/", "Example: nevn/"));
         assertError(" evn/" + "E".repeat(Event.MAX_NAME_LENGTH + 1)
                 + " st/09-10-2026", Event.MESSAGE_NAME_LENGTH_CONSTRAINTS);
         assertError(" evn/Fair nevn/" + "E".repeat(Event.MAX_NAME_LENGTH + 1),

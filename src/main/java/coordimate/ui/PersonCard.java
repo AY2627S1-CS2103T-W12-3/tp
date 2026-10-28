@@ -1,10 +1,10 @@
 package coordimate.ui;
 
 import java.time.LocalDate;
-import java.util.Comparator;
 
 import coordimate.model.person.Address;
 import coordimate.model.person.Person;
+import coordimate.model.tag.Tag;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.layout.FlowPane;
@@ -77,7 +77,7 @@ public class PersonCard extends UiPart<Region> {
         archived.setVisible(person.isArchived());
         archived.setManaged(person.isArchived());
         person.getTags().stream()
-                .sorted(Comparator.comparing(tag -> tag.getTagName()))
+                .sorted(Tag.ALPHABETICAL_ORDER)
                 .forEach(tag -> tags.getChildren().add(TagStyle.createTagLabel(tag.getTagName())));
     }
 

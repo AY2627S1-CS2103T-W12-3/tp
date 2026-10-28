@@ -55,6 +55,21 @@ public class NameTest {
     }
 
     @Test
+    public void isValidName_relationshipWords() {
+        assertTrue(Name.isValidName("Rajesh s/o Kumar"));
+        assertTrue(Name.isValidName("Priya d/o Raman"));
+        assertTrue(Name.isValidName("RAJESH S/O KUMAR")); // any capitalization
+        assertTrue(Name.isValidName("Rajesh s/o")); // at the end of the name
+
+        assertFalse(Name.isValidName("s/o")); // needs a letter outside the relationship word
+        assertFalse(Name.isValidName("s/o d/o"));
+        assertFalse(Name.isValidName("Rajeshs/o Kumar")); // not a separate word
+        assertFalse(Name.isValidName("Rajesh s/oKumar"));
+        assertFalse(Name.isValidName("Rajesh w/o Kumar")); // only s/o and d/o are allowed
+        assertFalse(Name.isValidName("Alex/Yeoh"));
+    }
+
+    @Test
     public void constructor_surroundingSpaces_trimmed() {
         assertEquals("Alice Tan", new Name("  Alice Tan  ").getFullName());
     }

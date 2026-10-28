@@ -131,6 +131,7 @@ public class ParserUtilTest {
     @Test
     public void parseAddress_invalidValue_throwsParseException() {
         assertThrows(ParseException.class, () -> ParserUtil.parseAddress(INVALID_ADDRESS));
+        assertThrows(ParseException.class, Address.MESSAGE_CONSTRAINTS, () -> ParserUtil.parseAddress("\u200B"));
     }
 
     @Test
@@ -277,6 +278,7 @@ public class ParserUtilTest {
         assertThrows(ParseException.class, Note.MESSAGE_CONSTRAINTS, () -> ParserUtil.parseNote(WHITESPACE));
         assertThrows(ParseException.class, Note.MESSAGE_CONSTRAINTS, () ->
                 ParserUtil.parseNote("N".repeat(Note.MAX_LENGTH + 1)));
+        assertThrows(ParseException.class, Note.MESSAGE_CONSTRAINTS, () -> ParserUtil.parseNote("\u200B"));
         assertEquals(new Note("Handles venue bookings"),
                 ParserUtil.parseNote(WHITESPACE + "Handles venue bookings" + WHITESPACE));
     }
@@ -289,6 +291,8 @@ public class ParserUtilTest {
                 ParserUtil.parseEventName("E".repeat(Event.MAX_NAME_LENGTH + 1)));
         assertThrows(ParseException.class, Event.MESSAGE_NAME_CONSTRAINTS, () ->
                 ParserUtil.parseEventName("Final\u0007Concert"));
+        assertThrows(ParseException.class, Event.MESSAGE_NAME_CONSTRAINTS, () ->
+                ParserUtil.parseEventName("\u200B"));
         assertEquals("Final Concert", ParserUtil.parseEventName("  Final Concert  "));
         assertEquals("E".repeat(Event.MAX_NAME_LENGTH), ParserUtil.parseEventName("E".repeat(Event.MAX_NAME_LENGTH)));
     }

@@ -18,6 +18,14 @@ public class TagTest {
     }
 
     @Test
+    public void alphabeticalOrder_ignoresCaseThenBreaksTiesByCase() {
+        List<Tag> tags = List.of(new Tag("friends"), new Tag("Logistics"), new Tag("EXCO"), new Tag("budget"),
+                new Tag("Budget"));
+        assertEquals(List.of(new Tag("Budget"), new Tag("budget"), new Tag("EXCO"), new Tag("friends"),
+                new Tag("Logistics")), tags.stream().sorted(Tag.ALPHABETICAL_ORDER).toList());
+    }
+
+    @Test
     public void constructor_invalidTagName_throwsIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class, () -> new Tag(""));
         assertThrows(IllegalArgumentException.class, () -> new Tag("Publicity Team"));

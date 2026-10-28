@@ -75,6 +75,20 @@ public class PrefixParserTest {
                 PrefixParser.CONTACT_PARAMETER_PATTERN, PREFIXES, USAGE, UNKNOWN, REPEATED));
     }
 
+    @Test
+    public void rejectUnknownParameters_relationshipWordsInContactInput_notParameters() throws Exception {
+        for (String input : new String[] {"n/Rajesh s/o Kumar", "n/Priya D/O Raman", "n/Rajesh s/o"}) {
+            PrefixParser.rejectUnknownParameters(input, PrefixParser.CONTACT_PARAMETER_PATTERN,
+                    Set.of("n/"), UNKNOWN);
+        }
+        for (String prefix : new String[] {"s/", "d/", "so/"}) {
+            String input = "n/Rajesh " + prefix + "old";
+            assertEquals(String.format(UNKNOWN, prefix), assertThrows(ParseException.class, () ->
+                    PrefixParser.rejectUnknownParameters(input, PrefixParser.CONTACT_PARAMETER_PATTERN,
+                            Set.of("n/"), UNKNOWN)).getMessage());
+        }
+    }
+
     private Map<String, String> parse(String args) throws ParseException {
         return PrefixParser.parseUniqueParameters(args, PrefixParser.EVENT_PARAMETER_PATTERN,
                 PREFIXES, USAGE, UNKNOWN, REPEATED);

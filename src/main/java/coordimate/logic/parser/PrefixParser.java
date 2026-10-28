@@ -11,13 +11,16 @@ import java.util.regex.Pattern;
 import coordimate.commons.util.ParameterSyntax;
 import coordimate.commons.util.StringUtil;
 import coordimate.logic.parser.exceptions.ParseException;
+import coordimate.model.person.Name;
 
 /**
  * Scans command parameters while preserving each command's accepted prefix syntax.
  */
 final class PrefixParser {
     static final String PARAMETER_BOUNDARY = ParameterSyntax.BOUNDARY;
-    static final Pattern CONTACT_PARAMETER_PATTERN = Pattern.compile(PARAMETER_BOUNDARY + "([A-Za-z]+/)");
+    /** Matches a contact command prefix, but not the name words {@code s/o} and {@code d/o}. */
+    static final Pattern CONTACT_PARAMETER_PATTERN =
+            Pattern.compile(PARAMETER_BOUNDARY + "(?!" + Name.RELATIONSHIP_WORD_REGEX + ")([A-Za-z]+/)");
     static final Pattern EVENT_PARAMETER_PATTERN = ParameterSyntax.EVENT_PARAMETER_PATTERN;
 
     private PrefixParser() {}

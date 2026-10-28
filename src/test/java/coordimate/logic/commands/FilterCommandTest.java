@@ -5,9 +5,13 @@ import static coordimate.testutil.TypicalPersons.ALICE;
 import static coordimate.testutil.TypicalPersons.BENSON;
 import static coordimate.testutil.TypicalPersons.getTypicalCoordiMate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.Map;
+import java.util.function.Predicate;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,6 +24,7 @@ import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
 import coordimate.model.person.FilterCriterion;
 import coordimate.model.person.FilterField;
+import coordimate.model.person.Person;
 import coordimate.model.tag.Tag;
 import coordimate.testutil.PersonBuilder;
 
@@ -90,6 +95,22 @@ public class FilterCommandTest {
         command.execute(model);
 
         assertEquals(List.of(ALICE), model.getFilteredPersonList());
+    }
+
+    @Test
+    public void execute_eventFilter_predicateFollowsLaterEventChanges() throws Exception {
+        Event concert = new Event("Final Concert", new EventTime("08-08-2026"), new EventTime("08-08-2026"),
+                List.of(ALICE.getName()));
+        model.addEvent(concert);
+        filter(FilterField.EVENT, "Final Concert").execute(model);
+        Predicate<? super Person> predicate = model.getFilteredPersonPredicate();
+
+        model.setEvent(concert, concert.withMembersAndAttendance(List.of(BENSON.getName()), Map.of()));
+        assertFalse(predicate.test(ALICE));
+        assertTrue(predicate.test(BENSON));
+
+        model.deleteEvent(model.getCoordiMate().getEventList().get(0));
+        assertFalse(predicate.test(BENSON));
     }
 
     @Test

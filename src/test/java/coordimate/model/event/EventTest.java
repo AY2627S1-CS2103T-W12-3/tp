@@ -102,6 +102,7 @@ public class EventTest {
         assertFalse(Event.isValidName("Final\nConcert")); // line break inside the name
         assertFalse(Event.isValidName("Final\u0007Concert")); // control character
         assertFalse(Event.isValidName("Final\tConcert")); // tab inside the name is not collapsed into a space
+        assertFalse(Event.isValidName("\u200B")); // zero-width space
 
         assertTrue(Event.isValidName("E"));
         assertTrue(Event.isValidName("E".repeat(Event.MAX_NAME_LENGTH))); // at the limit
@@ -118,6 +119,8 @@ public class EventTest {
                 new Event("E".repeat(Event.MAX_NAME_LENGTH + 1), date, time)).getMessage());
         assertEquals(Event.MESSAGE_NAME_CONSTRAINTS, assertThrows(IllegalArgumentException.class, () ->
                 new Event("Final\u0007Concert", date, time)).getMessage());
+        assertEquals(Event.MESSAGE_NAME_CONSTRAINTS, assertThrows(IllegalArgumentException.class, () ->
+                new Event("\u200B", date, time)).getMessage());
         assertEquals("E".repeat(Event.MAX_NAME_LENGTH),
                 new Event("E".repeat(Event.MAX_NAME_LENGTH), date, time).getName());
         assertTrue(Event.MESSAGE_NAME_LENGTH_CONSTRAINTS.contains(String.valueOf(Event.MAX_NAME_LENGTH)));

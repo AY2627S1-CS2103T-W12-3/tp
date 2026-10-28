@@ -3,7 +3,6 @@ package coordimate.model;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -402,8 +401,7 @@ public class CoordiMate implements ReadOnlyCoordiMate {
     private void registerTagsFromPersons(List<Person> personsToRegister) {
         personsToRegister.stream()
                 .flatMap(person -> person.getTags().stream())
-                .sorted(Comparator.comparing(Tag::getTagName, String.CASE_INSENSITIVE_ORDER)
-                        .thenComparing(Tag::getTagName))
+                .sorted(Tag.ALPHABETICAL_ORDER)
                 .forEach(tag -> {
                     if (!hasTag(tag)) {
                         tags.add(tag);
