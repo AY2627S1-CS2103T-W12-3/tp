@@ -645,6 +645,10 @@ follows the same changes. For a rename, `keepEventViewsAfterRename` uses
 `ContactFilterPredicate#withCriteriaReplaced` to replace only the event criteria for the renamed event, keeping the
 other criteria unchanged.
 
+A `filter tag/...` criterion is a `TagFilterPredicate`, which also identifies its tag by name. After `edittag` renames
+that tag, `LogicManager#keepTagFiltersAfterRename` replaces it with a predicate for the new name in the same way, so
+the filtered list keeps showing the contacts that have the renamed tag.
+
 A filtered list re-tests its predicate only when the contact list changes. For this reason `CoordiMate#resetData`
 replaces the events **before** the contacts: when the contacts are replaced and the predicate is tested again, it
 already sees the new events.

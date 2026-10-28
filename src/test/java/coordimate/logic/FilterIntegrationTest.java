@@ -246,6 +246,42 @@ public class FilterIntegrationTest {
         assertEquals(List.of(BENSON, DANIEL), model.getFilteredPersonList());
     }
 
+    @Test
+    public void filteredTagRenamed_listKeepsContacts() throws Exception {
+        logic.execute("filter tag/friends");
+        assertEquals(List.of("Alice Pauline", "Benson Meier", "Daniel Meier"), shownNames());
+
+        logic.execute("edittag FRIENDS t/pals");
+        assertEquals(List.of("Alice Pauline", "Benson Meier", "Daniel Meier"), shownNames());
+
+        logic.execute("edittag pals t/mates");
+        assertEquals(List.of("Alice Pauline", "Benson Meier", "Daniel Meier"), shownNames());
+    }
+
+    @Test
+    public void tagRenamedWithEventCriterion_bothCriteriaStillApply() throws Exception {
+        logic.execute("filter event/Final Concert tag/friends");
+        logic.execute("edittag friends t/pals");
+        assertEquals(List.of("Alice Pauline", "Benson Meier"), shownNames());
+
+        logic.execute("assign evn/Final Concert c/3 4");
+        assertEquals(List.of("Alice Pauline", "Benson Meier", "Daniel Meier"), shownNames());
+    }
+
+    @Test
+    public void otherTagRenamedOrFilteredTagDeleted_followsCurrentTags() throws Exception {
+        logic.execute("filter tag/friends");
+        logic.execute("edittag owesMoney t/debt");
+        assertEquals(List.of("Alice Pauline", "Benson Meier", "Daniel Meier"), shownNames());
+
+        logic.execute("deletetag t/friends");
+        assertEquals(List.of(), shownNames());
+    }
+
+    private List<String> shownNames() {
+        return model.getFilteredPersonList().stream().map(person -> person.getName().getFullName()).toList();
+    }
+
     private void assertSaveFailurePreservesFilter(String filter, String command, String saveError, String usage)
             throws Exception {
         logic.execute(filter);
