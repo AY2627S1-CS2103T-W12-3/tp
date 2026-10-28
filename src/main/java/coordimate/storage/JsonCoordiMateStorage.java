@@ -3,10 +3,17 @@ package coordimate.storage;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+import java.nio.channels.OverlappingFileLockException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,24 +57,47 @@ public class JsonCoordiMateStorage {
      * Returns the recovery details only after all repairs are saved successfully.
      */
     public RecoveryResult recoverSavedData() throws DataLoadingException, IOException {
-        Optional<JsonSerializableCoordiMate> savedData = JsonUtil.readJsonFile(
-                filePath, JsonSerializableCoordiMate.class);
-        if (savedData.isEmpty()) {
+        byte[] originalContents;
+        JsonSerializableCoordiMate savedData;
+        try {
+            originalContents = Files.readAllBytes(filePath);
+            savedData = JsonUtil.fromJsonString(new String(originalContents, StandardCharsets.UTF_8),
+                    JsonSerializableCoordiMate.class);
+            if (savedData == null) {
+                throw new IOException("JSON file must contain an object.");
+            }
+        } catch (NoSuchFileException e) {
             return new RecoveryResult(List.of(), List.of());
+        } catch (IOException e) {
+            throw new DataLoadingException(e);
         }
-        List<String> removedNames = savedData.get().removeYearZeroEvents();
-        boolean removedHistory = savedData.get().removeYearZeroReminderStarts();
+        List<String> removedNames = savedData.removeYearZeroEvents();
+        boolean removedHistory = savedData.removeYearZeroReminderStarts();
         CoordiMate cleanedData;
         try {
-            cleanedData = savedData.get().toModelType();
+            cleanedData = savedData.toModelType();
         } catch (IllegalValueException | IllegalArgumentException | NullPointerException e) {
             throw new DataLoadingException(e);
         }
         List<String> removedAssignments = removeAssignmentsCoveredByLeave(cleanedData);
         if (!removedNames.isEmpty() || removedHistory || !removedAssignments.isEmpty()) {
-            saveCoordiMate(cleanedData);
+            saveRecoveredData(cleanedData, originalContents);
         }
         return new RecoveryResult(removedNames, removedAssignments);
+    }
+
+    private void saveRecoveredData(ReadOnlyCoordiMate data, byte[] originalContents) throws IOException {
+        Path dataPath = getCoordiMateFilePath().toAbsolutePath();
+        Path lockPath = dataPath.resolveSibling(dataPath.getFileName() + ".lock");
+        try (FileChannel channel = FileChannel.open(lockPath, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+                FileLock ignored = channel.lock()) {
+            if (!Arrays.equals(originalContents, Files.readAllBytes(dataPath))) {
+                throw new DataConflictException();
+            }
+            saveCoordiMate(data);
+        } catch (OverlappingFileLockException e) {
+            throw new IOException("The data file is being saved by another window. Try again.", e);
+        }
     }
 
     private List<String> removeAssignmentsCoveredByLeave(CoordiMate data) {

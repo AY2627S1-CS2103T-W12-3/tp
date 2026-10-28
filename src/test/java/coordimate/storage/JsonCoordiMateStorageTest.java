@@ -13,9 +13,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -51,6 +54,16 @@ public class JsonCoordiMateStorageTest {
         Path path = testFolder.resolve("missing.json");
         assertEquals("", new JsonCoordiMateStorage(path).recoverSavedData().getWarning());
         assertFalse(Files.exists(path));
+    }
+
+    @Test
+    public void recoverSavedData_nullJson_preservesFile() throws Exception {
+        Path path = testFolder.resolve("null.json");
+        Files.writeString(path, "null");
+
+        assertThrows(DataLoadingException.class, () -> new JsonCoordiMateStorage(path).recoverSavedData());
+
+        assertEquals("null", Files.readString(path));
     }
 
     @Test
@@ -241,6 +254,74 @@ public class JsonCoordiMateStorageTest {
         };
 
         assertThrows(IOException.class, storage::recoverSavedData);
+        assertEquals(before, Files.readString(path));
+    }
+
+    @Test
+    public void recoverSavedData_leaveWhileSaveLockHeld_preservesFile() throws Exception {
+        CoordiMate original = getTypicalCoordiMate();
+        original.setPerson(ALICE, new PersonBuilder(ALICE).withLeaveDate("08-08-2026").build());
+        original.addEvent(new Event("Concert", new EventTime("08-08-2026"), new EventTime("08-08-2026"),
+                List.of(ALICE.getName()), Map.of(ALICE.getName(), AttendanceStatus.PRESENT)));
+        Path path = testFolder.resolve("locked.json");
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path);
+        storage.saveCoordiMate(original);
+        String before = Files.readString(path);
+        Path lockPath = path.resolveSibling(path.getFileName() + ".lock");
+
+        try (FileChannel channel = FileChannel.open(lockPath, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+                FileLock ignored = channel.lock()) {
+            assertThrows(IOException.class, storage::recoverSavedData);
+        }
+
+        assertEquals(before, Files.readString(path));
+        assertEquals(original, storage.readCoordiMate().orElseThrow());
+    }
+
+    @Test
+    public void recoverSavedData_changedBeforeSave_preservesNewerFile() throws Exception {
+        CoordiMate original = getTypicalCoordiMate();
+        original.setPerson(ALICE, new PersonBuilder(ALICE).withLeaveDate("08-08-2026").build());
+        original.addEvent(new Event("Concert", new EventTime("08-08-2026"), new EventTime("08-08-2026"),
+                List.of(ALICE.getName())));
+        Path path = testFolder.resolve("changed.json");
+        JsonCoordiMateStorage otherWindow = new JsonCoordiMateStorage(path);
+        otherWindow.saveCoordiMate(original);
+        CoordiMate newer = new CoordiMate(original);
+        newer.addPerson(HOON);
+        StorageManager otherStorage = new StorageManager(otherWindow,
+                new JsonUserPrefsStorage(testFolder.resolve("prefs.json")));
+        otherStorage.readCoordiMate();
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path) {
+            @Override
+            public Path getCoordiMateFilePath() {
+                try {
+                    otherStorage.saveCoordiMateIfUnchanged(newer);
+                } catch (IOException e) {
+                    throw new AssertionError(e);
+                }
+                return super.getCoordiMateFilePath();
+            }
+        };
+
+        assertThrows(DataConflictException.class, storage::recoverSavedData);
+
+        assertEquals(newer, otherWindow.readCoordiMate().orElseThrow());
+    }
+
+    @Test
+    public void recoverSavedData_noRepairsWhileSaveLockHeld_preservesFile() throws Exception {
+        Path path = testFolder.resolve("locked.json");
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path);
+        storage.saveCoordiMate(getTypicalCoordiMate());
+        String before = Files.readString(path);
+        Path lockPath = path.resolveSibling(path.getFileName() + ".lock");
+
+        try (FileChannel channel = FileChannel.open(lockPath, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+                FileLock ignored = channel.lock()) {
+            assertEquals("", storage.recoverSavedData().getWarning());
+        }
+
         assertEquals(before, Files.readString(path));
     }
 

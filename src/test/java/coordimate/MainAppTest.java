@@ -8,8 +8,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Map;
 
@@ -150,6 +153,34 @@ public class MainAppTest {
         assertEquals(new CoordiMate(), app.model.getCoordiMate());
         assertTrue(app.logic.getReminders().isEmpty());
         assertEquals(original, Files.readString(dataFile));
+    }
+
+    @Test
+    public void init_leaveCleanupBlockedBySave_preservesFileAndEntersRecoveryMode() throws Exception {
+        Path dataFile = testFolder.resolve("coordimate.json");
+        CoordiMate data = getTypicalCoordiMate();
+        data.setPerson(ALICE, new PersonBuilder(ALICE).withLeaveDate("08-08-2026").build());
+        data.addEvent(new Event("Concert", new EventTime("08-08-2026"), new EventTime("08-08-2026"),
+                List.of(ALICE.getName()), Map.of(ALICE.getName(), AttendanceStatus.PRESENT)));
+        new JsonCoordiMateStorage(dataFile).saveCoordiMate(data);
+        String original = Files.readString(dataFile);
+        MainApp app = new MainApp(testFolder.resolve("preferences.json"), dataFile);
+        Path lockPath = dataFile.resolveSibling(dataFile.getFileName() + ".lock");
+
+        try (FileChannel channel = FileChannel.open(lockPath, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+                FileLock ignored = channel.lock()) {
+            app.init();
+        }
+
+        assertTrue(app.isDataRecoveryMode);
+        assertEquals(new CoordiMate(), app.model.getCoordiMate());
+        assertTrue(app.logic.getReminders().isEmpty());
+        assertEquals(original, Files.readString(dataFile));
+
+        app.init();
+
+        assertFalse(app.isDataRecoveryMode);
+        assertTrue(app.model.getCoordiMate().getEventList().getFirst().getMembers().isEmpty());
     }
 
     @Test
