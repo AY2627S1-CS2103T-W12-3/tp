@@ -161,16 +161,10 @@ public class CoordiMateParserTest {
 
     @Test
     public void parseCommand_removedCommand_throwsUnknownCommandException() {
-        assertThrows(ParseException.class, withUsage(MESSAGE_UNKNOWN_COMMAND, HelpCommand.MESSAGE_USAGE), () ->
-                parser.parseCommand("find"));
-        assertThrows(ParseException.class, withUsage(MESSAGE_UNKNOWN_COMMAND, HelpCommand.MESSAGE_USAGE), () ->
-                parser.parseCommand("find Alice"));
-        assertThrows(ParseException.class, withUsage(MESSAGE_UNKNOWN_COMMAND, HelpCommand.MESSAGE_USAGE), () ->
-                parser.parseCommand("switch events"));
-        assertThrows(ParseException.class, withUsage(MESSAGE_UNKNOWN_COMMAND, HelpCommand.MESSAGE_USAGE), () ->
-                parser.parseCommand("listtags"));
-        assertThrows(ParseException.class, withUsage(MESSAGE_UNKNOWN_COMMAND, HelpCommand.MESSAGE_USAGE), () ->
-                parser.parseCommand("listtags 1"));
+        for (String input : List.of("find", "find Alice", "switch events", "listtags", "listtags 1")) {
+            assertThrows(ParseException.class, withUsage(MESSAGE_UNKNOWN_COMMAND, HelpCommand.MESSAGE_USAGE), () ->
+                    parser.parseCommand(input));
+        }
     }
 
     @Test
