@@ -874,7 +874,7 @@ Or: `edit target/IDENTIFIER [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [
 * `t/TAG` replaces all existing tags; repeat it to specify several replacement tags. `t/` with no value clears the tag set.
 * `at/TAG` adds a tag without removing other tags, while `rt/TAG` removes only that tag from the contact. These may be repeated or mixed and are applied in command order. Neither may be mixed with `t/`.
 * Tag matching ignores case. Adding an existing tag or removing an absent tag has no effect. A valid new tag named by `t/` or `at/` is saved as a custom tag. Empty `at/` and `rt/` values are invalid.
-* A contact can have at most 15 tags after the edit. A contact saved with more than 15 tags can still be edited, as long as the edit does not increase its number of tags.
+* `t/` replacements may contain at most 15 tags, and `at/` cannot give a contact more than 15 tags. A contact saved with more than 15 tags can still be edited with `at/` and `rt/`, or without changing its tags, as long as the edit does not increase its number of tags.
 * If the contact's name changes, events they are assigned to show the new name.
 * A new name already used by another contact, ignoring case and extra spaces, is rejected.
 * An edit is saved to the local data file before it appears in the contact list. If the file cannot be read or written,
