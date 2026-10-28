@@ -173,6 +173,41 @@ public class MainAppTest {
     }
 
     @Test
+    public void init_invalidPreferencesAndYearZeroEvent_preservesPreferencesAndCleansData() throws Exception {
+        Path prefsFile = testFolder.resolve("preferences.json");
+        Path dataFile = testFolder.resolve("coordimate.json");
+        String invalidPrefs = "{\"hasSeenTutorial\":17}";
+        Files.writeString(prefsFile, invalidPrefs);
+        Files.writeString(dataFile, """
+                {"persons":[],"events":[{"name":"Year Zero","startTime":"01-01-0000",
+                "endTime":"02-01-0000"}]}
+                """);
+        MainApp app = new MainApp(prefsFile, dataFile);
+
+        app.init();
+
+        assertTrue(app.isPrefsRecoveryMode);
+        assertFalse(app.isDataRecoveryMode);
+        assertTrue(app.model.getCoordiMate().getEventList().isEmpty());
+        assertEquals(invalidPrefs, Files.readString(prefsFile));
+        app.stop();
+        assertEquals(invalidPrefs, Files.readString(prefsFile));
+    }
+
+    @Test
+    public void initAndStop_preferencesCannotBeWritten_doesNotCrash() throws Exception {
+        Path blockingFile = testFolder.resolve("not-a-directory");
+        Files.writeString(blockingFile, "keep");
+        MainApp app = new MainApp(blockingFile.resolve("preferences.json"), testFolder.resolve("data.json"));
+
+        app.init();
+        app.stop();
+
+        assertFalse(app.isPrefsRecoveryMode);
+        assertEquals("keep", Files.readString(blockingFile));
+    }
+
+    @Test
     public void start_startsUi() {
         MainApp app = new MainApp();
         UiStub uiStub = new UiStub();

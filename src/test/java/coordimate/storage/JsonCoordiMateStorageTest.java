@@ -108,6 +108,84 @@ public class JsonCoordiMateStorageTest {
     }
 
     @Test
+    public void readCoordiMate_wrongCollectionTypes_rejectsWithFieldPath() throws Exception {
+        Path path = testFolder.resolve("data.json");
+        String[][] cases = {
+            {"{\"persons\":[] ,\"events\":{}}", "events", "an array"},
+            {"{\"persons\":[17]}", "persons[0]", "an object"},
+            {"{\"persons\":[],\"tags\":[17]}", "tags[0]", "a string"},
+            {"{\"persons\":[],\"events\":[{\"name\":\"Concert\",\"startTime\":\"01-01-2026\","
+                    + "\"endTime\":\"02-01-2026\",\"members\":[17]}]}", "events[0].members[0]", "a string"}
+        };
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path);
+        for (String[] testCase : cases) {
+            Files.writeString(path, testCase[0]);
+
+            DataLoadingException error = assertThrows(DataLoadingException.class, storage::readCoordiMate);
+
+            assertEquals("Invalid JSON type at " + testCase[1] + ": expected " + testCase[2] + ".",
+                    error.getCause().getMessage());
+            assertEquals(testCase[0], Files.readString(path));
+        }
+    }
+
+    @Test
+    public void readCoordiMate_legacyNullOptionalFields_loads() throws Exception {
+        Path path = testFolder.resolve("data.json");
+        Files.writeString(path, """
+                {"persons":[{"name":"Alex Yeoh","phone":"8000001","email":"alex@example.com",
+                "role":null,"tags":null}],"events":[{"name":"Concert","startTime":"01-01-2026",
+                "endTime":"02-01-2026","members":null,"attendance":null,"dismissedReminderStarts":null}]}
+                """);
+
+        ReadOnlyCoordiMate loaded = new JsonCoordiMateStorage(path).readCoordiMate().orElseThrow();
+
+        assertEquals(1, loaded.getPersonList().size());
+        assertEquals(1, loaded.getEventList().size());
+    }
+
+    @Test
+    public void readCoordiMate_nullMember_keepsExistingValidationError() throws Exception {
+        Path path = testFolder.resolve("data.json");
+        Files.writeString(path, """
+                {"persons":[],"events":[{"name":"Concert","startTime":"01-01-2026",
+                "endTime":"02-01-2026","members":[null]}]}
+                """);
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path);
+
+        DataLoadingException error = assertThrows(DataLoadingException.class, storage::readCoordiMate);
+
+        assertEquals(JsonAdaptedEvent.MESSAGE_NULL_MEMBER, error.getCause().getMessage());
+    }
+
+    @Test
+    public void readCoordiMate_nullAttendanceStatus_keepsExistingValidationError() throws Exception {
+        Path path = testFolder.resolve("data.json");
+        Files.writeString(path, """
+                {"persons":[],"events":[{"name":"Concert","startTime":"01-01-2026",
+                "endTime":"02-01-2026","attendance":{"Alex Yeoh":null}}]}
+                """);
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path);
+
+        DataLoadingException error = assertThrows(DataLoadingException.class, storage::readCoordiMate);
+
+        assertEquals(JsonAdaptedEvent.MESSAGE_NULL_ATTENDANCE, error.getCause().getMessage());
+    }
+
+    @Test
+    public void removeYearZeroEvents_nullEvent_keepsFileForExistingValidation() throws Exception {
+        Path path = testFolder.resolve("data.json");
+        String invalid = "{\"persons\":[],\"events\":[null]}";
+        Files.writeString(path, invalid);
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path);
+
+        assertEquals(List.of(), storage.removeYearZeroEvents());
+        DataLoadingException error = assertThrows(DataLoadingException.class, storage::readCoordiMate);
+        assertEquals("Events list must not contain null entries.", error.getCause().getMessage());
+        assertEquals(invalid, Files.readString(path));
+    }
+
+    @Test
     public void removeYearZeroEvents_mixedData_preservesValidDataAndDeletesOnlyOnce() throws Exception {
         CoordiMate expected = getTypicalCoordiMate();
         EventTime start = new EventTime("01-01-0001");

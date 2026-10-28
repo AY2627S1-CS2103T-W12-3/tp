@@ -3,6 +3,7 @@ package coordimate.storage;
 import static coordimate.testutil.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -81,7 +82,12 @@ public class JsonUserPrefsStorageTest {
             {"{\"hasSeenTutorial\":\"false\"}", "hasSeenTutorial", "a boolean"},
             {"{\"guiSettings\":{\"windowWidth\":\"1200\"}}", "guiSettings.windowWidth", "a number"},
             {"{\"guiSettings\":{\"windowCoordinates\":{\"x\":1.5}}}",
-                "guiSettings.windowCoordinates.x", "an integer"}
+                "guiSettings.windowCoordinates.x", "an integer"},
+            {"{\"guiSettings\":{\"windowCoordinates\":{\"x\":2147483648}}}",
+                "guiSettings.windowCoordinates.x", "an integer"},
+            {"{\"guiSettings\":null}", "guiSettings", "an object"},
+            {"{\"guiSettings\":{\"windowCoordinates\":17}}", "guiSettings.windowCoordinates", "an object"},
+            {"{\"hasSeenTutorial\":null}", "hasSeenTutorial", "a boolean"}
         };
         for (String[] testCase : cases) {
             Files.writeString(prefsFile, testCase[0]);
@@ -91,6 +97,16 @@ public class JsonUserPrefsStorageTest {
             assertEquals("Invalid JSON type at " + testCase[1] + ": expected " + testCase[2] + ".",
                     error.getCause().getMessage());
         }
+    }
+
+    @Test
+    public void readUserPrefs_nullWindowCoordinates_usesDefaultPosition() throws Exception {
+        Path prefsFile = testFolder.resolve("preferences.json");
+        Files.writeString(prefsFile, "{\"guiSettings\":{\"windowCoordinates\":null}}");
+
+        UserPrefs loaded = new JsonUserPrefsStorage(prefsFile).readUserPrefs().orElseThrow();
+
+        assertNull(loaded.getGuiSettings().getWindowCoordinates());
     }
 
     private UserPrefs getTypicalUserPrefs() {

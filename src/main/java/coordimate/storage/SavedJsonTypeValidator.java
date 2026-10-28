@@ -49,7 +49,7 @@ final class SavedJsonTypeValidator {
         requireType(records, path, JsonNode::isArray, "an array");
         for (int index = 0; index < records.size(); index++) {
             JsonNode record = records.get(index);
-            if (record == null || record.isNull()) {
+            if (record.isNull()) {
                 continue; // Existing model conversion reports null entries.
             }
             String recordPath = path + "[" + index + "]";
@@ -112,7 +112,7 @@ final class SavedJsonTypeValidator {
 
     private static void requireType(JsonNode value, String path, Predicate<JsonNode> type, String expected)
             throws IOException {
-        if (value == null || !type.test(value)) {
+        if (!type.test(value)) {
             throw new JsonTypeMismatchException(path, expected);
         }
     }

@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
@@ -19,10 +20,14 @@ import coordimate.model.ModelManager;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.DialogPane;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
+import javafx.stage.Window;
 
 public class UiManagerTest {
 
@@ -52,6 +57,8 @@ public class UiManagerTest {
                 void showAlertDialogAndWait(Alert.AlertType type, String title, String header, String content) {
                     assertTrue(primaryStage.isShowing());
                     assertEquals(Alert.AlertType.WARNING, type);
+                    assertEquals("Saved files", title);
+                    assertEquals("Saved files need attention", header);
                     assertEquals(warning, content);
                     notified[0] = true;
                 }
@@ -181,6 +188,59 @@ public class UiManagerTest {
             assertTrue(isExitRequested[0]);
             uiManager.stop();
             primaryStage.close();
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void start_longRecoveryMessage_isScrollableAndKeepsRepairPath() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            LogicManager logic = new LogicManager(new ModelManager(), null);
+            Path dataFilePath = Path.of("data", "coordimate.json");
+            String detail = "Invalid JSON type at persons[0].phone. ".repeat(12);
+            boolean[] isExitRequested = {false};
+            UiManager uiManager = new UiManager(logic, dataFilePath, true, detail, () ->
+                    isExitRequested[0] = true);
+            Stage primaryStage = new Stage();
+            AtomicReference<Throwable> failure = new AtomicReference<>();
+            Platform.runLater(() -> {
+                DialogPane dialogPane = null;
+                try {
+                    dialogPane = Window.getWindows().stream().filter(Window::isShowing)
+                            .map(window -> window.getScene().getRoot())
+                            .filter(DialogPane.class::isInstance).map(DialogPane.class::cast)
+                            .findFirst().orElseThrow();
+                    ScrollPane scrollPane = (ScrollPane) dialogPane.getContent();
+                    Label message = (Label) scrollPane.getContent();
+                    assertTrue(message.getText().contains(dataFilePath.toAbsolutePath().toString()));
+                    assertTrue(message.getText().contains("Repair or restore this file"));
+                    assertTrue(message.getLayoutBounds().getHeight() > scrollPane.getViewportBounds().getHeight());
+                    assertTrue(scrollPane.isFitToWidth());
+                    assertTrue(scrollPane.getHeight() <= 150, "Scroll area height: " + scrollPane.getHeight());
+                } catch (Throwable error) {
+                    failure.set(error);
+                } finally {
+                    if (dialogPane != null) {
+                        Button okButton = (Button) dialogPane.lookupButton(ButtonType.OK);
+                        okButton.fire();
+                    } else {
+                        Window.getWindows().stream().filter(window -> window != primaryStage)
+                                .forEach(Window::hide);
+                    }
+                }
+            });
+            try {
+                uiManager.start(primaryStage);
+                if (failure.get() != null) {
+                    throw new AssertionError(failure.get());
+                }
+                assertTrue(isExitRequested[0]);
+            } finally {
+                uiManager.stop();
+                primaryStage.close();
+            }
             return null;
         });
         Platform.runLater(task);

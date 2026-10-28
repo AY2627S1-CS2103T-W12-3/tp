@@ -8,8 +8,11 @@ import coordimate.commons.core.LogsCenter;
 import coordimate.commons.util.StringUtil;
 import coordimate.logic.Logic;
 import javafx.application.Platform;
+import javafx.geometry.Insets;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
@@ -102,7 +105,7 @@ public class UiManager implements Ui {
                 exitAction.run();
                 return;
             } else if (!startupWarning.isEmpty()) {
-                showAlertDialogAndWait(AlertType.WARNING, "Saved event data", "Saved event data needs attention",
+                showAlertDialogAndWait(AlertType.WARNING, "Saved files", "Saved files need attention",
                         startupWarning);
             }
             mainWindow.showTutorialOnFirstLaunch();
@@ -144,7 +147,14 @@ public class UiManager implements Ui {
         alert.initOwner(owner);
         alert.setTitle(title);
         alert.setHeaderText(headerText);
-        alert.setContentText(contentText);
+        Label message = new Label(contentText);
+        message.setWrapText(true);
+        message.setPadding(new Insets(4, 8, 4, 0));
+        ScrollPane scrollPane = new ScrollPane(message);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setPrefViewportWidth(440);
+        scrollPane.setPrefViewportHeight(100);
+        alert.getDialogPane().setContent(scrollPane);
         alert.getDialogPane().setId(ALERT_DIALOG_PANE_FIELD_ID);
         alert.showAndWait();
     }

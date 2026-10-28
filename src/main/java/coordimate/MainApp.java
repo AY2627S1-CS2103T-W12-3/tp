@@ -94,10 +94,10 @@ public class MainApp extends Application {
         }
 
         if (isPrefsRecoveryMode) {
-            String detail = prefsRecoveryDetail.isEmpty() ? "" : "Problem: " + prefsRecoveryDetail + "\n";
+            String detail = prefsRecoveryDetail.isEmpty() ? "" : "\n\nProblem: " + prefsRecoveryDetail;
             String prefsWarning = "Preferences could not be loaded. Default preferences are in use for this "
-                    + "session. The original file will not be changed.\n" + detail
-                    + "Repair or restore this file before restarting CoordiMate:\n"
+                    + "session. The original file will not be changed." + detail
+                    + "\n\nRepair or restore this file before restarting CoordiMate:\n"
                     + userPrefsFilePath.toAbsolutePath();
             startupWarning = startupWarning.isEmpty() ? prefsWarning : startupWarning + "\n\n" + prefsWarning;
         }
