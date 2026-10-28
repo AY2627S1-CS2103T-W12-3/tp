@@ -19,7 +19,6 @@ import coordimate.model.UserPrefs;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
 import coordimate.model.person.Person;
-
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
@@ -149,11 +148,11 @@ public class MembersCommandTest {
         ModelShowingExtraContact() {
             super(getTypicalCoordiMate(), new UserPrefs());
         }
-    }
 
-    @Override
-    public ObservableList<Person> getFilteredPersonList() {
-        // Simulates a broken model whose displayed list contains contacts that are not saved members.
-        return FXCollections.observableArrayList(ALICE, BENSON, CARL);
+        @Override
+        public ObservableList<Person> getFilteredPersonList() {
+            // Simulates a broken model whose displayed list contains contacts that are not saved members.
+            return FXCollections.observableArrayList(ALICE, BENSON, CARL);
+        }
     }
 }
