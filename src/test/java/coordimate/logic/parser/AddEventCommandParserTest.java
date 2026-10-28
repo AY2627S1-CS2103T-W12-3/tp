@@ -33,6 +33,7 @@ public class AddEventCommandParserTest {
     @Test
     public void parse_emptyValues_specificErrors() {
         assertError(" evn/ st/09-10-2026 et/10-10-2026", Event.MESSAGE_EMPTY_NAME);
+        assertError(" evn/\u200B st/09-10-2026 et/10-10-2026", Event.MESSAGE_NAME_CONSTRAINTS);
         assertError(" evn/" + "E".repeat(Event.MAX_NAME_LENGTH + 1) + " st/09-10-2026 et/10-10-2026",
                 Event.MESSAGE_NAME_LENGTH_CONSTRAINTS);
         assertError(" evn/Fair st/ et/10-10-2026", "Start time must not be empty. Example: st/17-09-2026 16:30");
@@ -48,6 +49,15 @@ public class AddEventCommandParserTest {
         assertError(" evn/Fair st/31-02-2026 et/10-10-2026", EventTime.MESSAGE_CONSTRAINTS);
         assertError(" evn/Fair st/09-10-2026 et/10-10-2026 24:00",
                 EventTime.MESSAGE_CONSTRAINTS.replace("Example: st/", "Example: et/"));
+    }
+
+    @Test
+    public void parse_yearZero_rejected() {
+        for (String value : new String[] {"01-01-0000", "01-01-0000 00:00"}) {
+            assertError(" evn/Fair st/" + value + " et/10-10-2026", EventTime.MESSAGE_CONSTRAINTS);
+            assertError(" evn/Fair st/01-01-0001 et/" + value,
+                    EventTime.MESSAGE_CONSTRAINTS.replace("Example: st/", "Example: et/"));
+        }
     }
 
     @Test

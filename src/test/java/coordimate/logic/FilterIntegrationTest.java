@@ -42,6 +42,35 @@ public class FilterIntegrationTest {
     }
 
     @Test
+    public void normalizedEventFilter_renameAndMembershipChanges_keepsFollowingEvent() throws Exception {
+        logic.execute("filter event/  fInAl   CoNcErT  tag/friends");
+        assertEquals(List.of(ALICE, BENSON), model.getFilteredPersonList());
+
+        logic.execute("editevent evn/Final Concert nevn/Grand Concert");
+        logic.execute("assign evn/Grand Concert c/3 4");
+        logic.execute("unassign evn/Grand Concert c/1");
+        assertEquals(List.of(BENSON, DANIEL), model.getFilteredPersonList());
+
+        logic.execute("deleteevent evn/Grand Concert");
+        assertEquals(List.of(), model.getFilteredPersonList());
+    }
+
+    @Test
+    public void multipleEventCriteria_rename_preservesIntersection() throws Exception {
+        logic.execute("assign evn/Fair c/2 3");
+        logic.execute("filter event/Final Concert event/Fair");
+        assertEquals(List.of(BENSON), model.getFilteredPersonList());
+
+        logic.execute("editevent evn/Fair nevn/Welcome Fair");
+        logic.execute("assign evn/Final Concert c/3");
+        assertEquals(List.of(BENSON, CARL), model.getFilteredPersonList());
+
+        logic.execute("editevent evn/Final Concert nevn/Grand Concert");
+        logic.execute("unassign evn/Welcome Fair c/2");
+        assertEquals(List.of(CARL), model.getFilteredPersonList());
+    }
+
+    @Test
     public void unassign_filteredEvent_removedMemberDisappears() throws Exception {
         logic.execute("filter event/Final Concert");
         assertEquals(List.of(ALICE, BENSON), model.getFilteredPersonList());

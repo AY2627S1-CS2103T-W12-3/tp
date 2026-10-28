@@ -227,7 +227,7 @@ public class ParserUtil {
     }
 
     /**
-     * Parses a {@code String eventName} into a trimmed event name.
+     * Parses a {@code String eventName} into an event name with its spacing normalised.
      *
      * @throws ParseException if the given {@code eventName} is empty or otherwise invalid.
      */
@@ -240,16 +240,16 @@ public class ParserUtil {
      */
     public static String parseEventName(String eventName, Prefix prefix) throws ParseException {
         requireNonNull(eventName);
-        String trimmedEventName = eventName.strip();
+        String normalizedEventName = StringUtil.normalizeWhitespace(eventName);
         String field = prefix.equals(CliSyntax.PREFIX_NEW_EVENT_NAME) ? "New event name" : "Event name";
-        requireValue(trimmedEventName, field, prefix + "Final Concert");
-        if (trimmedEventName.codePointCount(0, trimmedEventName.length()) > Event.MAX_NAME_LENGTH) {
+        requireValue(normalizedEventName, field, prefix + "Final Concert");
+        if (normalizedEventName.codePointCount(0, normalizedEventName.length()) > Event.MAX_NAME_LENGTH) {
             throw new ParseException(eventNameMessage(Event.MESSAGE_NAME_LENGTH_CONSTRAINTS, prefix));
         }
-        if (!Event.isValidName(trimmedEventName)) {
+        if (!Event.isValidName(eventName)) {
             throw new ParseException(eventNameMessage(Event.MESSAGE_NAME_CONSTRAINTS, prefix));
         }
-        return trimmedEventName;
+        return normalizedEventName;
     }
 
     private static String eventNameMessage(String message, Prefix prefix) {

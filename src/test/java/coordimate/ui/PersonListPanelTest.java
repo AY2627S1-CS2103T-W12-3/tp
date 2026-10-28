@@ -418,6 +418,24 @@ public class PersonListPanelTest {
     }
 
     @Test
+    public void tags_onCardAndDetails_sortedIgnoringCase() throws Exception {
+        runOnJavaFxThread(() -> {
+            Person contact = new PersonBuilder(ALICE).withTags("friends", "EXCO", "Logistics", "budget").build();
+            Region root = new PersonListPanel(FXCollections.observableArrayList(contact)).getRoot();
+            new Scene(root);
+            root.applyCss();
+            getList(root).getSelectionModel().select(contact);
+            List<String> expected = List.of("budget", "EXCO", "friends", "Logistics");
+            assertEquals(expected, tagTexts((FlowPane) root.lookup("#detailTags")));
+
+            Region card = new PersonCard(contact).getRoot();
+            new Scene(card);
+            card.applyCss();
+            assertEquals(expected, tagTexts((FlowPane) card.lookup("#tags")));
+        });
+    }
+
+    @Test
     public void contactWithoutOptionalFields_showsPlaceholdersOnlyInDetails() throws Exception {
         runOnJavaFxThread(() -> {
             Person contact = new PersonBuilder(ALICE).withoutAddress().withTags().build();
@@ -663,6 +681,10 @@ public class PersonListPanelTest {
         return (Label) root.lookupAll("#leave").stream()
                 .filter(node -> node.getStyleClass().contains("detail-value"))
                 .findFirst().orElseThrow();
+    }
+
+    private static List<String> tagTexts(FlowPane tagPane) {
+        return tagPane.getChildren().stream().map(Label.class::cast).map(Label::getText).toList();
     }
 
     private static void assertTagColor(FlowPane tagPane, String tagName, String colorClass) {

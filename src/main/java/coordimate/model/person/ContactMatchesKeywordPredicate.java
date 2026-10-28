@@ -2,7 +2,6 @@ package coordimate.model.person;
 
 import static java.util.Objects.requireNonNull;
 
-import java.util.Locale;
 import java.util.function.Predicate;
 
 import coordimate.commons.util.ToStringBuilder;
@@ -26,19 +25,36 @@ public class ContactMatchesKeywordPredicate implements Predicate<Person> {
     /**
      * Returns true if {@code person}'s name, phone, email, address, or organisation
      * contains the keyword as a case-insensitive substring.
+     * A phone number also matches when it contains the keyword after spaces, hyphens, and brackets are removed
+     * from both, so {@code 91234567} finds {@code 9123 4567} and the reverse.
      */
     @Override
     public boolean test(Person person) {
-        String lowerKeyword = keyword.toLowerCase(Locale.ROOT);
-        return person.getName().getFullName().toLowerCase(Locale.ROOT).contains(lowerKeyword)
-                || person.getPhone().getValue().toLowerCase(Locale.ROOT).contains(lowerKeyword)
-                || person.getEmail().getValue().toLowerCase(Locale.ROOT).contains(lowerKeyword)
-                || person.getAddress().map(address -> address.getValue().toLowerCase(Locale.ROOT)
-                        .contains(lowerKeyword))
+        return containsIgnoreCase(person.getName().getFullName(), keyword)
+                || containsPhoneDigits(person.getPhone(), keyword)
+                || containsIgnoreCase(person.getEmail().getValue(), keyword)
+                || person.getAddress().map(address -> containsIgnoreCase(address.getValue(), keyword))
                         .orElse(false)
-                || person.getOrganisation().map(organisation -> organisation.getValue().toLowerCase(Locale.ROOT)
-                        .contains(lowerKeyword))
+                || person.getOrganisation().map(organisation -> containsIgnoreCase(organisation.getValue(), keyword))
                         .orElse(false);
+    }
+
+    /**
+     * Returns true if {@code phone} contains {@code keyword} once phone formatting is removed from both.
+     * A keyword made only of formatting characters matches nothing.
+     */
+    private static boolean containsPhoneDigits(Phone phone, String keyword) {
+        String normalizedKeyword = Phone.normalize(keyword);
+        return !normalizedKeyword.isEmpty() && phone.getNormalizedValue().contains(normalizedKeyword);
+    }
+
+    private static boolean containsIgnoreCase(String value, String keyword) {
+        for (int index = 0; index <= value.length() - keyword.length(); index++) {
+            if (value.regionMatches(true, index, keyword, 0, keyword.length())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

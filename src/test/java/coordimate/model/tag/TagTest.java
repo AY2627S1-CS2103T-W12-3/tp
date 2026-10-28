@@ -3,7 +3,10 @@ package coordimate.model.tag;
 import static coordimate.testutil.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -12,6 +15,14 @@ public class TagTest {
     @Test
     public void constructor_null_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> new Tag(null));
+    }
+
+    @Test
+    public void alphabeticalOrder_ignoresCaseThenBreaksTiesByCase() {
+        List<Tag> tags = List.of(new Tag("friends"), new Tag("Logistics"), new Tag("EXCO"), new Tag("budget"),
+                new Tag("Budget"));
+        assertEquals(List.of(new Tag("Budget"), new Tag("budget"), new Tag("EXCO"), new Tag("friends"),
+                new Tag("Logistics")), tags.stream().sorted(Tag.ALPHABETICAL_ORDER).toList());
     }
 
     @Test
@@ -65,6 +76,21 @@ public class TagTest {
         assertTrue(tag.isSameTag(new Tag("exco")));
         assertFalse(tag.isSameTag(new Tag("Sponsor")));
         assertFalse(tag.isSameTag(null));
+    }
+
+    @Test
+    public void findSavedTag() {
+        List<Tag> savedTags = List.of(new Tag("EXCO"), new Tag("Sponsor"));
+
+        // saved tag typed in different case -> saved tag
+        assertEquals(new Tag("EXCO"), new Tag("exco").findSavedTag(savedTags));
+
+        // no saved match -> typed tag
+        Tag newTag = new Tag("publicity");
+        assertSame(newTag, newTag.findSavedTag(savedTags));
+        assertSame(newTag, newTag.findSavedTag(List.of()));
+
+        assertThrows(NullPointerException.class, () -> newTag.findSavedTag(null));
     }
 
 }

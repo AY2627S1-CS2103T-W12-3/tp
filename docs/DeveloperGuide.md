@@ -147,7 +147,7 @@ Here's a (partial) class diagram of the `Logic` component:
 
 <puml src="diagrams/LogicClassDiagram.puml" width="550"/>
 
-The sequence diagram below follows `execute("delete 1")` and the subsequent confirmation response. The first call resolves and stores the contact without deleting it. If the response is `y` or `Y`, the confirmed command deletes the contact on a candidate model through the atomic save path; any other response cancels the deletion without changing data.
+The sequence diagram below follows `execute("delete 1")` and the subsequent confirmation response. The first call resolves and stores the contact without deleting it. If the response is `y` or `Y` after removing surrounding whitespace, the confirmed command deletes the contact on a candidate model through the atomic save path; any other response cancels the deletion without changing data.
 
 <puml src="diagrams/DeleteSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `delete 1` Command" />
 
@@ -160,7 +160,7 @@ How the `Logic` component works:
 
 1. When `Logic` is called upon to execute a command, the command is passed to a `CoordiMateParser` object, which in turn creates a parser that matches the command (e.g., `DeleteCommandParser`) and uses it to parse the command.
 1. This results in a `Command` object (more precisely, an object of one of its subclasses e.g., `DeleteCommand`). For `delete`, `LogicManager` first calls `resolvePerson` and returns a confirmation prompt without executing the deletion.
-1. If the next input is `y` or `Y`, `LogicManager` creates a command for the resolved `Person` and executes it on a candidate model. That command deletes the contact from the candidate, which is saved before the live model changes. Any other input cancels the deletion.
+1. If the next input is `y` or `Y` after removing surrounding whitespace, `LogicManager` creates a command for the resolved `Person` and executes it on a candidate model. That command deletes the contact from the candidate, which is saved before the live model changes. Any other input cancels the deletion.
 1. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
 
 Here are the other classes in `Logic` (omitted from the class diagram above) that are used for parsing a user command:
@@ -230,12 +230,19 @@ The `Storage` component,
 * converts CoordiMate data through `JsonSerializableCoordiMate`, which stores contacts (`JsonAdaptedPerson`), events (`JsonAdaptedEvent`), and the global tag list (`JsonAdaptedTag`) as separate lists. Each contact also stores its own tags, and each event records its members by contact name rather than by member ID.
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
 
+If the data file cannot be loaded during startup, `MainApp` creates an empty in-memory model only for initialization
+and passes a recovery flag to `UiManager`. After the main window is ready, `UiManager` shows a warning that names the
+unchanged data file and asks the user to repair or restore it. Dismissing the warning requests a normal JavaFX
+shutdown before the tutorial or command interface can be used.
+
 The tutorial flag is saved with the other user preferences. Preference files without that field are read with the
 tutorial flag set to `false`, so the tutorial is offered until the user closes or finishes it.
 
-Previously saved digit-only phone numbers with at least three digits remain valid model data, so older JSON files can
-still load. The command parser applies the current 7–15-digit rule whenever a user supplies a phone number for `add`
-or `edit`; editing another field does not require replacing a legacy phone number.
+Previously saved digit-only phone numbers with at least three digits, and 7–15-digit numbers whose brackets do not
+match, remain valid model data, so older JSON files can still load. The command parser applies the current rule,
+`Phone#isValidInputPhone`, whenever a user supplies a phone number for `add` or `edit`: 7–15 digits, an optional `+`
+or bracketed country code such as `(+65)` at the start, and brackets in non-nested pairs that each enclose a digit.
+Editing another field does not require replacing a legacy phone number.
 
 When loading JSON data, explicitly saved tags are validated and restored before contacts. If a contact uses a tag
 that is missing from the saved global tag list, CoordiMate registers it automatically. This also migrates older files
@@ -335,8 +342,10 @@ These are `AddCommand`, `EditCommand`,
    IDs and allocation state. Its filtered contact list initially shows the same contacts as the live view.
    Commands resolve member IDs against the complete saved contact list in either model.
 1. It executes the command on the candidate. If the command fails, the candidate is discarded.
-1. It saves the candidate's data with `Storage#saveCoordiMate`. If saving fails, the command is rejected with a
-   save error such as `Event could not be saved. No changes were made.` and the candidate is discarded.
+1. It saves the candidate's data with `Storage#saveCoordiMateIfUnchanged`. This compares the file with the revision
+   loaded at startup or last saved by this window while holding a lock shared by CoordiMate instances. If another
+   window changed the file, the command is rejected and the candidate is discarded. Other save failures still
+   report an error such as `Event could not be saved. No changes were made.`
 1. Only then does it call `Model#setCoordiMate` to replace the live model's data with the candidate's data,
    which updates the UI.
 
@@ -366,11 +375,9 @@ The next input is treated as the answer, not as a command: `y` or `Y` runs the d
 `executeAtomicCommand`, and any other input cancels it.
 
 **Commands that do not change data**, such as `list`, `search`, `filter`, `members`, and `listtags`, are executed
-directly on the live model. As in AddressBook-Level3, `LogicManager` still saves the model afterwards. This has two
-consequences that developers should be aware of:
-
-* If the data file is invalid, such a command replaces it with the data currently in the app.
-* If the data file cannot be written, such a command reports a save error even though it changed no data.
+directly on the live model without saving. They cannot overwrite a newer or invalid data file. A window that has
+become stale can still show its loaded data, but its next save is rejected until it is reopened. Reminder dismissal
+uses the same conditional save and retains its session-only fallback when saving fails.
 
 `CommandResult.View` carries one requested view, or `NONE` when a command does not request a view change.
 `MainWindow` applies a requested view through the same view controls used by the sidebar.
@@ -552,7 +559,10 @@ To add a filter field, add a constant to `FilterField`, add a case to `FilterCom
 `FilterCommandParser.MESSAGE_INVALID_FIELD`.
 
 The `search` command is implemented separately. `SearchCommand` uses `ContactMatchesKeywordPredicate`, which tests
-whether a contact's name, phone, email, address, or organisation contains the keyword, ignoring case.
+whether a contact's name, phone, email, address, or organisation contains the keyword, ignoring case. It compares
+substrings with `String#regionMatches(true, ...)`, using the same case comparison as duplicate-name detection.
+A phone number also matches when it contains the keyword after `Phone#normalize` removes spaces, hyphens, and
+brackets from both, the same normalisation that `delete p/`, `edit target/`, and duplicate detection use.
 
 #### Design considerations
 
@@ -1286,7 +1296,8 @@ testers are expected to do more *exploratory* testing.
    1. Download the JAR file and copy it into an empty folder.
 
    1. Double-click the JAR file.<br>
-      Expected: The GUI opens maximized with a set of sample contacts.
+      Expected: The GUI opens maximized with a set of sample contacts and a sample event. The first-launch tutorial
+      can show the event's assigned members and attendance information.
 
 1. Saving window preferences
 
@@ -1353,7 +1364,7 @@ testers are expected to do more *exploratory* testing.
    1. Test case: `delete 1`, then `n`<br>
       Expected: `ID: 1` and Alex Yeoh's name, phone, email, and role are shown, followed by `Confirm deletion? [y/N]`. After `n`, the status message shows `Deletion cancelled. No changes were made.` and no contact is deleted.
 
-   1. Test case: `delete 1`, then `y`<br>
+   1. Test case: `delete 1`, then `y ` (with a trailing space)<br>
       Expected: Alex Yeoh (member ID `1`) is deleted. Other contacts keep their IDs. The status message shows `Contact deleted successfully: ` followed by the contact's name.
 
    1. Test case: `delete 0`<br>
@@ -1722,7 +1733,8 @@ and `PAST_DATE` is any date before today, such as `01-01-2020`.
       Expected: The app loads the data. The contact is not shown as on leave, and the details pane shows `— (not on leave)`. The `leaveUntil` value is still in the data file.
 
    1. Test case: Close the app, change `leaveUntil` to `31-02-2030`, save, then launch the app.<br>
-      Expected: The file is treated as invalid, so the app starts with no contacts and no events. Restore the file afterwards.
+      Expected: CoordiMate warns that the saved data could not be loaded and that the original file is unchanged.
+      The warning shows the file path. Selecting **OK** closes the app. Restore the file before launching again.
 
    1. Test case: Run `edit 1 lv/TODAY` and select that contact. Leave the app open past midnight, or set your
       computer's date to the next day.<br>
@@ -1733,10 +1745,12 @@ and `PAST_DATE` is any date before today, such as `01-01-2020`.
 
 1. Adding, renaming, and deleting tags
 
-   1. Prerequisites: The sample contacts are loaded and no custom tags have been created.
+   1. Prerequisites: The sample contacts are loaded and no additional custom tags have been created.
 
    1. Test case: `listtags`<br>
-      Expected: The Tags view opens. The status message lists `EXCO, Sponsor, UniversityStaff, Logistics, friends, colleagues, neighbours, family, classmates`.
+      Expected: The Tags view opens. The status message lists
+      `EXCO, Sponsor, UniversityStaff, Logistics, friends, neighbours`. Selecting `EXCO` shows Alex Yeoh,
+      Bernice Yu, and Irfan Ibrahim.
 
    1. Test case: `addtag t/Publicity`<br>
       Expected: `Publicity` appears in the Tags view. The status message shows `Created tag: Publicity.`
@@ -1846,10 +1860,14 @@ want to keep.
    1. Prerequisites: The app is closed and `data/coordimate.json` exists.
 
    1. Test case: Delete `data/coordimate.json`, then launch the app.<br>
-      Expected: The app starts with the sample contacts.
+      Expected: The app starts with the sample contacts and the `Freshmen Welcome Night` sample event. The event
+      has two assigned contacts, with Alex Yeoh marked present.
 
    1. Test case: Run `list`, then check the `data` folder.<br>
-      Expected: `data/coordimate.json` has been created again.
+      Expected: `data/coordimate.json` has not been created, because commands that do not change data do not save.
+
+   1. Test case: Run `addtag t/Test`, then check the `data` folder.<br>
+      Expected: `data/coordimate.json` has been created again, containing the sample data and the `Test` tag.
 
 1. Migrating legacy member IDs and keeping command targets across restarts
 
@@ -1887,23 +1905,23 @@ want to keep.
    1. Prerequisites: The app is closed and `data/coordimate.json` contains at least one contact. Keep a copy of the file.
 
    1. Test case: Open `data/coordimate.json` in a text editor, delete the first `{`, save, then launch the app.<br>
-      Expected: The app starts with no contacts and no events.
+      Expected: CoordiMate warns that the saved data could not be loaded and that the original file is unchanged.
+      The warning shows the path to `data/coordimate.json` and says that CoordiMate will close.
 
-   1. Test case: Without closing the app, run `addevent evn/Test st/01-01-2027 et/01-01-2027`.<br>
-      Expected: No event is added. The status message shows `Saved data could not be loaded. Check the local data file.` The data file is unchanged.
+   1. Test case: Select **OK**, then inspect `data/coordimate.json`.<br>
+      Expected: CoordiMate closes. The file still contains the same corrupted contents and has not been replaced with
+      an empty dataset.
 
-   1. Test case: Close the app, put the `{` back, save, then launch the app.<br>
-      Expected: The original contacts and events are shown again.
-
-   1. Test case: Corrupt the file again as above, launch the app, then run `list`.<br>
-      Expected: The corrupted file is replaced with the app's empty data. Restore the copy of the file to get the original data back.
+   1. Test case: Restore the copy of the file, then launch the app again.<br>
+      Expected: The recovery warning does not appear. The original contacts and events are shown again.
 
 1. Dealing with an event member who is not a contact
 
    1. Prerequisites: The app is closed and `data/coordimate.json` contains an event with at least one member. Keep a copy of the file.
 
    1. Test case: In the data file, change one name in an event's `members` list to a name that no contact has, save, then launch the app.<br>
-      Expected: The file is treated as invalid, so the app starts with no contacts and no events. Restore the copy of the file afterwards.
+      Expected: CoordiMate shows the recovery warning and closes after **OK** is selected. The invalid file remains
+      unchanged. Restore the copy before launching again.
 
 1. Dealing with a failed save
 

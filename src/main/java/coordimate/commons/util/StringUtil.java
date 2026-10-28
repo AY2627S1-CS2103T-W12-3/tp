@@ -6,11 +6,14 @@ import static java.util.Objects.requireNonNull;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Arrays;
+import java.util.regex.Pattern;
 
 /**
  * Helper functions for handling strings.
  */
 public class StringUtil {
+
+    private static final Pattern WHITESPACE_RUN = Pattern.compile("\\p{javaWhitespace}+");
 
     /**
      * Returns true if the {@code sentence} contains the {@code word}.
@@ -37,6 +40,21 @@ public class StringUtil {
 
         return Arrays.stream(wordsInPreppedSentence)
                 .anyMatch(preppedWord::equalsIgnoreCase);
+    }
+
+    /**
+     * Returns {@code s} without surrounding whitespace and with each internal run of whitespace replaced by
+     * a single space. Uses the same definition of whitespace as {@link String#strip()}.
+     *   <br>examples:<pre>
+     *       normalizeWhitespace("  Alex   Yeoh ") == "Alex Yeoh"
+     *       normalizeWhitespace("Final \t Concert") == "Final Concert"
+     *       </pre>
+     *
+     * @throws NullPointerException if {@code s} is null.
+     */
+    public static String normalizeWhitespace(String s) {
+        requireNonNull(s);
+        return WHITESPACE_RUN.matcher(s.strip()).replaceAll(" ");
     }
 
     /**

@@ -2,6 +2,7 @@ package coordimate;
 
 import static coordimate.testutil.TypicalPersons.getTypicalCoordiMate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -11,7 +12,13 @@ import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import coordimate.commons.util.JsonUtil;
 import coordimate.model.CoordiMate;
+import coordimate.model.event.Event;
+import coordimate.model.event.EventTime;
 import coordimate.model.util.SampleDataUtil;
 import coordimate.storage.JsonCoordiMateStorage;
 import coordimate.ui.Ui;
@@ -35,6 +42,7 @@ public class MainAppTest {
         app.init();
 
         assertEquals(new CoordiMate(SampleDataUtil.getSampleCoordiMate()), app.model.getCoordiMate());
+        assertFalse(app.isDataRecoveryMode);
         app.stop();
         assertTrue(Files.exists(prefsFile));
     }
@@ -49,6 +57,30 @@ public class MainAppTest {
         app.init();
 
         assertEquals(storedData, app.model.getCoordiMate());
+        assertFalse(app.isDataRecoveryMode);
+    }
+
+    @Test
+    public void init_yearZeroEvents_deletesInvalidEventsAndLoadsRemainingData() throws Exception {
+        Path dataFile = testFolder.resolve("coordimate.json");
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(dataFile);
+        CoordiMate expected = getTypicalCoordiMate();
+        expected.addEvent(new Event("Keep", new EventTime("01-01-0001"), new EventTime("31-12-9999")));
+        storage.saveCoordiMate(expected);
+        ObjectNode json = JsonUtil.fromJsonString(Files.readString(dataFile), ObjectNode.class);
+        json.withArray("events").add(JsonUtil.fromJsonString("""
+                {"name":"Year Zero","startTime":"01-01-0000","endTime":"02-01-0000"}
+                """, JsonNode.class));
+        Files.writeString(dataFile, JsonUtil.toJsonString(json));
+        MainApp app = new MainApp(testFolder.resolve("preferences.json"), dataFile);
+
+        app.init();
+
+        assertEquals(expected, app.model.getCoordiMate());
+        assertEquals(expected, storage.readCoordiMate().orElseThrow());
+        String cleaned = Files.readString(dataFile);
+        app.init();
+        assertEquals(cleaned, Files.readString(dataFile));
     }
 
     @Test
@@ -61,6 +93,8 @@ public class MainAppTest {
 
         assertEquals(new CoordiMate(), app.model.getCoordiMate());
         assertTrue(app.logic.getReminders().isEmpty());
+        assertTrue(app.isDataRecoveryMode);
+        assertEquals("not valid JSON", Files.readString(dataFile));
     }
 
     @Test

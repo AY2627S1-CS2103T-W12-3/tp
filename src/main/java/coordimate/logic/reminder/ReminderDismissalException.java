@@ -13,4 +13,11 @@ public class ReminderDismissalException extends Exception {
     public ReminderDismissalException(Exception cause) {
         super(MESSAGE, cause);
     }
+
+    /**
+     * Uses more specific feedback when saving failed because another window changed the file.
+     */
+    public ReminderDismissalException(String message, Exception cause) {
+        super(message, cause);
+    }
 }

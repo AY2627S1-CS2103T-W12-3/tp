@@ -3,6 +3,9 @@ package coordimate.model.tag;
 import static coordimate.commons.util.AppUtil.checkArgument;
 import static java.util.Objects.requireNonNull;
 
+import java.util.Collection;
+import java.util.Comparator;
+
 /**
  * Represents a Tag in the CoordiMate.
  * Guarantees: immutable; name is valid as declared in {@link #isValidTagName(String)}
@@ -15,6 +18,10 @@ public class Tag {
             "Tag name must not exceed 30 characters. Example: t/Publicity";
     public static final String VALIDATION_REGEX = "\\p{Alnum}+";
     public static final int MAX_LENGTH = 30;
+
+    /** Orders tags alphabetically ignoring case, so {@code budget} comes before {@code EXCO}. */
+    public static final Comparator<Tag> ALPHABETICAL_ORDER =
+            Comparator.comparing(Tag::getTagName, String.CASE_INSENSITIVE_ORDER).thenComparing(Tag::getTagName);
 
     private final String tagName;
 
@@ -42,6 +49,15 @@ public class Tag {
         }
 
         return otherTag != null && tagName.equalsIgnoreCase(otherTag.tagName);
+    }
+
+    /**
+     * Returns the tag in {@code savedTags} with the same name as this tag, ignoring case,
+     * or this tag if no saved tag matches.
+     */
+    public Tag findSavedTag(Collection<Tag> savedTags) {
+        requireNonNull(savedTags);
+        return savedTags.stream().filter(this::isSameTag).findFirst().orElse(this);
     }
 
     /**

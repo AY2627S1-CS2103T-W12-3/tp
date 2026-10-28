@@ -83,7 +83,7 @@ public class MainWindow extends UiPart<Stage> {
                     + "Example: delete e/aisha@example.com"),
             Map.entry("search", "Format: search KEYWORD\nExample: search jurong west"),
             Map.entry("filter", "Format: filter FIELD/VALUE [FIELD/VALUE]...\n"
-                    + "Example: filter tag/friend organisation/NUS"),
+                    + "Example: filter tag/EXCO organisation/NUS Student Affairs"),
             Map.entry("list", "Format: list [archived]\nExample: list archived"),
             Map.entry("archive", "Format: archive MEMBER_ID\nExample: archive 2"),
             Map.entry("unarchive", "Format: unarchive MEMBER_ID\nExample: unarchive 2"),
@@ -272,6 +272,8 @@ public class MainWindow extends UiPart<Stage> {
         primaryStage.addEventHandler(WindowEvent.WINDOW_SHOWN, event -> {
             if (reminderPanel != null) {
                 logic.refreshReminders();
+                personListPanel.refreshIfDateChanged();
+                eventListPanel.refreshIfDateChanged();
                 reminderTimer.play();
             }
         });
@@ -324,7 +326,7 @@ public class MainWindow extends UiPart<Stage> {
         personListPanel = new PersonListPanel(logic.getFilteredPersonList(), logic.getEventList(), clock);
         personListPanelPlaceholder.getChildren().add(personListPanel.getRoot());
 
-        eventListPanel = new EventListPanel(logic.getFilteredEventList(), logic.getFilteredPersonList());
+        eventListPanel = new EventListPanel(logic.getFilteredEventList(), logic.getFilteredPersonList(), clock);
         eventListPanelPlaceholder.getChildren().add(eventListPanel.getRoot());
         showArchivedEmptyMessages(logic.showingArchivedProperty().get());
         logic.showingArchivedProperty().addListener((observable, wasArchived, isArchived) ->
@@ -375,6 +377,7 @@ public class MainWindow extends UiPart<Stage> {
         reminderTimer.getKeyFrames().setAll(new KeyFrame(Duration.minutes(1), event -> {
             logic.refreshReminders();
             personListPanel.refreshIfDateChanged();
+            eventListPanel.refreshIfDateChanged();
         }));
         reminderTimer.setCycleCount(Animation.INDEFINITE);
         if (primaryStage.isShowing()) {

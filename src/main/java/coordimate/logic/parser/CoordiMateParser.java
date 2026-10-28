@@ -94,16 +94,20 @@ public class CoordiMateParser {
                 case DeleteEventCommand.COMMAND_WORD -> new DeleteEventCommandParser().parse(arguments);
                 case DeleteTagCommand.COMMAND_WORD -> new DeleteTagCommandParser().parse(arguments);
                 case DismissCommand.COMMAND_WORD -> new DismissCommandParser(reminderService).parse(arguments);
-                case ClearCommand.COMMAND_WORD -> new ClearCommand();
+                case ClearCommand.COMMAND_WORD -> parseCommandWithoutArguments(
+                        arguments, ClearCommand.MESSAGE_USAGE, new ClearCommand());
                 case CreateTagCommand.COMMAND_WORD -> new CreateTagCommandParser().parse(arguments);
                 case FilterCommand.COMMAND_WORD -> new FilterCommandParser().parse(arguments);
                 case ListCommand.COMMAND_WORD -> new ListCommandParser().parse(arguments);
                 case SearchCommand.COMMAND_WORD -> new SearchCommandParser().parse(arguments);
                 case ListTagsCommand.COMMAND_WORD -> new ListTagsCommandParser().parse(arguments);
                 case MarkAttendanceCommand.COMMAND_WORD -> new MarkAttendanceCommandParser().parse(arguments);
-                case ExitCommand.COMMAND_WORD -> new ExitCommand();
-                case HelpCommand.COMMAND_WORD -> new HelpCommand();
-                case TutorialCommand.COMMAND_WORD -> new TutorialCommand();
+                case ExitCommand.COMMAND_WORD -> parseCommandWithoutArguments(
+                        arguments, ExitCommand.MESSAGE_USAGE, new ExitCommand());
+                case HelpCommand.COMMAND_WORD -> parseCommandWithoutArguments(
+                        arguments, HelpCommand.MESSAGE_USAGE, new HelpCommand());
+                case TutorialCommand.COMMAND_WORD -> parseCommandWithoutArguments(
+                        arguments, TutorialCommand.MESSAGE_USAGE, new TutorialCommand());
                 default -> {
                     logger.finer("This user input caused a ParseException: " + userInput);
                     throw new ParseException(MESSAGE_UNKNOWN_COMMAND);
@@ -112,6 +116,14 @@ public class CoordiMateParser {
         } catch (ParseException e) {
             throw new ParseException(Messages.withUsage(e.getMessage(), getUsage(commandWord)), e);
         }
+    }
+
+    private static Command parseCommandWithoutArguments(String arguments, String usage, Command command)
+            throws ParseException {
+        if (!arguments.isBlank()) {
+            throw ParserUtil.createInvalidFormatException(usage);
+        }
+        return command;
     }
 
     /**

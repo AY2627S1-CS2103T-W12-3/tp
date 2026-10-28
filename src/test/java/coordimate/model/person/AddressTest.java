@@ -17,6 +17,7 @@ public class AddressTest {
     public void constructor_invalidAddress_throwsIllegalArgumentException() {
         String invalidAddress = "";
         assertThrows(IllegalArgumentException.class, () -> new Address(invalidAddress));
+        assertThrows(IllegalArgumentException.class, () -> new Address("\u200B"));
     }
 
     @Test
@@ -31,6 +32,7 @@ public class AddressTest {
         assertFalse(Address.isValidAddress("A\tB")); // tab is a control character
         assertFalse(Address.isValidAddress("A\nB")); // line break is not printable
         assertFalse(Address.isValidAddress("A\u2028B")); // Unicode line separator
+        assertFalse(Address.isValidAddress("\u200B")); // zero-width space
 
         // valid addresses
         assertTrue(Address.isValidAddress("Blk 456, Den Road, #01-355"));

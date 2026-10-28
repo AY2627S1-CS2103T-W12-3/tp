@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import coordimate.logic.LogicManager;
 import coordimate.model.ModelManager;
 import javafx.application.Platform;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ToggleButton;
@@ -36,6 +37,36 @@ public class UiManagerTest {
         }
         assertTrue(started.await(10, TimeUnit.SECONDS));
         Platform.setImplicitExit(false);
+    }
+
+    @Test
+    public void start_startupWarning_notifiesAfterWindowIsShown() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            ModelManager model = new ModelManager();
+            model.setHasSeenTutorial(true);
+            Stage primaryStage = new Stage();
+            String warning = "Deleted events with year 0000: Year Zero";
+            boolean[] notified = {false};
+            UiManager manager = new UiManager(new LogicManager(model, null), Path.of("data.json"), warning) {
+                @Override
+                void showAlertDialogAndWait(Alert.AlertType type, String title, String header, String content) {
+                    assertTrue(primaryStage.isShowing());
+                    assertEquals(Alert.AlertType.WARNING, type);
+                    assertEquals(warning, content);
+                    notified[0] = true;
+                }
+            };
+            try {
+                manager.start(primaryStage);
+                assertTrue(notified[0]);
+            } finally {
+                manager.stop();
+                primaryStage.close();
+            }
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
@@ -69,6 +100,8 @@ public class UiManagerTest {
             closeButton.fire();
             assertTrue(logic.hasSeenTutorial());
             assertFalse(tutorialOverlay.isVisible());
+            assertTrue(logic.getPersonList().isEmpty());
+            assertTrue(logic.getEventList().isEmpty());
             assertTrue(contactsView.isSelected());
             assertFalse(primaryStage.getScene().lookup("#commandTextField").isDisabled());
             uiManager.stop();
@@ -102,6 +135,37 @@ public class UiManagerTest {
     }
 
     @Test
+    public void start_dataRecoveryMode_showsWarningAndExits() throws Exception {
+        FutureTask<RecordingUiManager> task = new FutureTask<>(() -> {
+            ModelManager model = new ModelManager();
+            LogicManager logic = new LogicManager(model, null);
+            Path dataFilePath = Path.of("data", "coordimate.json");
+            boolean[] isExitRequested = {false};
+            Runnable exitAction = () -> isExitRequested[0] = true;
+            RecordingUiManager uiManager = new RecordingUiManager(logic, dataFilePath, true, exitAction);
+            Stage primaryStage = new Stage();
+
+            uiManager.start(primaryStage);
+
+            assertTrue(primaryStage.isShowing());
+            assertEquals(Alert.AlertType.WARNING, uiManager.alertType);
+            assertEquals(UiManager.DATA_RECOVERY_ALERT_TITLE, uiManager.alertTitle);
+            assertEquals(UiManager.DATA_RECOVERY_ALERT_HEADER, uiManager.alertHeader);
+            assertTrue(uiManager.alertContent.contains("original data file has not been changed"));
+            assertTrue(uiManager.alertContent.contains("will now close"));
+            assertTrue(uiManager.alertContent.contains(dataFilePath.toAbsolutePath().toString()));
+            assertTrue(isExitRequested[0]);
+            assertFalse(logic.hasSeenTutorial());
+            assertFalse(primaryStage.getScene().lookup("#tutorialOverlay").isVisible());
+            uiManager.stop();
+            primaryStage.close();
+            return uiManager;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
     public void finishingTutorial_recordsPreferenceAndClosesOverlay() throws Exception {
         FutureTask<Void> task = new FutureTask<>(() -> {
             LogicManager logic = new LogicManager(new ModelManager(), null);
@@ -127,6 +191,25 @@ public class UiManagerTest {
         });
         Platform.runLater(task);
         task.get(10, TimeUnit.SECONDS);
+    }
+
+    private static class RecordingUiManager extends UiManager {
+        private Alert.AlertType alertType;
+        private String alertTitle;
+        private String alertHeader;
+        private String alertContent;
+
+        RecordingUiManager(LogicManager logic, Path dataFilePath, boolean isDataRecoveryMode, Runnable exitAction) {
+            super(logic, dataFilePath, isDataRecoveryMode, exitAction);
+        }
+
+        @Override
+        void showAlertDialogAndWait(Alert.AlertType type, String title, String headerText, String contentText) {
+            alertType = type;
+            alertTitle = title;
+            alertHeader = headerText;
+            alertContent = contentText;
+        }
     }
 
 }
