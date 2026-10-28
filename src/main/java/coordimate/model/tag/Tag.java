@@ -4,6 +4,7 @@ import static coordimate.commons.util.AppUtil.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Collection;
+import java.util.Comparator;
 
 /**
  * Represents a Tag in the CoordiMate.
@@ -17,6 +18,10 @@ public class Tag {
             "Tag name must not exceed 30 characters. Example: t/Publicity";
     public static final String VALIDATION_REGEX = "\\p{Alnum}+";
     public static final int MAX_LENGTH = 30;
+
+    /** Orders tags alphabetically ignoring case, so {@code budget} comes before {@code EXCO}. */
+    public static final Comparator<Tag> ALPHABETICAL_ORDER =
+            Comparator.comparing(Tag::getTagName, String.CASE_INSENSITIVE_ORDER).thenComparing(Tag::getTagName);
 
     private final String tagName;
 
