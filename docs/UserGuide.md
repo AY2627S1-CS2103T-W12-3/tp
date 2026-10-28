@@ -1008,6 +1008,9 @@ Format: `filter FIELD/VALUE [FIELD/VALUE]...`
 * Filter checks all saved contacts, including those hidden by the current search or filter.
 * Results replace the displayed contact list. Permanent member IDs remain unchanged; `edit`, `delete`, `assign`, and `unassign` accept those IDs even for hidden contacts. Use `list` to show everyone.
 * If a value does not exist, the command is rejected and the displayed list stays as it was.
+* An `event` filter stays up to date while it is shown, like [`members`](#viewing-members-of-an-event-members):
+  contacts assigned with `assign` appear, contacts removed with `unassign` disappear, and renaming the event with
+  `editevent` keeps the filter working. If the event is deleted, the list becomes empty.
 
 **Quotation marks**
 
