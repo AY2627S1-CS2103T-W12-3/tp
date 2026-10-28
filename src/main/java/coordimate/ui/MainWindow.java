@@ -106,7 +106,9 @@ public class MainWindow extends UiPart<Stage> {
                     + "Example: unassign evn/Final Concert c/2 3"),
             Map.entry("members", "Format: members evn/EVENT_NAME\nExample: members evn/Final Concert"),
             Map.entry("markattendance", "Format: markattendance evn/EVENT_NAME mem/MEMBER_NAME att/STATUS\n"
-                    + "Example: markattendance evn/Final Concert mem/Alex Yeoh att/present"),
+                    + "STATUS must be present or absent (case-insensitive).\n"
+                    + "Example: markattendance evn/Final Concert mem/Alex Yeoh att/present\n"
+                    + "Example: markattendance evn/Final Concert mem/Alex Yeoh att/absent"),
             Map.entry("listtags", "Format: listtags\nExample: listtags"),
             Map.entry("addtag", "Format: addtag t/TAG\nExample: addtag t/ProductionCrew"),
             Map.entry("edittag", "Format: edittag OLD_TAG t/NEW_TAG\n"

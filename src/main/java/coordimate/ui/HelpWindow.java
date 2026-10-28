@@ -85,7 +85,8 @@ public class HelpWindow extends UiPart<Stage> {
             commandUsage(ListCommand.COMMAND_WORD, "[archived]"),
             commandUsage(ListTagsCommand.COMMAND_WORD, ""),
             commandUsage(MarkAttendanceCommand.COMMAND_WORD,
-                    "evn/EVENT_NAME mem/MEMBER_NAME att/STATUS"),
+                    "evn/EVENT_NAME mem/MEMBER_NAME att/STATUS\n"
+                            + "STATUS must be present or absent (case-insensitive)."),
             commandUsage(MembersCommand.COMMAND_WORD, "evn/EVENT_NAME"),
             commandUsage(SearchCommand.COMMAND_WORD, "KEYWORD"),
             commandUsage(TutorialCommand.COMMAND_WORD, ""),
