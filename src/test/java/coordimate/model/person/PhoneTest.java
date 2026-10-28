@@ -40,6 +40,7 @@ public class PhoneTest {
         // valid phone numbers
         assertTrue(Phone.isValidPhone("1234567")); // minimum digit count
         assertTrue(Phone.isValidPhone("123")); // previously valid stored phone number
+        assertTrue(Phone.isValidPhone(" 123 ")); // previously valid number with surrounding spaces
         assertTrue(Phone.isValidPhone("1234567890123456")); // previously valid digit-only phone number
         assertTrue(Phone.isValidPhone("93121534"));
         assertTrue(Phone.isValidPhone("124293842033123")); // maximum digit count
@@ -60,6 +61,36 @@ public class PhoneTest {
         assertTrue(Phone.isValidInputPhone("1234567"));
         assertTrue(Phone.isValidInputPhone("123456789012345"));
         assertTrue(Phone.isValidInputPhone("+65 (9123) 4567"));
+    }
+
+    @Test
+    public void isValidInputPhone_brackets_mustMatchAndEncloseDigits() {
+        assertFalse(Phone.isValidInputPhone(")))1234567((("));
+        assertFalse(Phone.isValidInputPhone("(91234567")); // never closed
+        assertFalse(Phone.isValidInputPhone("91234567)")); // never opened
+        assertFalse(Phone.isValidInputPhone("()91234567")); // empty
+        assertFalse(Phone.isValidInputPhone("((65)) 91234567")); // nested
+        assertFalse(Phone.isValidInputPhone("(+65)+91234567")); // second plus sign
+        assertFalse(Phone.isValidInputPhone("9123 (+65) 4567")); // country code not at the start
+
+        assertTrue(Phone.isValidInputPhone("(+65) 9123 4567"));
+        assertTrue(Phone.isValidInputPhone("(65) 9123-4567"));
+        assertTrue(Phone.isValidInputPhone("+1 (555) 123-4567"));
+        assertTrue(Phone.isValidInputPhone("(02) (1234) 5678")); // several pairs
+    }
+
+    @Test
+    public void isValidPhone_numbersSavedByOlderVersions_stillValid() {
+        assertTrue(Phone.isValidPhone(")))1234567(((")); // brackets did not have to match
+        assertTrue(Phone.isValidPhone("(91234567"));
+        assertTrue(Phone.isValidPhone("(+65) 9123 4567")); // new format
+        assertFalse(Phone.isValidPhone("(+65)+91234567"));
+    }
+
+    @Test
+    public void getNormalizedValue_bracketedCountryCode_matchesPlainNumber() {
+        assertEquals(new Phone("+6591234567").getNormalizedValue(),
+                new Phone("(+65) 9123 4567").getNormalizedValue());
     }
 
     @Test
