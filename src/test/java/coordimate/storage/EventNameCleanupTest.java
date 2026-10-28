@@ -295,6 +295,29 @@ public class EventNameCleanupTest {
     }
 
     @Test
+    public void cleanup_yearZeroRead_holdsLockAgainstNormalSaves() throws Exception {
+        Path path = testFolder.resolve("data.json");
+        String original = """
+                {"persons":[],"events":[
+                  {"name":"Year Zero","startTime":"01-01-0000","endTime":"01-01-2027"}]}
+                """;
+        Files.writeString(path, original);
+        StorageManager otherWindow = storage(new JsonCoordiMateStorage(path));
+        assertThrows(DataLoadingException.class, otherWindow::readCoordiMate);
+        JsonCoordiMateStorage jsonStorage = new JsonCoordiMateStorage(path) {
+            @Override
+            Optional<EventNameCleanup> readEventNameCleanup() throws DataLoadingException {
+                assertThrows(IOException.class, () -> otherWindow.saveCoordiMateIfUnchanged(getTypicalCoordiMate()));
+                return super.readEventNameCleanup();
+            }
+        };
+
+        assertEquals(List.of("Year Zero"), storage(jsonStorage).cleanUpEventNames().yearZeroDeletedNames());
+        assertEquals(new CoordiMate(), jsonStorage.readCoordiMate().orElseThrow());
+        assertThrows(DataConflictException.class, () -> otherWindow.saveCoordiMateIfUnchanged(getTypicalCoordiMate()));
+    }
+
+    @Test
     public void cleanup_fileChangesWhilePreparing_doesNotOverwriteConcurrentSave() throws Exception {
         Path path = testFolder.resolve("data.json");
         writeLegacyData(path, new CoordiMate(), List.of("Bad\u2003c/review"));

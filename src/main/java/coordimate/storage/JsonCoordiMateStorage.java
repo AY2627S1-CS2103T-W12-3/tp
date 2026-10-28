@@ -70,10 +70,24 @@ public class JsonCoordiMateStorage {
      * Returns the deleted names only after the cleaned file is saved successfully.
      */
     public List<String> removeYearZeroEvents() throws DataLoadingException, IOException {
+        try (DataFileGuard guard = new DataFileGuard(filePath)) {
+            Optional<String> originalRevision = DataFileGuard.readRevision(filePath);
+            Optional<YearZeroCleanup> cleanup = readYearZeroCleanup();
+            if (cleanup.isEmpty()) {
+                return List.of();
+            }
+            guard.checkRevision(originalRevision);
+            saveCoordiMate(cleanup.get().data());
+            return cleanup.get().deletedNames();
+        }
+    }
+
+    /** Prepares legacy date cleanup while the caller holds the shared data-file lock. */
+    Optional<YearZeroCleanup> readYearZeroCleanup() throws DataLoadingException {
         Optional<JsonSerializableCoordiMate> savedData = JsonUtil.readJsonFile(
                 filePath, JsonSerializableCoordiMate.class, SavedJsonTypeValidator::validateCoordiMate);
         if (savedData.isEmpty()) {
-            return List.of();
+            return Optional.empty();
         }
         try {
             savedData.get().validateEventArchiveStatuses();
@@ -83,7 +97,7 @@ public class JsonCoordiMateStorage {
         List<String> removedNames = savedData.get().removeYearZeroEvents();
         boolean removedHistory = savedData.get().removeYearZeroReminderStarts();
         if (removedNames.isEmpty() && !removedHistory) {
-            return List.of();
+            return Optional.empty();
         }
         ReadOnlyCoordiMate cleanedData;
         try {
@@ -91,9 +105,10 @@ public class JsonCoordiMateStorage {
         } catch (IllegalValueException | IllegalArgumentException | NullPointerException e) {
             throw new DataLoadingException(e);
         }
-        saveCoordiMate(cleanedData);
-        return List.copyOf(removedNames);
+        return Optional.of(new YearZeroCleanup(cleanedData, List.copyOf(removedNames)));
     }
+
+    record YearZeroCleanup(ReadOnlyCoordiMate data, List<String> deletedNames) {}
 
     /**
      * Returns CoordiMate data as a {@link ReadOnlyCoordiMate}.

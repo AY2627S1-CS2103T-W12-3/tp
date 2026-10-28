@@ -11,11 +11,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -251,6 +255,45 @@ public class JsonCoordiMateStorageTest {
         String original = Files.readString(path);
         assertThrows(DataLoadingException.class, () -> new JsonCoordiMateStorage(path).removeYearZeroEvents());
         assertEquals(original, Files.readString(path));
+    }
+
+    @Test
+    public void removeYearZeroEvents_fileChangesWhilePreparing_preservesNewerData() throws Exception {
+        Path path = writeLegacyEvents(new CoordiMate(),
+                new JsonAdaptedEvent("Zero", "01-01-0000", "02-01-0000"));
+        CoordiMate concurrentData = getTypicalCoordiMate();
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path) {
+            @Override
+            Optional<YearZeroCleanup> readYearZeroCleanup() throws DataLoadingException {
+                Optional<YearZeroCleanup> cleanup = super.readYearZeroCleanup();
+                try {
+                    new JsonCoordiMateStorage(path).saveCoordiMate(concurrentData);
+                } catch (IOException e) {
+                    throw new DataLoadingException(e);
+                }
+                return cleanup;
+            }
+        };
+
+        assertThrows(DataConflictException.class, storage::removeYearZeroEvents);
+        assertEquals(concurrentData, new JsonCoordiMateStorage(path).readCoordiMate().orElseThrow());
+    }
+
+    @Test
+    public void removeYearZeroEvents_lockHeld_preservesFileAndCanRetryAfterRelease() throws Exception {
+        Path path = writeLegacyEvents(new CoordiMate(),
+                new JsonAdaptedEvent("Zero", "01-01-0000", "02-01-0000"));
+        String original = Files.readString(path);
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path);
+        Path lockPath = path.resolveSibling(path.getFileName() + ".lock");
+        try (FileChannel channel = FileChannel.open(lockPath, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+                FileLock ignored = channel.lock()) {
+            assertThrows(IOException.class, storage::removeYearZeroEvents);
+            assertEquals(original, Files.readString(path));
+        }
+
+        assertEquals(List.of("Zero"), storage.removeYearZeroEvents());
+        assertEquals(new CoordiMate(), storage.readCoordiMate().orElseThrow());
     }
 
     @Test

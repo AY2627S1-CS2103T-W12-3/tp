@@ -1,17 +1,8 @@
 package coordimate.storage;
 
 import java.io.IOException;
-import java.nio.channels.FileChannel;
-import java.nio.channels.FileLock;
-import java.nio.channels.OverlappingFileLockException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.HexFormat;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
@@ -72,19 +63,21 @@ public class StorageManager implements Storage {
      * Leaves the initial model load responsible for capturing its own matching file revision.
      */
     public EventNameCleanupResult cleanUpEventNames() throws DataLoadingException, IOException {
-        Optional<String> originalRevision = dataRevision();
-        Optional<JsonCoordiMateStorage.EventNameCleanup> cleanup = coordiMateStorage.readEventNameCleanup();
-        if (cleanup.isEmpty()) {
-            return new EventNameCleanupResult(List.of(), List.of());
+        try (DataFileGuard guard = new DataFileGuard(getCoordiMateFilePath())) {
+            Optional<String> originalRevision = dataRevision();
+            Optional<JsonCoordiMateStorage.EventNameCleanup> cleanup = coordiMateStorage.readEventNameCleanup();
+            if (cleanup.isEmpty()) {
+                return new EventNameCleanupResult(List.of(), List.of());
+            }
+            if (isDataRevisionInitialized && !expectedDataRevision.equals(originalRevision)) {
+                throw new DataConflictException();
+            }
+            Optional<String> savedRevision = saveCoordiMateIfUnchanged(cleanup.get().data(), originalRevision, guard);
+            if (isDataRevisionInitialized) {
+                expectedDataRevision = savedRevision;
+            }
+            return cleanup.get().changes();
         }
-        if (isDataRevisionInitialized && !expectedDataRevision.equals(originalRevision)) {
-            throw new DataConflictException();
-        }
-        Optional<String> savedRevision = saveCoordiMateIfUnchanged(cleanup.get().data(), originalRevision);
-        if (isDataRevisionInitialized) {
-            expectedDataRevision = savedRevision;
-        }
-        return cleanup.get().changes();
     }
 
     @Override
@@ -132,44 +125,23 @@ public class StorageManager implements Storage {
         if (!isDataRevisionInitialized) {
             throw new IOException("Data file has not been loaded.");
         }
-        expectedDataRevision = saveCoordiMateIfUnchanged(coordiMate, expectedDataRevision);
+        try (DataFileGuard guard = new DataFileGuard(getCoordiMateFilePath())) {
+            expectedDataRevision = saveCoordiMateIfUnchanged(coordiMate, expectedDataRevision, guard);
+        }
     }
 
-    private Optional<String> saveCoordiMateIfUnchanged(ReadOnlyCoordiMate coordiMate, Optional<String> expectedRevision)
-            throws IOException {
-        Path dataPath = getCoordiMateFilePath().toAbsolutePath();
-        Files.createDirectories(dataPath.getParent());
-        Path lockPath = dataPath.resolveSibling(dataPath.getFileName() + ".lock");
-        try (FileChannel channel = FileChannel.open(lockPath, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
-                FileLock ignored = channel.lock()) {
-            if (!expectedRevision.equals(dataRevision())) {
-                throw new DataConflictException();
-            }
-            Optional<String> savedRevision = Optional.of(revisionOf(
-                    JsonUtil.toJsonString(new JsonSerializableCoordiMate(coordiMate))
-                            .getBytes(StandardCharsets.UTF_8)));
-            coordiMateStorage.saveCoordiMate(coordiMate);
-            return savedRevision;
-        } catch (OverlappingFileLockException e) {
-            throw new IOException("The data file is being saved by another window. Try again.", e);
-        }
+    private Optional<String> saveCoordiMateIfUnchanged(ReadOnlyCoordiMate coordiMate, Optional<String> expectedRevision,
+            DataFileGuard guard) throws IOException {
+        Optional<String> savedRevision = Optional.of(DataFileGuard.revisionOf(
+                JsonUtil.toJsonString(new JsonSerializableCoordiMate(coordiMate))
+                        .getBytes(StandardCharsets.UTF_8)));
+        guard.checkRevision(expectedRevision);
+        coordiMateStorage.saveCoordiMate(coordiMate);
+        return savedRevision;
     }
 
     private Optional<String> dataRevision() throws IOException {
-        try {
-            return Optional.of(revisionOf(Files.readAllBytes(getCoordiMateFilePath())));
-        } catch (NoSuchFileException e) {
-            return Optional.empty();
-        }
-    }
-
-    private static String revisionOf(byte[] contents) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            return HexFormat.of().formatHex(digest.digest(contents));
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 must be available", e);
-        }
+        return DataFileGuard.readRevision(getCoordiMateFilePath());
     }
 
 }
