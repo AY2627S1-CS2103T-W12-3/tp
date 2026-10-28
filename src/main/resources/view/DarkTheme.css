@@ -60,6 +60,9 @@
     -fx-background-color: #101319;
 }
 .dialog-pane .label { -fx-text-fill: #f0f6fc; }
+.dialog-pane .scroll-pane, .dialog-pane .scroll-pane > .viewport {
+    -fx-background-color: #101319;
+}
 
 .view-navigation {
     -fx-padding: 20 12 16;

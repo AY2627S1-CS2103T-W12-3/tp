@@ -3,7 +3,9 @@ package coordimate;
 import static coordimate.testutil.TypicalPersons.getTypicalCoordiMate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
@@ -15,12 +17,14 @@ import org.junit.jupiter.api.io.TempDir;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import coordimate.commons.exceptions.DataLoadingException;
 import coordimate.commons.util.JsonUtil;
 import coordimate.model.CoordiMate;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
 import coordimate.model.util.SampleDataUtil;
 import coordimate.storage.JsonCoordiMateStorage;
+import coordimate.testutil.PersonBuilder;
 import coordimate.ui.Ui;
 import javafx.stage.Stage;
 
@@ -94,7 +98,139 @@ public class MainAppTest {
         assertEquals(new CoordiMate(), app.model.getCoordiMate());
         assertTrue(app.logic.getReminders().isEmpty());
         assertTrue(app.isDataRecoveryMode);
+        assertEquals("", app.dataRecoveryDetail);
         assertEquals("not valid JSON", Files.readString(dataFile));
+    }
+
+    @Test
+    public void init_numericArchivedStatus_entersRecoveryModeAndLeavesFileUnchanged() throws Exception {
+        Path dataFile = testFolder.resolve("coordimate.json");
+        CoordiMate savedData = new CoordiMate();
+        savedData.addPerson(new PersonBuilder().withName("Alex Yeoh").build());
+        new JsonCoordiMateStorage(dataFile).saveCoordiMate(savedData);
+        String validJson = Files.readString(dataFile);
+        String invalidJson = validJson.replaceFirst("\"archived\" : false", "\"archived\" : 17");
+        assertNotEquals(validJson, invalidJson);
+        Files.writeString(dataFile, invalidJson);
+        DataLoadingException loadError = assertThrows(DataLoadingException.class, () ->
+                new JsonCoordiMateStorage(dataFile).readCoordiMate());
+        assertEquals("Contact \"Alex Yeoh\": archived must be true or false.", loadError.getCause().getMessage());
+        MainApp app = new MainApp(testFolder.resolve("preferences.json"), dataFile);
+
+        app.init();
+
+        assertTrue(app.isDataRecoveryMode);
+        assertEquals(loadError.getCause().getMessage(), app.dataRecoveryDetail);
+        assertEquals(new CoordiMate(), app.model.getCoordiMate());
+        assertEquals(invalidJson, Files.readString(dataFile));
+    }
+
+    @Test
+    public void init_invalidPreferences_usesDefaultsAndPreservesFileOnExit() throws Exception {
+        Path prefsFile = testFolder.resolve("preferences.json");
+        String invalid = "{\"guiSettings\":{\"windowMaximized\":17}}";
+        Files.writeString(prefsFile, invalid);
+        MainApp app = new MainApp(prefsFile, testFolder.resolve("coordimate.json"));
+
+        app.init();
+
+        assertTrue(app.isPrefsRecoveryMode);
+        assertEquals("Invalid JSON type at guiSettings.windowMaximized: expected a boolean.",
+                app.prefsRecoveryDetail);
+        assertEquals(new coordimate.model.UserPrefs(), app.model.getUserPrefs());
+        assertEquals(invalid, Files.readString(prefsFile));
+        app.stop();
+        assertEquals(invalid, Files.readString(prefsFile));
+    }
+
+    @Test
+    public void init_numericPhone_entersRecoveryModeAndPreservesDataFile() throws Exception {
+        Path dataFile = testFolder.resolve("coordimate.json");
+        String invalid = """
+                {"persons":[{"name":"Alex Yeoh","phone":8000001,"email":"alex@example.com"}]}
+                """;
+        Files.writeString(dataFile, invalid);
+        MainApp app = new MainApp(testFolder.resolve("preferences.json"), dataFile);
+
+        app.init();
+
+        assertTrue(app.isDataRecoveryMode);
+        assertEquals("Invalid JSON type at persons[0].phone: expected a string.", app.dataRecoveryDetail);
+        assertEquals(invalid, Files.readString(dataFile));
+    }
+
+    @Test
+    public void init_invalidDataAndPreferences_preservesBothFilesOnExit() throws Exception {
+        Path dataFile = testFolder.resolve("coordimate.json");
+        Path prefsFile = testFolder.resolve("preferences.json");
+        String invalidData = """
+                {"persons":[{"name":"Alex Yeoh","phone":8000001,"email":"alex@example.com"}]}
+                """;
+        String invalidPrefs = "{\"guiSettings\":{\"windowMaximized\":17}}";
+        Files.writeString(dataFile, invalidData);
+        Files.writeString(prefsFile, invalidPrefs);
+        MainApp app = new MainApp(prefsFile, dataFile);
+
+        app.init();
+
+        assertTrue(app.isDataRecoveryMode);
+        assertTrue(app.isPrefsRecoveryMode);
+        assertEquals("Invalid JSON type at persons[0].phone: expected a string.", app.dataRecoveryDetail);
+        assertEquals("Invalid JSON type at guiSettings.windowMaximized: expected a boolean.",
+                app.prefsRecoveryDetail);
+        assertEquals(invalidData, Files.readString(dataFile));
+        assertEquals(invalidPrefs, Files.readString(prefsFile));
+        app.stop();
+        assertEquals(invalidData, Files.readString(dataFile));
+        assertEquals(invalidPrefs, Files.readString(prefsFile));
+    }
+
+    @Test
+    public void init_malformedPreferences_preservesFileOnExit() throws Exception {
+        Path prefsFile = testFolder.resolve("preferences.json");
+        Files.writeString(prefsFile, "invalid JSON");
+        MainApp app = new MainApp(prefsFile, testFolder.resolve("coordimate.json"));
+
+        app.init();
+        app.stop();
+
+        assertTrue(app.isPrefsRecoveryMode);
+        assertEquals("invalid JSON", Files.readString(prefsFile));
+    }
+
+    @Test
+    public void init_invalidPreferencesAndYearZeroEvent_preservesPreferencesAndCleansData() throws Exception {
+        Path prefsFile = testFolder.resolve("preferences.json");
+        Path dataFile = testFolder.resolve("coordimate.json");
+        String invalidPrefs = "{\"hasSeenTutorial\":17}";
+        Files.writeString(prefsFile, invalidPrefs);
+        Files.writeString(dataFile, """
+                {"persons":[],"events":[{"name":"Year Zero","startTime":"01-01-0000",
+                "endTime":"02-01-0000"}]}
+                """);
+        MainApp app = new MainApp(prefsFile, dataFile);
+
+        app.init();
+
+        assertTrue(app.isPrefsRecoveryMode);
+        assertFalse(app.isDataRecoveryMode);
+        assertTrue(app.model.getCoordiMate().getEventList().isEmpty());
+        assertEquals(invalidPrefs, Files.readString(prefsFile));
+        app.stop();
+        assertEquals(invalidPrefs, Files.readString(prefsFile));
+    }
+
+    @Test
+    public void initAndStop_preferencesCannotBeWritten_doesNotCrash() throws Exception {
+        Path blockingFile = testFolder.resolve("not-a-directory");
+        Files.writeString(blockingFile, "keep");
+        MainApp app = new MainApp(blockingFile.resolve("preferences.json"), testFolder.resolve("data.json"));
+
+        app.init();
+        app.stop();
+
+        assertFalse(app.isPrefsRecoveryMode);
+        assertEquals("keep", Files.readString(blockingFile));
     }
 
     @Test

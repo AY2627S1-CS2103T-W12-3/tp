@@ -108,6 +108,15 @@ class JsonSerializableCoordiMate {
         return removedNames;
     }
 
+    /** Validates statuses before cleanup can remove an event with an invalid archive value. */
+    void validateEventArchiveStatuses() throws IllegalValueException {
+        for (JsonAdaptedEvent event : events) {
+            if (event != null) {
+                event.validateArchived();
+            }
+        }
+    }
+
     /**
      * Removes year-zero dismissal history from events that remain after cleanup.
      */

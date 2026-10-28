@@ -4,11 +4,14 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Logger;
 
 import coordimate.commons.core.LogsCenter;
 import coordimate.commons.exceptions.DataLoadingException;
+import coordimate.commons.exceptions.IllegalValueException;
+import coordimate.commons.exceptions.JsonTypeMismatchException;
 import coordimate.commons.util.StringUtil;
 import coordimate.logic.Logic;
 import coordimate.logic.LogicManager;
@@ -44,6 +47,9 @@ public class MainApp extends Application {
     protected Storage storage;
     protected Model model;
     protected boolean isDataRecoveryMode;
+    protected String dataRecoveryDetail = "";
+    protected boolean isPrefsRecoveryMode;
+    protected String prefsRecoveryDetail = "";
 
     private final Path userPrefsFilePath;
     private final Path coordiMateFilePath;
@@ -89,9 +95,24 @@ public class MainApp extends Application {
 
         model = initModelManager(storage, userPrefs);
 
+        String preferencesWarning = "";
+        if (isPrefsRecoveryMode) {
+            String detail = prefsRecoveryDetail.isEmpty() ? "" : "\n\nProblem: " + prefsRecoveryDetail;
+            String defaults = isDataRecoveryMode ? "" : " Default preferences are in use for this session.";
+            preferencesWarning = "Preferences could not be loaded." + defaults
+                    + " The original file will not be changed." + detail
+                    + "\n\nRepair or restore this file before restarting CoordiMate:\n"
+                    + userPrefsFilePath.toAbsolutePath();
+            if (!isDataRecoveryMode) {
+                startupWarning = startupWarning.isEmpty() ? preferencesWarning
+                        : startupWarning + "\n\n" + preferencesWarning;
+            }
+        }
+
         logic = new LogicManager(model, storage);
 
-        ui = new UiManager(logic, storage.getCoordiMateFilePath(), startupWarning, isDataRecoveryMode);
+        ui = new UiManager(logic, storage.getCoordiMateFilePath(), startupWarning, isDataRecoveryMode,
+                dataRecoveryDetail, preferencesWarning);
     }
 
     /**
@@ -101,6 +122,8 @@ public class MainApp extends Application {
      */
     private Model initModelManager(Storage storage, ReadOnlyUserPrefs userPrefs) {
         logger.info("Using data file : " + storage.getCoordiMateFilePath());
+        isDataRecoveryMode = false;
+        dataRecoveryDetail = "";
 
         ReadOnlyCoordiMate initialData;
         try {
@@ -114,6 +137,11 @@ public class MainApp extends Application {
             logger.warning("Data file at " + storage.getCoordiMateFilePath() + " could not be loaded."
                     + " Will be starting with an empty CoordiMate.");
             isDataRecoveryMode = true;
+            if (e.getCause() instanceof IllegalValueException invalidValue) {
+                dataRecoveryDetail = Objects.toString(invalidValue.getMessage(), "");
+            } else if (e.getCause() instanceof JsonTypeMismatchException invalidType) {
+                dataRecoveryDetail = Objects.toString(invalidType.getMessage(), "");
+            }
             initialData = new CoordiMate();
         }
 
@@ -128,6 +156,8 @@ public class MainApp extends Application {
     protected UserPrefs initPrefs(JsonUserPrefsStorage storage) {
         Path prefsFilePath = storage.getUserPrefsFilePath();
         logger.info("Using preference file : " + prefsFilePath);
+        isPrefsRecoveryMode = false;
+        prefsRecoveryDetail = "";
 
         UserPrefs initializedPrefs;
         try {
@@ -140,13 +170,19 @@ public class MainApp extends Application {
             logger.warning("Preference file at " + prefsFilePath + " could not be loaded."
                     + " Using default preferences.");
             initializedPrefs = new UserPrefs();
+            isPrefsRecoveryMode = true;
+            if (e.getCause() instanceof JsonTypeMismatchException invalidType) {
+                prefsRecoveryDetail = Objects.toString(invalidType.getMessage(), "");
+            }
         }
 
         //Update prefs file in case it was missing to begin with or there are new/unused fields
-        try {
-            storage.saveUserPrefs(initializedPrefs);
-        } catch (IOException e) {
-            logger.warning("Failed to save preference file : " + StringUtil.getDetails(e));
+        if (!isPrefsRecoveryMode) {
+            try {
+                storage.saveUserPrefs(initializedPrefs);
+            } catch (IOException e) {
+                logger.warning("Failed to save preference file : " + StringUtil.getDetails(e));
+            }
         }
 
         return initializedPrefs;
@@ -162,10 +198,12 @@ public class MainApp extends Application {
     public void stop() {
         logger.info("============================ [ Stopping CoordiMate ] =============================");
         ui.stop();
-        try {
-            storage.saveUserPrefs(model.getUserPrefs());
-        } catch (IOException e) {
-            logger.severe("Failed to save preferences " + StringUtil.getDetails(e));
+        if (!isPrefsRecoveryMode) {
+            try {
+                storage.saveUserPrefs(model.getUserPrefs());
+            } catch (IOException e) {
+                logger.severe("Failed to save preferences " + StringUtil.getDetails(e));
+            }
         }
     }
 }

@@ -130,6 +130,31 @@ public class JsonAdaptedEventTest {
     }
 
     @Test
+    public void toModelType_nonBooleanArchiveStatus_throwsIllegalValueException() throws Exception {
+        Event saved = new Event("Concert", new EventTime("08-08-2026"), new EventTime("09-08-2026"));
+        String validJson = JsonUtil.toJsonString(new JsonAdaptedEvent(saved));
+        String expectedMessage = "Event \"Concert\": " + JsonAdaptedEvent.MESSAGE_INVALID_ARCHIVED;
+        for (String invalidValue : List.of("17", "\"false\"", "{}", "[]")) {
+            String json = validJson.replace("\"archived\" : false", "\"archived\" : " + invalidValue);
+            JsonAdaptedEvent event = JsonUtil.fromJsonString(json, JsonAdaptedEvent.class);
+
+            assertEquals(expectedMessage,
+                    assertThrows(IllegalValueException.class, event::toModelType).getMessage());
+        }
+    }
+
+    @Test
+    public void toModelType_invalidArchiveStatusWithoutValidName_identifiesEvent() throws Exception {
+        for (String savedName : List.of("null", "\"\"")) {
+            String json = "{\"name\":" + savedName + ",\"archived\":17}";
+            JsonAdaptedEvent event = JsonUtil.fromJsonString(json, JsonAdaptedEvent.class);
+
+            assertEquals("Event with no valid name: " + JsonAdaptedEvent.MESSAGE_INVALID_ARCHIVED,
+                    assertThrows(IllegalValueException.class, event::toModelType).getMessage());
+        }
+    }
+
+    @Test
     public void toModelType_nullDismissedStart_throwsIllegalValueException() {
         JsonAdaptedEvent event = new JsonAdaptedEvent("Concert", "08-08-2026", "09-08-2026", List.of(), Map.of(),
                 Arrays.asList("08-08-2026", null));
