@@ -393,7 +393,7 @@ can be loaded, resolves the contact, stores it in its `pendingDelete` field, and
 The next input is treated as the answer, not as a command: `y` or `Y` runs the deletion through
 `executeAtomicCommand`, and any other input cancels it.
 
-**Commands that do not change data**, such as `list`, `search`, `filter`, `members`, and `listtags`, are executed
+**Commands that do not change data**, such as `list`, `search`, `filter`, and `members`, are executed
 directly on the live model without saving. They cannot overwrite a newer or invalid data file. A window that has
 become stale can still show its loaded data, but its next save is rejected until it is reopened. Reminder dismissal
 uses the same conditional save and retains its session-only fallback when saving fails.
@@ -1768,10 +1768,9 @@ and `PAST_DATE` is any date before today, such as `01-01-2020`.
 
    1. Prerequisites: The sample contacts are loaded and no additional custom tags have been created.
 
-   1. Test case: `listtags`<br>
-      Expected: The Tags view opens. The status message lists
-      `EXCO, Sponsor, UniversityStaff, Logistics, friends, neighbours`. Selecting `EXCO` shows Alex Yeoh,
-      Bernice Yu, and Irfan Ibrahim.
+   1. Test case: Press <kbd>Esc</kbd>, then <kbd>S</kbd> until the Tags view is active.<br>
+      Expected: The Tags view lists `EXCO, Sponsor, UniversityStaff, Logistics, friends, neighbours`. Selecting
+      `EXCO` shows Alex Yeoh, Bernice Yu, and Irfan Ibrahim.
 
    1. Test case: `addtag t/Publicity`<br>
       Expected: `Publicity` appears in the Tags view. The status message shows `Created tag: Publicity.`
@@ -1794,7 +1793,7 @@ and `PAST_DATE` is any date before today, such as `01-01-2020`.
    1. Test case: `deletetag t/Nope`<br>
       Expected: No tag is deleted. The status message shows `No such tag exists: Nope.`
 
-   1. Other incorrect tag commands to try: `addtag`, `addtag Publicity`, `edittag EXCO`, `deletetag EXCO`, `listtags 1`<br>
+   1. Other incorrect tag commands to try: `addtag`, `addtag Publicity`, `edittag EXCO`, `deletetag EXCO`<br>
       Expected: No change. The status message shows error details.
 
 ### Archiving contacts and events

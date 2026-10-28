@@ -841,21 +841,16 @@ Success: `Created tag: Publicity.`
 
 If saving fails, the command reports `Tag could not be saved. No changes were made.`
 
-### Listing all tags: `listtags`
+### Viewing all tags
 
-Shows every default and custom tag in the Tags view.
-
-Format: `listtags`
+The **Tags** tab shows every default and custom tag. To open it without the mouse, press <kbd>Esc</kbd> to enter
+Navigation mode, then press <kbd>S</kbd> until the Tags view is active. `addtag`, `edittag`, and `deletetag` also open
+the Tags view.
 
 Select a tag in the **Tags** tab to see the contacts assigned to it and the member count. The member list includes
 all saved contacts, regardless of the current contact search or filter, and is ordered by name. Each member shows
 their tags, role, and organisation. Archived contacts are included and marked `(archived)`. Every tag assigned to a
 contact is included in this global tag list, including tags recovered from older saved data.
-Success: `Here is the list of all existing tags.` followed by `Tags: ` and the tag names, separated by commas.
-If every tag has been deleted, `listtags` shows `No tags yet. Create one with addtag.` instead.
-
-Unlike `list`, `listtags` does not ignore extra text: `listtags 123` is rejected with
-`Invalid command format.`
 
 ### Editing a contact: `edit`
 
@@ -1011,7 +1006,7 @@ Format: `filter FIELD/VALUE [FIELD/VALUE]...`
   other commands; for example, use `tag/EXCO`, not `t/EXCO`.
 * `VALUE` must match a saved value in full, ignoring case. Unlike `search`, partial values do not match:
   `filter organisation/NUS` does not match `NUS Student Affairs`.
-  * `tag/VALUE` lists contacts that have the tag. The tag must be in the tag list shown by `listtags`.
+  * `tag/VALUE` lists contacts that have the tag. The tag must be in the tag list shown in the **Tags** tab.
   * `event/VALUE` lists the members of the event with that name.
   * `organisation/VALUE` lists contacts whose organisation is that value. At least one contact must have it.
     Several spaces in a row count as one, so `organisation/NUS  Student Affairs` matches `NUS Student Affairs`.
@@ -1297,7 +1292,6 @@ Action | Format, Examples
 **Add tag** | `addtag t/TAG`<br> e.g., `addtag t/Publicity`
 **Edit tag** | `edittag OLD_TAG t/NEW_TAG`<br> e.g., `edittag Media t/Publicity`
 **Delete tag** | `deletetag t/TAG`<br> e.g., `deletetag t/Publicity`
-**List tags** | `listtags`
 **Clear** | `clear`
 **Help** | `help`
 **Tutorial** | `tutorial`
