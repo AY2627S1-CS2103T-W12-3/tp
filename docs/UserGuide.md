@@ -126,11 +126,11 @@ A command that breaks a constraint is rejected and makes no changes.
 | `ROLE` | `r/` | 1 to 50 characters. Letters, digits, spaces, hyphens, and `/` only, with at least one letter or digit. |
 | `BIRTHDAY` | `b/` | A real date in `dd-MM-yyyy` format that is not in the future, e.g. `18-06-2004`. |
 | `LEAVE_END_DATE` | `lv/` | A real date in `dd-MM-yyyy` format that is not in the past, e.g. `30-11-2026`. Today's date is allowed. |
-| `ADDRESS` | `a/` | 1 to 200 characters. Any printable characters. |
+| `ADDRESS` | `a/` | 1 to 200 printable characters, including at least one visible character. |
 | `ORGANISATION` | `o/` | 1 to 80 characters. Letters, digits, spaces, hyphens, and `&` only, with at least one letter or digit. |
-| `NOTE` | `m/` | 1 to 500 characters. Any printable characters. |
+| `NOTE` | `m/` | 1 to 500 printable characters, including at least one visible character. |
 | `TAG`, `NEW_TAG` | `t/`, `at/`, `rt/` | 1 to 30 characters. English letters and digits only, with no spaces. Tags are unique, ignoring case. |
-| `EVENT_NAME`, `NEW_EVENT_NAME` | `evn/`, `nevn/` | At least one non-space character. Any characters are allowed, subject to the note below. Several spaces in a row count as one. Event names are unique, ignoring case and extra spaces. |
+| `EVENT_NAME`, `NEW_EVENT_NAME` | `evn/`, `nevn/` | At least one visible character. Any printable characters are allowed, subject to the note below. Several spaces in a row count as one. Event names are unique, ignoring case and extra spaces. |
 | `START_TIME`, `END_TIME` | `st/`, `et/` | A real date in `dd-MM-yyyy` format, optionally followed by a 24-hour time in `HH:mm` format, e.g. `17-09-2026` or `17-09-2026 16:30`. The start must not be after the end. |
 | `STATUS` | `att/` | `present` or `absent`, ignoring case. |
 | `MEMBER_ID` | `c/` for `assign` and `unassign`; none for `edit`, `delete`, `archive`, and `unarchive` | A permanent positive integer from 1 to 2147483647 identifying a saved contact, independent of the displayed list. |
@@ -243,12 +243,14 @@ Name, phone, email, and role are required. Each field accepts the following valu
 | `ROLE` | 1 to 50 characters: letters, digits, spaces, hyphens, and slashes (`/`), with at least one letter or digit. |
 | `BIRTHDAY` | A real date in `dd-MM-yyyy` format that is not in the future. |
 | `LEAVE_END_DATE` | A real date in `dd-MM-yyyy` format that is not in the past. |
-| `ADDRESS` | 1 to 200 printable characters. |
+| `ADDRESS` | 1 to 200 printable characters, including at least one visible character. |
 | `ORGANISATION` | 1 to 80 characters: letters, digits, spaces, and `-` `&` `.` `,` `'` `(` `)` `/`, with at least one letter or digit, e.g. `St. John's Ambulance`. |
-| `NOTE` | 1 to 500 printable characters. |
+| `NOTE` | 1 to 500 printable characters, including at least one visible character. |
 | `TAG` | 1 to 30 letters or digits with no spaces. |
 
-"Printable" excludes line breaks and other control characters. A value that breaks these rules is rejected with a
+"Printable" excludes line breaks and other control characters. "Visible" excludes spaces, zero-width and formatting
+characters, accent marks on their own, and blank filler characters such as `U+3164` Hangul Filler.
+A value that breaks these rules is rejected with a
 message stating the field's constraints, such as
 `Invalid organisation. Use 1 to 80 characters: letters, digits, spaces, and - & . , ' ( ) /, with at least one letter or digit. Example: o/NUS Student Affairs`.
 Birthday, address, organisation, leave end date, and note are optional. An empty `b/`, `a/`, `o/`, `lv/`, or
@@ -288,9 +290,9 @@ Examples:
 | The role violates its constraints. | `Invalid role. Use 1 to 50 characters: letters, digits, spaces, hyphens, and slashes, with at least one letter or digit. Example: r/Logistics Lead` |
 | A non-empty birthday is invalid, incorrectly formatted, or in the future. | `Invalid birthday. Use a real date in dd-MM-yyyy format that is not in the future. Example: b/18-06-2004` |
 | A non-empty leave end date is invalid, incorrectly formatted, or in the past. | `Invalid leave end date. Use a real date in dd-MM-yyyy format that is not in the past. Example: lv/30-11-2026` |
-| A non-empty address exceeds 200 characters or contains a control character. | `Invalid address. Use 1 to 200 printable characters. Example: a/21 Kent Ridge Road, #03-12` |
+| A non-empty address exceeds 200 characters, has no visible characters, or contains a control character. | `Invalid address. Use 1 to 200 printable characters. Example: a/21 Kent Ridge Road, #03-12` |
 | A non-empty organisation violates its constraints. | `Invalid organisation. Use 1 to 80 characters: letters, digits, spaces, and - & . , ' ( ) /, with at least one letter or digit. Example: o/NUS Student Affairs` |
-| A non-empty note exceeds 500 characters or contains a control character. | `Invalid note. Use 1 to 500 printable characters. Example: m/Handles venue bookings` |
+| A non-empty note exceeds 500 characters, has no visible characters, or contains a control character. | `Invalid note. Use 1 to 500 printable characters. Example: m/Handles venue bookings` |
 | A non-empty tag contains spaces, symbols, or punctuation. | `Invalid tag name. Use letters and numbers without spaces. Example: t/Publicity` |
 | A tag exceeds 30 characters. | `Tag name must not exceed 30 characters. Example: t/Publicity` |
 | Another contact has the same name, phone number, or email. | `A contact with this name, phone number, or email already exists.` |
@@ -305,8 +307,9 @@ Format: `addevent evn/EVENT_NAME st/START_TIME et/END_TIME`
 
 Each parameter must appear once. Leading and trailing whitespace is removed before an event name is checked, and
 several spaces in a row are saved as one, so `evn/Final  Concert` is saved as `Final Concert`.
-The resulting name must contain 1 to 100 printable characters; line breaks and other control characters within
-the name are rejected. Names must be unique, ignoring case and extra spaces.
+The resulting name must contain 1 to 100 printable characters, including at least one visible character;
+line breaks and other control characters within the name are rejected. Names must be unique, ignoring case and
+extra spaces.
 An overlong name reports `Event name must not exceed 100 characters. Example: evn/Final Concert`.
 An invalid character reports `Invalid event name. Use letters, digits, spaces, or punctuation. Example: evn/Final-Concert`.
 Different events may share the same start and end times.
@@ -327,8 +330,8 @@ Success: `Created Event Student Life Fair. Start Time: 09-10-2026. End Time: 10-
 
 Use the **Events** tab on the left to browse saved events. Selecting an event shows its
 start time, end time, duration, and members. Each member row shows the contact's role,
-organisation, tags, notes, and attendance status. A successful `addevent` opens this tab and selects
-the new event. Each event card shows its member count and attendance summary. At narrower window
+organisation, tags, notes, current leave status, and attendance status. A successful `addevent` opens this tab
+and selects the new event. Each event card shows its member count and attendance summary. At narrower window
 sizes, the list appears above the details. The list and details divider can be dragged, but the
 details pane keeps a minimum width while the panes are side by side.
 
@@ -403,8 +406,8 @@ Success: `Edited Event NUS Student Life Fair. Start Time: 09-10-2026. End Time: 
 | The new event name is empty or contains only whitespace. | `New event name must not be empty. Example: nevn/Final Concert` |
 | The event name is longer than 100 characters. | `Event name must not exceed 100 characters. Example: evn/Final Concert` |
 | The new event name is longer than 100 characters. | `Event name must not exceed 100 characters. Example: nevn/Final Concert` |
-| The event name contains a line break or other control character. | `Invalid event name. Use letters, digits, spaces, or punctuation. Example: evn/Final-Concert` |
-| The new event name contains a line break or other control character. | `Invalid event name. Use letters, digits, spaces, or punctuation. Example: nevn/Final-Concert` |
+| The event name has no visible characters, or contains a line break or other control character. | `Invalid event name. Use letters, digits, spaces, or punctuation. Example: evn/Final-Concert` |
+| The new event name has no visible characters, or contains a line break or other control character. | `Invalid event name. Use letters, digits, spaces, or punctuation. Example: nevn/Final-Concert` |
 | `st/` is supplied, but its value is empty or contains only whitespace. | `Start time must not be empty. Example: st/17-09-2026 16:30` |
 | `et/` is supplied, but its value is empty or contains only whitespace. | `End time must not be empty. Example: et/17-09-2026 18:30` |
 | The new start time is invalid or incorrectly formatted. | `Invalid event time. Use dd-MM-yyyy with an optional time in HH:mm format. Example: st/17-09-2026 16:30` |
@@ -646,6 +649,10 @@ Format: `members evn/EVENT_NAME`
 
 Selecting an event in the **Events** tab also shows its members under **Members**, in the order they were assigned. Each member shows **Present**, **Absent**, or **Not marked** if attendance has not been recorded. The counts above the list show how many members have each status. They update as soon as attendance is successfully marked or changed with `markattendance`.
 
+Members who are currently on leave also show **On leave until LEAVE_END_DATE** beneath their role. This reflects
+their leave as of today, regardless of the event date. It updates when their leave is edited or cleared, and disappears
+after their last day of leave. Leave status is separate from attendance and does not change the attendance counts.
+
 Examples:
 
 * `members evn/Final Concert` shows the members of `Final Concert`.
@@ -838,6 +845,7 @@ all saved contacts, regardless of the current contact search or filter, and is o
 their tags, role, and organisation. Archived contacts are included and marked `(archived)`. Every tag assigned to a
 contact is included in this global tag list, including tags recovered from older saved data.
 Success: `Here is the list of all existing tags.` followed by `Tags: ` and the tag names, separated by commas.
+If every tag has been deleted, `listtags` shows `No tags yet. Create one with addtag.` instead.
 
 Unlike `list`, `listtags` does not ignore extra text: `listtags 123` is rejected with
 `Invalid command format.`
@@ -928,8 +936,9 @@ Format: `edit MEMBER_ID lv/LEAVE_END_DATE` or `edit target/IDENTIFIER lv/LEAVE_E
 * `LEAVE_END_DATE` is the **last day** of leave, in `dd-MM-yyyy` format. It must be today or a later date.
 * The contact is on leave up to and including that date. While on leave, their card in the contact list shows
   **On leave until LEAVE_END_DATE**, and the details pane shows the date under **On leave until**.
+  The same leave label appears beside their details in the **Events** tab when they are assigned to the selected event.
 * From the day after, the contact is no longer shown as on leave. You do not need to run any command: if CoordiMate
-  is open at midnight, the badge and the details pane update within a minute.
+  is open at midnight, the Contacts and Events views update within a minute.
 * The ended leave date stays in the data file. The details pane shows `— (not on leave)`.
 * Setting a new date replaces the previous one. `edit MEMBER_ID lv/` with no date ends the leave immediately.
 * A contact cannot be newly [assigned to an event](#assigning-members-to-an-event-assign) if their leave covers
@@ -960,6 +969,8 @@ Format: `search KEYWORD`
 * Partial words match; for example, `Han` matches `Hans`.
 * The entire keyword is matched as one substring within a field. Spaces and word order matter:
   `search Hans Bo` matches `Hans Bo Yang`, but does not match `Bo Hans` or separate contacts named `Hans` and `Bo`.
+* Phone numbers are also matched ignoring spaces, hyphens, and brackets, so `search 91234567` finds `9123 4567`,
+  and `search 9123 4567` finds `91234567`.
 * Surrounding quotation marks are optional: `search "Jurong West"` and `search Jurong West` give the same results.
 * Leading and trailing spaces are ignored. An empty keyword is rejected.
 * Search checks all saved contacts, including those hidden by the current search or filter.

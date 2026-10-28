@@ -49,7 +49,15 @@ public class Phone {
      * Returns the phone number without formatting separators for duplicate checks.
      */
     public String getNormalizedValue() {
-        return value.replace(" ", "").replace("-", "").replace("(", "").replace(")", "");
+        return normalize(value);
+    }
+
+    /**
+     * Returns {@code text} without the spaces, hyphens, and brackets used to format phone numbers.
+     */
+    public static String normalize(String text) {
+        requireNonNull(text);
+        return text.replace(" ", "").replace("-", "").replace("(", "").replace(")", "");
     }
 
     /**
