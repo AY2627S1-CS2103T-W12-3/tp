@@ -3,6 +3,7 @@ package coordimate.storage;
 import static coordimate.testutil.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -71,6 +72,64 @@ public class JsonUserPrefsStorageTest {
         UserPrefs actual = readUserPrefs("ExtraValuesUserPref.json").get();
 
         assertEquals(expected, actual);
+    }
+
+    @Test
+    public void readUserPrefs_wrongScalarTypes_rejectsWithFieldPath() throws IOException {
+        Path prefsFile = testFolder.resolve("preferences.json");
+        String[][] cases = {
+            {"{\"guiSettings\":{\"windowMaximized\":17}}", "guiSettings.windowMaximized", "a boolean"},
+            {"{\"hasSeenTutorial\":\"false\"}", "hasSeenTutorial", "a boolean"},
+            {"{\"guiSettings\":{\"windowWidth\":\"1200\"}}", "guiSettings.windowWidth", "a number"},
+            {"{\"guiSettings\":{\"windowCoordinates\":{\"x\":1.5}}}",
+                "guiSettings.windowCoordinates.x", "an integer"},
+            {"{\"guiSettings\":{\"windowCoordinates\":{\"x\":2147483648}}}",
+                "guiSettings.windowCoordinates.x", "an integer"},
+            {"{\"guiSettings\":null}", "guiSettings", "an object"},
+            {"{\"guiSettings\":{\"windowCoordinates\":17}}", "guiSettings.windowCoordinates", "an object"}
+        };
+        for (String[] testCase : cases) {
+            Files.writeString(prefsFile, testCase[0]);
+            JsonUserPrefsStorage storage = new JsonUserPrefsStorage(prefsFile);
+            DataLoadingException error = org.junit.jupiter.api.Assertions.assertThrows(DataLoadingException.class,
+                    storage::readUserPrefs);
+            assertEquals("Invalid JSON type at " + testCase[1] + ": expected " + testCase[2] + ".",
+                    error.getCause().getMessage());
+        }
+    }
+
+    @Test
+    public void readUserPrefs_nullScalarFields_useDefaultsWithoutChangingFile() throws Exception {
+        Path prefsFile = testFolder.resolve("preferences.json");
+        String[][] cases = {
+            {"{\"hasSeenTutorial\":null}", "hasSeenTutorial"},
+            {"{\"guiSettings\":{\"windowWidth\":null}}", "windowWidth"},
+            {"{\"guiSettings\":{\"windowHeight\":null}}", "windowHeight"},
+            {"{\"guiSettings\":{\"windowMaximized\":null}}", "windowMaximized"},
+            {"{\"hasSeenTutorial\":null,\"guiSettings\":{\"windowWidth\":null,"
+                    + "\"windowHeight\":null,\"windowMaximized\":null}}", "all fields"}
+        };
+        for (String[] testCase : cases) {
+            Files.writeString(prefsFile, testCase[0]);
+
+            UserPrefs loaded = new JsonUserPrefsStorage(prefsFile).readUserPrefs().orElseThrow();
+
+            assertEquals(new UserPrefs(), loaded, testCase[1]);
+            assertEquals(testCase[0], Files.readString(prefsFile), testCase[1]);
+        }
+    }
+
+    @Test
+    public void readUserPrefs_nullOrMissingWindowCoordinates_usesDefaultPosition() throws Exception {
+        Path prefsFile = testFolder.resolve("preferences.json");
+        for (String content : new String[] {"{\"guiSettings\":{\"windowCoordinates\":null}}",
+            "{\"guiSettings\":{}}"}) {
+            Files.writeString(prefsFile, content);
+
+            UserPrefs loaded = new JsonUserPrefsStorage(prefsFile).readUserPrefs().orElseThrow();
+
+            assertNull(loaded.getGuiSettings().getWindowCoordinates());
+        }
     }
 
     private UserPrefs getTypicalUserPrefs() {

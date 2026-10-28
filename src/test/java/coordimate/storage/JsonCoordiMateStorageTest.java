@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.BooleanNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import coordimate.commons.exceptions.DataLoadingException;
@@ -60,6 +61,143 @@ public class JsonCoordiMateStorageTest {
     }
 
     @Test
+    public void readCoordiMate_numericPhone_rejectsWithoutChangingFile() throws Exception {
+        Path path = testFolder.resolve("data.json");
+        String invalid = """
+                {"persons":[{"name":"Alex Yeoh","phone":8000001,"email":"alex@example.com"}]}
+                """;
+        Files.writeString(path, invalid);
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path);
+
+        DataLoadingException error = assertThrows(DataLoadingException.class, storage::readCoordiMate);
+
+        assertEquals("Invalid JSON type at persons[0].phone: expected a string.", error.getCause().getMessage());
+        assertThrows(DataLoadingException.class, storage::removeYearZeroEvents);
+        assertEquals(invalid, Files.readString(path));
+    }
+
+    @Test
+    public void readCoordiMate_numericAttendance_rejectsNestedValue() throws Exception {
+        Path path = testFolder.resolve("data.json");
+        Files.writeString(path, """
+                {"persons":[],"events":[{"name":"Concert","startTime":"01-01-2026",
+                "endTime":"02-01-2026","attendance":{"Alex Yeoh":17}}]}
+                """);
+
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path);
+        DataLoadingException error = assertThrows(DataLoadingException.class, storage::readCoordiMate);
+
+        assertEquals("Invalid JSON type at events[0].attendance.Alex Yeoh: expected a string.",
+                error.getCause().getMessage());
+    }
+
+    @Test
+    public void removeYearZeroEvents_invalidArchiveStatus_doesNotRewriteFile() throws Exception {
+        Path path = testFolder.resolve("data.json");
+        String invalid = """
+                {"persons":[],"events":[{"name":"Year Zero","startTime":"01-01-0000",
+                "endTime":"02-01-0000","archived":17}]}
+                """;
+        Files.writeString(path, invalid);
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path);
+
+        DataLoadingException error = assertThrows(DataLoadingException.class, storage::removeYearZeroEvents);
+
+        assertEquals("Event \"Year Zero\": archived must be true or false.", error.getCause().getMessage());
+        assertEquals(invalid, Files.readString(path));
+    }
+
+    @Test
+    public void readCoordiMate_wrongCollectionTypes_rejectsWithFieldPath() throws Exception {
+        Path path = testFolder.resolve("data.json");
+        String[][] cases = {
+            {"{\"persons\":[] ,\"events\":{}}", "events", "an array"},
+            {"{\"persons\":[17]}", "persons[0]", "an object"},
+            {"{\"persons\":[],\"tags\":[17]}", "tags[0]", "a string"},
+            {"{\"persons\":[],\"events\":[{\"name\":\"Concert\",\"startTime\":\"01-01-2026\","
+                    + "\"endTime\":\"02-01-2026\",\"members\":[17]}]}", "events[0].members[0]", "a string"}
+        };
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path);
+        for (String[] testCase : cases) {
+            Files.writeString(path, testCase[0]);
+
+            DataLoadingException error = assertThrows(DataLoadingException.class, storage::readCoordiMate);
+
+            assertEquals("Invalid JSON type at " + testCase[1] + ": expected " + testCase[2] + ".",
+                    error.getCause().getMessage());
+            assertEquals(testCase[0], Files.readString(path));
+        }
+    }
+
+    @Test
+    public void readCoordiMate_legacyNullOptionalFields_loads() throws Exception {
+        Path path = testFolder.resolve("data.json");
+        Files.writeString(path, """
+                {"persons":[{"name":"Alex Yeoh","phone":"8000001","email":"alex@example.com",
+                "role":null,"tags":null}],"events":[{"name":"Concert","startTime":"01-01-2026",
+                "endTime":"02-01-2026","members":null,"attendance":null,"dismissedReminderStarts":null}]}
+                """);
+
+        ReadOnlyCoordiMate loaded = new JsonCoordiMateStorage(path).readCoordiMate().orElseThrow();
+
+        assertEquals(1, loaded.getPersonList().size());
+        assertEquals(1, loaded.getEventList().size());
+    }
+
+    @Test
+    public void readCoordiMate_nullEvents_loadsEmptyEventList() throws Exception {
+        Path path = testFolder.resolve("data.json");
+        String content = "{\"persons\":[],\"events\":null}";
+        Files.writeString(path, content);
+
+        ReadOnlyCoordiMate loaded = new JsonCoordiMateStorage(path).readCoordiMate().orElseThrow();
+
+        assertTrue(loaded.getEventList().isEmpty());
+        assertEquals(content, Files.readString(path));
+    }
+
+    @Test
+    public void readCoordiMate_nullMember_keepsExistingValidationError() throws Exception {
+        Path path = testFolder.resolve("data.json");
+        Files.writeString(path, """
+                {"persons":[],"events":[{"name":"Concert","startTime":"01-01-2026",
+                "endTime":"02-01-2026","members":[null]}]}
+                """);
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path);
+
+        DataLoadingException error = assertThrows(DataLoadingException.class, storage::readCoordiMate);
+
+        assertEquals(JsonAdaptedEvent.MESSAGE_NULL_MEMBER, error.getCause().getMessage());
+    }
+
+    @Test
+    public void readCoordiMate_nullAttendanceStatus_keepsExistingValidationError() throws Exception {
+        Path path = testFolder.resolve("data.json");
+        Files.writeString(path, """
+                {"persons":[],"events":[{"name":"Concert","startTime":"01-01-2026",
+                "endTime":"02-01-2026","attendance":{"Alex Yeoh":null}}]}
+                """);
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path);
+
+        DataLoadingException error = assertThrows(DataLoadingException.class, storage::readCoordiMate);
+
+        assertEquals(JsonAdaptedEvent.MESSAGE_NULL_ATTENDANCE, error.getCause().getMessage());
+    }
+
+    @Test
+    public void removeYearZeroEvents_nullEvent_keepsFileForExistingValidation() throws Exception {
+        Path path = testFolder.resolve("data.json");
+        String invalid = "{\"persons\":[],\"events\":[null]}";
+        Files.writeString(path, invalid);
+        JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path);
+
+        assertEquals(List.of(), storage.removeYearZeroEvents());
+        DataLoadingException error = assertThrows(DataLoadingException.class, storage::readCoordiMate);
+        assertEquals("Events list must not contain null entries.", error.getCause().getMessage());
+        assertEquals(invalid, Files.readString(path));
+    }
+
+    @Test
     public void removeYearZeroEvents_mixedData_preservesValidDataAndDeletesOnlyOnce() throws Exception {
         CoordiMate expected = getTypicalCoordiMate();
         EventTime start = new EventTime("01-01-0001");
@@ -70,7 +208,7 @@ public class JsonCoordiMateStorageTest {
                 new JsonAdaptedEvent("Zero End", "01-01-0001", "02-01-0000 12:30"),
                 new JsonAdaptedEvent("Zero History", "01-01-0001", "02-01-0001",
                         List.of(ALICE.getName().toString()), Map.of(ALICE.getName().toString(), "absent"),
-                        List.of("01-01-0001", "01-01-0000 00:00"), true),
+                        List.of("01-01-0001", "01-01-0000 00:00"), BooleanNode.TRUE),
                 new JsonAdaptedEvent(null, "01-01-0000", "02-01-0000"));
         expected.addEvent(new Event("Zero History", start, new EventTime("02-01-0001"),
                 List.of(ALICE.getName()), Map.of(ALICE.getName(), AttendanceStatus.ABSENT), Set.of(start))

@@ -628,6 +628,9 @@ public class EventListPanelTest {
 
             pane.resize(700, 500);
             assertEquals(Orientation.VERTICAL, pane.getOrientation());
+
+            pane.resize(850, 500);
+            assertEquals(Orientation.VERTICAL, pane.getOrientation());
         });
     }
 

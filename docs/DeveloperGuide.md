@@ -104,15 +104,21 @@ entries. While `Logic` awaits delete confirmation, arrow-key navigation is pause
 to history. Inserting a command from the sidebar resets history navigation.
 
 The `UI` component uses the JavaFX UI framework. The layouts of these UI parts are defined in matching `.fxml` files in `src/main/resources/view`. For example, [`MainWindow.fxml`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/resources/view/MainWindow.fxml) specifies the layout of [`MainWindow`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/ui/MainWindow.java).
+`ResultDisplay` sizes its scroll pane from the message's wrapped height, capped at 220 pixels, so delete confirmation
+details remain visible at the minimum window size while longer feedback shows
+several lines without displacing the workspace or command box. Its icon and status label stay outside the scroll pane.
+The status column reserves space for the overflow hint even while it is hidden, keeping the message width stable.
+The hint appears only when the current message is taller than the visible viewport.
 
 At launch, `MainWindow` obtains the saved size, position, and maximized state from `GuiSettings`. It selects the screen
 containing the saved position, or the primary screen if that display is no longer connected. `WindowBounds` then clamps
 the saved dimensions and coordinates to the screen's visual bounds, which exclude operating-system areas such as the
-taskbar or dock. The preferred minimum size is also capped to the available area, so it cannot force the window beyond
-a smaller display. `MainWindow` tracks the latest non-maximized bounds separately, allowing a maximized window to be
-restored without replacing its normal dimensions. If a maximized window is moved to another monitor before closing,
-the normal bounds retain their size and relative position on that monitor so the next launch maximizes there. Screen
-fallback is logged at `WARNING`, bounds adjustments at `INFO`, and maximized-state restoration and saving at `FINE`.
+taskbar or dock. The preferred minimum size is 1200 × 800 pixels, capped to the available area so it cannot force the
+window beyond a smaller display. `MainWindow` tracks the latest non-maximized bounds separately, allowing a maximized
+window to be restored without replacing its normal dimensions. If a maximized window is moved to another monitor
+before closing, the normal bounds retain their size and relative position on that monitor so the next launch maximizes
+there. Screen fallback is logged at `WARNING`, bounds adjustments at `INFO`, and maximized-state restoration and saving
+at `FINE`.
 
 The `UI` component,
 
@@ -126,7 +132,8 @@ The `UI` component,
   It also derives assigned-event rows from the live event list. The Events view resolves each assigned
   member to contact role, organisation, and tags, and refreshes when contact data changes. Contact and
   event views keep their details pane above a minimum width, then stack the list above details when the
-  window is narrow. Sidebar command rows insert only the command word into the command box and show its
+  window is narrow. The Events view stacks below 900 pixels of workspace width so its timing card does not extend
+  beyond the details viewport. Sidebar command rows insert only the command word into the command box and show its
   format and an example; rows also support keyboard activation. Selecting a tag shows all saved contacts
   assigned to it, independent of the current contact filter, and refreshes names, roles, organisations, and tags
   when contact data changes.
@@ -231,12 +238,24 @@ The `Storage` component,
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
 
 If the data file cannot be loaded during startup, `MainApp` creates an empty in-memory model only for initialization
-and passes a recovery flag to `UiManager`. After the main window is ready, `UiManager` shows a warning that names the
-unchanged data file and asks the user to repair or restore it. Dismissing the warning requests a normal JavaFX
-shutdown before the tutorial or command interface can be used.
+and passes a recovery flag to `UiManager`. If model conversion raised `IllegalValueException`, it also passes the
+validation message. After the main window is ready, `UiManager` shows a warning that names the unchanged data file,
+includes any available validation message, and asks the user to repair or restore it. Dismissing the warning requests
+a normal JavaFX shutdown before the tutorial or command interface can be used. When preferences also fail to load,
+`MainApp` passes that warning separately so the same recovery dialog names both files and their problems.
 
 The tutorial flag is saved with the other user preferences. Preference files without that field are read with the
 tutorial flag set to `false`, so the tutorial is offered until the user closes or finishes it.
+
+Before Jackson binds saved data to Java fields, `SavedJsonTypeValidator` checks the JSON types of known contact,
+event, and preference fields. This prevents Jackson from converting values such as numeric phone numbers or numeric
+window maximization flags. Existing validation for `archived`, member IDs, and model values still runs afterward.
+The validator reports a field path for type errors, while unknown fields remain ignored for compatibility.
+For preferences, it removes explicit `null` scalar fields after validation so Jackson retains the defaults for
+`hasSeenTutorial`, window width, window height, and maximized state.
+If preferences cannot be loaded, `MainApp` uses defaults and shows a warning. It skips preference writes during that
+session, including shutdown, so the original file remains available for repair. If the data file is also invalid,
+the warning instead appears in the data recovery dialog before the app closes.
 
 Previously saved digit-only phone numbers with at least three digits, and 7–15-digit numbers whose brackets do not
 match, remain valid model data, so older JSON files can still load. The command parser applies the current rule,
@@ -810,8 +829,10 @@ that commands which read the displayed list see the same contacts on the copy as
 **Storage.** [`JsonAdaptedEvent`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/storage/JsonAdaptedEvent.java)
 and
 [`JsonAdaptedPerson`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/storage/JsonAdaptedPerson.java)
-both read `archived` as a `Boolean` creator parameter. A missing or `null` value is read as `false`, so data files
-saved before archiving existed still load.
+both read `archived` as a `JsonNode` creator parameter and reject non-boolean values during model conversion.
+The rejection message names the contact or event when its saved name is valid and uses a fallback otherwise. Quoted
+boolean strings are rejected. A missing or `null` value is read as `false`, so files saved before archiving existed
+still load.
 
 #### Design considerations
 

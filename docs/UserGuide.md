@@ -29,11 +29,16 @@
    On subsequent launches, CoordiMate restores whether the window was maximized, together with its most recent
    non-maximized size and position. If those saved bounds do not fit the current display, such as after disconnecting
    a secondary screen or changing the display resolution, CoordiMate adjusts the window to remain fully visible.<br>
+   On displays large enough, the minimum window size is 1200 × 800 pixels. On smaller displays, CoordiMate fits the
+   available screen and stacks narrow list and details panes; scroll within a pane to read content below its viewport.<br>
 
    The left sidebar switches between Contacts, Events, and Tags and shows commands for the selected view.
    Click a command name to put only the command word in the input and show its format and an example below the input.
    Complete the command by typing its arguments after the command word.
    The main workspace shows a list beside its details, and the command box, feedback, and prefix hints stay at the bottom.
+   Feedback grows up to 220 pixels so the delete confirmation is visible without scrolling. Longer messages scroll;
+   use the scrollbar or mouse wheel to read the full message.
+   The scroll hint appears only when the current message extends beyond the visible feedback area.
    After a successful command, CoordiMate opens the view for its result: contact commands open Contacts, event
    commands open Events, and tag commands open Tags. `assign` and `unassign` keep the current view and refresh its
    related contact or event details. Failed commands keep the current view. A valid `delete` request opens Contacts
@@ -129,7 +134,7 @@ A command that breaks a constraint is rejected and makes no changes.
 | `BIRTHDAY` | `b/` | A real date in `dd-MM-yyyy` format that is not in the future, e.g. `18-06-2004`. |
 | `LEAVE_END_DATE` | `lv/` | A real date in `dd-MM-yyyy` format that is not in the past, e.g. `30-11-2026`. Today's date is allowed. |
 | `ADDRESS` | `a/` | 1 to 200 printable characters, including at least one visible character. |
-| `ORGANISATION` | `o/` | 1 to 80 characters. Letters, digits, spaces, hyphens, and `&` only, with at least one letter or digit. |
+| `ORGANISATION` | `o/` | 1 to 80 characters. Letters, digits, spaces, hyphens, and `&` only, with at least one letter or digit. Several spaces in a row count as one. |
 | `NOTE` | `m/` | 1 to 500 printable characters, including at least one visible character. |
 | `TAG`, `NEW_TAG` | `t/`, `at/`, `rt/` | 1 to 30 characters. English letters and digits only, with no spaces. Tags are unique, ignoring case. |
 | `EVENT_NAME`, `NEW_EVENT_NAME` | `evn/`, `nevn/` | 1 to 100 printable Unicode characters, including at least one visible character. Internal tabs, line breaks, and control characters are rejected. Several spaces in a row count as one. Event names are unique, ignoring case and extra spaces. See the parameter syntax note below. |
@@ -247,7 +252,7 @@ Name, phone, email, and role are required. Each field accepts the following valu
 | `BIRTHDAY` | A real date in `dd-MM-yyyy` format that is not in the future. |
 | `LEAVE_END_DATE` | A real date in `dd-MM-yyyy` format that is not in the past. |
 | `ADDRESS` | 1 to 200 printable characters, including at least one visible character. |
-| `ORGANISATION` | 1 to 80 characters: letters, digits, spaces, and `-` `&` `.` `,` `'` `(` `)` `/`, with at least one letter or digit, e.g. `St. John's Ambulance`. |
+| `ORGANISATION` | 1 to 80 characters: letters, digits, spaces, and `-` `&` `.` `,` `'` `(` `)` `/`, with at least one letter or digit, e.g. `St. John's Ambulance`. Several spaces in a row are saved as one, so `o/NUS  Student Affairs` is saved as `NUS Student Affairs`. |
 | `NOTE` | 1 to 500 printable characters, including at least one visible character. |
 | `TAG` | 1 to 30 letters or digits with no spaces. |
 
@@ -969,6 +974,8 @@ Format: `search KEYWORD`
 * Partial words match; for example, `Han` matches `Hans`.
 * The entire keyword is matched as one substring within a field. Spaces and word order matter:
   `search Hans Bo` matches `Hans Bo Yang`, but does not match `Bo Hans` or separate contacts named `Hans` and `Bo`.
+* Several spaces in a row count as one, in both the keyword and the saved values. For example, `search Kent  Ridge`
+  matches an address containing `Kent Ridge`. Addresses are still saved and displayed as entered.
 * Phone numbers are also matched ignoring spaces, hyphens, and brackets, so `search 91234567` finds `9123 4567`,
   and `search 9123 4567` finds `91234567`.
 * Surrounding quotation marks are optional: `search "Jurong West"` and `search Jurong West` give the same results.
@@ -1007,6 +1014,7 @@ Format: `filter FIELD/VALUE [FIELD/VALUE]...`
   * `tag/VALUE` lists contacts that have the tag. The tag must be in the tag list shown by `listtags`.
   * `event/VALUE` lists the members of the event with that name.
   * `organisation/VALUE` lists contacts whose organisation is that value. At least one contact must have it.
+    Several spaces in a row count as one, so `organisation/NUS  Student Affairs` matches `NUS Student Affairs`.
 * When several filters are given, a contact must match **all** of them.
 * Filter checks all saved contacts, including those hidden by the current search or filter.
 * Results replace the displayed contact list. Permanent member IDs remain unchanged; `edit`, `delete`, `assign`, and `unassign` accept those IDs even for hidden contacts. Use `list` to show everyone.
@@ -1219,7 +1227,8 @@ CoordiMate data is saved automatically as a JSON file `[JAR file location]/data/
 **Caution:**
 If your changes make the data file invalid, CoordiMate shows a warning at the next launch and leaves the original file
 unchanged. Select **OK** to close CoordiMate, repair or restore the file path shown in the warning, then restart the
-app. CoordiMate does not open its normal interface or accept commands until the file can be loaded.<br>
+app. When a saved value fails validation, the warning also shows the reason and identifies the contact or event when
+possible. CoordiMate does not open its normal interface or accept commands until the file can be loaded.<br>
 Each name in an event's `members` list must exactly match the name of a saved contact, or the data file is invalid.<br>
 Contact and event names are read with several spaces in a row treated as one. If two contacts, or two events, have
 names that differ only in letter case or spacing (e.g. `Alex Yeoh` and `Alex  Yeoh`), they are duplicates and the data
@@ -1237,11 +1246,25 @@ saved, the file is left unchanged.<br>
 Each contact's `memberId` must be a unique integer from `1` to `2147483647`. Keep existing IDs unchanged.
 Keep the top-level `nextMemberId` field: it must exceed every saved ID, must not be reduced after deleting contacts,
 and cannot exceed `2147483648`.<br>
-Each contact and event has an `archived` value of `true` or `false`. A missing value is read as `false`.<br>
+Each contact and event has an `archived` value of the JSON boolean `true` or `false`, without quotes. A missing or
+`null` value is read as `false`; quoted strings such as `"false"`, numbers such as `17`, and other values make the
+data file invalid.<br>
+Other saved values must also use the correct JSON type. For example, a phone number must be a quoted string, even
+when it contains only digits; event attendance values must be strings. Numbers or booleans in text fields, and quoted
+booleans in boolean fields, make the file invalid. The warning identifies the affected field when possible.<br>
 If a contact uses a tag that is missing from the top-level `tags` list, CoordiMate adds it to the global tag list when
 the file is loaded. Existing top-level tags, including unused tags, retain their saved order and capitalization.<br>
 Furthermore, certain edits can cause CoordiMate to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
 </box>
+
+If `preferences.json` contains invalid JSON or a value of the wrong type, CoordiMate warns you and uses default
+preferences for that session when the data file is valid. For example, `windowMaximized` must be `true` or `false`
+without quotes, and window width and height must be JSON numbers. A missing or `null` `hasSeenTutorial`,
+`windowWidth`, `windowHeight`, or `windowMaximized` uses its default value (`false`, `1200`, `850`, or `true`,
+respectively). Other values of the wrong type still make the file invalid. The original preferences file is kept
+unchanged, including when you close the app. Repair or restore the file shown in the warning before the next launch.
+If both the data and preferences files are invalid, one recovery warning lists both problems and file paths, then
+CoordiMate closes after **OK**.
 
 --------------------------------------------------------------------------------------------------------------------
 

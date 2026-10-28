@@ -9,6 +9,7 @@ import java.awt.GraphicsEnvironment;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
@@ -25,11 +26,13 @@ import coordimate.model.ModelManager;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
 import coordimate.model.person.Person;
+import coordimate.model.tag.Tag;
 import coordimate.storage.JsonCoordiMateStorage;
 import coordimate.storage.JsonUserPrefsStorage;
 import coordimate.storage.StorageManager;
 import coordimate.testutil.PersonBuilder;
 import coordimate.testutil.TypicalPersons;
+import javafx.animation.AnimationTimer;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -41,6 +44,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MenuBar;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TextField;
@@ -256,10 +260,8 @@ public class MainWindowTest {
             assertEquals("Step 8 of 16", ((Label) stage.getScene().lookup("#stepCounter")).getText());
             ListView<?> eventList = (ListView<?>) stage.getScene().lookup("#eventListView");
             assertEquals(0, eventList.getSelectionModel().getSelectedIndex());
-            assertTrue(stage.getScene().lookup("#targetHighlight").isVisible());
-            Bounds eventCardHighlight = stage.getScene().lookup("#targetHighlight")
-                    .localToScene(stage.getScene().lookup("#targetHighlight").getLayoutBounds());
-            assertTrue(eventCardHighlight.getHeight() < eventList.getHeight());
+            // The list is the fallback target until JavaFX creates the selected card on the next pulse.
+            assertTutorialHighlights(stage, "#eventListView");
             nextButton.fire();
             assertEquals("Step 9 of 16", ((Label) stage.getScene().lookup("#stepCounter")).getText());
             assertTrue(stage.getScene().lookup("#targetHighlight").isVisible());
@@ -902,6 +904,243 @@ public class MainWindowTest {
     }
 
     @Test
+    public void longFeedback_atMinimumWindowSize_keepsWorkspaceAndCommandInputVisible() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            Stage stage = new Stage();
+            ModelManager model = new ModelManager();
+            model.setGuiSettings(new GuiSettings(WindowBounds.PREFERRED_MIN_WIDTH,
+                    WindowBounds.PREFERRED_MIN_HEIGHT, 0, 0, false));
+            model.addPerson(new PersonBuilder().withName("Alexandria ".repeat(7).strip())
+                    .withEmail("a".repeat(64) + "@" + "b".repeat(63) + "."
+                            + "c".repeat(60) + "." + "d".repeat(60) + ".com").build());
+            for (int index = 1; index <= 86; index++) {
+                model.addTag(new Tag("Custom" + index + "LongNameLongName"));
+            }
+            Path dataPath = temporaryFolder.resolve("long-feedback-data.json");
+            StorageManager storage = new StorageManager(new JsonCoordiMateStorage(dataPath),
+                    new JsonUserPrefsStorage(temporaryFolder.resolve("long-feedback-prefs.json")));
+            storage.saveCoordiMate(model.getCoordiMate());
+            MainWindow window = new MainWindow(stage, new LogicManager(model, storage), dataPath);
+            try {
+                window.fillInnerParts();
+                window.show();
+
+                TextField input = (TextField) stage.getScene().lookup("#commandTextField");
+                Button submit = (Button) stage.getScene().lookup("#submitButton");
+                Label feedback = (Label) stage.getScene().lookup("#resultDisplay");
+                ScrollPane feedbackScroll = (ScrollPane) stage.getScene().lookup("#feedbackMessageScroll");
+                TabPane views = (TabPane) stage.getScene().lookup("#views");
+
+                String keyword = "a".repeat(3000);
+                input.setText("search " + keyword);
+                submit.fire();
+                stage.getScene().getRoot().applyCss();
+                stage.getScene().getRoot().layout();
+                assertEquals("No contacts found matching \"" + keyword + "\".", feedback.getText());
+                assertLongFeedbackFitsWindow(stage, input, feedbackScroll, views);
+
+                input.setText("listtags");
+                submit.fire();
+                stage.getScene().getRoot().applyCss();
+                stage.getScene().getRoot().layout();
+                assertTrue(feedback.getText().startsWith("Here is the list of all existing tags."));
+                assertTrue(feedback.getText().contains("Custom86"));
+                assertEquals(90, ((ListView<?>) stage.getScene().lookup("#tagListView")).getItems().size());
+                assertLongFeedbackFitsWindow(stage, input, feedbackScroll, views);
+                assertTrue(stage.getScene().lookup("#tagListView").getBoundsInLocal().getHeight() > 30);
+
+                input.setText("delete 1");
+                submit.fire();
+                stage.getScene().getRoot().applyCss();
+                stage.getScene().getRoot().layout();
+                assertTrue(feedback.getText().contains("Confirm deletion? [y/N]"));
+                assertTrue(feedbackScroll.getHeight() > 84);
+                assertTrue(feedbackScroll.getContent().getLayoutBounds().getHeight()
+                        <= feedbackScroll.getViewportBounds().getHeight() + 1);
+                assertFalse(stage.getScene().lookup("#feedbackScrollHint").isVisible());
+                assertTrue(views.getHeight() > 100);
+                assertTrue(input.localToScene(input.getBoundsInLocal()).getMaxY() <= stage.getScene().getHeight());
+
+                input.setText("n");
+                submit.fire();
+
+                input.setText("list");
+                submit.fire();
+                stage.getScene().getRoot().applyCss();
+                stage.getScene().getRoot().layout();
+                assertEquals("Listed all contacts.", feedback.getText());
+                assertTrue(feedbackScroll.getHeight() < 84);
+                assertFalse(stage.getScene().lookup("#feedbackScrollHint").isVisible());
+            } finally {
+                window.stop();
+                stage.close();
+            }
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(20, TimeUnit.SECONDS);
+    }
+
+    private static void assertLongFeedbackFitsWindow(Stage stage, TextField input, ScrollPane feedbackScroll,
+                                                     TabPane views) {
+        assertTrue(feedbackScroll.getHeight() <= 220);
+        assertTrue(feedbackScroll.getContent().getLayoutBounds().getHeight()
+                > feedbackScroll.getViewportBounds().getHeight());
+        assertTrue(stage.getScene().lookup("#feedbackScrollHint").isVisible());
+        assertTrue(feedbackScroll.lookup(".scroll-bar:vertical").isVisible());
+        assertTrue(views.getHeight() > 100);
+        Bounds inputBounds = input.localToScene(input.getBoundsInLocal());
+        assertTrue(inputBounds.getMaxY() <= stage.getScene().getHeight());
+    }
+
+    @Test
+    public void feedbackLayout_longSentenceAndRepeatedMediumMessage_staysConsistent() throws Exception {
+        MainWindow window = runOnJavaFxThread(() -> {
+            Stage stage = new Stage();
+            ModelManager model = new ModelManager();
+            model.setGuiSettings(new GuiSettings(WindowBounds.PREFERRED_MIN_WIDTH,
+                    WindowBounds.PREFERRED_MIN_HEIGHT, 0, 0, false));
+            Path dataPath = temporaryFolder.resolve("feedback-layout-data.json");
+            StorageManager storage = new StorageManager(new JsonCoordiMateStorage(dataPath),
+                    new JsonUserPrefsStorage(temporaryFolder.resolve("feedback-layout-prefs.json")));
+            storage.saveCoordiMate(model.getCoordiMate());
+            MainWindow mainWindow = new MainWindow(stage, new LogicManager(model, storage), dataPath);
+            mainWindow.fillInnerParts();
+            mainWindow.show();
+            return mainWindow;
+        });
+        Stage stage = window.getPrimaryStage();
+        String mediumSearch = "search " + "a".repeat(130);
+        try {
+            submitFeedbackCommand(stage, "list");
+            submitFeedbackCommand(stage, mediumSearch);
+            double mediumWidth = runOnJavaFxThread(() -> {
+                ScrollPane scroll = (ScrollPane) stage.getScene().lookup("#feedbackMessageScroll");
+                assertFalse(stage.getScene().lookup("#feedbackScrollHint").isVisible());
+                return scroll.getWidth();
+            });
+
+            submitFeedbackCommand(stage, "search " + "a".repeat(3000));
+            runOnJavaFxThread(() -> {
+                ScrollPane scroll = (ScrollPane) stage.getScene().lookup("#feedbackMessageScroll");
+                assertTrue(scroll.getHeight() >= 60);
+                assertTrue(scroll.getHeight() <= 220);
+                assertTrue(stage.getScene().lookup("#feedbackScrollHint").isVisible());
+                return null;
+            });
+
+            submitFeedbackCommand(stage, mediumSearch);
+            runOnJavaFxThread(() -> {
+                ScrollPane scroll = (ScrollPane) stage.getScene().lookup("#feedbackMessageScroll");
+                assertFalse(stage.getScene().lookup("#feedbackScrollHint").isVisible());
+                assertEquals(mediumWidth, scroll.getWidth(), 1);
+                return null;
+            });
+        } finally {
+            runOnJavaFxThread(() -> {
+                window.stop();
+                stage.close();
+                return null;
+            });
+        }
+    }
+
+    private static void submitFeedbackCommand(Stage stage, String command) throws Exception {
+        runOnJavaFxThread(() -> {
+            TextField input = (TextField) stage.getScene().lookup("#commandTextField");
+            Button submit = (Button) stage.getScene().lookup("#submitButton");
+            input.setText(command);
+            submit.fire();
+            return null;
+        });
+        waitForJavaFxPulses();
+    }
+
+    private static void waitForJavaFxPulses() throws InterruptedException {
+        CountDownLatch completed = new CountDownLatch(1);
+        Platform.runLater(() -> new AnimationTimer() {
+            private int pulseCount;
+
+            @Override
+            public void handle(long now) {
+                if (++pulseCount == 3) {
+                    stop();
+                    completed.countDown();
+                }
+            }
+        }.start());
+        assertTrue(completed.await(10, TimeUnit.SECONDS));
+    }
+
+    private static <T> T runOnJavaFxThread(Callable<T> action) throws Exception {
+        FutureTask<T> task = new FutureTask<>(action);
+        Platform.runLater(task);
+        return task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void minimumWindowSize_keepsDetailsBesideListsAndEventTimingVisible() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            if (Screen.getPrimary().getVisualBounds().getWidth() < WindowBounds.PREFERRED_MIN_WIDTH
+                    || Screen.getPrimary().getVisualBounds().getHeight() < WindowBounds.PREFERRED_MIN_HEIGHT) {
+                return null;
+            }
+            Stage stage = new Stage();
+            ModelManager model = new ModelManager();
+            model.setGuiSettings(new GuiSettings(WindowBounds.PREFERRED_MIN_WIDTH,
+                    WindowBounds.PREFERRED_MIN_HEIGHT, 0, 0, false));
+            model.addPerson(TypicalPersons.ALICE);
+            EventTime start = new EventTime("01-10-2026 18:00");
+            EventTime end = new EventTime("01-10-2026 21:00");
+            model.addEvent(new Event("Final Concert", start, end));
+            MainWindow window = new MainWindow(stage, new LogicManager(model, null),
+                    Path.of("data", "coordimate.json"));
+            try {
+                window.fillInnerParts();
+                window.show();
+                stage.getScene().getRoot().applyCss();
+                stage.getScene().getRoot().layout();
+
+                SplitPane contacts = (SplitPane) stage.getScene().lookup("#contactSplitPane");
+                assertEquals(Orientation.HORIZONTAL, contacts.getOrientation());
+                assertTrue(contacts.getItems().get(1).getBoundsInParent().getWidth() >= 460);
+
+                ToggleButton eventsView = (ToggleButton) stage.getScene().lookup("#eventsView");
+                eventsView.fire();
+                ListView<?> eventList = (ListView<?>) stage.getScene().lookup("#eventListView");
+                eventList.getSelectionModel().select(0);
+                stage.getScene().getRoot().applyCss();
+                stage.getScene().getRoot().layout();
+                SplitPane events = (SplitPane) stage.getScene().lookup("#eventSplitPane");
+                assertEquals(Orientation.HORIZONTAL, events.getOrientation());
+                ScrollPane eventDetails = (ScrollPane) events.getItems().get(1);
+                Node viewport = eventDetails.lookup(".viewport");
+                Bounds visibleBounds = viewport.localToScene(viewport.getBoundsInLocal());
+                var timeTiles = eventDetails.lookupAll(".time-tile");
+                assertEquals(2, timeTiles.size());
+                for (Node tile : timeTiles) {
+                    Bounds tileBounds = tile.localToScene(tile.getBoundsInLocal());
+                    assertTrue(tileBounds.getMaxX() <= visibleBounds.getMaxX() + 1);
+                }
+
+                ToggleButton tagsView = (ToggleButton) stage.getScene().lookup("#tagsView");
+                tagsView.fire();
+                stage.getScene().getRoot().applyCss();
+                stage.getScene().getRoot().layout();
+                SplitPane tags = (SplitPane) stage.getScene().lookup("#tagSplitPane");
+                assertEquals(Orientation.HORIZONTAL, tags.getOrientation());
+                assertTrue(stage.getScene().lookup("#tagMemberListView").getBoundsInLocal().getHeight() > 100);
+            } finally {
+                window.stop();
+                stage.close();
+            }
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(20, TimeUnit.SECONDS);
+    }
+
+    @Test
     public void assignmentCommands_keepCurrentView() throws Exception {
         FutureTask<Void> task = new FutureTask<>(() -> {
             Stage stage = new Stage();
@@ -1084,14 +1323,18 @@ public class MainWindowTest {
             window.fillInnerParts();
             window.scheduleNormalWindowBoundsUpdate();
 
+            Rectangle2D screenBounds = Screen.getPrimary().getVisualBounds();
+            stage.setMinWidth(0);
+            stage.setMinHeight(0);
+            stage.setWidth(Math.min(900, screenBounds.getWidth() - 100));
+            stage.setHeight(Math.min(700, screenBounds.getHeight() - 100));
             window.show();
             assertFalse(stage.isMaximized());
             window.scheduleNormalWindowBoundsUpdate();
             window.scheduleNormalWindowBoundsUpdate();
 
-            Rectangle2D screenBounds = Screen.getPrimary().getVisualBounds();
-            stage.setWidth(Math.min(950, screenBounds.getWidth()));
-            stage.setHeight(Math.min(700, screenBounds.getHeight()));
+            stage.setWidth(Math.min(950, screenBounds.getWidth() - 100));
+            stage.setHeight(Math.min(700, screenBounds.getHeight() - 100));
             stage.setX(screenBounds.getMinX());
             stage.setY(screenBounds.getMinY());
             double expectedWidth = stage.getWidth();

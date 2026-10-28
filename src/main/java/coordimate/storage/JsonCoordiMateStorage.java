@@ -70,9 +70,14 @@ public class JsonCoordiMateStorage {
      */
     public List<String> removeYearZeroEvents() throws DataLoadingException, IOException {
         Optional<JsonSerializableCoordiMate> savedData = JsonUtil.readJsonFile(
-                filePath, JsonSerializableCoordiMate.class);
+                filePath, JsonSerializableCoordiMate.class, SavedJsonTypeValidator::validateCoordiMate);
         if (savedData.isEmpty()) {
             return List.of();
+        }
+        try {
+            savedData.get().validateEventArchiveStatuses();
+        } catch (IllegalValueException e) {
+            throw new DataLoadingException(e);
         }
         List<String> removedNames = savedData.get().removeYearZeroEvents();
         boolean removedHistory = savedData.get().removeYearZeroReminderStarts();
@@ -109,7 +114,7 @@ public class JsonCoordiMateStorage {
         requireNonNull(filePath);
 
         Optional<JsonSerializableCoordiMate> jsonCoordiMate = JsonUtil.readJsonFile(
-                filePath, JsonSerializableCoordiMate.class);
+                filePath, JsonSerializableCoordiMate.class, SavedJsonTypeValidator::validateCoordiMate);
         if (!jsonCoordiMate.isPresent()) {
             return Optional.empty();
         }

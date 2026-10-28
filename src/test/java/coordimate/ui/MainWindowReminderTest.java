@@ -493,8 +493,8 @@ public class MainWindowReminderTest {
     @Test
     public void minimumWindowSize_manyLongNamesKeepWorkspaceAndCommandInputUsable() throws Exception {
         onJavaFxThread(() -> {
-            for (int width : List.of(1100, 830)) {
-                Fixture fixture = openWindow(true, width, width == 830 ? 650 : 800);
+            for (int width : List.of(1400, 1200)) {
+                Fixture fixture = openWindow(true, width, 800);
                 try {
                     Parent root = fixture.stage().getScene().getRoot();
                     for (int index = 0; index < 8; index++) {
@@ -517,7 +517,7 @@ public class MainWindowReminderTest {
                     assertEquals(ScrollPane.ScrollBarPolicy.NEVER, navigation.getHbarPolicy());
                     navigation.setVvalue(1);
                     layout(root);
-                    snapshot(root, width == 830 ? "minimum-window.png" : "desktop.png");
+                    snapshot(root, width == 1200 ? "minimum-window.png" : "desktop.png");
                 } finally {
                     fixture.stage().close();
                 }

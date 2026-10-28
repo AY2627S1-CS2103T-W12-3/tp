@@ -21,9 +21,10 @@ import coordimate.model.ModelManager;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.DialogPane;
 import javafx.scene.control.Label;
-import javafx.scene.control.TextArea;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
@@ -43,7 +44,8 @@ public class UiManagerTest {
                 void showAlertDialogAndWait(Alert.AlertType type, String title, String header, String content) {
                     assertTrue(primaryStage.isShowing());
                     assertEquals(Alert.AlertType.WARNING, type);
-                    assertEquals("Saved event data", title);
+                    assertEquals("Saved files", title);
+                    assertEquals("Saved files need attention", header);
                     assertEquals(warning, content);
                     assertFalse(primaryStage.getScene().lookup("#tutorialOverlay").isVisible());
                     shown[0] = true;
@@ -69,7 +71,7 @@ public class UiManagerTest {
             ModelManager model = new ModelManager();
             model.setHasSeenTutorial(true);
             Stage primaryStage = new Stage();
-            String warning = "Deleted 2 saved events:\n\n\"First\\u2003c/review\"\n\"Second c/review\"";
+            String warning = "Deleted 40 saved events:\n\n" + "\"Planning\\u2003c/review\"\n".repeat(40);
             UiManager manager = new UiManager(new LogicManager(model, null), Path.of("data.json"), warning);
             AtomicReference<Throwable> dialogFailure = new AtomicReference<>();
             Platform.runLater(() -> {
@@ -78,10 +80,14 @@ public class UiManagerTest {
                 try {
                     assertTrue(primaryStage.isShowing());
                     assertTrue(dialog != null);
-                    TextArea list = (TextArea) dialog.getScene().lookup(".text-area");
-                    assertEquals(warning, list.getText());
-                    assertFalse(list.isEditable());
-                    assertTrue(list.getPrefRowCount() <= 14);
+                    DialogPane pane = (DialogPane) dialog.getScene().getRoot();
+                    ScrollPane scrollPane = (ScrollPane) pane.getContent();
+                    Label message = (Label) scrollPane.getContent();
+                    assertEquals(warning, message.getText());
+                    assertTrue(message.isWrapText());
+                    assertTrue(scrollPane.isFitToWidth());
+                    assertTrue(message.getHeight() > scrollPane.getViewportBounds().getHeight());
+                    assertTrue(scrollPane.getViewportBounds().getHeight() <= 340);
                 } catch (Throwable error) {
                     dialogFailure.set(error);
                 } finally {
@@ -104,12 +110,13 @@ public class UiManagerTest {
     }
 
     @Test
-    public void showAlertDialogAndWait_errorMessage_keepsExistingErrorContent() throws Exception {
+    public void showAlertDialogAndWait_errorMessage_keepsCompleteScrollableContent() throws Exception {
         FutureTask<Void> task = new FutureTask<>(() -> {
             ModelManager model = new ModelManager();
             model.setHasSeenTutorial(true);
             Stage primaryStage = new Stage();
             UiManager manager = new UiManager(new LogicManager(model, null), Path.of("data.json"));
+            String errorMessage = "Could not load data. ".repeat(100);
             AtomicReference<Throwable> dialogFailure = new AtomicReference<>();
             try {
                 manager.start(primaryStage);
@@ -119,8 +126,13 @@ public class UiManagerTest {
                     try {
                         assertTrue(dialog != null);
                         DialogPane pane = (DialogPane) dialog.getScene().getRoot();
-                        assertEquals("Could not load data", pane.getContentText());
-                        assertFalse(pane.getContent() instanceof TextArea);
+                        ScrollPane scrollPane = (ScrollPane) pane.getContent();
+                        Label message = (Label) scrollPane.getContent();
+                        assertEquals(errorMessage, message.getText());
+                        assertTrue(message.isWrapText());
+                        assertTrue(scrollPane.isFitToWidth());
+                        assertTrue(message.getHeight() > scrollPane.getViewportBounds().getHeight());
+                        assertTrue(scrollPane.getViewportBounds().getHeight() <= 340);
                     } catch (Throwable error) {
                         dialogFailure.set(error);
                     } finally {
@@ -130,7 +142,7 @@ public class UiManagerTest {
                     }
                 });
                 manager.showAlertDialogAndWait(Alert.AlertType.ERROR, "Saved event data", "Load failed",
-                        "Could not load data");
+                        errorMessage);
                 assertNull(dialogFailure.get());
             } finally {
                 manager.stop();
@@ -168,6 +180,8 @@ public class UiManagerTest {
                 void showAlertDialogAndWait(Alert.AlertType type, String title, String header, String content) {
                     assertTrue(primaryStage.isShowing());
                     assertEquals(Alert.AlertType.WARNING, type);
+                    assertEquals("Saved files", title);
+                    assertEquals("Saved files need attention", header);
                     assertEquals(warning, content);
                     notified[0] = true;
                 }
@@ -282,6 +296,199 @@ public class UiManagerTest {
     }
 
     @Test
+    public void start_dataRecoveryModeWithDetail_showsReasonAndExits() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            LogicManager logic = new LogicManager(new ModelManager(), null);
+            Path dataFilePath = Path.of("data", "coordimate.json");
+            String detail = "Contact \"Alex Yeoh\": archived must be true or false.";
+            boolean[] isExitRequested = {false};
+            RecordingUiManager uiManager = new RecordingUiManager(logic, dataFilePath, true, detail, () ->
+                    isExitRequested[0] = true);
+            Stage primaryStage = new Stage();
+
+            uiManager.start(primaryStage);
+
+            assertTrue(uiManager.alertContent.contains("Problem: " + detail));
+            assertTrue(uiManager.alertContent.contains(dataFilePath.toAbsolutePath().toString()));
+            assertTrue(isExitRequested[0]);
+            uiManager.stop();
+            primaryStage.close();
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void start_dataAndPreferencesRecovery_showsBothProblemsAndExits() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            LogicManager logic = new LogicManager(new ModelManager(), null);
+            Path dataFilePath = Path.of("data", "coordimate.json");
+            Path prefsFilePath = Path.of("preferences.json");
+            String dataDetail = "Invalid JSON type at persons[0].phone: expected a string.";
+            String prefsWarning = "Preferences could not be loaded.\n\nProblem: Invalid JSON type at "
+                    + "guiSettings.windowMaximized: expected a boolean.\n\nRepair or restore this file:\n"
+                    + prefsFilePath.toAbsolutePath();
+            boolean[] isExitRequested = {false};
+            Runnable exitAction = () -> isExitRequested[0] = true;
+            RecordingUiManager uiManager = new RecordingUiManager(logic, dataFilePath, dataDetail, prefsWarning,
+                    exitAction);
+            Stage primaryStage = new Stage();
+
+            uiManager.start(primaryStage);
+
+            assertEquals(1, uiManager.alertCount);
+            assertTrue(uiManager.alertContent.contains(dataDetail));
+            assertTrue(uiManager.alertContent.contains(dataFilePath.toAbsolutePath().toString()));
+            assertTrue(uiManager.alertContent.contains("guiSettings.windowMaximized"));
+            assertTrue(uiManager.alertContent.contains(prefsFilePath.toAbsolutePath().toString()));
+            assertTrue(isExitRequested[0]);
+            uiManager.stop();
+            primaryStage.close();
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void start_standardRecoveryMessage_showsBothRepairPathsWithoutScrolling() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            LogicManager logic = new LogicManager(new ModelManager(), null);
+            Path dataPath = Path.of("data", "coordimate.json").toAbsolutePath();
+            Path prefsPath = Path.of("preferences.json").toAbsolutePath();
+            String prefsWarning = "Preferences could not be loaded. Default preferences are in use for this "
+                    + "session. The original file will not be changed.\n\n"
+                    + "Problem: Invalid JSON type at guiSettings.windowMaximized: expected a boolean.\n\n"
+                    + "Repair or restore this file before restarting CoordiMate:\n" + prefsPath;
+            UiManager manager = new UiManager(logic, dataPath, "", true,
+                    "Invalid JSON type at persons[0].phone: expected a string.", prefsWarning, () -> {});
+            Stage stage = new Stage();
+            AtomicReference<Throwable> failure = new AtomicReference<>();
+            checkVisibleDialogPathsAndClose(failure, dataPath.toString(), prefsPath.toString());
+            try {
+                manager.start(stage);
+                if (failure.get() != null) {
+                    throw new AssertionError(failure.get());
+                }
+            } finally {
+                manager.stop();
+                stage.close();
+            }
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void start_preferenceWarning_showsRepairPathWithoutScrolling() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            ModelManager model = new ModelManager();
+            model.setHasSeenTutorial(true);
+            Path prefsPath = Path.of("preferences.json").toAbsolutePath();
+            String warning = "Preferences could not be loaded. Default preferences are in use for this "
+                    + "session. The original file will not be changed.\n\n"
+                    + "Problem: Invalid JSON type at guiSettings.windowMaximized: expected a boolean.\n\n"
+                    + "Repair or restore this file before restarting CoordiMate:\n" + prefsPath;
+            UiManager manager = new UiManager(new LogicManager(model, null), Path.of("data.json"), warning);
+            Stage stage = new Stage();
+            AtomicReference<Throwable> failure = new AtomicReference<>();
+            checkVisibleDialogPathsAndClose(failure, prefsPath.toString());
+            try {
+                manager.start(stage);
+                if (failure.get() != null) {
+                    throw new AssertionError(failure.get());
+                }
+            } finally {
+                manager.stop();
+                stage.close();
+            }
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    private static void checkVisibleDialogPathsAndClose(AtomicReference<Throwable> failure, String... paths) {
+        Platform.runLater(() -> {
+            DialogPane dialogPane = Window.getWindows().stream().filter(Window::isShowing)
+                    .map(window -> window.getScene().getRoot())
+                    .filter(DialogPane.class::isInstance).map(DialogPane.class::cast)
+                    .findFirst().orElseThrow();
+            try {
+                ScrollPane scrollPane = (ScrollPane) dialogPane.getContent();
+                Label message = (Label) scrollPane.getContent();
+                for (String path : paths) {
+                    assertTrue(message.getText().contains(path));
+                }
+                assertTrue(message.getHeight() <= scrollPane.getViewportBounds().getHeight() + 1,
+                        "Message height: " + message.getHeight() + ", viewport: "
+                                + scrollPane.getViewportBounds().getHeight());
+            } catch (Throwable error) {
+                failure.set(error);
+            } finally {
+                Button okButton = (Button) dialogPane.lookupButton(ButtonType.OK);
+                okButton.fire();
+            }
+        });
+    }
+
+    @Test
+    public void start_longRecoveryMessage_isScrollableAndKeepsRepairPath() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            LogicManager logic = new LogicManager(new ModelManager(), null);
+            Path dataFilePath = Path.of("data", "coordimate.json");
+            String detail = "Invalid JSON type at persons[0].phone. ".repeat(30);
+            boolean[] isExitRequested = {false};
+            UiManager uiManager = new UiManager(logic, dataFilePath, true, detail, () ->
+                    isExitRequested[0] = true);
+            Stage primaryStage = new Stage();
+            AtomicReference<Throwable> failure = new AtomicReference<>();
+            Platform.runLater(() -> {
+                DialogPane dialogPane = null;
+                try {
+                    dialogPane = Window.getWindows().stream().filter(Window::isShowing)
+                            .map(window -> window.getScene().getRoot())
+                            .filter(DialogPane.class::isInstance).map(DialogPane.class::cast)
+                            .findFirst().orElseThrow();
+                    ScrollPane scrollPane = (ScrollPane) dialogPane.getContent();
+                    Label message = (Label) scrollPane.getContent();
+                    assertTrue(message.getText().contains(dataFilePath.toAbsolutePath().toString()));
+                    assertTrue(message.getText().contains("Repair or restore this file"));
+                    assertTrue(message.getLayoutBounds().getHeight() > scrollPane.getViewportBounds().getHeight());
+                    assertTrue(scrollPane.isFitToWidth());
+                    assertTrue(scrollPane.getViewportBounds().getHeight() <= 340,
+                            "Viewport height: " + scrollPane.getViewportBounds().getHeight());
+                } catch (Throwable error) {
+                    failure.set(error);
+                } finally {
+                    if (dialogPane != null) {
+                        Button okButton = (Button) dialogPane.lookupButton(ButtonType.OK);
+                        okButton.fire();
+                    } else {
+                        Window.getWindows().stream().filter(window -> window != primaryStage)
+                                .forEach(Window::hide);
+                    }
+                }
+            });
+            try {
+                uiManager.start(primaryStage);
+                if (failure.get() != null) {
+                    throw new AssertionError(failure.get());
+                }
+                assertTrue(isExitRequested[0]);
+            } finally {
+                uiManager.stop();
+                primaryStage.close();
+            }
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
     public void finishingTutorial_recordsPreferenceAndClosesOverlay() throws Exception {
         FutureTask<Void> task = new FutureTask<>(() -> {
             LogicManager logic = new LogicManager(new ModelManager(), null);
@@ -314,9 +521,20 @@ public class UiManagerTest {
         private String alertTitle;
         private String alertHeader;
         private String alertContent;
+        private int alertCount;
 
         RecordingUiManager(LogicManager logic, Path dataFilePath, boolean isDataRecoveryMode, Runnable exitAction) {
             super(logic, dataFilePath, isDataRecoveryMode, exitAction);
+        }
+
+        RecordingUiManager(LogicManager logic, Path dataFilePath, boolean isDataRecoveryMode,
+                String dataRecoveryDetail, Runnable exitAction) {
+            super(logic, dataFilePath, isDataRecoveryMode, dataRecoveryDetail, exitAction);
+        }
+
+        RecordingUiManager(LogicManager logic, Path dataFilePath, String dataRecoveryDetail,
+                String preferencesWarning, Runnable exitAction) {
+            super(logic, dataFilePath, "", true, dataRecoveryDetail, preferencesWarning, exitAction);
         }
 
         @Override
@@ -325,6 +543,7 @@ public class UiManagerTest {
             alertTitle = title;
             alertHeader = headerText;
             alertContent = contentText;
+            alertCount++;
         }
     }
 

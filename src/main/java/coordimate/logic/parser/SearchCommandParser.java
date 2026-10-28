@@ -2,6 +2,7 @@ package coordimate.logic.parser;
 
 import static java.util.Objects.requireNonNull;
 
+import coordimate.commons.util.StringUtil;
 import coordimate.logic.commands.SearchCommand;
 import coordimate.logic.parser.exceptions.ParseException;
 import coordimate.model.person.ContactMatchesKeywordPredicate;
@@ -9,6 +10,7 @@ import coordimate.model.person.ContactMatchesKeywordPredicate;
 /**
  * Parses the remaining input into a search keyword, optionally stripping a pair
  * of surrounding quotation marks used to mark an exact phrase.
+ * Each run of spaces in the keyword is collapsed to one.
  */
 public class SearchCommandParser implements Parser<SearchCommand> {
 
@@ -19,7 +21,7 @@ public class SearchCommandParser implements Parser<SearchCommand> {
         if (trimmed.isEmpty()) {
             throw ParserUtil.createInvalidFormatException(SearchCommand.MESSAGE_USAGE);
         }
-        String keyword = stripQuotes(trimmed);
+        String keyword = StringUtil.normalizeWhitespace(stripQuotes(trimmed));
         if (keyword.isEmpty()) {
             throw ParserUtil.createInvalidFormatException(SearchCommand.MESSAGE_USAGE);
         }
