@@ -167,9 +167,11 @@ public class UiManager implements Ui {
         message.setPadding(new Insets(4, 8, 4, 0));
         ScrollPane scrollPane = new ScrollPane(message);
         scrollPane.setFitToWidth(true);
-        scrollPane.setPrefViewportWidth(440);
-        scrollPane.setPrefViewportHeight(100);
+        double viewportWidth = 440;
+        scrollPane.setPrefViewportWidth(viewportWidth);
         alert.getDialogPane().setContent(scrollPane);
+        alert.getDialogPane().applyCss();
+        scrollPane.setPrefViewportHeight(Math.clamp(message.prefHeight(viewportWidth), 100, 320));
         alert.getDialogPane().setId(ALERT_DIALOG_PANE_FIELD_ID);
         alert.showAndWait();
     }

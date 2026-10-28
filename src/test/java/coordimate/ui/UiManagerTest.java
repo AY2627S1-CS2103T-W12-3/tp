@@ -229,11 +229,94 @@ public class UiManagerTest {
     }
 
     @Test
+    public void start_standardRecoveryMessage_showsBothRepairPathsWithoutScrolling() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            LogicManager logic = new LogicManager(new ModelManager(), null);
+            Path dataPath = Path.of("data", "coordimate.json").toAbsolutePath();
+            Path prefsPath = Path.of("preferences.json").toAbsolutePath();
+            String prefsWarning = "Preferences could not be loaded. Default preferences are in use for this "
+                    + "session. The original file will not be changed.\n\n"
+                    + "Problem: Invalid JSON type at guiSettings.windowMaximized: expected a boolean.\n\n"
+                    + "Repair or restore this file before restarting CoordiMate:\n" + prefsPath;
+            UiManager manager = new UiManager(logic, dataPath, "", true,
+                    "Invalid JSON type at persons[0].phone: expected a string.", prefsWarning, () -> {});
+            Stage stage = new Stage();
+            AtomicReference<Throwable> failure = new AtomicReference<>();
+            checkVisibleDialogPathsAndClose(failure, dataPath.toString(), prefsPath.toString());
+            try {
+                manager.start(stage);
+                if (failure.get() != null) {
+                    throw new AssertionError(failure.get());
+                }
+            } finally {
+                manager.stop();
+                stage.close();
+            }
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void start_preferenceWarning_showsRepairPathWithoutScrolling() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            ModelManager model = new ModelManager();
+            model.setHasSeenTutorial(true);
+            Path prefsPath = Path.of("preferences.json").toAbsolutePath();
+            String warning = "Preferences could not be loaded. Default preferences are in use for this "
+                    + "session. The original file will not be changed.\n\n"
+                    + "Problem: Invalid JSON type at guiSettings.windowMaximized: expected a boolean.\n\n"
+                    + "Repair or restore this file before restarting CoordiMate:\n" + prefsPath;
+            UiManager manager = new UiManager(new LogicManager(model, null), Path.of("data.json"), warning);
+            Stage stage = new Stage();
+            AtomicReference<Throwable> failure = new AtomicReference<>();
+            checkVisibleDialogPathsAndClose(failure, prefsPath.toString());
+            try {
+                manager.start(stage);
+                if (failure.get() != null) {
+                    throw new AssertionError(failure.get());
+                }
+            } finally {
+                manager.stop();
+                stage.close();
+            }
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    private static void checkVisibleDialogPathsAndClose(AtomicReference<Throwable> failure, String... paths) {
+        Platform.runLater(() -> {
+            DialogPane dialogPane = Window.getWindows().stream().filter(Window::isShowing)
+                    .map(window -> window.getScene().getRoot())
+                    .filter(DialogPane.class::isInstance).map(DialogPane.class::cast)
+                    .findFirst().orElseThrow();
+            try {
+                ScrollPane scrollPane = (ScrollPane) dialogPane.getContent();
+                Label message = (Label) scrollPane.getContent();
+                for (String path : paths) {
+                    assertTrue(message.getText().contains(path));
+                }
+                assertTrue(message.getHeight() <= scrollPane.getViewportBounds().getHeight() + 1,
+                        "Message height: " + message.getHeight() + ", viewport: "
+                                + scrollPane.getViewportBounds().getHeight());
+            } catch (Throwable error) {
+                failure.set(error);
+            } finally {
+                Button okButton = (Button) dialogPane.lookupButton(ButtonType.OK);
+                okButton.fire();
+            }
+        });
+    }
+
+    @Test
     public void start_longRecoveryMessage_isScrollableAndKeepsRepairPath() throws Exception {
         FutureTask<Void> task = new FutureTask<>(() -> {
             LogicManager logic = new LogicManager(new ModelManager(), null);
             Path dataFilePath = Path.of("data", "coordimate.json");
-            String detail = "Invalid JSON type at persons[0].phone. ".repeat(12);
+            String detail = "Invalid JSON type at persons[0].phone. ".repeat(30);
             boolean[] isExitRequested = {false};
             UiManager uiManager = new UiManager(logic, dataFilePath, true, detail, () ->
                     isExitRequested[0] = true);
@@ -252,7 +335,8 @@ public class UiManagerTest {
                     assertTrue(message.getText().contains("Repair or restore this file"));
                     assertTrue(message.getLayoutBounds().getHeight() > scrollPane.getViewportBounds().getHeight());
                     assertTrue(scrollPane.isFitToWidth());
-                    assertTrue(scrollPane.getHeight() <= 150, "Scroll area height: " + scrollPane.getHeight());
+                    assertTrue(scrollPane.getViewportBounds().getHeight() <= 340,
+                            "Viewport height: " + scrollPane.getViewportBounds().getHeight());
                 } catch (Throwable error) {
                     failure.set(error);
                 } finally {

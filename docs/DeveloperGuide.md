@@ -244,6 +244,8 @@ Before Jackson binds saved data to Java fields, `SavedJsonTypeValidator` checks 
 event, and preference fields. This prevents Jackson from converting values such as numeric phone numbers or numeric
 window maximization flags. Existing validation for `archived`, member IDs, and model values still runs afterward.
 The validator reports a field path for type errors, while unknown fields remain ignored for compatibility.
+For preferences, it removes explicit `null` scalar fields after validation so Jackson retains the defaults for
+`hasSeenTutorial`, window width, window height, and maximized state.
 If preferences cannot be loaded, `MainApp` uses defaults and shows a warning. It skips preference writes during that
 session, including shutdown, so the original file remains available for repair. If the data file is also invalid,
 the warning instead appears in the data recovery dialog before the app closes.

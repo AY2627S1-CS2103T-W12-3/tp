@@ -4,10 +4,11 @@ import java.io.IOException;
 import java.util.function.Predicate;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import coordimate.commons.exceptions.JsonTypeMismatchException;
 
-/** Checks saved JSON types before Jackson converts values into Java fields. */
+/** Checks saved JSON types and prepares accepted null preferences before Jackson binds fields. */
 final class SavedJsonTypeValidator {
     private SavedJsonTypeValidator() {}
 
@@ -19,18 +20,19 @@ final class SavedJsonTypeValidator {
         checkStrings(root, "tags", "tags");
     }
 
-    static void validatePreferences(JsonNode root) throws IOException {
+    static void preparePreferences(JsonNode root) throws IOException {
         requireType(root, "root", JsonNode::isObject, "an object");
-        checkField(root, "hasSeenTutorial", "hasSeenTutorial", JsonNode::isBoolean, "a boolean", false);
+        checkField(root, "hasSeenTutorial", "hasSeenTutorial", JsonNode::isBoolean, "a boolean", true);
         JsonNode settings = root.get("guiSettings");
         if (settings == null) {
+            removeNullField((ObjectNode) root, "hasSeenTutorial");
             return;
         }
         requireType(settings, "guiSettings", JsonNode::isObject, "an object");
-        checkField(settings, "windowWidth", "guiSettings.windowWidth", JsonNode::isNumber, "a number", false);
-        checkField(settings, "windowHeight", "guiSettings.windowHeight", JsonNode::isNumber, "a number", false);
+        checkField(settings, "windowWidth", "guiSettings.windowWidth", JsonNode::isNumber, "a number", true);
+        checkField(settings, "windowHeight", "guiSettings.windowHeight", JsonNode::isNumber, "a number", true);
         checkField(settings, "windowMaximized", "guiSettings.windowMaximized", JsonNode::isBoolean,
-                "a boolean", false);
+                "a boolean", true);
         JsonNode coordinates = settings.get("windowCoordinates");
         if (coordinates != null && !coordinates.isNull()) {
             requireType(coordinates, "guiSettings.windowCoordinates", JsonNode::isObject, "an object");
@@ -38,6 +40,18 @@ final class SavedJsonTypeValidator {
                     "an integer", false);
             checkField(coordinates, "y", "guiSettings.windowCoordinates.y", SavedJsonTypeValidator::isInt,
                     "an integer", false);
+        }
+        removeNullField((ObjectNode) root, "hasSeenTutorial");
+        ObjectNode settingsObject = (ObjectNode) settings;
+        removeNullField(settingsObject, "windowWidth");
+        removeNullField(settingsObject, "windowHeight");
+        removeNullField(settingsObject, "windowMaximized");
+    }
+
+    private static void removeNullField(ObjectNode object, String field) {
+        JsonNode value = object.get(field);
+        if (value != null && value.isNull()) {
+            object.remove(field);
         }
     }
 

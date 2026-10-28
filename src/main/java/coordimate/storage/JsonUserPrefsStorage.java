@@ -44,7 +44,7 @@ public class JsonUserPrefsStorage {
      * @throws DataLoadingException if the file format is not as expected.
      */
     public Optional<UserPrefs> readUserPrefs(Path prefsFilePath) throws DataLoadingException {
-        return JsonUtil.readJsonFile(prefsFilePath, UserPrefs.class, SavedJsonTypeValidator::validatePreferences);
+        return JsonUtil.readJsonFile(prefsFilePath, UserPrefs.class, SavedJsonTypeValidator::preparePreferences);
     }
 
     /**

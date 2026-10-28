@@ -86,8 +86,7 @@ public class JsonUserPrefsStorageTest {
             {"{\"guiSettings\":{\"windowCoordinates\":{\"x\":2147483648}}}",
                 "guiSettings.windowCoordinates.x", "an integer"},
             {"{\"guiSettings\":null}", "guiSettings", "an object"},
-            {"{\"guiSettings\":{\"windowCoordinates\":17}}", "guiSettings.windowCoordinates", "an object"},
-            {"{\"hasSeenTutorial\":null}", "hasSeenTutorial", "a boolean"}
+            {"{\"guiSettings\":{\"windowCoordinates\":17}}", "guiSettings.windowCoordinates", "an object"}
         };
         for (String[] testCase : cases) {
             Files.writeString(prefsFile, testCase[0]);
@@ -96,6 +95,27 @@ public class JsonUserPrefsStorageTest {
                     storage::readUserPrefs);
             assertEquals("Invalid JSON type at " + testCase[1] + ": expected " + testCase[2] + ".",
                     error.getCause().getMessage());
+        }
+    }
+
+    @Test
+    public void readUserPrefs_nullScalarFields_useDefaultsWithoutChangingFile() throws Exception {
+        Path prefsFile = testFolder.resolve("preferences.json");
+        String[][] cases = {
+            {"{\"hasSeenTutorial\":null}", "hasSeenTutorial"},
+            {"{\"guiSettings\":{\"windowWidth\":null}}", "windowWidth"},
+            {"{\"guiSettings\":{\"windowHeight\":null}}", "windowHeight"},
+            {"{\"guiSettings\":{\"windowMaximized\":null}}", "windowMaximized"},
+            {"{\"hasSeenTutorial\":null,\"guiSettings\":{\"windowWidth\":null,"
+                    + "\"windowHeight\":null,\"windowMaximized\":null}}", "all fields"}
+        };
+        for (String[] testCase : cases) {
+            Files.writeString(prefsFile, testCase[0]);
+
+            UserPrefs loaded = new JsonUserPrefsStorage(prefsFile).readUserPrefs().orElseThrow();
+
+            assertEquals(new UserPrefs(), loaded, testCase[1]);
+            assertEquals(testCase[0], Files.readString(prefsFile), testCase[1]);
         }
     }
 
