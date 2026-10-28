@@ -2,7 +2,6 @@ package coordimate.ui;
 
 import java.time.Clock;
 import java.time.LocalDate;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -14,6 +13,7 @@ import coordimate.model.person.Birthday;
 import coordimate.model.person.Note;
 import coordimate.model.person.Organisation;
 import coordimate.model.person.Person;
+import coordimate.model.tag.Tag;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
@@ -326,7 +326,7 @@ public class PersonListPanel extends UiPart<Region> {
                 ? person.getLeaveDate().orElseThrow().getValue() : NOT_ON_LEAVE);
         detailTags.getChildren().clear();
         person.getTags().stream()
-                .sorted(Comparator.comparing(tag -> tag.getTagName()))
+                .sorted(Tag.ALPHABETICAL_ORDER)
                 .forEach(tag -> detailTags.getChildren().add(TagStyle.createTagLabel(tag.getTagName())));
         showAssignedEvents(person);
     }

@@ -30,6 +30,13 @@ public class EventMembersPredicate implements Predicate<Person> {
         return eventName;
     }
 
+    /**
+     * Returns a predicate for the event named {@code newName} in the same event list, for following a renamed event.
+     */
+    public EventMembersPredicate withEventName(String newName) {
+        return new EventMembersPredicate(newName, events);
+    }
+
     @Override
     public boolean test(Person person) {
         return events.stream()

@@ -26,11 +26,13 @@ public class ContactMatchesKeywordPredicate implements Predicate<Person> {
     /**
      * Returns true if {@code person}'s name, phone, email, address, or organisation
      * contains the keyword as a case-insensitive substring.
+     * A phone number also matches when it contains the keyword after spaces, hyphens, and brackets are removed
+     * from both, so {@code 91234567} finds {@code 9123 4567} and the reverse.
      */
     @Override
     public boolean test(Person person) {
         return containsIgnoreCase(person.getName().getFullName(), keyword)
-                || containsIgnoreCase(person.getPhone().getValue(), keyword)
+                || containsPhoneDigits(person.getPhone(), keyword)
                 || containsIgnoreCase(person.getEmail().getValue(), keyword)
                 // Addresses keep their spacing as entered, so runs of spaces are collapsed only for matching.
                 || person.getAddress().map(address ->
@@ -38,6 +40,15 @@ public class ContactMatchesKeywordPredicate implements Predicate<Person> {
                         .orElse(false)
                 || person.getOrganisation().map(organisation -> containsIgnoreCase(organisation.getValue(), keyword))
                         .orElse(false);
+    }
+
+    /**
+     * Returns true if {@code phone} contains {@code keyword} once phone formatting is removed from both.
+     * A keyword made only of formatting characters matches nothing.
+     */
+    private static boolean containsPhoneDigits(Phone phone, String keyword) {
+        String normalizedKeyword = Phone.normalize(keyword);
+        return !normalizedKeyword.isEmpty() && phone.getNormalizedValue().contains(normalizedKeyword);
     }
 
     private static boolean containsIgnoreCase(String value, String keyword) {

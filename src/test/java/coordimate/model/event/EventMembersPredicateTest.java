@@ -54,6 +54,45 @@ public class EventMembersPredicateTest {
     }
 
     @Test
+    public void withEventName_followsNewNameInSameEventList() {
+        List<Event> events = new ArrayList<>(List.of(concert));
+        EventMembersPredicate renamed = new EventMembersPredicate("Final Concert", events)
+                .withEventName("Grand Concert");
+        assertEquals("Grand Concert", renamed.getEventName());
+        assertFalse(renamed.test(ALICE));
+
+        events.set(0, concert.withDetails("Grand Concert", date, date));
+        assertTrue(renamed.test(ALICE));
+    }
+
+    @Test
+    public void withEventName_originalUnchanged_replacementStillFollowsLiveList() {
+        List<Event> events = new ArrayList<>(List.of(concert));
+        EventMembersPredicate original = new EventMembersPredicate("Final Concert", events);
+        EventMembersPredicate renamed = original.withEventName("  Grand Concert  ");
+
+        assertEquals("Final Concert", original.getEventName());
+        assertEquals("Grand Concert", renamed.getEventName());
+        assertTrue(original.test(ALICE));
+        assertFalse(renamed.test(ALICE));
+        assertThrows(NullPointerException.class, () -> original.withEventName(null));
+
+        events.set(0, new Event("Grand Concert", date, date, List.of(CARL.getName())));
+        assertFalse(original.test(ALICE));
+        assertFalse(renamed.test(ALICE));
+        assertTrue(renamed.test(CARL));
+        events.clear();
+        assertFalse(renamed.test(CARL));
+    }
+
+    @Test
+    public void toString_includesEventName() {
+        EventMembersPredicate predicate = new EventMembersPredicate("Final Concert", List.of(concert));
+        assertEquals(EventMembersPredicate.class.getCanonicalName() + "{eventName=Final Concert}",
+                predicate.toString());
+    }
+
+    @Test
     public void equalityAndNullArguments() {
         EventMembersPredicate predicate = new EventMembersPredicate(" Final Concert ", List.of(concert));
         assertEquals("Final Concert", predicate.getEventName());

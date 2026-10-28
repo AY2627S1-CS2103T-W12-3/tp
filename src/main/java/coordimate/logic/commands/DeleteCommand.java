@@ -13,6 +13,7 @@ import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.Model;
 import coordimate.model.person.MemberId;
 import coordimate.model.person.Person;
+import coordimate.model.person.Phone;
 
 /** Deletes a contact identified by its permanent member ID or an exact saved detail. */
 public class DeleteCommand extends Command {
@@ -108,13 +109,9 @@ public class DeleteCommand extends Command {
         return switch (identifierType) {
             case NAME -> person.getName().getFullName()
                     .equalsIgnoreCase(StringUtil.normalizeWhitespace(identifier));
-            case PHONE -> person.getPhone().getNormalizedValue().equals(normalizePhone(identifier));
+            case PHONE -> person.getPhone().getNormalizedValue().equals(Phone.normalize(identifier));
             case EMAIL -> person.getEmail().getValue().equalsIgnoreCase(identifier);
         };
-    }
-
-    private static String normalizePhone(String phone) {
-        return phone.replace(" ", "").replace("-", "").replace("(", "").replace(")", "");
     }
 
     /** Formats the contact details and the confirmation prompt. */

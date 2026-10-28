@@ -230,12 +230,19 @@ The `Storage` component,
 * converts CoordiMate data through `JsonSerializableCoordiMate`, which stores contacts (`JsonAdaptedPerson`), events (`JsonAdaptedEvent`), and the global tag list (`JsonAdaptedTag`) as separate lists. Each contact also stores its own tags, and each event records its members by contact name rather than by member ID.
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
 
+If the data file cannot be loaded during startup, `MainApp` creates an empty in-memory model only for initialization
+and passes a recovery flag to `UiManager`. After the main window is ready, `UiManager` shows a warning that names the
+unchanged data file and asks the user to repair or restore it. Dismissing the warning requests a normal JavaFX
+shutdown before the tutorial or command interface can be used.
+
 The tutorial flag is saved with the other user preferences. Preference files without that field are read with the
 tutorial flag set to `false`, so the tutorial is offered until the user closes or finishes it.
 
-Previously saved digit-only phone numbers with at least three digits remain valid model data, so older JSON files can
-still load. The command parser applies the current 7–15-digit rule whenever a user supplies a phone number for `add`
-or `edit`; editing another field does not require replacing a legacy phone number.
+Previously saved digit-only phone numbers with at least three digits, and 7–15-digit numbers whose brackets do not
+match, remain valid model data, so older JSON files can still load. The command parser applies the current rule,
+`Phone#isValidInputPhone`, whenever a user supplies a phone number for `add` or `edit`: 7–15 digits, an optional `+`
+or bracketed country code such as `(+65)` at the start, and brackets in non-nested pairs that each enclose a digit.
+Editing another field does not require replacing a legacy phone number.
 
 When loading JSON data, explicitly saved tags are validated and restored before contacts. If a contact uses a tag
 that is missing from the saved global tag list, CoordiMate registers it automatically. This also migrates older files
@@ -530,20 +537,22 @@ turns each criterion into a `Predicate<Person>` using the model:
 | Field | The value must match, ignoring case | A contact matches if |
 |---|---|---|
 | `tag` | a tag in `Model#getTagList()` | it has that tag |
-| `event` | the name of a saved event | it is a member of that event |
+| `event` | the name of a saved event | it is a member of the event with that name |
 | `organisation` | the organisation of at least one saved contact | its organisation is that value |
 
 If a value matches nothing, the command throws a `CommandException` with `No matching value found.` before the
 displayed list is changed. This tells the user about a mistyped value instead of showing an empty list. Otherwise
-the predicates are combined with `Predicate#and` and passed to `Model#updateFilteredPersonList`.
+the predicates are combined into a [`ContactFilterPredicate`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/person/ContactFilterPredicate.java),
+which a contact matches only if it matches every predicate, and passed to `Model#updateFilteredPersonList`.
 
 `filter` does not change data, so it is executed directly on the live model.
 
 <box type="info" seamless>
 
-**Note:** The `event` predicate holds the `Event` found when the command was executed. Since an `Event` is
-immutable, the filtered list does not follow later changes to that event's members until `filter` is run again.
-The `members` command differs: it uses `EventMembersPredicate`, which looks the event up each time it is tested.
+**Note:** The `event` predicate is the same `EventMembersPredicate` that the `members` command uses. It holds the
+event's name and looks the event up each time it is tested, so the filtered list follows later changes to that
+event, as described in [Keeping events in sync with contacts](#keeping-events-in-sync-with-contacts). The existence
+check above is made only when `filter` is executed: if the event is deleted afterwards, the list becomes empty.
 </box>
 
 To add a filter field, add a constant to `FilterField`, add a case to `FilterCommand#resolvePredicate`, and update
@@ -552,6 +561,8 @@ To add a filter field, add a constant to `FilterField`, add a case to `FilterCom
 The `search` command is implemented separately. `SearchCommand` uses `ContactMatchesKeywordPredicate`, which tests
 whether a contact's name, phone, email, address, or organisation contains the keyword, ignoring case. It compares
 substrings with `String#regionMatches(true, ...)`, using the same case comparison as duplicate-name detection.
+A phone number also matches when it contains the keyword after `Phone#normalize` removes spaces, hyphens, and
+brackets from both, the same normalisation that `delete p/`, `edit target/`, and duplicate detection use.
 
 #### Design considerations
 
@@ -605,10 +616,15 @@ who is not a saved contact, with `Event members must refer to existing contacts.
 The predicate holds the event's name and the model's live event list, and looks the event up each time it is tested.
 The displayed members therefore follow later changes:
 
-* After `unassign`, the removed member no longer matches and disappears from the list.
+* After `assign` or `unassign`, an added member matches and a removed member no longer does.
 * After `deleteevent`, no event has that name, so the list becomes empty.
 * After `editevent` renames the event, the old name would match nothing, so
-  `LogicManager#keepMembersViewAfterRename` replaces the predicate with one for the new name.
+  `LogicManager#keepEventViewsAfterRename` replaces the predicate with one for the new name.
+
+`filter event/...` uses the same predicate as one of the criteria of a `ContactFilterPredicate`, so a filtered list
+follows the same changes. For a rename, `keepEventViewsAfterRename` uses
+`ContactFilterPredicate#withCriteriaReplaced` to replace only the event criteria for the renamed event, keeping the
+other criteria unchanged.
 
 A filtered list re-tests its predicate only when the contact list changes. For this reason `CoordiMate#resetData`
 replaces the events **before** the contacts: when the contacts are replaced and the predicate is tested again, it
@@ -749,7 +765,7 @@ contact filter set by commands:
 
 * The filtered contact list shows a contact only if its `archived` value matches the view **and** it matches the
   latest predicate passed to `updateFilteredPersonList`. `getFilteredPersonPredicate` still returns that predicate,
-  so code such as `LogicManager#keepMembersViewAfterRename` sees the command's filter and not the combined test.
+  so code such as `LogicManager#keepEventViewsAfterRename` sees the command's filter and not the combined test.
 * A filtered event list, `Model#getFilteredEventList`, shows the events whose `archived` value matches the view.
   The **Events** tab and its count use this list. A contact's details pane uses the full event list instead, so that
   archived events still appear in the contact's history.
@@ -1280,7 +1296,8 @@ testers are expected to do more *exploratory* testing.
    1. Download the JAR file and copy it into an empty folder.
 
    1. Double-click the JAR file.<br>
-      Expected: The GUI opens maximized with a set of sample contacts.
+      Expected: The GUI opens maximized with a set of sample contacts and a sample event. The first-launch tutorial
+      can show the event's assigned members and attendance information.
 
 1. Saving window preferences
 
@@ -1716,7 +1733,8 @@ and `PAST_DATE` is any date before today, such as `01-01-2020`.
       Expected: The app loads the data. The contact is not shown as on leave, and the details pane shows `— (not on leave)`. The `leaveUntil` value is still in the data file.
 
    1. Test case: Close the app, change `leaveUntil` to `31-02-2030`, save, then launch the app.<br>
-      Expected: The file is treated as invalid, so the app starts with no contacts and no events. Restore the file afterwards.
+      Expected: CoordiMate warns that the saved data could not be loaded and that the original file is unchanged.
+      The warning shows the file path. Selecting **OK** closes the app. Restore the file before launching again.
 
    1. Test case: Run `edit 1 lv/TODAY` and select that contact. Leave the app open past midnight, or set your
       computer's date to the next day.<br>
@@ -1727,10 +1745,12 @@ and `PAST_DATE` is any date before today, such as `01-01-2020`.
 
 1. Adding, renaming, and deleting tags
 
-   1. Prerequisites: The sample contacts are loaded and no custom tags have been created.
+   1. Prerequisites: The sample contacts are loaded and no additional custom tags have been created.
 
    1. Test case: `listtags`<br>
-      Expected: The Tags view opens. The status message lists `EXCO, Sponsor, UniversityStaff, Logistics, friends, colleagues, neighbours, family, classmates`.
+      Expected: The Tags view opens. The status message lists
+      `EXCO, Sponsor, UniversityStaff, Logistics, friends, neighbours`. Selecting `EXCO` shows Alex Yeoh,
+      Bernice Yu, and Irfan Ibrahim.
 
    1. Test case: `addtag t/Publicity`<br>
       Expected: `Publicity` appears in the Tags view. The status message shows `Created tag: Publicity.`
@@ -1840,10 +1860,14 @@ want to keep.
    1. Prerequisites: The app is closed and `data/coordimate.json` exists.
 
    1. Test case: Delete `data/coordimate.json`, then launch the app.<br>
-      Expected: The app starts with the sample contacts.
+      Expected: The app starts with the sample contacts and the `Freshmen Welcome Night` sample event. The event
+      has two assigned contacts, with Alex Yeoh marked present.
 
    1. Test case: Run `list`, then check the `data` folder.<br>
-      Expected: `data/coordimate.json` has been created again.
+      Expected: `data/coordimate.json` has not been created, because commands that do not change data do not save.
+
+   1. Test case: Run `addtag t/Test`, then check the `data` folder.<br>
+      Expected: `data/coordimate.json` has been created again, containing the sample data and the `Test` tag.
 
 1. Migrating legacy member IDs and keeping command targets across restarts
 
@@ -1881,23 +1905,23 @@ want to keep.
    1. Prerequisites: The app is closed and `data/coordimate.json` contains at least one contact. Keep a copy of the file.
 
    1. Test case: Open `data/coordimate.json` in a text editor, delete the first `{`, save, then launch the app.<br>
-      Expected: The app starts with no contacts and no events.
+      Expected: CoordiMate warns that the saved data could not be loaded and that the original file is unchanged.
+      The warning shows the path to `data/coordimate.json` and says that CoordiMate will close.
 
-   1. Test case: Without closing the app, run `addevent evn/Test st/01-01-2027 et/01-01-2027`.<br>
-      Expected: No event is added. The status message shows `Saved data could not be loaded. Check the local data file.` The data file is unchanged.
+   1. Test case: Select **OK**, then inspect `data/coordimate.json`.<br>
+      Expected: CoordiMate closes. The file still contains the same corrupted contents and has not been replaced with
+      an empty dataset.
 
-   1. Test case: Close the app, put the `{` back, save, then launch the app.<br>
-      Expected: The original contacts and events are shown again.
-
-   1. Test case: Corrupt the file again as above, launch the app, then run `list`.<br>
-      Expected: The corrupted file is replaced with the app's empty data. Restore the copy of the file to get the original data back.
+   1. Test case: Restore the copy of the file, then launch the app again.<br>
+      Expected: The recovery warning does not appear. The original contacts and events are shown again.
 
 1. Dealing with an event member who is not a contact
 
    1. Prerequisites: The app is closed and `data/coordimate.json` contains an event with at least one member. Keep a copy of the file.
 
    1. Test case: In the data file, change one name in an event's `members` list to a name that no contact has, save, then launch the app.<br>
-      Expected: The file is treated as invalid, so the app starts with no contacts and no events. Restore the copy of the file afterwards.
+      Expected: CoordiMate shows the recovery warning and closes after **OK** is selected. The invalid file remains
+      unchanged. Restore the copy before launching again.
 
 1. Dealing with a failed save
 

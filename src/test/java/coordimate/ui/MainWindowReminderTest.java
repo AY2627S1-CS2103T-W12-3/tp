@@ -14,9 +14,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.FutureTask;
@@ -29,10 +32,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import coordimate.logic.LogicManager;
+import coordimate.logic.commands.EditCommand;
 import coordimate.logic.reminder.ReminderDismissalException;
 import coordimate.model.ModelManager;
 import coordimate.model.ReadOnlyCoordiMate;
 import coordimate.model.UserPrefs;
+import coordimate.model.event.AttendanceStatus;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
 import coordimate.storage.JsonCoordiMateStorage;
@@ -46,6 +51,7 @@ import javafx.event.ActionEvent;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
@@ -566,6 +572,186 @@ public class MainWindowReminderTest {
             }
             return null;
         });
+    }
+
+    @Test
+    public void periodicCheck_eventMemberLeaveEnds_preservesAttendanceAndSelection() throws Exception {
+        onJavaFxThread(() -> {
+            ModelManager model = new ModelManager();
+            model.addPerson(new PersonBuilder(ALICE).withoutMemberId().withLeaveDate("19-10-2026")
+                    .withNote("Contact by email while on leave").build());
+            Event event = event("Team Dinner", "25-10-2026", "25-10-2026")
+                    .withMembersAndAttendance(List.of(ALICE.getName()),
+                            Map.of(ALICE.getName(), AttendanceStatus.ABSENT));
+            model.addEvent(event);
+            ControlledStorage storage = new ControlledStorage(temporaryFolder.resolve("data.json"));
+            storage.saveCoordiMate(model.getCoordiMate());
+            Fixture fixture = openWindow(model, storage, new AdjustableClock(), true, 1100, 800);
+            try {
+                Parent root = fixture.stage().getScene().getRoot();
+                ToggleButton eventsView = (ToggleButton) root.lookup("#eventsView");
+                eventsView.fire();
+                ListView<?> events = (ListView<?>) root.lookup("#eventListView");
+                events.getSelectionModel().selectFirst();
+                VBox members = (VBox) root.lookup("#members");
+                assertEquals(List.of("On leave until 19-10-2026"), leaveBadges(members));
+                snapshot(root, "event-member-leave.png");
+                byte[] savedBeforeExpiry = Files.readAllBytes(storage.getCoordiMateFilePath());
+
+                var originalRow = members.getChildren().getFirst();
+                fixture.clock().advance(java.time.Duration.ofHours(8));
+                fixture.timer().getKeyFrames().getFirst().getOnFinished().handle(new ActionEvent());
+                assertSame(originalRow, members.getChildren().getFirst());
+                assertEquals(List.of("On leave until 19-10-2026"), leaveBadges(members));
+
+                fixture.clock().advance(java.time.Duration.ofHours(1));
+                fixture.timer().getKeyFrames().getFirst().getOnFinished().handle(new ActionEvent());
+                assertEquals(List.of(), leaveBadges(members));
+                assertSame(event, events.getSelectionModel().getSelectedItem());
+                assertEquals("1 Absent", ((Label) root.lookup("#absentCount")).getText());
+                assertEquals("● absent", ((Label) members.lookup(".attendance-badge")).getText());
+                assertArrayEquals(savedBeforeExpiry, Files.readAllBytes(storage.getCoordiMateFilePath()));
+
+                events.getSelectionModel().clearSelection();
+                fixture.clock().advance(java.time.Duration.ofDays(1));
+                fixture.timer().getKeyFrames().getFirst().getOnFinished().handle(new ActionEvent());
+                assertTrue(events.getSelectionModel().isEmpty());
+                assertTrue(root.lookup("#selectionHint").isVisible());
+            } finally {
+                fixture.stage().close();
+            }
+            return null;
+        });
+    }
+
+    @Test
+    public void showWindow_afterHiddenAcrossMidnight_refreshesLeaveBeforeNextTick() throws Exception {
+        onJavaFxThread(() -> {
+            ModelManager model = new ModelManager();
+            model.addPerson(new PersonBuilder(ALICE).withoutMemberId().withLeaveDate("19-10-2026").build());
+            Event event = event("Team Dinner", "25-10-2026", "25-10-2026")
+                    .withMembersAndAttendance(List.of(ALICE.getName()), Map.of());
+            model.addEvent(event);
+            ControlledStorage storage = new ControlledStorage(temporaryFolder.resolve("data.json"));
+            storage.saveCoordiMate(model.getCoordiMate());
+            Fixture fixture = openWindow(model, storage, new AdjustableClock(), true, 1100, 800);
+            try {
+                Parent root = fixture.stage().getScene().getRoot();
+                ToggleButton eventsView = (ToggleButton) root.lookup("#eventsView");
+                eventsView.fire();
+                ListView<?> events = (ListView<?>) root.lookup("#eventListView");
+                events.getSelectionModel().selectFirst();
+                VBox members = (VBox) root.lookup("#members");
+                assertEquals(List.of("On leave until 19-10-2026"), leaveBadges(members));
+
+                fixture.stage().hide();
+                assertEquals(Animation.Status.STOPPED, fixture.timer().getStatus());
+                fixture.clock().advance(java.time.Duration.ofHours(9));
+                fixture.stage().show();
+
+                assertEquals(List.of(), leaveBadges(members));
+                assertSame(event, events.getSelectionModel().getSelectedItem());
+                assertEquals(Animation.Status.RUNNING, fixture.timer().getStatus());
+                ToggleButton contactsView = (ToggleButton) root.lookup("#contactsView");
+                contactsView.fire();
+                assertEquals(List.of(), leaveBadges(root));
+            } finally {
+                fixture.stage().close();
+            }
+            return null;
+        });
+    }
+
+    @Test
+    public void commands_createEventAssignMemberAndEditLeave_updateSelectedEventAndSavedData() throws Exception {
+        onJavaFxThread(() -> {
+            ModelManager model = new ModelManager();
+            model.addPerson(new PersonBuilder(ALICE).withoutMemberId().withName("Aisha")
+                    .withLeaveDate("19-10-2026").build());
+            model.addEvent(event("Existing Event", "25-10-2026", "25-10-2026"));
+            ControlledStorage storage = new ControlledStorage(temporaryFolder.resolve("data.json"));
+            storage.saveCoordiMate(model.getCoordiMate());
+            Fixture fixture = openWindow(model, storage, new AdjustableClock(), false, 1100, 800);
+            try {
+                Parent root = fixture.stage().getScene().getRoot();
+                submitCommand(root, "addevent evn/Planning Session st/25-10-2026 et/25-10-2026");
+                ToggleButton eventsView = (ToggleButton) root.lookup("#eventsView");
+                ListView<?> events = (ListView<?>) root.lookup("#eventListView");
+                assertTrue(eventsView.isSelected());
+                assertEquals(1, events.getSelectionModel().getSelectedIndex());
+                assertEquals("Planning Session", ((Label) root.lookup("#selectedName")).getText());
+
+                submitCommand(root, "assign evn/Planning Session c/1");
+                VBox members = (VBox) root.lookup("#members");
+                assertEquals(List.of("On leave until 19-10-2026"), leaveBadges(members));
+                assertEquals("A", ((Label) members.lookup(".event-member-avatar")).getText());
+                submitCommand(root, "markattendance evn/Planning Session mem/Aisha att/present");
+                assertEquals("1 Present", ((Label) root.lookup("#presentCount")).getText());
+
+                String future = LocalDate.now().plusYears(1).format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+                submitCommand(root, "edit 1 lv/" + future);
+                eventsView.fire();
+                assertEquals(List.of("On leave until " + future), leaveBadges(members));
+                assertEquals(future, storage.readCoordiMate().orElseThrow().getPersonList().getFirst()
+                        .getLeaveDate().orElseThrow().getValue());
+
+                submitCommand(root, "edit 1 lv/");
+                eventsView.fire();
+                assertEquals(List.of(), leaveBadges(members));
+                assertEquals("Planning Session", ((Label) root.lookup("#selectedName")).getText());
+                assertEquals("1 Present", ((Label) root.lookup("#presentCount")).getText());
+                assertEquals("● present", ((Label) members.lookup(".attendance-badge")).getText());
+                assertTrue(storage.readCoordiMate().orElseThrow().getPersonList().getFirst().getLeaveDate().isEmpty());
+            } finally {
+                fixture.stage().close();
+            }
+            return null;
+        });
+    }
+
+    @Test
+    public void editLeave_saveFailure_preservesEventIndicatorAttendanceAndSavedData() throws Exception {
+        onJavaFxThread(() -> {
+            ModelManager model = new ModelManager();
+            model.addPerson(new PersonBuilder(ALICE).withoutMemberId().withLeaveDate("19-10-2026").build());
+            Event event = event("Team Dinner", "25-10-2026", "25-10-2026")
+                    .withMembersAndAttendance(List.of(ALICE.getName()),
+                            Map.of(ALICE.getName(), AttendanceStatus.ABSENT));
+            model.addEvent(event);
+            ControlledStorage storage = new ControlledStorage(temporaryFolder.resolve("data.json"));
+            storage.saveCoordiMate(model.getCoordiMate());
+            Fixture fixture = openWindow(model, storage, new AdjustableClock(), true, 1100, 800);
+            try {
+                Parent root = fixture.stage().getScene().getRoot();
+                ToggleButton eventsView = (ToggleButton) root.lookup("#eventsView");
+                eventsView.fire();
+                ListView<?> events = (ListView<?>) root.lookup("#eventListView");
+                events.getSelectionModel().selectFirst();
+                byte[] savedBeforeEdit = Files.readAllBytes(storage.getCoordiMateFilePath());
+                storage.failSave = true;
+
+                submitCommand(root, "edit 1 lv/");
+
+                assertTrue(((Label) root.lookup("#resultDisplay")).getText()
+                        .startsWith(EditCommand.MESSAGE_SAVE_ERROR));
+                assertEquals(List.of("On leave until 19-10-2026"), leaveBadges((VBox) root.lookup("#members")));
+                assertTrue(eventsView.isSelected());
+                assertSame(event, events.getSelectionModel().getSelectedItem());
+                assertEquals("1 Absent", ((Label) root.lookup("#absentCount")).getText());
+                assertEquals("19-10-2026", model.getCoordiMate().getPersonList().getFirst()
+                        .getLeaveDate().orElseThrow().getValue());
+                assertArrayEquals(savedBeforeEdit, Files.readAllBytes(storage.getCoordiMateFilePath()));
+            } finally {
+                fixture.stage().close();
+            }
+            return null;
+        });
+    }
+
+    private static void submitCommand(Parent root, String command) {
+        TextField input = (TextField) root.lookup("#commandTextField");
+        input.setText(command);
+        input.fireEvent(new ActionEvent());
     }
 
     private Fixture openWindow(boolean showBeforeFilling) throws IOException {

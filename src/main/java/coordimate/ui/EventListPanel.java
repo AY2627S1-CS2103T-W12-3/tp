@@ -1,6 +1,8 @@
 package coordimate.ui;
 
+import java.time.Clock;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 import java.util.Objects;
@@ -91,6 +93,8 @@ public class EventListPanel extends UiPart<Region> {
 
     private int lastSelectedIndex = -1;
     private final ObservableList<Person> persons;
+    private final Clock clock;
+    private LocalDate shownDate;
     private final Label emptyListMessage = new Label(MESSAGE_NO_EVENTS);
     private final BooleanProperty showingArchived = new SimpleBooleanProperty(false);
 
@@ -105,8 +109,15 @@ public class EventListPanel extends UiPart<Region> {
      * Observes events and contacts so assigned members show their saved contact details.
      */
     public EventListPanel(ObservableList<Event> events, ObservableList<Person> persons) {
+        this(events, persons, Clock.systemDefaultZone());
+    }
+
+    /** Shows assigned members' leave status as of the date supplied by {@code clock}. */
+    EventListPanel(ObservableList<Event> events, ObservableList<Person> persons, Clock clock) {
         super(FXML);
         this.persons = getPersonSource(persons);
+        this.clock = Objects.requireNonNull(clock);
+        shownDate = LocalDate.now(clock);
         eventListView.setItems(events);
         eventListView.setCellFactory(list -> new EventListCell());
         eventListView.setPlaceholder(emptyListMessage);
@@ -179,6 +190,16 @@ public class EventListPanel extends UiPart<Region> {
     private void selectAndReveal(int targetIndex) {
         eventListView.getSelectionModel().select(targetIndex);
         eventListView.scrollTo(targetIndex);
+    }
+
+    /** Refreshes leave indicators when the calendar date changes. */
+    void refreshIfDateChanged() {
+        LocalDate today = LocalDate.now(clock);
+        if (today.equals(shownDate)) {
+            return;
+        }
+        shownDate = today;
+        showDetails(eventListView.getSelectionModel().getSelectedItem());
     }
 
     /** Runs the given action whenever the displayed event list is clicked. */
@@ -362,6 +383,13 @@ public class EventListPanel extends UiPart<Region> {
 
         VBox memberDetails = new VBox(4, identityLine, subtitle);
         if (person != null) {
+            if (person.isOnLeave(LocalDate.now(clock))) {
+                Label leave = new Label("On leave until " + person.getLeaveDate().orElseThrow());
+                leave.setWrapText(true);
+                leave.setMinWidth(0);
+                leave.getStyleClass().add("leave-badge");
+                memberDetails.getChildren().add(leave);
+            }
             person.getNote().ifPresent(note -> {
                 Label noteLabel = new Label("Note: " + note.getValue());
                 noteLabel.setWrapText(true);

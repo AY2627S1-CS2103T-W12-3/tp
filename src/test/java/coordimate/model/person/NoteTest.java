@@ -14,6 +14,7 @@ public class NoteTest {
     public void constructor_invalidNote_throwsIllegalArgumentException() {
         assertThrows(NullPointerException.class, () -> new Note(null));
         assertThrows(IllegalArgumentException.class, () -> new Note(" "));
+        assertThrows(IllegalArgumentException.class, () -> new Note("\u200B"));
     }
 
     @Test
@@ -26,6 +27,7 @@ public class NoteTest {
         assertFalse(Note.isValidNote("Call\tAlice"));
         assertFalse(Note.isValidNote("Call\r\nAlice"));
         assertFalse(Note.isValidNote("Call\u2029Alice"));
+        assertFalse(Note.isValidNote("\u200B"));
 
         assertTrue(Note.isValidNote("N".repeat(500)));
         assertTrue(Note.isValidNote("🎵".repeat(500))); // supplementary Unicode counts as one code point
