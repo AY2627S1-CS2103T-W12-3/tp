@@ -53,6 +53,15 @@ public class ArchiveCommandTest {
     }
 
     @Test
+    public void execute_unarchive_focusesRestoredContact() throws Exception {
+        archive(2).execute(model);
+
+        CommandResult result = unarchive(2).execute(model);
+
+        assertEquals(BENSON, result.getContactToFocus().orElseThrow());
+    }
+
+    @Test
     public void execute_contactHiddenByFilter_archivedById() throws Exception {
         model.updateFilteredPersonList(new ContactMatchesKeywordPredicate("Alice"));
 
