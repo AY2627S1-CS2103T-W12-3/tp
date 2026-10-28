@@ -41,11 +41,12 @@ public class JsonCoordiMateStorage {
      */
     Optional<EventNameCleanup> readEventNameCleanup() throws DataLoadingException {
         Optional<JsonSerializableCoordiMate> savedData = JsonUtil.readJsonFile(
-                filePath, JsonSerializableCoordiMate.class);
+                filePath, JsonSerializableCoordiMate.class, SavedJsonTypeValidator::validateCoordiMate);
         if (savedData.isEmpty()) {
             return Optional.empty();
         }
         try {
+            savedData.get().validateEventArchiveStatuses();
             List<String> yearZeroDeletedNames = savedData.get().removeYearZeroEvents();
             List<String> deletedNames = savedData.get().removeEventsWithEmbeddedParameters();
             boolean removedHistory = savedData.get().removeYearZeroReminderStarts();

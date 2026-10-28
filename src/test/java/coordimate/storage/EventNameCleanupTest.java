@@ -208,6 +208,41 @@ public class EventNameCleanupTest {
     }
 
     @Test
+    public void cleanup_numericPhone_preservesOriginalFile() throws Exception {
+        Path path = testFolder.resolve("data.json");
+        writeLegacyData(path, getTypicalCoordiMate(), List.of("Bad\u2003c/review"));
+        ObjectNode json = JsonUtil.fromJsonString(Files.readString(path), ObjectNode.class);
+        ObjectNode person = (ObjectNode) json.withArray("persons").get(0);
+        person.put("phone", 91234567);
+        String original = JsonUtil.toJsonString(json);
+        Files.writeString(path, original);
+
+        DataLoadingException error = assertThrows(DataLoadingException.class, () ->
+                storage(new JsonCoordiMateStorage(path)).cleanUpEventNames());
+
+        assertEquals("Invalid JSON type at persons[0].phone: expected a string.", error.getCause().getMessage());
+        assertEquals(original, Files.readString(path));
+    }
+
+    @Test
+    public void cleanup_invalidArchiveStatusOnDeletedEvent_preservesOriginalFile() throws Exception {
+        Path path = testFolder.resolve("data.json");
+        for (String event : List.of(
+                "{\"name\":\"Year Zero\",\"startTime\":\"01-01-0000\",\"endTime\":\"01-01-2027\",\"archived\":17}",
+                "{\"name\":\"Bad\u2003c/review\",\"startTime\":\"01-01-2027\","
+                        + "\"endTime\":\"01-01-2027\",\"archived\":17}")) {
+            String original = "{\"persons\":[],\"events\":[" + event + "]}";
+            Files.writeString(path, original);
+
+            DataLoadingException error = assertThrows(DataLoadingException.class, () ->
+                    storage(new JsonCoordiMateStorage(path)).cleanUpEventNames());
+
+            assertTrue(error.getCause().getMessage().endsWith(": archived must be true or false."));
+            assertEquals(original, Files.readString(path));
+        }
+    }
+
+    @Test
     public void cleanup_invalidContactOrMetadata_preservesOriginalFile() throws Exception {
         Path path = testFolder.resolve("data.json");
         for (String field : List.of("persons", "tags", "nextMemberId")) {
