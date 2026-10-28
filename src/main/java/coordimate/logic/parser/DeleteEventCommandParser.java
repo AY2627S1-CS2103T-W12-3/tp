@@ -1,9 +1,9 @@
 package coordimate.logic.parser;
 
 import static coordimate.logic.parser.CliSyntax.PREFIX_EVENT_NAME;
-import static java.util.Objects.requireNonNull;
 
-import java.util.regex.Matcher;
+import java.util.Map;
+import java.util.Set;
 
 import coordimate.logic.Messages;
 import coordimate.logic.commands.DeleteEventCommand;
@@ -20,28 +20,13 @@ public class DeleteEventCommandParser implements Parser<DeleteEventCommand> {
 
     @Override
     public DeleteEventCommand parse(String args) throws ParseException {
-        requireNonNull(args);
-        Matcher matcher = PrefixParser.EVENT_PARAMETER_PATTERN.matcher(args);
-        int valueStart = -1;
-        while (matcher.find()) {
-            if (!PREFIX_EVENT_NAME.toString().equals(matcher.group())) {
-                throw new ParseException(String.format(MESSAGE_UNKNOWN_PARAMETER, matcher.group()));
-            }
-            if (valueStart >= 0) {
-                throw new ParseException(String.format(MESSAGE_REPEATED_PARAMETER, PREFIX_EVENT_NAME));
-            }
-            if (!args.substring(0, matcher.start()).isBlank()) {
-                throw createInvalidFormatException();
-            }
-            valueStart = matcher.end();
+        Map<String, String> values = PrefixParser.parseUniqueParameters(args, PrefixParser.EVENT_PARAMETER_PATTERN,
+                Set.of(PREFIX_EVENT_NAME.toString()), DeleteEventCommand.MESSAGE_USAGE,
+                MESSAGE_UNKNOWN_PARAMETER, MESSAGE_REPEATED_PARAMETER);
+        String eventName = values.get(PREFIX_EVENT_NAME.toString());
+        if (eventName == null) {
+            throw ParserUtil.createInvalidFormatException(DeleteEventCommand.MESSAGE_USAGE);
         }
-        if (valueStart < 0) {
-            throw createInvalidFormatException();
-        }
-        return new DeleteEventCommand(ParserUtil.parseEventName(args.substring(valueStart)));
-    }
-
-    private ParseException createInvalidFormatException() {
-        return ParserUtil.createInvalidFormatException(DeleteEventCommand.MESSAGE_USAGE);
+        return new DeleteEventCommand(ParserUtil.parseEventName(eventName));
     }
 }
