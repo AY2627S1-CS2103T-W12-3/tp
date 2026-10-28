@@ -653,6 +653,17 @@ Success: `Listed 2 member(s) of Final Concert. Use list to show all contacts.`
 
 If the event has no members, the contact list is empty: `Final Concert has no members assigned. Use list to show all contacts.`
 
+The contact list shows only members in the current view, so [archived](#archiving-contacts-and-events-archive-archiveevent)
+members are not listed in the normal view, and active members are not listed after `list archived`. The message says how
+many members are in the other view:
+
+| Condition | Message |
+|---|---|
+| Some members are archived, in the normal view. | `Listed 1 member(s) of Final Concert. 1 member(s) are archived. Use list archived to show archived contacts.` |
+| All members are archived, in the normal view. | `No active members of Final Concert are shown. 2 member(s) are archived. Use list archived to show archived contacts.` |
+| Some members are active, after `list archived`. | `Listed 1 member(s) of Final Concert. 1 member(s) are active. Use list to show all contacts.` |
+| All members are active, after `list archived`. | `No archived members of Final Concert are shown. 2 member(s) are active. Use list to show all contacts.` |
+
 | Condition | Error message |
 |---|---|
 | No saved event has the supplied name, ignoring case. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
