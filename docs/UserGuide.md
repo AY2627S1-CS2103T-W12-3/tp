@@ -550,8 +550,8 @@ Format: `assign evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]...`
 * Contacts who are already assigned to the event are skipped, and an ID repeated in the same command is counted once.
 * A new member cannot be assigned if their leave covers the entire event: their last day of leave is on or after
   the event's end date. This includes events ending at any time on the last day of leave, or with a date-only end.
-  If any new member meets this condition, no contacts are assigned. Leave ending before or during the event
-  does not prevent assignment.
+  Members who meet this condition are skipped; other eligible members are still assigned. The result lists
+  the skipped members' names and IDs. Leave ending before or during the event does not prevent assignment.
 * New members are added after the existing members, in the order given.
 
 At startup, CoordiMate also removes saved assignments whose members' leave covers the entire event, including
@@ -571,6 +571,11 @@ Success: `Assigned 2 member(s) to Final Concert.`
 
 If some contacts were already assigned: `Assigned 1 member(s) to Final Concert. 1 contact(s) were already assigned.`
 
+If a member is skipped because of leave: `Assigned 2 member(s) to Final Concert. Skipped 1 contact(s) on leave for the entire event: Alice Pauline (ID: 1).`
+
+If no new members can be assigned, no changes are made. The error lists members skipped because of leave and,
+if applicable, the number who were already assigned.
+
 | Condition | Error message |
 |---|---|
 | No saved event has the supplied name, ignoring case. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
@@ -578,7 +583,7 @@ If some contacts were already assigned: `Assigned 1 member(s) to Final Concert. 
 | A member ID does not exist. | `No contact exists with member ID: {MEMBER_ID}. Use an existing member ID.` |
 | A member ID is not written as digits representing a value from 1 to 2147483647. | `Member IDs must be positive integers separated by spaces. Example: c/1 3 5` |
 | A specified contact is archived. | `{NAME} is archived, so it cannot be assigned. No changes were made. Unarchive it first with: unarchive {MEMBER_ID}` |
-| A new member's leave covers the entire event. | `Unable to assign member. Member is on leave for the entire event. No changes were made.` |
+| No new members can be assigned because their leave covers the entire event. | `No new members could be assigned to {EVENT_NAME}. No changes were made.` followed by any already-assigned count and `Skipped {COUNT} contact(s) on leave for the entire event: {NAME} (ID: {MEMBER_ID}), ...` |
 | Every specified contact is already assigned. | `All specified contacts are already assigned to {EVENT_NAME}. No changes were made.` |
 | The event name is empty. | `Event name must not be empty. Example: evn/Final Concert` |
 | The event name is longer than 100 characters. | `Event name must not exceed 100 characters. Example: evn/Final Concert` |
