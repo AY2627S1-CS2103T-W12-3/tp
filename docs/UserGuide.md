@@ -29,11 +29,16 @@
    On subsequent launches, CoordiMate restores whether the window was maximized, together with its most recent
    non-maximized size and position. If those saved bounds do not fit the current display, such as after disconnecting
    a secondary screen or changing the display resolution, CoordiMate adjusts the window to remain fully visible.<br>
+   On displays large enough, the minimum window size is 1200 × 800 pixels. On smaller displays, CoordiMate fits the
+   available screen and stacks narrow list and details panes; scroll within a pane to read content below its viewport.<br>
 
    The left sidebar switches between Contacts, Events, and Tags and shows commands for the selected view.
    Click a command name to put only the command word in the input and show its format and an example below the input.
    Complete the command by typing its arguments after the command word.
    The main workspace shows a list beside its details, and the command box, feedback, and prefix hints stay at the bottom.
+   Feedback grows up to 220 pixels so the delete confirmation is visible without scrolling. Longer messages scroll;
+   use the scrollbar or mouse wheel to read the full message.
+   The scroll hint appears only when the current message extends beyond the visible feedback area.
    After a successful command, CoordiMate opens the view for its result: contact commands open Contacts, event
    commands open Events, and tag commands open Tags. `assign` and `unassign` keep the current view and refresh its
    related contact or event details. Failed commands keep the current view. A valid `delete` request opens Contacts

@@ -10,8 +10,8 @@ import javafx.geometry.Rectangle2D;
  */
 final class WindowBounds {
 
-    static final double PREFERRED_MIN_WIDTH = 830;
-    static final double PREFERRED_MIN_HEIGHT = 650;
+    static final double PREFERRED_MIN_WIDTH = 1200;
+    static final double PREFERRED_MIN_HEIGHT = 800;
 
     private WindowBounds() {
     }

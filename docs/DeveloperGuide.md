@@ -104,15 +104,21 @@ entries. While `Logic` awaits delete confirmation, arrow-key navigation is pause
 to history. Inserting a command from the sidebar resets history navigation.
 
 The `UI` component uses the JavaFX UI framework. The layouts of these UI parts are defined in matching `.fxml` files in `src/main/resources/view`. For example, [`MainWindow.fxml`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/resources/view/MainWindow.fxml) specifies the layout of [`MainWindow`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/ui/MainWindow.java).
+`ResultDisplay` sizes its scroll pane from the message's wrapped height, capped at 220 pixels, so delete confirmation
+details remain visible at the minimum window size while longer feedback shows
+several lines without displacing the workspace or command box. Its icon and status label stay outside the scroll pane.
+The status column reserves space for the overflow hint even while it is hidden, keeping the message width stable.
+The hint appears only when the current message is taller than the visible viewport.
 
 At launch, `MainWindow` obtains the saved size, position, and maximized state from `GuiSettings`. It selects the screen
 containing the saved position, or the primary screen if that display is no longer connected. `WindowBounds` then clamps
 the saved dimensions and coordinates to the screen's visual bounds, which exclude operating-system areas such as the
-taskbar or dock. The preferred minimum size is also capped to the available area, so it cannot force the window beyond
-a smaller display. `MainWindow` tracks the latest non-maximized bounds separately, allowing a maximized window to be
-restored without replacing its normal dimensions. If a maximized window is moved to another monitor before closing,
-the normal bounds retain their size and relative position on that monitor so the next launch maximizes there. Screen
-fallback is logged at `WARNING`, bounds adjustments at `INFO`, and maximized-state restoration and saving at `FINE`.
+taskbar or dock. The preferred minimum size is 1200 × 800 pixels, capped to the available area so it cannot force the
+window beyond a smaller display. `MainWindow` tracks the latest non-maximized bounds separately, allowing a maximized
+window to be restored without replacing its normal dimensions. If a maximized window is moved to another monitor
+before closing, the normal bounds retain their size and relative position on that monitor so the next launch maximizes
+there. Screen fallback is logged at `WARNING`, bounds adjustments at `INFO`, and maximized-state restoration and saving
+at `FINE`.
 
 The `UI` component,
 
@@ -126,7 +132,8 @@ The `UI` component,
   It also derives assigned-event rows from the live event list. The Events view resolves each assigned
   member to contact role, organisation, and tags, and refreshes when contact data changes. Contact and
   event views keep their details pane above a minimum width, then stack the list above details when the
-  window is narrow. Sidebar command rows insert only the command word into the command box and show its
+  window is narrow. The Events view stacks below 900 pixels of workspace width so its timing card does not extend
+  beyond the details viewport. Sidebar command rows insert only the command word into the command box and show its
   format and an example; rows also support keyboard activation. Selecting a tag shows all saved contacts
   assigned to it, independent of the current contact filter, and refreshes names, roles, organisations, and tags
   when contact data changes.
