@@ -234,7 +234,8 @@ If the data file cannot be loaded during startup, `MainApp` creates an empty in-
 and passes a recovery flag to `UiManager`. If model conversion raised `IllegalValueException`, it also passes the
 validation message. After the main window is ready, `UiManager` shows a warning that names the unchanged data file,
 includes any available validation message, and asks the user to repair or restore it. Dismissing the warning requests
-a normal JavaFX shutdown before the tutorial or command interface can be used.
+a normal JavaFX shutdown before the tutorial or command interface can be used. When preferences also fail to load,
+`MainApp` passes that warning separately so the same recovery dialog names both files and their problems.
 
 The tutorial flag is saved with the other user preferences. Preference files without that field are read with the
 tutorial flag set to `false`, so the tutorial is offered until the user closes or finishes it.
@@ -244,7 +245,8 @@ event, and preference fields. This prevents Jackson from converting values such 
 window maximization flags. Existing validation for `archived`, member IDs, and model values still runs afterward.
 The validator reports a field path for type errors, while unknown fields remain ignored for compatibility.
 If preferences cannot be loaded, `MainApp` uses defaults and shows a warning. It skips preference writes during that
-session, including shutdown, so the original file remains available for repair.
+session, including shutdown, so the original file remains available for repair. If the data file is also invalid,
+the warning instead appears in the data recovery dialog before the app closes.
 
 Previously saved digit-only phone numbers with at least three digits, and 7–15-digit numbers whose brackets do not
 match, remain valid model data, so older JSON files can still load. The command parser applies the current rule,

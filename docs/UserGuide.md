@@ -1215,9 +1215,11 @@ Furthermore, certain edits can cause CoordiMate to behave in unexpected ways (e.
 </box>
 
 If `preferences.json` contains invalid JSON or a value of the wrong type, CoordiMate warns you and uses default
-preferences for that session. For example, `windowMaximized` must be `true` or `false` without quotes, and window
-width and height must be JSON numbers. The original preferences file is kept unchanged, including when you close the
-app. Repair or restore the file shown in the warning before the next launch.
+preferences for that session when the data file is valid. For example, `windowMaximized` must be `true` or `false`
+without quotes, and window width and height must be JSON numbers. The original preferences file is kept unchanged,
+including when you close the
+app. Repair or restore the file shown in the warning before the next launch. If both the data and preferences files
+are invalid, one recovery warning lists both problems and file paths, then CoordiMate closes after **OK**.
 
 --------------------------------------------------------------------------------------------------------------------
 

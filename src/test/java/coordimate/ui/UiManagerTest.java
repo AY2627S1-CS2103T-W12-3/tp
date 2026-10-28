@@ -197,6 +197,38 @@ public class UiManagerTest {
     }
 
     @Test
+    public void start_dataAndPreferencesRecovery_showsBothProblemsAndExits() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            LogicManager logic = new LogicManager(new ModelManager(), null);
+            Path dataFilePath = Path.of("data", "coordimate.json");
+            Path prefsFilePath = Path.of("preferences.json");
+            String dataDetail = "Invalid JSON type at persons[0].phone: expected a string.";
+            String prefsWarning = "Preferences could not be loaded.\n\nProblem: Invalid JSON type at "
+                    + "guiSettings.windowMaximized: expected a boolean.\n\nRepair or restore this file:\n"
+                    + prefsFilePath.toAbsolutePath();
+            boolean[] isExitRequested = {false};
+            Runnable exitAction = () -> isExitRequested[0] = true;
+            RecordingUiManager uiManager = new RecordingUiManager(logic, dataFilePath, dataDetail, prefsWarning,
+                    exitAction);
+            Stage primaryStage = new Stage();
+
+            uiManager.start(primaryStage);
+
+            assertEquals(1, uiManager.alertCount);
+            assertTrue(uiManager.alertContent.contains(dataDetail));
+            assertTrue(uiManager.alertContent.contains(dataFilePath.toAbsolutePath().toString()));
+            assertTrue(uiManager.alertContent.contains("guiSettings.windowMaximized"));
+            assertTrue(uiManager.alertContent.contains(prefsFilePath.toAbsolutePath().toString()));
+            assertTrue(isExitRequested[0]);
+            uiManager.stop();
+            primaryStage.close();
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
     public void start_longRecoveryMessage_isScrollableAndKeepsRepairPath() throws Exception {
         FutureTask<Void> task = new FutureTask<>(() -> {
             LogicManager logic = new LogicManager(new ModelManager(), null);
@@ -282,6 +314,7 @@ public class UiManagerTest {
         private String alertTitle;
         private String alertHeader;
         private String alertContent;
+        private int alertCount;
 
         RecordingUiManager(LogicManager logic, Path dataFilePath, boolean isDataRecoveryMode, Runnable exitAction) {
             super(logic, dataFilePath, isDataRecoveryMode, exitAction);
@@ -292,12 +325,18 @@ public class UiManagerTest {
             super(logic, dataFilePath, isDataRecoveryMode, dataRecoveryDetail, exitAction);
         }
 
+        RecordingUiManager(LogicManager logic, Path dataFilePath, String dataRecoveryDetail,
+                String preferencesWarning, Runnable exitAction) {
+            super(logic, dataFilePath, "", true, dataRecoveryDetail, preferencesWarning, exitAction);
+        }
+
         @Override
         void showAlertDialogAndWait(Alert.AlertType type, String title, String headerText, String contentText) {
             alertType = type;
             alertTitle = title;
             alertHeader = headerText;
             alertContent = contentText;
+            alertCount++;
         }
     }
 

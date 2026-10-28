@@ -93,21 +93,26 @@ public class MainApp extends Application {
                     + "Check the data file: " + coordiMateFilePath;
         }
 
+        model = initModelManager(storage, userPrefs);
+
+        String preferencesWarning = "";
         if (isPrefsRecoveryMode) {
             String detail = prefsRecoveryDetail.isEmpty() ? "" : "\n\nProblem: " + prefsRecoveryDetail;
-            String prefsWarning = "Preferences could not be loaded. Default preferences are in use for this "
-                    + "session. The original file will not be changed." + detail
+            String defaults = isDataRecoveryMode ? "" : " Default preferences are in use for this session.";
+            preferencesWarning = "Preferences could not be loaded." + defaults
+                    + " The original file will not be changed." + detail
                     + "\n\nRepair or restore this file before restarting CoordiMate:\n"
                     + userPrefsFilePath.toAbsolutePath();
-            startupWarning = startupWarning.isEmpty() ? prefsWarning : startupWarning + "\n\n" + prefsWarning;
+            if (!isDataRecoveryMode) {
+                startupWarning = startupWarning.isEmpty() ? preferencesWarning
+                        : startupWarning + "\n\n" + preferencesWarning;
+            }
         }
-
-        model = initModelManager(storage, userPrefs);
 
         logic = new LogicManager(model, storage);
 
         ui = new UiManager(logic, storage.getCoordiMateFilePath(), startupWarning, isDataRecoveryMode,
-                dataRecoveryDetail);
+                dataRecoveryDetail, preferencesWarning);
     }
 
     /**

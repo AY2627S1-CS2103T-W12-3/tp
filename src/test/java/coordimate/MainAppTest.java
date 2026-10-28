@@ -160,6 +160,32 @@ public class MainAppTest {
     }
 
     @Test
+    public void init_invalidDataAndPreferences_preservesBothFilesOnExit() throws Exception {
+        Path dataFile = testFolder.resolve("coordimate.json");
+        Path prefsFile = testFolder.resolve("preferences.json");
+        String invalidData = """
+                {"persons":[{"name":"Alex Yeoh","phone":8000001,"email":"alex@example.com"}]}
+                """;
+        String invalidPrefs = "{\"guiSettings\":{\"windowMaximized\":17}}";
+        Files.writeString(dataFile, invalidData);
+        Files.writeString(prefsFile, invalidPrefs);
+        MainApp app = new MainApp(prefsFile, dataFile);
+
+        app.init();
+
+        assertTrue(app.isDataRecoveryMode);
+        assertTrue(app.isPrefsRecoveryMode);
+        assertEquals("Invalid JSON type at persons[0].phone: expected a string.", app.dataRecoveryDetail);
+        assertEquals("Invalid JSON type at guiSettings.windowMaximized: expected a boolean.",
+                app.prefsRecoveryDetail);
+        assertEquals(invalidData, Files.readString(dataFile));
+        assertEquals(invalidPrefs, Files.readString(prefsFile));
+        app.stop();
+        assertEquals(invalidData, Files.readString(dataFile));
+        assertEquals(invalidPrefs, Files.readString(prefsFile));
+    }
+
+    @Test
     public void init_malformedPreferences_preservesFileOnExit() throws Exception {
         Path prefsFile = testFolder.resolve("preferences.json");
         Files.writeString(prefsFile, "invalid JSON");

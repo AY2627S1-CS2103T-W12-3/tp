@@ -34,6 +34,7 @@ public class UiManager implements Ui {
     private Path dataFilePath;
     private final boolean isDataRecoveryMode;
     private final String dataRecoveryDetail;
+    private final String preferencesWarning;
     private final Runnable exitAction;
     private MainWindow mainWindow;
     private final String startupWarning;
@@ -74,16 +75,29 @@ public class UiManager implements Ui {
      */
     public UiManager(Logic logic, Path dataFilePath, String startupWarning, boolean isDataRecoveryMode,
             String dataRecoveryDetail) {
-        this(logic, dataFilePath, startupWarning, isDataRecoveryMode, dataRecoveryDetail, Platform::exit);
+        this(logic, dataFilePath, startupWarning, isDataRecoveryMode, dataRecoveryDetail, "", Platform::exit);
+    }
+
+    /** Creates the UI with a preference warning to include if saved data also needs recovery. */
+    public UiManager(Logic logic, Path dataFilePath, String startupWarning, boolean isDataRecoveryMode,
+            String dataRecoveryDetail, String preferencesWarning) {
+        this(logic, dataFilePath, startupWarning, isDataRecoveryMode, dataRecoveryDetail, preferencesWarning,
+                Platform::exit);
     }
 
     UiManager(Logic logic, Path dataFilePath, String startupWarning, boolean isDataRecoveryMode,
             String dataRecoveryDetail, Runnable exitAction) {
+        this(logic, dataFilePath, startupWarning, isDataRecoveryMode, dataRecoveryDetail, "", exitAction);
+    }
+
+    UiManager(Logic logic, Path dataFilePath, String startupWarning, boolean isDataRecoveryMode,
+            String dataRecoveryDetail, String preferencesWarning, Runnable exitAction) {
         this.logic = logic;
         this.dataFilePath = dataFilePath;
         this.startupWarning = startupWarning;
         this.isDataRecoveryMode = isDataRecoveryMode;
         this.dataRecoveryDetail = dataRecoveryDetail;
+        this.preferencesWarning = preferencesWarning;
         this.exitAction = exitAction;
     }
 
@@ -118,7 +132,8 @@ public class UiManager implements Ui {
 
     private String recoveryAlertContent() {
         String detail = dataRecoveryDetail.isEmpty() ? "" : "Problem: " + dataRecoveryDetail + "\n\n";
-        return String.format(DATA_RECOVERY_ALERT_CONTENT, detail, dataFilePath.toAbsolutePath());
+        String dataWarning = String.format(DATA_RECOVERY_ALERT_CONTENT, detail, dataFilePath.toAbsolutePath());
+        return preferencesWarning.isEmpty() ? dataWarning : dataWarning + "\n\n" + preferencesWarning;
     }
 
     @Override
