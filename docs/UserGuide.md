@@ -54,13 +54,13 @@
    to return to Command mode.<br>
    Some example commands you can try:
 
-   * `list` : Lists all contacts.
+   * `list` : Lists all contacts and events.
 
    * `add n/John Doe p/98765432 e/johnd@example.com r/Member` : Adds a contact named `John Doe` to CoordiMate.
 
    * `delete 3` : Asks to delete the contact with member ID `3`. Type `y` and press Enter to confirm.
 
-   * `clear` : Deletes all contacts, events, and custom tags.
+   * `clear` : Deletes all contacts, events, and custom tags, and restores the default tags.
 
    * `exit` : Exits the app.
 
@@ -134,9 +134,9 @@ A command that breaks a constraint is rejected and makes no changes.
 | `BIRTHDAY` | `b/` | A real date in `dd-MM-yyyy` format that is not in the future, e.g. `18-06-2004`. |
 | `LEAVE_END_DATE` | `lv/` | A real date in `dd-MM-yyyy` format that is not in the past, e.g. `30-11-2026`. Today's date is allowed. |
 | `ADDRESS` | `a/` | 1 to 200 printable characters, including at least one visible character. |
-| `ORGANISATION` | `o/` | 1 to 80 characters. Letters, digits, spaces, hyphens, and `&` only, with at least one letter or digit. Several spaces in a row count as one. |
+| `ORGANISATION` | `o/` | 1 to 80 characters. Letters, digits, spaces, and `-` `&` `.` `,` `'` `(` `)` `/` only, with at least one letter or digit. Several spaces in a row count as one. |
 | `NOTE` | `m/` | 1 to 500 printable characters, including at least one visible character. |
-| `TAG`, `NEW_TAG` | `t/`, `at/`, `rt/` | 1 to 30 characters. English letters and digits only, with no spaces. Tags are unique, ignoring case. |
+| `TAG`, `NEW_TAG` | `t/`, `at/`, `rt/` | 1 to 30 characters. English letters and digits only, with no spaces. Tags are unique, ignoring case. A contact can have at most 15 tags. |
 | `EVENT_NAME`, `NEW_EVENT_NAME` | `evn/`, `nevn/` | 1 to 100 printable Unicode characters, including at least one visible character. Internal tabs, line breaks, and control characters are rejected. Several spaces in a row count as one. Event names are unique, ignoring case and extra spaces. See the parameter syntax note below. |
 | `START_TIME`, `END_TIME` | `st/`, `et/` | A real date in `dd-MM-yyyy` format, optionally followed by a 24-hour time in `HH:mm` format, e.g. `17-09-2026` or `17-09-2026 16:30`. The start must not be after the end. |
 | `STATUS` | `att/` | `present` or `absent`, ignoring case. |
@@ -368,8 +368,8 @@ correct it, then press Enter or click **Retry**.
 
 | Condition | Error message |
 |---|---|
-| An event with the same name already exists, ignoring case. | `An event with this name already exists. No changes were made.` |
-| An archived event with the same name already exists, ignoring case. | `An archived event named {EVENT_NAME} already exists. No changes were made. To restore it, use: unarchiveevent evn/{EVENT_NAME}` |
+| An event with the same name already exists, ignoring case and extra spaces. | `An event with this name already exists. No changes were made.` |
+| An archived event with the same name already exists, ignoring case and extra spaces. | `An archived event named {EVENT_NAME} already exists. No changes were made. To restore it, use: unarchiveevent evn/{EVENT_NAME}` |
 | The event name is empty. | `Event name must not be empty. Example: evn/Final Concert` |
 | All required parameters are present, but `st/` contains only whitespace. | `Start time must not be empty. Example: st/17-09-2026 16:30` |
 | All required parameters are present, but `et/` contains only whitespace. | `End time must not be empty. Example: et/17-09-2026 18:30` |
@@ -395,7 +395,7 @@ Provide at least one field to edit; omitted fields
 keep their existing values. Each parameter may appear only once.
 
 The new name follows the same rules as in `addevent`: 1 to 100 printable characters, not duplicating
-another event's name, ignoring case. Start and end times use `dd-MM-yyyy [HH:mm]`; a date is
+another event's name, ignoring case and extra spaces. Start and end times use `dd-MM-yyyy [HH:mm]`; a date is
 required and a 24-hour time is optional. The updated start must not be after the
 updated end, using the same ordering rules as `addevent`.
 
@@ -410,7 +410,7 @@ Success: `Edited Event NUS Student Life Fair. Start Time: 09-10-2026. End Time: 
 | Condition | Error message |
 |---|---|
 | `evn/` is missing, or there is text before the first parameter. | `Invalid command format.` |
-| No saved event has the supplied name, ignoring case. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
+| No saved event has the supplied name, ignoring case and extra spaces. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
 | The event name is empty or contains only whitespace. | `Event name must not be empty. Example: evn/Final Concert` |
 | The new event name is empty or contains only whitespace. | `New event name must not be empty. Example: nevn/Final Concert` |
 | The event name is longer than 100 characters. | `Event name must not exceed 100 characters. Example: evn/Final Concert` |
@@ -447,9 +447,9 @@ Success: `Deleted Event Final Concert.`
 |---|---|
 | `evn/` is missing, or there is text before `evn/`. | `Invalid command format.` |
 | The event name is empty or contains only whitespace. | `Event name must not be empty. Example: evn/Final Concert` |
-| No saved event has the supplied name, ignoring case. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
+| No saved event has the supplied name, ignoring case and extra spaces. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
 | The event name is longer than 100 characters. | `Event name must not exceed 100 characters. Example: evn/Final Concert` |
-| The event name contains a line break or other control character. | `Invalid event name. Use letters, digits, spaces, or punctuation. Example: evn/Final-Concert` |
+| The event name has no visible characters, or contains a line break or other control character. | `Invalid event name. Use letters, digits, spaces, or punctuation. Example: evn/Final-Concert` |
 | `evn/` is repeated. | `Parameter evn/ may only be specified once.` |
 | An unknown parameter is used. | `Unknown parameter: {PREFIX}.` |
 
@@ -551,7 +551,7 @@ Assigns one or more contacts to an existing event as members and saves the chang
 
 Format: `assign evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]...`
 
-* `EVENT_NAME` must match a saved event name, ignoring case. Leading and trailing whitespace is removed.
+* `EVENT_NAME` must match a saved event name, ignoring case and extra spaces between words. Leading and trailing whitespace is removed.
 * `MEMBER_ID` is a contact's permanent numeric ID, from `1` to `2147483647`. Separate several IDs with spaces.
   IDs resolve across all saved contacts, including those hidden by searches, filters, or an empty results list.
 * Each parameter may appear only once.
@@ -573,7 +573,7 @@ If some contacts were already assigned: `Assigned 1 member(s) to Final Concert. 
 
 | Condition | Error message |
 |---|---|
-| No saved event has the supplied name, ignoring case. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
+| No saved event has the supplied name, ignoring case and extra spaces. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
 | The event is archived. | `Event {EVENT_NAME} is archived, so its members cannot be changed. Unarchive it first with: unarchiveevent evn/{EVENT_NAME}` |
 | A member ID does not exist. | `No contact exists with member ID: {MEMBER_ID}. Use an existing member ID.` |
 | A member ID is not written as digits representing a value from 1 to 2147483647. | `Member IDs must be positive integers separated by spaces. Example: c/1 3 5` |
@@ -581,7 +581,7 @@ If some contacts were already assigned: `Assigned 1 member(s) to Final Concert. 
 | Every specified contact is already assigned. | `All specified contacts are already assigned to {EVENT_NAME}. No changes were made.` |
 | The event name is empty. | `Event name must not be empty. Example: evn/Final Concert` |
 | The event name is longer than 100 characters. | `Event name must not exceed 100 characters. Example: evn/Final Concert` |
-| The event name contains a line break or other control character. | `Invalid event name. Use letters, digits, spaces, or punctuation. Example: evn/Final-Concert` |
+| The event name has no visible characters, or contains a line break or other control character. | `Invalid event name. Use letters, digits, spaces, or punctuation. Example: evn/Final-Concert` |
 | `c/` has no member IDs. | `Member IDs must not be empty. Example: c/1 3 5` |
 | `evn/` or `c/` is missing, or there is text before the first parameter. | `Invalid command format.` |
 | A parameter is repeated. | `Parameter {PREFIX} may only be specified once.` |
@@ -596,7 +596,7 @@ Removes one or more members from an existing event and saves the change. The con
 
 Format: `unassign evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]...`
 
-* `EVENT_NAME` must match a saved event name, ignoring case. Leading and trailing whitespace is removed.
+* `EVENT_NAME` must match a saved event name, ignoring case and extra spaces between words. Leading and trailing whitespace is removed.
 * `MEMBER_ID` is a contact's permanent numeric ID, from `1` to `2147483647`. Separate several IDs with spaces.
   IDs resolve across all saved contacts, including those hidden by searches, filters, or an empty results list.
 * Each parameter may appear only once.
@@ -617,14 +617,14 @@ If some contacts were not assigned: `Removed 1 member(s) from Final Concert. 1 c
 
 | Condition | Error message |
 |---|---|
-| No saved event has the supplied name, ignoring case. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
+| No saved event has the supplied name, ignoring case and extra spaces. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
 | The event is archived. | `Event {EVENT_NAME} is archived, so its members cannot be changed. Unarchive it first with: unarchiveevent evn/{EVENT_NAME}` |
 | A member ID does not exist. | `No contact exists with member ID: {MEMBER_ID}. Use an existing member ID.` |
 | A member ID is not written as digits representing a value from 1 to 2147483647. | `Member IDs must be positive integers separated by spaces. Example: c/1 3 5` |
 | None of the specified contacts are assigned. | `None of the specified contacts are assigned to {EVENT_NAME}. No changes were made.` |
 | The event name is empty. | `Event name must not be empty. Example: evn/Final Concert` |
 | The event name is longer than 100 characters. | `Event name must not exceed 100 characters. Example: evn/Final Concert` |
-| The event name contains a line break or other control character. | `Invalid event name. Use letters, digits, spaces, or punctuation. Example: evn/Final-Concert` |
+| The event name has no visible characters, or contains a line break or other control character. | `Invalid event name. Use letters, digits, spaces, or punctuation. Example: evn/Final-Concert` |
 | `c/` has no member IDs. | `Member IDs must not be empty. Example: c/1 3 5` |
 | `evn/` or `c/` is missing, or there is text before the first parameter. | `Invalid command format.` |
 | A parameter is repeated. | `Parameter {PREFIX} may only be specified once.` |
@@ -639,7 +639,7 @@ Shows only the members of an event in the contact list, with their full contact 
 
 Format: `members evn/EVENT_NAME`
 
-* `EVENT_NAME` must match a saved event name, ignoring case. Leading and trailing whitespace is removed.
+* `EVENT_NAME` must match a saved event name, ignoring case and extra spaces between words. Leading and trailing whitespace is removed.
 * CoordiMate switches to the **Contacts** view and lists the event's members in contact list order.
 * Use the members' permanent IDs in `assign`, `unassign`, `edit`, and `delete`, independently of the displayed list.
 * The list stays up to date while it is shown: members removed with `unassign` disappear from it, and renaming the event with `editevent` keeps showing its members. If the event is deleted, the list becomes empty.
@@ -675,10 +675,10 @@ many members are in the other view:
 
 | Condition | Error message |
 |---|---|
-| No saved event has the supplied name, ignoring case. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
+| No saved event has the supplied name, ignoring case and extra spaces. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
 | The event name is empty. | `Event name must not be empty. Example: evn/Final Concert` |
 | The event name is longer than 100 characters. | `Event name must not exceed 100 characters. Example: evn/Final Concert` |
-| The event name contains a line break or other control character. | `Invalid event name. Use letters, digits, spaces, or punctuation. Example: evn/Final-Concert` |
+| The event name has no visible characters, or contains a line break or other control character. | `Invalid event name. Use letters, digits, spaces, or punctuation. Example: evn/Final-Concert` |
 | `evn/` is missing, or there is text before it. | `Invalid command format.` |
 | `evn/` is repeated. | `Parameter evn/ may only be specified once.` |
 | An unknown parameter is used. | `Unknown parameter: {PREFIX}.` |
@@ -710,13 +710,13 @@ If the member already has the requested status, no changes are made:
 
 | Condition | Error message |
 |---|---|
-| No saved event has the supplied name, ignoring case. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
-| The supplied member is not assigned to the event, ignoring case. | `{MEMBER_NAME} is not assigned to event {EVENT_NAME}. Assign the contact to the event before marking attendance.` |
+| No saved event has the supplied name, ignoring case and extra spaces. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
+| The supplied member is not assigned to the event, ignoring case and extra spaces. | `{MEMBER_NAME} is not assigned to event {EVENT_NAME}. Assign the contact to the event before marking attendance.` |
 | The member name violates the constraints above. | `Invalid name. Use 1 to 80 characters: letters, spaces, hyphens, apostrophes, periods, and s/o or d/o, with at least one letter. Example: mem/Aisha Tan` |
 | `STATUS` is not `present` or `absent`, ignoring case. | `Invalid attendance status. Use present or absent. Example: att/present` |
 | The event name is empty. | `Event name must not be empty. Example: evn/Final Concert` |
 | The event name is longer than 100 characters. | `Event name must not exceed 100 characters. Example: evn/Final Concert` |
-| The event name contains a line break or other control character. | `Invalid event name. Use letters, digits, spaces, or punctuation. Example: evn/Final-Concert` |
+| The event name has no visible characters, or contains a line break or other control character. | `Invalid event name. Use letters, digits, spaces, or punctuation. Example: evn/Final-Concert` |
 | Any required parameter (`evn/`, `mem/`, or `att/`) is missing, or there is text before the first parameter. | `Invalid command format.` |
 | The member name is empty. | `Member name must not be empty. Example: mem/Aisha Tan` |
 | The attendance status is empty. | `Attendance status must not be empty. Example: att/present` |
@@ -1163,11 +1163,11 @@ Errors for `archiveevent` and `unarchiveevent`:
 |---|---|
 | `evn/` is missing, or there is text before `evn/`. | `Invalid command format.` |
 | The event name is empty or contains only whitespace. | `Event name must not be empty. Example: evn/Final Concert` |
-| No saved event has the supplied name, ignoring case. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
+| No saved event has the supplied name, ignoring case and extra spaces. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
 | `archiveevent` is used on an event that is already archived. | `Event {EVENT_NAME} is already archived. No changes were made.` |
 | `unarchiveevent` is used on an event that is not archived. | `Event {EVENT_NAME} is not archived. No changes were made.` |
 | The event name is longer than 100 characters. | `Event name must not exceed 100 characters. Example: evn/Final Concert` |
-| The event name contains a line break or other control character. | `Invalid event name. Use letters, digits, spaces, or punctuation. Example: evn/Final-Concert` |
+| The event name has no visible characters, or contains a line break or other control character. | `Invalid event name. Use letters, digits, spaces, or punctuation. Example: evn/Final-Concert` |
 | `evn/` is repeated. | `Parameter evn/ may only be specified once.` |
 | An unknown parameter is used. | `Unknown parameter: {PREFIX}.` |
 

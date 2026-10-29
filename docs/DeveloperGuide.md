@@ -77,74 +77,28 @@ The inheritance diagram shows all ten subclasses of the abstract `UiPart`, which
 
 <puml src="diagrams/UiPartInheritanceDiagram.puml" alt="UI component inheritance from UiPart"/>
 
-The `HelpWindow` provides an in-app command quick reference. Its read-only, scrollable command table is populated by
-`HelpWindow` using the command words defined by the corresponding command classes, while its FXML file controls the
-resizable layout. The User Guide URL remains available for more detailed instructions.
-The window's **Close** button is marked as the JavaFX cancel button, allowing users to dismiss it by selecting the
-button or pressing <kbd>Esc</kbd> without exiting the application.
-`MainWindow` hosts the guided `TutorialWindow` as an overlay above the main application scene. The sixteen-step tour
-highlights the Contacts, Events, and Tags views, contact commands and input, lists, details, the event member list, and
-Help. It also introduces keyboard navigation. It selects an existing contact, event, or tag when needed, without
-changing saved data; empty lists show their existing hints.
-The event details pane scrolls to the member list for its step, and highlights inside a scroll pane are clipped to the
-visible viewport. The dim backdrop leaves the highlighted area clear while a transparent blocker and disabled command
-box prevent commands from running during the tour. `UiManager` opens the overlay on first launch. `MainWindow` records
-the tutorial preference when the user closes or finishes it. The `tutorial` command, the Tutorial item beside Help in
-the top bar, and the <kbd>F2</kbd> shortcut can open the overlay again at any time. `TutorialCommand` returns a
-`CommandResult` whose `shouldShowTutorial()` flag asks `MainWindow` to open the overlay, in the same way that
-`shouldShowHelp()` opens the Help window. The overlay handles Left and Right Arrow navigation, Escape dismissal, and
-Tab focus movement before key events can reach the command box or the main window's navigation shortcuts. Tab and
-Shift+Tab cycle through the card's enabled buttons so that keyboard focus cannot leave the card.
-
-`CommandBox` keeps submitted, nonblank commands in a session-only list. The list has no configured cap or eviction;
-its practical limit is the JVM heap, and it is discarded when the app closes. It records an attempt before execution
-so commands that fail validation can be recalled for correction. Up and Down move through the list, with the current
-input saved as a draft and restored after the newest entry. Browsing does not execute a command or modify stored
-entries. While `Logic` awaits delete confirmation, arrow-key navigation is paused and the response is not added
-to history. Inserting a command from the sidebar resets history navigation.
-
 The `UI` component uses the JavaFX UI framework. The layouts of these UI parts are defined in matching `.fxml` files in `src/main/resources/view`. For example, [`MainWindow.fxml`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/resources/view/MainWindow.fxml) specifies the layout of [`MainWindow`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/ui/MainWindow.java).
-`ResultDisplay` sizes its scroll pane from the message's wrapped height, capped at 220 pixels, so delete confirmation
-details remain visible at the minimum window size while longer feedback shows
-several lines without displacing the workspace or command box. Its icon and status label stay outside the scroll pane.
-The status column reserves space for the overflow hint even while it is hidden, keeping the message width stable.
-The hint appears only when the current message is taller than the visible viewport.
 
-At launch, `MainWindow` obtains the saved size, position, and maximized state from `GuiSettings`. It selects the screen
-containing the saved position, or the primary screen if that display is no longer connected. `WindowBounds` then clamps
-the saved dimensions and coordinates to the screen's visual bounds, which exclude operating-system areas such as the
-taskbar or dock. The preferred minimum size is 1200 × 800 pixels, capped to the available area so it cannot force the
-window beyond a smaller display. `MainWindow` tracks the latest non-maximized bounds separately, allowing a maximized
-window to be restored without replacing its normal dimensions. If a maximized window is moved to another monitor
-before closing, the normal bounds retain their size and relative position on that monitor so the next launch maximizes
-there. Screen fallback is logged at `WARNING`, bounds adjustments at `INFO`, and maximized-state restoration and saving
-at `FINE`.
+Besides the main window, the `UI` component provides:
+
+* `HelpWindow`, a command quick reference built from the command words of the command classes.
+* `TutorialWindow`, a guided tour shown as an overlay over the main window. `UiManager` opens it on first launch, and
+  the `tutorial` command or <kbd>F2</kbd> opens it again.
+* Command history in `CommandBox`, which keeps the commands entered in the current session for recall with the Up
+  and Down arrow keys.
+
+At launch, `MainWindow` restores the window size, position, and maximized state saved in `GuiSettings`, using
+`WindowBounds` to keep the window within the available screen area.
 
 The `UI` component,
 
 * executes user commands using the `Logic` component.
-* listens for changes to `Model` data so that the UI can be updated with the modified data. The Contacts view
-  displays the filtered contact list beside a details pane, follows a selected contact by permanent member ID
-  across edits and reordering, and clears the selection when that ID leaves the displayed list.
-  Contact cards, contact details, event rosters, and tag member lists display `ID: <number>` from the saved contact,
-  independently of the current contact filter. The details pane displays all saved contact
-  fields, showing a placeholder for unset optional fields and no tag chips for an empty tag set.
-  It also derives assigned-event rows from the live event list. The Events view resolves each assigned
-  member to contact role, organisation, and tags, and refreshes when contact data changes. Contact and
-  event views keep their details pane above a minimum width, then stack the list above details when the
-  window is narrow. The Events view stacks below 900 pixels of workspace width so its timing card does not extend
-  beyond the details viewport. Sidebar command rows insert only the command word into the command box and show its
-  format and an example; rows also support keyboard activation. Selecting a tag shows all saved contacts
-  assigned to it, independent of the current contact filter, and refreshes names, roles, organisations, and tags
-  when contact data changes.
-  A window-level key filter owns Navigation-mode input: `J` and `K` move within the active view, `S` cycles views,
-  and `I` returns to Command mode. Other unmodified keys are consumed before focused controls can act on them.
-  Entering Navigation mode transfers focus to the mode indicator, preventing controls such as reminder dismissal
-  buttons from retaining keyboard activation.
+* listens for changes to `Model` data so that the UI can be updated with the modified data. For example, the Contacts,
+  Events, and Tags views refresh when a contact they show is edited.
 * keeps a reference to the `Logic` component, because the `UI` relies on the `Logic` to execute commands.
-  Commands such as `members` and the tag commands can return a view selection request that `MainWindow` applies
-  through the same view controls used by the sidebar.
-* depends on some classes in the `Model` component because it displays `Person` objects from the model.
+  A command can ask `MainWindow` to show the Help window, the tutorial, or a particular view through its
+  `CommandResult`.
+* depends on some classes in the `Model` component because it displays `Person` and `Event` objects from the model.
 
 ### Logic component
 
@@ -154,21 +108,17 @@ Here's a (partial) class diagram of the `Logic` component:
 
 <puml src="diagrams/LogicClassDiagram.puml" width="550"/>
 
-The sequence diagram below follows `execute("delete 1")` and the subsequent confirmation response. The first call resolves and stores the contact without deleting it. If the response is `y` or `Y` after removing surrounding whitespace, the confirmed command deletes the contact on a candidate model through the atomic save path; any other response cancels the deletion without changing data.
-
-<puml src="diagrams/DeleteSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `delete 1` Command" />
-
-Both delete diagrams use a reference to the detailed atomic-save sequence in
-[Saving data atomically](#saving-data-atomically). The confirmed command deletes the resolved contact from a candidate
-model; `LogicManager` replaces the live data only after saving the candidate succeeds.
-
-
 How the `Logic` component works:
 
 1. When `Logic` is called upon to execute a command, the command is passed to a `CoordiMateParser` object, which in turn creates a parser that matches the command (e.g., `DeleteCommandParser`) and uses it to parse the command.
-1. This results in a `Command` object (more precisely, an object of one of its subclasses e.g., `DeleteCommand`). For `delete`, `LogicManager` first calls `resolvePerson` and returns a confirmation prompt without executing the deletion.
-1. If the next input is `y` or `Y` after removing surrounding whitespace, `LogicManager` creates a command for the resolved `Person` and executes it on a candidate model. That command deletes the contact from the candidate, which is saved before the live model changes. Any other input cancels the deletion.
+1. This results in a `Command` object (more precisely, an object of one of its subclasses e.g., `DeleteCommand`), which is executed by the `LogicManager`. Most commands that change data are executed on a copy of the model, which replaces the live data only after it is saved, as described in [Saving data atomically](#saving-data-atomically).
 1. The result of the command execution is encapsulated as a `CommandResult` object which is returned from `Logic`.
+
+The sequence diagram below shows the interactions within the `Logic` component for `execute("delete 1")`. `delete`
+asks for confirmation first: the first call only finds the contact and returns a confirmation prompt, and the contact
+is deleted only if the next input is `y` or `Y`. Any other input cancels the deletion.
+
+<puml src="diagrams/DeleteSequenceDiagram.puml" alt="Interactions Inside the Logic Component for the `delete 1` Command" />
 
 Here are the other classes in `Logic` (omitted from the class diagram above) that are used for parsing a user command:
 
@@ -178,22 +128,8 @@ How the parsing works:
 * When called upon to parse a user command, the `CoordiMateParser` class creates an `XYZCommandParser` (`XYZ` is a placeholder for the specific command name, e.g., `AddCommandParser`). The parser uses the other classes shown above to parse the user command and create an `XYZCommand` object (e.g., `AddCommand`). The `CoordiMateParser` returns that object as a `Command` object.
 * All `XYZCommandParser` classes, such as `AddCommandParser` and `DeleteCommandParser`, implement the `Parser` interface so they can be treated similarly where appropriate, for example during testing.
 
-Command error messages follow these conventions:
-
-* Use sentence case and full stops for explanations, without an `Error!` prefix or exclamation marks.
-* For malformed command syntax, use `ParserUtil.createInvalidFormatException(Command.MESSAGE_USAGE)`.
-  Usage text has a command description, `Parameters:`, and `Example:` on separate lines.
-* Every command error includes the relevant command's usage once. `CoordiMateParser` appends it to parse errors;
-  `LogicManager` appends it to execution and storage errors. `Messages.withUsage` avoids duplicating usage.
-* For unknown or repeated parameters, name the offending prefix: `Unknown parameter: x/.` or
-  `Parameter evn/ may only be specified once.`
-* For invalid field values, explain the constraint and provide an `Example:` using the failing parameter's prefix.
-* Distinguish missing parameters, which show command-format guidance, from supplied but empty values, which use
-  `<Field> must not be empty. Example: <prefix><value>`. Optional contact fields can still be cleared intentionally.
-* Storage-loading errors use `Saved data could not be loaded. Check the local data file.` for every data type.
-* For execution errors, explain what failed and how to correct it. Reuse the templates in `Messages` for missing
-  contacts, events, and tags, and for unmatched or ambiguous contact identifiers.
-* Add `No changes were made.` when an attempted change is rejected without modifying the saved data.
+Every error message is followed by the usage of the command that failed. `CoordiMateParser` adds it to parse errors
+and `LogicManager` adds it to execution errors, using `Messages.withUsage`.
 
 ### Model component
 **API** : [`Model.java`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/Model.java)
@@ -237,40 +173,16 @@ The `Storage` component,
 * converts CoordiMate data through `JsonSerializableCoordiMate`, which stores contacts (`JsonAdaptedPerson`), events (`JsonAdaptedEvent`), and the global tag list (`JsonAdaptedTag`) as separate lists. Each contact also stores its own tags, and each event records its members by contact name rather than by member ID.
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
 
-If the data file cannot be loaded during startup, `MainApp` creates an empty in-memory model only for initialization
-and passes a recovery flag to `UiManager`. If model conversion raised `IllegalValueException`, it also passes the
-validation message. After the main window is ready, `UiManager` shows a warning that names the unchanged data file,
-includes any available validation message, and asks the user to repair or restore it. Dismissing the warning requests
-a normal JavaFX shutdown before the tutorial or command interface can be used. When preferences also fail to load,
-`MainApp` passes that warning separately so the same recovery dialog names both files and their problems.
-
-The tutorial flag is saved with the other user preferences. Preference files without that field are read with the
-tutorial flag set to `false`, so the tutorial is offered until the user closes or finishes it.
-
-Before Jackson binds saved data to Java fields, `SavedJsonTypeValidator` checks the JSON types of known contact,
-event, and preference fields. This prevents Jackson from converting values such as numeric phone numbers or numeric
-window maximization flags. Existing validation for `archived`, member IDs, and model values still runs afterward.
-The validator reports a field path for type errors, while unknown fields remain ignored for compatibility.
-For preferences, it removes explicit `null` scalar fields after validation so Jackson retains the defaults for
-`hasSeenTutorial`, window width, window height, and maximized state.
-If preferences cannot be loaded, `MainApp` uses defaults and shows a warning. It skips preference writes during that
-session, including shutdown, so the original file remains available for repair. If the data file is also invalid,
-the warning instead appears in the data recovery dialog before the app closes.
-
-Previously saved digit-only phone numbers with at least three digits, and 7–15-digit numbers whose brackets do not
-match, remain valid model data, so older JSON files can still load. The command parser applies the current rule,
-`Phone#isValidInputPhone`, whenever a user supplies a phone number for `add` or `edit`: 7–15 digits, an optional `+`
-or bracketed country code such as `(+65)` at the start, and brackets in non-nested pairs that each enclose a digit.
-Editing another field does not require replacing a legacy phone number.
-
-When loading JSON data, explicitly saved tags are validated and restored before contacts. If a contact uses a tag
-that is missing from the saved global tag list, CoordiMate registers it automatically. This also migrates older files
-without an explicit tag list: default tags are retained and tags used by contacts are added. Existing saved tag order,
-capitalization, and unused tags are preserved.
+Saved data is validated when it is loaded, and a file that fails validation is never overwritten. If the data file
+cannot be loaded, CoordiMate shows a warning naming the file and then closes, so that the user can repair or restore
+it. If only the preferences file cannot be loaded, CoordiMate starts with default preferences and does not save them
+for that session. Data files saved by earlier versions, such as those without member IDs or a saved tag list, are
+still accepted and are updated the next time the data is saved.
 
 ### Common classes
 
-Classes used by multiple components are in the `coordimate.commons` package.
+Classes used by multiple components are in the `coordimate.commons` package. These include `GuiSettings`,
+`LogsCenter`, the shared exceptions such as `DataLoadingException`, and utilities such as `StringUtil` and `JsonUtil`.
 
 --------------------------------------------------------------------------------------------------------------------
 
