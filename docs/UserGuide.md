@@ -143,7 +143,7 @@ A command that breaks a constraint is rejected and makes no changes.
 |---|---|---|
 | `NAME`, `MEMBER_NAME` | `n/`, `mem/` | 1 to 80 characters. Letters, spaces, hyphens (`-`), apostrophes (`'`), and periods (`.`) only, with at least one letter. The words `s/o` and `d/o` (any capitalization) are also allowed, e.g. `Rajesh s/o Kumar`. Digits are not allowed. Several spaces in a row count as one. Contact names are unique, ignoring case and extra spaces. |
 | `PHONE` | `p/` | 7 to 15 digits. May start with `+` or a bracketed country code such as `(+65)`, and may contain spaces, hyphens, and brackets. Brackets must come in pairs that each enclose at least one digit, and cannot be nested. Unique among contacts once spaces, hyphens, and brackets are removed. |
-| `EMAIL` | `e/` | `local-part@domain`. The local part uses letters, digits, and `_`, `%`, `+`, `-`, `.`; it cannot start or end with a period or contain two periods in a row. The domain is made of labels separated by periods; each label uses letters, digits, and hyphens and cannot start or end with a hyphen. The last label has at least 2 letters. Unique among contacts, ignoring case. |
+| `EMAIL` | `e/` | `local-part@domain`, at most 254 characters, with a local part of at most 64 characters. The local part uses letters, digits, and `_`, `%`, `+`, `-`, `.`; it cannot start or end with a period or contain two periods in a row. The domain is made of labels separated by periods; each label uses letters, digits, and hyphens and cannot start or end with a hyphen. The last label has at least 2 letters. Unique among contacts, ignoring case. |
 | `ROLE` | `r/` | 1 to 50 characters. Letters, digits, spaces, hyphens, and `/` only, with at least one letter or digit. |
 | `BIRTHDAY` | `b/` | A real date in `dd-MM-yyyy` format that is not in the future, e.g. `18-06-2004`. |
 | `LEAVE_END_DATE` | `lv/` | A real date in `dd-MM-yyyy` format that is not in the past, e.g. `30-11-2026`. Today's date is allowed. |
@@ -468,10 +468,7 @@ Examples:
 * `edit target/aisha@example.com lv/15-12-2026` changes Aisha's leave to end on 15 December 2026.
 * `edit 2 lv/` ends the leave of the contact with member ID `2`.
 
-| Condition | Error message |
-|---|---|
-| The date is invalid, incorrectly formatted, or in the past. | `Invalid leave end date. Use a real date in dd-MM-yyyy format that is not in the past. Example: lv/30-11-2026` |
-| `lv/` is repeated. | `Parameter lv/ may only be specified once.` |
+An invalid or repeated `lv/` is rejected with the same error messages as [`edit`](#editing-a-contact-edit).
 
 ### Deleting a contact: `delete`
 
@@ -1137,13 +1134,22 @@ restarting. This is the same behavior as the **Dismiss** button.
 
 ## Managing tags
 
-### Adding a tag: `addtag`
+### Managing tags: `addtag`, `edittag`, `deletetag`
 
-Creates a custom tag and opens the Tags view. Tag names must contain 1 to 30 alphanumeric characters without spaces.
-Leading and trailing whitespace is trimmed. Tag names preserve their capitalization, but are unique regardless of
-capitalization.
+`addtag` creates a custom tag. `edittag` renames an existing tag, including a default tag, and updates it wherever
+it is applied across contacts. `deletetag` deletes an existing tag, including a default tag, and removes it from
+every contact to which it is assigned. All three open the Tags view.
 
-Format: `addtag t/TAG`
+Formats:
+
+* `addtag t/TAG` creates `TAG`.
+* `edittag OLD_TAG t/NEW_TAG` renames `OLD_TAG` to `NEW_TAG`.
+* `deletetag t/TAG` deletes `TAG`.
+
+* `TAG` and `NEW_TAG` must contain 1 to 30 alphanumeric characters without spaces. Leading and trailing whitespace
+  is trimmed. Tag names preserve their capitalization, but are unique regardless of capitalization, so `addtag
+  t/publicity` is rejected as a duplicate if `Publicity` already exists.
+* `OLD_TAG`, and the `TAG` given to `deletetag`, must match an existing tag, ignoring capitalization.
 
 ![Add tag](images/addTag.png)
 *The Tags tab showing the new `ProductionCrew` tag after `addtag`.*
@@ -1152,78 +1158,26 @@ Examples:
 
 * `addtag t/ProductionCrew`
 * `addtag t/Publicity`
-
-If a tag named `Publicity` already exists, commands such as `addtag t/publicity` are rejected as duplicates.
-
-Success: `Created tag: Publicity.`
-
-| Condition | Error message |
-|---|---|
-| No parameters are supplied. | `Invalid command format.` |
-| The `t/` prefix is missing. | `Invalid command format.` |
-| More than one `t/` prefix is supplied. | `Parameter t/ may only be specified once.` |
-| Text appears before `t/`. | `Invalid command format.` |
-| An unknown parameter is used. | `Unknown parameter: {PREFIX}.` |
-| The tag name is empty. | `Tag name must not be empty. Example: t/Publicity` |
-| The tag name contains spaces, symbols, or punctuation. | `Invalid tag name. Use letters and numbers without spaces. Example: t/Publicity` |
-| The tag name exceeds 30 characters. | `Tag name must not exceed 30 characters. Example: t/Publicity` |
-| The tag name already exists, ignoring capitalization. | `A tag with this name already exists. No changes were made.` |
-
-If saving fails, the command reports `Tag could not be saved. No changes were made.`
-
-### Editing a tag: `edittag`
-
-Renames an existing tag, including a default tag, and updates it wherever it is applied across contacts.
-
-Format: `edittag OLD_TAG t/NEW_TAG`
-
-Examples:
-
 * `edittag Production t/ProductionCrew`
 * `edittag Media t/Publicity`
-
-`OLD_TAG` must match an existing tag, ignoring capitalization. `NEW_TAG` must contain 1 to 30
-alphanumeric characters without spaces. Leading and trailing whitespace is trimmed before validation.
-
-Success for `edittag Media t/Publicity`: `Media successfully renamed to Publicity.`
-
-| Condition | Error message |
-|---|---|
-| The current tag does not exist. | `Tag {OLD_TAG} does not exist. Use a saved tag name.` |
-| The `t/` prefix is missing. | `Invalid command format.` |
-| The current tag name is missing. | `Invalid command format.` |
-| The new tag name is blank. | `Tag name must not be empty. Example: t/Publicity` |
-| More than one `t/` prefix is supplied. | `Parameter t/ may only be specified once.` |
-| An unknown parameter is used. | `Unknown parameter: {PREFIX}.` |
-| The new tag contains spaces, symbols, or punctuation. | `Invalid tag name. Use letters and numbers without spaces. Example: t/Publicity` |
-| The new tag exceeds 30 characters. | `Tag name must not exceed 30 characters. Example: t/Publicity` |
-| The new tag matches the current tag, ignoring capitalization. | `Tag {OLD_TAG} already has that name. No changes were made.` |
-| The new tag already exists. | `A tag with this name already exists. No changes were made.` |
-
-If saving fails, the command reports `Tag could not be saved. No changes were made.`
-
-### Deleting a tag: `deletetag`
-
-Deletes an existing tag, including a default tag, and removes it from every contact to which it is assigned.
-
-Format: `deletetag t/TAG`
-
-Examples:
-
 * `deletetag t/ProductionCrew`
 * `deletetag t/Publicity`
 
-The tag name is matched case-insensitively.
-
-Success: `{TAG_NAME} successfully deleted.`
+Success: `Created tag: Publicity.` (`addtag`) · `Media successfully renamed to Publicity.` (`edittag`) ·
+`Publicity successfully deleted.` (`deletetag`)
 
 | Condition | Error message |
 |---|---|
-| The `t/` prefix is missing, or there is text before it. | `Invalid command format.` |
-| The tag name is empty. | `Tag name must not be empty. Example: t/Publicity` |
+| No parameters are supplied (`addtag`), the `t/` prefix is missing, `edittag`'s current tag name is missing, or text appears before the first parameter. | `Invalid command format.` |
 | More than one `t/` prefix is supplied. | `Parameter t/ may only be specified once.` |
 | An unknown parameter is used. | `Unknown parameter: {PREFIX}.` |
-| The specified tag does not exist. | `Tag {TAG_NAME} does not exist. Use a saved tag name.` |
+| The tag name (`addtag`), new tag name (`edittag`), or tag name (`deletetag`) is empty. | `Tag name must not be empty. Example: t/Publicity` |
+| `addtag`'s tag name, or `edittag`'s new tag name, contains spaces, symbols, or punctuation. | `Invalid tag name. Use letters and numbers without spaces. Example: t/Publicity` |
+| `addtag`'s tag name, or `edittag`'s new tag name, exceeds 30 characters. | `Tag name must not exceed 30 characters. Example: t/Publicity` |
+| `addtag`'s tag, or `edittag`'s new tag, already exists, ignoring capitalization. | `A tag with this name already exists. No changes were made.` |
+| `edittag`'s current tag does not exist. | `Tag {OLD_TAG} does not exist. Use a saved tag name.` |
+| `edittag`'s new tag matches the current tag, ignoring capitalization. | `Tag {OLD_TAG} already has that name. No changes were made.` |
+| `deletetag`'s tag does not exist. | `Tag {TAG_NAME} does not exist. Use a saved tag name.` |
 
 If saving fails, the command reports `Tag could not be saved. No changes were made.`
 
