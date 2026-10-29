@@ -5,6 +5,8 @@ import static coordimate.logic.parser.CliSyntax.PREFIX_EMAIL;
 import static coordimate.logic.parser.CliSyntax.PREFIX_NAME;
 import static coordimate.logic.parser.CliSyntax.PREFIX_PHONE;
 import static coordimate.logic.parser.CliSyntax.PREFIX_TAG;
+import static coordimate.testutil.TypicalPersons.ALICE;
+import static coordimate.testutil.TypicalPersons.BENSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -18,7 +20,9 @@ import coordimate.model.CoordiMate;
 import coordimate.model.Model;
 import coordimate.model.person.ContactMatchesKeywordPredicate;
 import coordimate.model.person.Person;
+import coordimate.model.tag.Tag;
 import coordimate.testutil.EditPersonDescriptorBuilder;
+import coordimate.testutil.PersonBuilder;
 
 /**
  * Contains helper methods for testing commands.
@@ -170,4 +174,16 @@ public class CommandTestUtil {
         assertEquals(1, model.getFilteredPersonList().size());
     }
 
+
+    /**
+     * Returns a CoordiMate with {@code customTag} saved, {@code ALICE} tagged with it and EXCO,
+     * and an untagged {@code BENSON}.
+     */
+    public static CoordiMate getCoordiMateWithTaggedAlice(Tag customTag) {
+        CoordiMate data = new CoordiMate();
+        data.addTag(customTag);
+        data.addPerson(new PersonBuilder(ALICE).withTags(customTag.getTagName(), "EXCO").build());
+        data.addPerson(BENSON);
+        return data;
+    }
 }
