@@ -29,6 +29,7 @@ import coordimate.model.person.exceptions.DuplicatePersonException;
 import coordimate.model.tag.Tag;
 import coordimate.model.tag.exceptions.DuplicateTagException;
 import coordimate.testutil.PersonBuilder;
+import coordimate.testutil.TagWithFixedMatch;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
@@ -476,5 +477,23 @@ public class CoordiMateTest {
         assertEquals(Optional.of(fair), data.findEvent("fair"));
         assertEquals(Optional.empty(), data.findEvent("Gala"));
         assertThrows(NullPointerException.class, () -> data.findEvent(null));
+    }
+
+    @Test
+    public void removeTag_tagStillSaved_triggersAssertion() {
+        Tag alwaysMatchingTag = new TagWithFixedMatch("Ghost", true);
+        assertThrows(AssertionError.class, () -> coordiMate.removeTag(alwaysMatchingTag));
+    }
+
+    @Test
+    public void setTag_oldTagStillSaved_triggersAssertion() {
+        Tag alwaysMatchingTag = new TagWithFixedMatch("Ghost", true);
+        assertThrows(AssertionError.class, () -> coordiMate.setTag(alwaysMatchingTag, new Tag("Publicity")));
+    }
+
+    @Test
+    public void setTag_newTagNotFound_triggersAssertion() {
+        Tag neverMatchingTag = new TagWithFixedMatch("Publicity", false);
+        assertThrows(AssertionError.class, () -> coordiMate.setTag(new Tag("EXCO"), neverMatchingTag));
     }
 }

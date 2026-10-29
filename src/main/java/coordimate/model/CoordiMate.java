@@ -218,6 +218,7 @@ public class CoordiMate implements ReadOnlyCoordiMate {
                 .toList();
         tags.setTags(remainingTags);
         persons.setPersons(updatedPersons);
+        assert !hasTag(target) : "Removed tag should no longer be saved";
     }
 
     /**
@@ -242,6 +243,8 @@ public class CoordiMate implements ReadOnlyCoordiMate {
                 .toList();
         tags.setTags(editedTags);
         persons.setPersons(editedPersons);
+        assert !hasTag(target) : "Renamed tag should no longer be saved under its old name";
+        assert hasTag(editedTag) : "Renamed tag should be saved under its new name";
     }
 
     @Override
