@@ -1249,7 +1249,7 @@ event, and no custom tags. Deleting contacts by hand is not enough, because memb
 
    1. Double-click the JAR file.<br>
       Expected: The GUI opens maximized with a set of sample contacts and a sample event. The first-launch tutorial
-      can show the event's assigned members and attendance information.
+      opens automatically and can show the event's assigned members and attendance information. Close it before continuing.
 
 1. Saving window preferences
 
@@ -1262,6 +1262,91 @@ event, and no custom tags. Deleting contacts by hand is not enough, because memb
 
    1. Test case: `exit`<br>
       Expected: The app closes. Relaunching it shows the same data as before.
+
+### Tutorial and Help
+
+1. Test case: `tutorial`, then press Right Arrow, Left Arrow, Tab, and Shift+Tab.<br>
+   Expected: The overlay starts at **Step 1 of 16**. Arrow keys change steps and Tab moves focus between the
+   tutorial's enabled buttons. The highlighted area stays bright, and the command box is disabled. Press Esc to close it.
+
+1. Test case: Press F2 (Fn+F2 if required), advance through the tutorial, and select **Finish**. Close and relaunch the app.<br>
+   Expected: The tutorial reopens at step 1, visits Contacts, Events, Tags, and Help, and closes after Finish.
+   It does not open automatically on relaunch. Contacts, events, and tags are unchanged.
+
+1. Test case: `help`, then resize the window and scroll its command table.<br>
+   Expected: The Help window shows keyboard navigation, command formats, and the User Guide URL. Press Esc to
+   close it; CoordiMate stays open. F1 (Fn+F1 if required) opens Help again; select **Close** to dismiss it.
+
+1. Other incorrect commands to try: `tutorial extra`, `help extra`<br>
+   Expected: Neither window opens. The status message shows `Invalid command format.`
+
+### Keyboard navigation
+
+1. Prerequisites: Restore the sample data. Run `list`, select Alex Yeoh,
+   then click the command box and type `search Bernice` without submitting it.
+
+1. Test case: Press Esc, J, K, then K again.<br>
+   Expected: The indicator shows **NAVIGATION**. Bernice is selected after J, then Alex after K. The extra K
+   keeps Alex selected at the start of the list. The unfinished command remains in the disabled command box.
+
+1. Test case: Press S three times, using J and K in the Events and Tags views.<br>
+   Expected: S cycles Contacts, Events, Tags, then Contacts. J and K navigate the active list; the corresponding
+   details update. Returning to Contacts keeps Alex selected. Enter and Up do not submit or replace the draft.
+
+1. Test case: Press I, then Enter.<br>
+   Expected: The indicator shows **COMMAND**, the command box regains focus with `search Bernice` unchanged,
+   and Enter executes it. Only Bernice Yu is listed.
+
+### Command history
+
+1. Prerequisites: Restore the sample data. Run `list`, then `search alex`.
+
+1. Test case: Type `search Bernice` without submitting it. Press Up twice, then Down twice.<br>
+   Expected: The input shows `search alex`, `list`, `search alex`, then the unfinished `search Bernice`.
+   No command executes while browsing; Alex remains the only result.
+
+1. Test case: Press Up, change the recalled command to `search Charlotte`, and press Enter. Press Up twice.<br>
+   Expected: Charlotte becomes the only result. Up recalls `search Charlotte`, then the original `search alex`;
+   editing a recalled command has not overwritten its earlier entry.
+
+1. Test case: Close and relaunch the app, then press Up in the empty command box.<br>
+   Expected: The box stays empty because commands from the previous session are not retained.
+
+### Adding a contact
+
+1. Prerequisites: Restore the sample data and run `list`.
+
+1. Test case: `add n/Aisha Tan p/+6591234567 e/aisha@example.com r/Logistics`<br>
+   Expected: The Contacts view selects Aisha Tan with `ID: 7` and the supplied details. The status message shows
+   `Contact saved successfully: Aisha Tan`.
+
+1. Test case: Repeat the previous command.<br>
+   Expected: No contact is added. The status message shows
+   `A contact with this name, phone number, or email already exists. No changes were made.`
+
+1. Other incorrect add commands to try: `add n/Ben Ong p/91112222 e/ben@example.com` (missing role),
+   `add n/Ben Ong p/abc e/ben@example.com r/Member`<br>
+   Expected: No contact is added. The missing-role command reports `Invalid command format.`; the invalid-phone
+   command explains the phone-number constraints.
+
+### Editing a contact
+
+1. Prerequisites: Restore the sample data and run `search Charlotte`, showing only member ID `3`.
+
+1. Test case: `edit 3 r/Treasurer o/NUS Student Affairs`<br>
+   Expected: All six contacts are listed and Charlotte is selected with the new role and organisation. Her ID
+   stays `3`, and other fields are unchanged. Feedback shows `Contact updated successfully:` and her details.
+
+1. Test case: `edit 3 o/`<br>
+   Expected: Charlotte's organisation is cleared. Her other details are unchanged.
+
+1. Test case: `edit 3 n/Bernice Yu`<br>
+   Expected: No contact changes. The status message shows
+   `This update conflicts with another saved contact. No changes were made.`
+
+1. Other incorrect edit commands to try: `edit 3`, `edit 99 r/Treasurer` (where member ID `99` does not exist)<br>
+   Expected: No contact changes. The first shows `Provide at least one field or tag operation to edit.`;
+   the second shows `No contact exists with member ID: 99. Use an existing member ID.`
 
 ### Deleting a contact
 
@@ -1291,6 +1376,22 @@ event, and no custom tags. Deleting contacts by hand is not enough, because memb
 
 1. Test case: `search`<br>
    Expected: The list is unchanged. The status message shows `Invalid command format.`
+
+### Listing contacts and events
+
+1. Prerequisites: Restore the sample data and run `search alex`.
+
+1. Test case: `list`<br>
+   Expected: The Contacts view shows all six active contacts again, and Events contains the sample event.
+   The status message shows `Listed all contacts.`
+
+1. Test case: `list archived`, then `list`<br>
+   Expected: The archived contact and event lists are empty, since nothing is archived. `list` restores the active
+   lists and the normal sidebar commands. Archiving and restoring entries is tested separately below.
+
+1. Test case: `list all`<br>
+   Expected: The lists are unchanged. The status message shows
+   `Unknown list option: all. Use list, or list archived to show archived contacts and events.`
 
 ### Filtering contacts
 
@@ -1376,6 +1477,18 @@ event, and no custom tags. Deleting contacts by hand is not enough, because memb
 
 1. Other incorrect deleteevent commands to try: `deleteevent`, `deleteevent evn/`<br>
    Expected: No event is deleted. The status message shows error details.
+
+### Automatic event reminders
+
+1. Prerequisites: No reminders are active and no event named `Reminder Check` exists. Replace `TOMORROW` with
+   tomorrow's date in `dd-MM-yyyy` format, using the computer's local time zone.
+
+1. Test case: `addevent evn/Reminder Check st/TOMORROW et/TOMORROW`<br>
+   Expected: The Upcoming events panel appears with `Reminder Check` at index 1 and the saved dates.
+   Switching between Contacts, Events, and Tags keeps the panel visible.
+
+1. Cleanup: Run `deleteevent evn/Reminder Check`.<br>
+   Expected: The event and its reminder disappear.
 
 ### Dismissing a reminder
 
@@ -1641,6 +1754,29 @@ and `PAST_DATE` is any date before today, such as `01-01-2020`.
 
    1. Test case: `unassign evn/Orientation c/ID`<br>
       Expected: The archived contact is removed from the event.
+
+### Clearing all data
+
+<box type="warning" seamless>
+
+**Caution:** `clear` deletes saved data immediately and cannot be undone. Back up `data/coordimate.json` first
+if it contains data you want to keep.
+</box>
+
+1. Prerequisites: Restore the sample data. Run `archive 2`, `addtag t/ClearTest`, and
+   `addevent evn/ClearTest st/TOMORROW et/TOMORROW`, replacing `TOMORROW` with tomorrow's date in `dd-MM-yyyy` format.
+
+1. Test case: `clear extra`<br>
+   Expected: The status message shows `Invalid command format.` No data changes.
+
+1. Test case: `clear`, then `list archived`<br>
+   Expected: `clear` reports `CoordiMate has been cleared!` without confirmation. Active and archived contacts
+   and events are removed, and the reminder panel hides. Tags contains only `EXCO`, `Sponsor`, `UniversityStaff`,
+   and `Logistics`; `ClearTest` is removed. `list archived` shows no archived contacts or events.
+
+1. Test case: Close and relaunch the app, run `list`, then
+   `add n/ID Reset p/91234567 e/idreset@example.com r/Member`.<br>
+   Expected: The contact and event lists are still empty before the add. ID Reset is then added with `ID: 1`.
 
 ### Saving data
 
