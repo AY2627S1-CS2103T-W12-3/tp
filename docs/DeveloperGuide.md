@@ -209,6 +209,11 @@ counter.
 increases, so deleted IDs are never reused. `UniquePersonList` rejects duplicate IDs and prevents an edit from
 changing a contact's ID. `clear` starts a new empty dataset and resets allocation to `1`.
 
+The object diagram below shows the contacts after three contacts were added, the contact with ID `3` was deleted, and
+another contact was added. The new contact received ID `4`, and `nextMemberId` moved on to `5`, so ID `3` stays unused.
+
+<puml src="diagrams/MemberIdObjectDiagram.puml" width="520" />
+
 #### Command targeting
 
 `ParserUtil#parseMemberId` parses a positive integer, and `MemberIdResolver` looks it up among **all** saved
@@ -295,7 +300,7 @@ JSON write through `JsonUserPrefsStorage` and do not have this atomic-replacemen
 
 A confirmed `delete` runs through `executeAtomicCommand` like any other command. Commands that do not change data,
 such as `list`, `search`, `filter`, and `members`, run directly on the live model without saving. Reminder
-dismissal uses its own save path, described in [Dismissing reminders](#dismissing-reminders).
+dismissal uses its own save path, described in [Event reminders](#event-reminders).
 
 #### Design considerations
 
@@ -311,11 +316,51 @@ dismissal uses its own save path, described in [Dismissing reminders](#dismissin
   * Pros: No copy is needed when saving succeeds.
   * Cons: The UI observes the model, so it briefly shows a change that is then reverted.
 
-### Dismissing reminders
+### Event reminders
 
-The **Upcoming events** panel lists [reminders](#glossary), ordered by start time and then by name.
-`dismiss INDEX` and the panel's **Dismiss** button both hide a reminder through the same `ReminderService`, which
-`LogicManager` creates and passes to `DismissCommand`.
+The **Upcoming events** panel lists [reminders](#glossary) for events starting soon, ordered by start time and then by name.
+
+#### Implementation
+
+Reminders are worked out from the saved events whenever they are needed, rather than being stored.
+
+**Finding upcoming events.** [`UpcomingEventFinder`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/reminder/UpcomingEventFinder.java)
+decides which events qualify, using a `Clock` so that tests can fix the current time:
+
+* An event with a start time qualifies from 24 hours before its start until the start itself, inclusive.
+* An event with only a start date qualifies throughout the day before that date and the date itself.
+
+It returns the qualifying events ordered by start, then by name ignoring case. A date-only start counts as midnight
+for ordering only.
+
+**Keeping the reminder list current.** [`ReminderService`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/logic/reminder/ReminderService.java)
+holds the observable list that `ReminderPanel` displays. `ReminderService#refreshReminders()` rebuilds it from the
+finder's results, leaving out archived events and events whose reminder has been dismissed. The list is refreshed:
+
+* when `LogicManager` is created, so reminders are ready at launch.
+* after every command, in a `finally` block of `LogicManager#execute`, so that adding, editing, archiving, or deleting
+  an event updates the panel straight away, even if the command fails.
+* once a minute by a `Timeline` in `MainWindow`, so that reminders appear and expire as time passes.
+* when the main window is shown again after being hidden.
+
+The list is only replaced when its contents change, which avoids redrawing the panel every minute.
+
+**Remembering dismissals.** Each `Event` stores the start values whose reminders were dismissed, in
+`dismissedReminderStarts`. `Event#isReminderDismissed()` checks whether the current start is among them, so a
+dismissal applies to one particular start:
+
+* Renaming the event or changing only its end keeps the dismissal, because the start is unchanged.
+* `Event#withDetails`, used by `editevent`, clears the history whenever the start changes, including a change back
+  to an earlier start. The reminder for the new start can then appear.
+
+The history is saved with the event, so a dismissal survives restarting the app.
+
+**Dismissing a reminder.** `dismiss INDEX` and the panel's **Dismiss** button both hide a reminder through the same
+`ReminderService`, which `LogicManager` creates and passes to `DismissCommand`.
+
+The sequence diagram below shows `dismiss 1`, both when the dismissal is saved and when saving fails.
+
+<puml src="diagrams/DismissSequenceDiagram.puml" alt="Interactions when a reminder is dismissed" />
 
 `DismissCommand` checks the index against the current reminder list, then asks `ReminderService` to dismiss that
 event's reminder. Like other commands that change data, the service saves an updated copy of the event before
@@ -325,6 +370,31 @@ If the data file cannot be read or saved, the dismissal is still kept for the cu
 disappears, and the command shows a **Not saved** warning instead of an error. The reminder may then return after a
 restart. Because `ReminderService` handles the save itself, `LogicManager` does not run `dismiss` through
 `executeAtomicCommand`.
+
+#### Design considerations
+
+**Aspect: How reminders follow the passage of time**
+
+* **Alternative 1 (current choice):** Recompute the reminders once a minute, and after every command.
+  * Pros: Simple, and correct after the computer sleeps or its clock changes, since each refresh reads the current
+    time. Adding, editing, and deleting events need no extra code to update reminders.
+  * Cons: A reminder can appear or disappear up to a minute late.
+
+* **Alternative 2:** Schedule a timer for each event's next eligibility change.
+  * Pros: Reminders change at exactly the right moment.
+  * Cons: Every event change must cancel and reschedule its timers, and timers can fire at the wrong moment after a
+    sleep or clock change.
+
+**Aspect: How a dismissal is remembered**
+
+* **Alternative 1 (current choice):** Store the dismissed start values in the event.
+  * Pros: The dismissal is saved with the event, and naturally stops applying when the start changes.
+  * Cons: Adds a field to every event in the data file.
+
+* **Alternative 2:** Store a single "dismissed" flag in the event.
+  * Pros: Simpler data.
+  * Cons: The flag would have to be cleared on every change to the start, and a moved event could otherwise stay
+    silently dismissed.
 
 ### Event attendance
 
@@ -410,6 +480,11 @@ are combined into a [`ContactFilterPredicate`](https://github.com/AY2627S1-CS210
 which a contact matches only if it matches every predicate, and passed to `Model#updateFilteredPersonList`.
 `filter` does not change data, so it is executed directly on the live model.
 
+The class diagram below shows how these classes relate. The `organisation` criterion is a plain lambda, so it is not
+shown.
+
+<puml src="diagrams/FilterClassDiagram.puml" width="550" />
+
 The `event` and `tag` predicates identify their event or tag by name. How a filtered list follows later changes to
 that event or tag is described in [Keeping events in sync with contacts](#keeping-events-in-sync-with-contacts).
 
@@ -458,6 +533,10 @@ updates events whenever a contact changes:
 All the updated events are built before anything is changed. If an event already has a member with the new name,
 the rename is rejected and no data is changed. When loading, a data file in which an event lists a member who is not
 a saved contact is rejected.
+
+The activity diagram below summarises how `CoordiMate` handles a renamed or deleted contact.
+
+<puml src="diagrams/EventSyncActivityDiagram.puml" width="380" />
 
 **Showing an event's members.** `MembersCommand` filters the contact list with
 [`EventMembersPredicate`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/event/EventMembersPredicate.java),
@@ -509,6 +588,11 @@ that leave which has ended can still be loaded.
 leave on the current date, and shows the **On leave until** badge only if it is. The ended date stays in the data
 file until the user replaces or clears it. Code that copies a contact, such as `CoordiMate#setTag` and
 `CoordiMate#removeTag`, must pass the leave date on so that it is not dropped.
+
+The state diagram below shows how a contact's leave changes. **Leave ended** looks the same as **Not on leave** in the
+app; the difference is only that the old date is still saved.
+
+<puml src="diagrams/LeaveStateDiagram.puml" width="560" />
 
 `PersonListPanel` reads the current date from a `Clock`, which tests replace to control the date. A window left open
 past midnight still needs redrawing, so `MainWindow`'s existing one-minute reminder timer also calls
@@ -620,6 +704,112 @@ archived.
   * Pros: The normal lists never contain archived items.
   * Cons: Duplicate checks, event member lookups, and the data file format would all have to handle two lists, and
     moving an item between lists could break the links between events and contacts.
+
+### First-launch tutorial
+
+The tutorial is a step-by-step tour of the main window, shown automatically on the first launch.
+
+#### Implementation
+
+[`TutorialWindow`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/ui/TutorialWindow.java)
+is an overlay inside the main window, not a separate window. It holds a fixed list of `TutorialStep` records, each
+with a title, a description, where to place the step's card, and a `TutorialTarget` naming the part of the main window
+to highlight.
+
+`TutorialWindow` handles the tour itself, and `MainWindow` connects it to the rest of the window:
+
+* **Changing steps.** When the step changes, `TutorialWindow` calls the step-change handler set by `MainWindow`.
+  `MainWindow#showTutorialStep` switches to the tab that the step needs, finds the node for its `TutorialTarget`, and
+  passes it to `TutorialWindow#highlight`. The overlay then shades everything except that node and places the step's
+  card beside it.
+* **Blocking the app.** While the tutorial is showing, event filters on the overlay and on the main window consume
+  every mouse and key event that is not aimed at the tutorial card. `MainWindow#showTutorial` also disables the command
+  box. This prevents commands from changing the lists that the tour points at.
+* **Keyboard control.** `TutorialWindow#handleShortcut` moves between steps with the Left and Right arrow keys and
+  closes the tour with Esc. Tab cycles focus through the card's buttons without leaving the card.
+* **Normal view.** `MainWindow#showTutorial` calls `Logic#showActiveItems()` first, because the archived view hides
+  the lists and commands that the tour describes.
+
+**Showing it once.** `UserPrefs` stores whether the tutorial has been seen. On launch,
+`MainWindow#showTutorialOnFirstLaunch()` opens the tutorial only if it has not. Finishing or closing the tour calls
+`Logic#setHasSeenTutorial(true)`, and the preference is saved with the other user preferences when the app exits.
+The tutorial can be opened again at any time with the `tutorial` command, the **Tutorial** item in the top bar, or
+F2. `TutorialCommand` returns a `CommandResult` that asks `MainWindow` to show the tutorial.
+
+#### Design considerations
+
+**Aspect: How the tutorial is displayed**
+
+* **Alternative 1 (current choice):** An overlay inside the main window that highlights the real controls.
+  * Pros: Users see the actual tabs, cards, and command box that each step describes, and the overlay can never be
+    separated from the window it explains.
+  * Cons: Each step needs a target node, and the overlay must block input to the window underneath.
+
+* **Alternative 2:** A separate window with screenshots and text.
+  * Pros: Independent of the main window's layout.
+  * Cons: Screenshots go out of date whenever the UI changes, and users must map each picture onto the real window.
+
+### Keyboard navigation and command history
+
+CoordiMate can be used without a mouse. Besides typing commands, users can move between cards and views with single
+keys, and recall earlier commands.
+
+#### Implementation
+
+**Interaction modes.** `MainWindow` keeps track of one of two `InteractionMode`s, shown in the label beside the command
+box:
+
+* **Command mode**, the default, in which keys go to the command box.
+* **Navigation mode**, in which the command box is disabled and single keys act on the selected tab: J and K select the
+  next and previous card, and S switches to the next view.
+
+The state diagram below shows how the user moves between the two modes.
+
+<puml src="diagrams/InteractionModeStateDiagram.puml" width="520" />
+
+`MainWindow#handleKeyboardInput` is a key filter on the whole window. In Command mode it only reacts to Esc, which
+enters Navigation mode. In Navigation mode it handles J, K, and S, and consumes every other unmodified key so that it
+does nothing. Navigation mode returns to Command mode when I is **released**, rather than pressed, so that the I does
+not also appear in the command box. Clicking a card list enters Navigation mode, and clicking the command box or a
+command row in the sidebar returns to Command mode.
+
+Mode changes are ignored while the tutorial is showing, and while a `delete` is waiting for confirmation, so that the
+confirmation stays in the command box.
+
+**Moving between cards.** `CardNavigation` moves the selection of a card list by one card and scrolls it into view.
+With nothing selected, J selects the first card and K the last. At either end of the list, the selection stays where
+it is, rather than wrapping around. `PersonListPanel`, `EventListPanel`, and the tag list all use it, so the three
+tabs behave the same way.
+
+**Command history.** [`CommandBox`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/ui/CommandBox.java)
+keeps every submitted command in a list, including commands that failed, so that they can be corrected and run again.
+The Up and Down keys move through the list. The text being typed before browsing is kept as a draft and restored by
+pressing Down past the newest command. Submitting a command, or inserting one from the sidebar, resets browsing to the
+end of the list. Answers to a `delete` confirmation are not recorded, and Up and Down do nothing while one is pending,
+so that `y` is never recalled as a command. The history is kept only for the current session.
+
+#### Design considerations
+
+**Aspect: How single-key navigation coexists with typing**
+
+* **Alternative 1 (current choice):** A separate Navigation mode, entered with Esc.
+  * Pros: Single keys such as J can move between cards without a modifier, as in many keyboard-driven tools, while
+    the same keys still type normally in Command mode.
+  * Cons: Users must know which mode they are in, so the current mode is always shown beside the command box.
+
+* **Alternative 2:** Shortcuts with a modifier key, such as Ctrl+J, available at all times.
+  * Pros: No modes to learn.
+  * Cons: Common modifier shortcuts already have meanings in text fields and on different operating systems.
+
+**Aspect: Whether command history is saved**
+
+* **Alternative 1 (current choice):** Keep the history only for the current session.
+  * Pros: Nothing extra is written to disk, and the history cannot be corrupted or grow without limit.
+  * Cons: The history is lost when the app closes.
+
+* **Alternative 2:** Save the history with the user preferences.
+  * Pros: Commands can be recalled across sessions.
+  * Cons: Adds another file format to maintain, and saves commands that may contain contacts' personal details.
 
 --------------------------------------------------------------------------------------------------------------------
 

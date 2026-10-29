@@ -1,0 +1,55 @@
+@startuml
+!include style.puml
+skinparam ArrowFontStyle plain
+
+box Logic LOGIC_COLOR_T1
+participant ":LogicManager" as LogicManager LOGIC_COLOR
+participant "d:DismissCommand" as DismissCommand LOGIC_COLOR
+participant ":ReminderService" as ReminderService LOGIC_COLOR
+end box
+
+box Model MODEL_COLOR_T1
+participant "m:Model" as Model MODEL_COLOR
+end box
+
+box Storage STORAGE_COLOR_T1
+participant ":Storage" as Storage STORAGE_COLOR
+end box
+
+[-> LogicManager : execute("dismiss 1")
+activate LogicManager
+
+LogicManager -> DismissCommand : execute(m)
+activate DismissCommand
+
+DismissCommand -> ReminderService : getShownReminders()
+activate ReminderService
+ReminderService --> DismissCommand : reminders
+deactivate ReminderService
+
+DismissCommand -> ReminderService : dismissReminder(e)
+activate ReminderService
+
+ReminderService -> Storage : saveCoordiMate(copy with e dismissed)
+activate Storage
+Storage --> ReminderService
+deactivate Storage
+
+alt save succeeded
+    ReminderService -> Model : setEvent(e, dismissed)
+    activate Model
+    Model --> ReminderService
+    deactivate Model
+    ReminderService --> DismissCommand
+    DismissCommand --> LogicManager : success result
+else save failed
+    ReminderService -> ReminderService : hide e for this session
+    ReminderService --> DismissCommand : ReminderDismissalException
+    DismissCommand --> LogicManager : "Not saved" warning result
+end
+deactivate ReminderService
+deactivate DismissCommand
+
+[<-- LogicManager
+deactivate LogicManager
+@enduml
