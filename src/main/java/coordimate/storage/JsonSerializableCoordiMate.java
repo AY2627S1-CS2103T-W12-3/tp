@@ -123,15 +123,16 @@ class JsonSerializableCoordiMate {
 
     /**
      * Removes year-zero dismissal history from events that remain after cleanup.
+     * Returns true if any history was removed.
      */
-    boolean removeYearZeroReminderStarts() {
-        boolean removed = false;
+    boolean tryRemoveYearZeroReminderStarts() {
+        boolean hasRemovedHistory = false;
         for (JsonAdaptedEvent event : events) {
-            if (event != null && event.removeYearZeroReminderStarts()) {
-                removed = true;
+            if (event != null && event.tryRemoveYearZeroReminderStarts()) {
+                hasRemovedHistory = true;
             }
         }
-        return removed;
+        return hasRemovedHistory;
     }
 
     /**
@@ -240,14 +241,17 @@ class JsonSerializableCoordiMate {
             if (seenNames.add(event.getName())) {
                 continue;
             }
-            String newName = uniqueEventName(event.getName(), reservedNames);
+            String newName = reserveUniqueEventName(event.getName(), reservedNames);
             renamedEvents.add(new EventNameCleanupResult.Rename(events.get(i).getName(), newName));
             events.set(i, new JsonAdaptedEvent(event.withDetails(newName, event.getStartTime(), event.getEndTime())));
         }
         return renamedEvents;
     }
 
-    private static String uniqueEventName(String name, Set<String> reservedNames) {
+    /**
+     * Reserves an unused numbered name, truncating its stem to fit the event name limit.
+     */
+    private static String reserveUniqueEventName(String name, Set<String> reservedNames) {
         for (int number = 2; ; number++) {
             String suffix = " (" + number + ")";
             int stemLength = Math.min(name.codePointCount(0, name.length()), Event.MAX_NAME_LENGTH - suffix.length());
@@ -258,6 +262,9 @@ class JsonSerializableCoordiMate {
         }
     }
 
+    /**
+     * Returns the saved allocation counter, rejecting counters that could reuse a member ID.
+     */
     private long resolveNextMemberId(long minimumNextId) throws IllegalValueException {
         if (nextMemberId == null || nextMemberId.isNull()) {
             return minimumNextId;

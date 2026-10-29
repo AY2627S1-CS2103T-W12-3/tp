@@ -86,7 +86,9 @@ public class CommandBox extends UiPart<Region> {
         commandTextField.requestFocus();
     }
 
-    /** Returns keyboard focus to the command input. */
+    /**
+     * Returns keyboard focus to the command input.
+     */
     void requestFocus() {
         commandTextField.requestFocus();
     }

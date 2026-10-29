@@ -130,6 +130,9 @@ public class StorageManager implements Storage {
         }
     }
 
+    /**
+     * Saves the candidate while holding the lock, rejecting changes since the expected revision.
+     */
     private Optional<String> saveCoordiMateIfUnchanged(ReadOnlyCoordiMate coordiMate, Optional<String> expectedRevision,
             DataFileGuard guard) throws IOException {
         Optional<String> savedRevision = Optional.of(DataFileGuard.revisionOf(

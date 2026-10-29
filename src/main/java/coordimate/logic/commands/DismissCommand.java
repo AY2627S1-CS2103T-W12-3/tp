@@ -14,7 +14,9 @@ import coordimate.logic.reminder.ReminderService;
 import coordimate.model.Model;
 import coordimate.model.event.Event;
 
-/** Dismisses a reminder identified by its position in the upcoming events panel. */
+/**
+ * Dismisses a reminder identified by its position in the upcoming events panel.
+ */
 public class DismissCommand extends Command {
     public static final String COMMAND_WORD = "dismiss";
     public static final String MESSAGE_USAGE = COMMAND_WORD + ": Dismisses an upcoming event reminder.\n"
@@ -30,7 +32,9 @@ public class DismissCommand extends Command {
     private final Index targetIndex;
     private final ReminderService reminderService;
 
-    /** Uses the shared reminder service so CLI and button dismissals have the same persistence behavior. */
+    /**
+     * Uses the shared reminder service so CLI and button dismissals have the same persistence behavior.
+     */
     public DismissCommand(Index targetIndex, ReminderService reminderService) {
         this.targetIndex = requireNonNull(targetIndex);
         this.reminderService = requireNonNull(reminderService);

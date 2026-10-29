@@ -92,6 +92,9 @@ public class LogicManager implements Logic {
         }
     }
 
+    /**
+     * Executes a parsed command, requesting confirmation before deleting a contact.
+     */
     private CommandResult executeCommand(String commandText) throws CommandException, ParseException {
         logger.info("----------------[USER COMMAND][" + commandText + "]");
 
@@ -259,6 +262,9 @@ public class LogicManager implements Logic {
         }
     }
 
+    /**
+     * Transfers temporary reminder dismissals to the new event name after a successful save.
+     */
     private void keepReminderDismissalAfterRename(Command command) {
         if (command instanceof EditEventCommand editEvent) {
             model.getCoordiMate().getEventList().stream()

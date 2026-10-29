@@ -267,7 +267,7 @@ public class MainWindowReminderTest {
         onJavaFxThread(() -> {
             Fixture fixture = openWindow(true);
             try {
-                fixture.storage().failSave = true;
+                fixture.storage().shouldFailSave = true;
                 Parent root = fixture.stage().getScene().getRoot();
                 TextField input = (TextField) root.lookup("#commandTextField");
                 input.setText("dismiss 1");
@@ -451,7 +451,7 @@ public class MainWindowReminderTest {
             try {
                 Parent root = fixture.stage().getScene().getRoot();
                 byte[] before = Files.readAllBytes(fixture.storage().getCoordiMateFilePath());
-                fixture.storage().failSave = true;
+                fixture.storage().shouldFailSave = true;
 
                 Button dismiss = (Button) root.lookup(".reminder-dismiss");
                 dismiss.fire();
@@ -728,7 +728,7 @@ public class MainWindowReminderTest {
                 ListView<?> events = (ListView<?>) root.lookup("#eventListView");
                 events.getSelectionModel().selectFirst();
                 byte[] savedBeforeEdit = Files.readAllBytes(storage.getCoordiMateFilePath());
-                storage.failSave = true;
+                storage.shouldFailSave = true;
 
                 submitCommand(root, "edit 1 lv/");
 
@@ -754,21 +754,21 @@ public class MainWindowReminderTest {
         input.fireEvent(new ActionEvent());
     }
 
-    private Fixture openWindow(boolean showBeforeFilling) throws IOException {
-        return openWindow(showBeforeFilling, 1100, 800);
+    private Fixture openWindow(boolean shouldShowBeforeFilling) throws IOException {
+        return openWindow(shouldShowBeforeFilling, 1100, 800);
     }
 
-    private Fixture openWindow(boolean showBeforeFilling, int width, int height) throws IOException {
+    private Fixture openWindow(boolean shouldShowBeforeFilling, int width, int height) throws IOException {
         ModelManager model = new ModelManager();
         model.addEvent(event("Final Concert", "20-10-2026 15:00", "20-10-2026 18:00"));
         ControlledStorage storage = new ControlledStorage(temporaryFolder.resolve("data.json"));
         storage.saveCoordiMate(model.getCoordiMate());
         AdjustableClock clock = new AdjustableClock();
-        return openWindow(model, storage, clock, showBeforeFilling, width, height);
+        return openWindow(model, storage, clock, shouldShowBeforeFilling, width, height);
     }
 
     private Fixture openWindow(ModelManager model, ControlledStorage storage, AdjustableClock clock,
-            boolean showBeforeFilling, int width, int height) {
+            boolean shouldShowBeforeFilling, int width, int height) {
         LogicManager logic = new LogicManager(model, new StorageManager(storage,
                 new JsonUserPrefsStorage(temporaryFolder.resolve("prefs.json"))), clock);
         Stage stage = new Stage();
@@ -776,11 +776,11 @@ public class MainWindowReminderTest {
         MainWindow window = new MainWindow(stage, logic, storage.getCoordiMateFilePath(), timer, clock);
         stage.setWidth(width);
         stage.setHeight(height);
-        if (showBeforeFilling) {
+        if (shouldShowBeforeFilling) {
             stage.show();
         }
         window.fillInnerParts();
-        if (!showBeforeFilling) {
+        if (!shouldShowBeforeFilling) {
             assertEquals(Animation.Status.STOPPED, timer.getStatus());
             stage.show();
         }
@@ -853,7 +853,7 @@ public class MainWindowReminderTest {
                            ControlledStorage storage, AdjustableClock clock, Timeline timer) { }
 
     private static class ControlledStorage extends JsonCoordiMateStorage {
-        private boolean failSave;
+        private boolean shouldFailSave;
 
         ControlledStorage(Path path) {
             super(path);
@@ -861,7 +861,7 @@ public class MainWindowReminderTest {
 
         @Override
         public void saveCoordiMate(ReadOnlyCoordiMate data) throws IOException {
-            if (failSave) {
+            if (shouldFailSave) {
                 throw new IOException("Disk full");
             }
             super.saveCoordiMate(data);

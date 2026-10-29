@@ -91,7 +91,9 @@ public class CommandResult {
         this(feedbackToUser, false, false);
     }
 
-    /** Reports an operation that took effect for this session but could not be saved. */
+    /**
+     * Reports an operation that took effect for this session but could not be saved.
+     */
     public static CommandResult warning(String feedbackToUser) {
         return new CommandResult(feedbackToUser, false, false, false, View.NONE, true, null, -1);
     }

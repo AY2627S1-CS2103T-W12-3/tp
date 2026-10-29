@@ -50,7 +50,9 @@ public class CoordiMateParser {
     private static final Logger logger = LogsCenter.getLogger(CoordiMateParser.class);
     private final ReminderService reminderService;
 
-    /** Supplies the shared reminder service to commands that dismiss reminders. */
+    /**
+     * Supplies the shared reminder service to commands that dismiss reminders.
+     */
     public CoordiMateParser(ReminderService reminderService) {
         this.reminderService = requireNonNull(reminderService);
     }

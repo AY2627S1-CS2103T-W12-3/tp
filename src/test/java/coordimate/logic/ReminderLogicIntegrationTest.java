@@ -451,8 +451,8 @@ public class ReminderLogicIntegrationTest {
         verifyEndOnlyEditAfterRestart(true);
     }
 
-    private void verifyEndOnlyEditAfterRestart(boolean dismissed) throws Exception {
-        if (dismissed) {
+    private void verifyEndOnlyEditAfterRestart(boolean isDismissed) throws Exception {
+        if (isDismissed) {
             logic.dismissReminder(concert);
         }
         ObservableList<Event> view = logic.getReminders();
@@ -461,8 +461,8 @@ public class ReminderLogicIntegrationTest {
 
         assertEquals(new EventTime("22-10-2026 18:00"), savedEvent().getEndTime());
         assertEquals(START, savedEvent().getStartTime());
-        assertEquals(dismissed, savedEvent().isReminderDismissed());
-        assertEquals(dismissed ? List.of() : List.of(savedEvent()), view);
+        assertEquals(isDismissed, savedEvent().isReminderDismissed());
+        assertEquals(isDismissed ? List.of() : List.of(savedEvent()), view);
         List<Event> expected = List.copyOf(view);
         restartFromSavedData();
         assertEquals(expected, logic.getReminders());
@@ -478,8 +478,8 @@ public class ReminderLogicIntegrationTest {
         verifyDeletionAndRecreationAcrossRestarts(true);
     }
 
-    private void verifyDeletionAndRecreationAcrossRestarts(boolean dismissed) throws Exception {
-        if (dismissed) {
+    private void verifyDeletionAndRecreationAcrossRestarts(boolean isDismissed) throws Exception {
+        if (isDismissed) {
             logic.dismissReminder(concert);
         }
         ObservableList<Event> view = logic.getReminders();
@@ -528,8 +528,8 @@ public class ReminderLogicIntegrationTest {
         verifyRejectedEditsAcrossRestart(true);
     }
 
-    private void verifyRejectedEditsAcrossRestart(boolean dismissed) throws Exception {
-        if (dismissed) {
+    private void verifyRejectedEditsAcrossRestart(boolean isDismissed) throws Exception {
+        if (isDismissed) {
             logic.dismissReminder(concert);
         }
         logic.execute("addevent evn/Other st/21-10-2026 16:00 et/21-10-2026 18:00");
@@ -565,8 +565,8 @@ public class ReminderLogicIntegrationTest {
         verifyFailedEditAcrossRestart(true);
     }
 
-    private void verifyFailedEditAcrossRestart(boolean dismissed) throws Exception {
-        if (dismissed) {
+    private void verifyFailedEditAcrossRestart(boolean isDismissed) throws Exception {
+        if (isDismissed) {
             logic.dismissReminder(concert);
         }
         ObservableList<Event> view = logic.getReminders();
@@ -597,8 +597,8 @@ public class ReminderLogicIntegrationTest {
         verifyUnreadableDataPreservesReminderState(true);
     }
 
-    private void verifyUnreadableDataPreservesReminderState(boolean dismissed) throws Exception {
-        if (dismissed) {
+    private void verifyUnreadableDataPreservesReminderState(boolean isDismissed) throws Exception {
+        if (isDismissed) {
             logic.dismissReminder(concert);
         }
         ObservableList<Event> view = logic.getReminders();
