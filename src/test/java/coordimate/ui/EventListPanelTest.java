@@ -941,7 +941,6 @@ public class EventListPanelTest {
         return (Label) root.lookup("#" + id);
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void earlierEventRemovedOrArchived_keepsChosenEventSelected() throws Exception {
         JavaFxTestSupport.runOnFxThreadAndWait(() -> {
@@ -1066,6 +1065,7 @@ public class EventListPanelTest {
         return getEventList(root);
     }
 
+    @SuppressWarnings("unchecked")
     private static ListView<Event> getEventList(Region root) {
         return (ListView<Event>) root.lookup("#eventListView");
     }
