@@ -14,8 +14,6 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -29,7 +27,6 @@ import coordimate.model.person.Person;
 import coordimate.testutil.JavaFxTestSupport;
 import coordimate.testutil.PersonBuilder;
 import coordimate.testutil.TypicalPersons;
-import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -66,7 +63,7 @@ public class EventListPanelTest {
 
     @Test
     public void selectEvent_dateOnlyDuration_countsDatesInclusively() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             assertDuration("27-10-2026", "27-10-2026", "1 day");
             assertDuration("27-10-2026", "29-10-2026", "3 days");
             assertDuration("31-10-2026", "01-11-2026", "2 days");
@@ -77,7 +74,7 @@ public class EventListPanelTest {
 
     @Test
     public void selectEvent_mixedTimesDuration_identifiesMissingTime() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             assertDuration("27-10-2026", "29-10-2026 10:30", "Unknown (start time not specified)");
             assertDuration("27-10-2026 09:00", "29-10-2026", "Unknown (end time not specified)");
             assertDuration("27-10-2026", "27-10-2026 00:00", "Unknown (start time not specified)");
@@ -87,7 +84,7 @@ public class EventListPanelTest {
 
     @Test
     public void selectEvent_timedDuration_formatsDaysHoursAndMinutes() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             assertDuration("27-10-2026 09:00", "29-10-2026 10:30", "2 days 1 hour 30 minutes");
             assertDuration("27-10-2026 09:00", "29-10-2026 09:00", "2 days");
             assertDuration("27-10-2026 09:00", "28-10-2026 09:00", "1 day");
@@ -99,7 +96,7 @@ public class EventListPanelTest {
 
     @Test
     public void selectEvent_timedDuration_omitsZeroUnitsAndPluralises() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             assertDuration("27-10-2026 09:00", "27-10-2026 09:00", "0 minutes");
             assertDuration("27-10-2026 09:00", "27-10-2026 09:01", "1 minute");
             assertDuration("27-10-2026 09:00", "27-10-2026 09:30", "30 minutes");
@@ -112,7 +109,7 @@ public class EventListPanelTest {
 
     @Test
     public void selectEvent_timedDuration_countsElapsedTimeAcrossDateBoundaries() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             assertDuration("27-10-2026 23:59", "28-10-2026 00:00", "1 minute");
             assertDuration("27-10-2026 09:00", "28-10-2026 08:59", "23 hours 59 minutes");
             assertDuration("31-10-2026 23:00", "01-11-2026 01:30", "2 hours 30 minutes");
@@ -122,7 +119,7 @@ public class EventListPanelTest {
 
     @Test
     public void selectEvent_durationRefreshesWhenSwitchingEvents() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             String[][] cases = {
                 {"27-10-2026", "29-10-2026", "3 days"},
                 {"27-10-2026 09:00", "29-10-2026 10:30", "2 days 1 hour 30 minutes"},
@@ -149,7 +146,7 @@ public class EventListPanelTest {
 
     @Test
     public void replaceSelectedEvent_durationRefreshesWhenTimesChange() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Event original = new Event("Concert", new EventTime("27-10-2026"), new EventTime("29-10-2026"));
             ObservableList<Event> events = FXCollections.observableArrayList(original);
             Region root = new EventListPanel(events).getRoot();
@@ -178,7 +175,7 @@ public class EventListPanelTest {
 
     @Test
     public void memberIds_ignoreContactFilteringAndFollowRosterReorderingAndEdits() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Person alice = new PersonBuilder(TypicalPersons.ALICE).withMemberId(12)
                     .withName(ALICE.getFullName()).build();
             Person bob = new PersonBuilder(TypicalPersons.BENSON).withMemberId(45).withName(BOB.getFullName()).build();
@@ -205,7 +202,7 @@ public class EventListPanelTest {
 
     @Test
     public void selectEvent_showsEveryMemberStatusAndSummary() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Event event = event(List.of(ALICE, BOB, CHARLIE),
                     Map.of(ALICE, AttendanceStatus.PRESENT, BOB, AttendanceStatus.ABSENT));
             Region root = new EventListPanel(FXCollections.observableArrayList(event)).getRoot();
@@ -222,7 +219,7 @@ public class EventListPanelTest {
 
     @Test
     public void navigateCards_handlesUnselectedEmptyAndBoundaryStates() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Event first = event(List.of(ALICE), Map.of());
             Event second = new Event("Planning Session", DATE, DATE, List.of(), Map.of());
             EventListPanel panel = new EventListPanel(FXCollections.observableArrayList(first, second));
@@ -260,7 +257,7 @@ public class EventListPanelTest {
 
     @Test
     public void tutorialTargets_selectExistingEventAndUseEmptyStates() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             EventListPanel emptyPanel = new EventListPanel(FXCollections.observableArrayList());
             Region emptyRoot = emptyPanel.getRoot();
             new Scene(emptyRoot, 1000, 700);
@@ -285,7 +282,7 @@ public class EventListPanelTest {
 
     @Test
     public void tutorialEventCardTarget_usesVisibleSelectedCard() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Event first = event(List.of(), Map.of());
             Event second = new Event("Welcome Fair", DATE, DATE, List.of(), Map.of());
             EventListPanel panel = new EventListPanel(FXCollections.observableArrayList(first, second));
@@ -314,7 +311,7 @@ public class EventListPanelTest {
 
     @Test
     public void revealTutorialMemberList_scrollsToMembersWhenPaneIsShort() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Event event = event(List.of(ALICE, BOB, CHARLIE), Map.of());
             EventListPanel panel = new EventListPanel(FXCollections.observableArrayList(event));
             Stage stage = new Stage();
@@ -337,7 +334,7 @@ public class EventListPanelTest {
 
     @Test
     public void eventListChanges_preserveIntentionalSelectionState() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             ObservableList<Event> events = FXCollections.observableArrayList();
             EventListPanel panel = new EventListPanel(events);
             Region root = panel.getRoot();
@@ -363,7 +360,7 @@ public class EventListPanelTest {
 
     @Test
     public void replaceSelectedEvent_refreshesStatusAndCountsImmediately() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Event event = event(List.of(ALICE, BOB), Map.of());
             ObservableList<Event> events = FXCollections.observableArrayList(event);
             Region root = new EventListPanel(events).getRoot();
@@ -388,7 +385,7 @@ public class EventListPanelTest {
 
     @Test
     public void eventWithoutMembers_showsZeroCountsAndAssignmentHint() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Region root = new EventListPanel(FXCollections.observableArrayList(event(List.of(), Map.of())))
                     .getRoot();
             new Scene(root);
@@ -404,7 +401,7 @@ public class EventListPanelTest {
 
     @Test
     public void selectEvent_showsMemberListStyleWithContactRoleOrganisationAndTags() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Person alice = new PersonBuilder().withMemberId(12).withName(ALICE.getFullName()).withRole("Treasurer")
                     .withOrganisation("Student Union").withTags("Finance", "Publicity").build();
             Region root = new EventListPanel(FXCollections.observableArrayList(event(List.of(ALICE), Map.of())),
@@ -427,7 +424,7 @@ public class EventListPanelTest {
 
     @Test
     public void selectEvent_showsSavedNoteBelowMemberMetadata() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             String note = "Vegetarian; requires step-free access";
             Person alice = new PersonBuilder().withMemberId(12).withName(ALICE.getFullName()).withRole("Logistics")
                     .withOrganisation("NUS").withTags("Logistics", "Publicity").withNote(note).build();
@@ -457,7 +454,7 @@ public class EventListPanelTest {
 
     @Test
     public void selectEvent_withoutNoteOrSavedContact_omitsNoteLine() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Person alice = new PersonBuilder().withMemberId(12).withName(ALICE.getFullName()).withoutNote().build();
             Event event = event(List.of(ALICE, BOB), Map.of(BOB, AttendanceStatus.ABSENT));
             Region root = new EventListPanel(FXCollections.observableArrayList(event),
@@ -481,7 +478,7 @@ public class EventListPanelTest {
 
     @Test
     public void editContactNote_refreshesSelectedEventImmediately() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Person alice = new PersonBuilder().withMemberId(12).withName(ALICE.getFullName())
                     .withNote("Vegetarian").build();
             Person bob = new PersonBuilder().withMemberId(45).withName(BOB.getFullName())
@@ -511,7 +508,7 @@ public class EventListPanelTest {
 
     @Test
     public void clearContactNote_removesSelectedEventNoteLineImmediately() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Person alice = new PersonBuilder().withMemberId(12).withName(ALICE.getFullName())
                     .withNote("Vegetarian").build();
             Person bob = new PersonBuilder().withMemberId(45).withName(BOB.getFullName())
@@ -540,7 +537,7 @@ public class EventListPanelTest {
 
     @Test
     public void contactChanges_refreshSelectedEventMemberDetails() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Person original = new PersonBuilder().withMemberId(12).withName(ALICE.getFullName()).withRole("Treasurer")
                     .withOrganisation("Student Union").withTags("Finance").build();
             ObservableList<Person> persons = FXCollections.observableArrayList(original);
@@ -583,7 +580,7 @@ public class EventListPanelTest {
 
     @Test
     public void eventCard_showsMemberAndAttendanceOverview() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Event event = event(List.of(ALICE, BOB, CHARLIE),
                     Map.of(ALICE, AttendanceStatus.PRESENT, BOB, AttendanceStatus.ABSENT));
             Region root = new EventListPanel(FXCollections.observableArrayList(event)).getRoot();
@@ -603,17 +600,18 @@ public class EventListPanelTest {
 
     @Test
     public void resize_longNotes_wrapWithoutCompressingAttendanceBadges() throws Exception {
-        runOnJavaFxThread(() -> assertLongNoteLayout("Requires step-free access. ".repeat(20).substring(0, 500)));
+        JavaFxTestSupport.runOnFxThreadAndWait(() ->
+                assertLongNoteLayout("Requires step-free access. ".repeat(20).substring(0, 500)));
     }
 
     @Test
     public void resize_unbrokenNotes_wrapWithoutCompressingAttendanceBadges() throws Exception {
-        runOnJavaFxThread(() -> assertLongNoteLayout("W".repeat(500)));
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> assertLongNoteLayout("W".repeat(500)));
     }
 
     @Test
     public void resize_narrowWindowStacksEventPanes() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             SplitPane pane = (SplitPane) new EventListPanel(FXCollections.observableArrayList()).getRoot();
             new Scene(pane);
             pane.resize(900, 500);
@@ -703,7 +701,7 @@ public class EventListPanelTest {
 
     @Test
     public void selectEvent_showsCurrentLeaveSeparatelyFromAttendance() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Person alice = new PersonBuilder().withMemberId(12).withName(ALICE.getFullName())
                     .withLeaveDate("30-11-2026").withNote("Contact by email").build();
             Person bob = new PersonBuilder().withMemberId(45).withName(BOB.getFullName())
@@ -731,7 +729,7 @@ public class EventListPanelTest {
 
     @Test
     public void selectEvent_endedLeaveNoLeaveOrMissingContact_omitsLeaveIndicator() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Person alice = new PersonBuilder().withMemberId(12).withName(ALICE.getFullName())
                     .withLeaveDate("29-11-2026").build();
             Person bob = new PersonBuilder().withMemberId(45).withName(BOB.getFullName()).withoutLeaveDate().build();
@@ -750,7 +748,7 @@ public class EventListPanelTest {
 
     @Test
     public void editContactLeave_refreshesSelectedEventEvenWhenContactIsFilteredOut() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Person alice = new PersonBuilder().withMemberId(12).withName(ALICE.getFullName()).build();
             ObservableList<Person> persons = FXCollections.observableArrayList(alice);
             FilteredList<Person> filtered = new FilteredList<>(persons, person -> false);
@@ -777,7 +775,7 @@ public class EventListPanelTest {
 
     @Test
     public void refreshIfDateChanged_handlesDifferentExpiryDatesAndClockMovingBackward() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             MutableClock clock = new MutableClock(LocalDate.of(2026, 11, 30));
             Person alice = new PersonBuilder(TypicalPersons.ALICE).withName(ALICE.getFullName())
                     .withLeaveDate("30-11-2026").build();
@@ -813,7 +811,7 @@ public class EventListPanelTest {
 
     @Test
     public void archivedEvent_showsAndRefreshesLeaveForContactsHiddenByArchiveAndFilter() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             ModelManager model = new ModelManager();
             Person alice = new PersonBuilder(TypicalPersons.ALICE).withName(ALICE.getFullName())
                     .withLeaveDate("30-11-2026").withArchived(true).build();
@@ -860,7 +858,7 @@ public class EventListPanelTest {
 
     @Test
     public void setShowingArchived_marksArchivedMembersAndRelabelsList() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Person archived = new PersonBuilder().withMemberId(1).withName(ALICE.getFullName()).build()
                     .withArchived(true);
             Person active = new PersonBuilder().withMemberId(2).withName(BOB.getFullName())
@@ -946,15 +944,6 @@ public class EventListPanelTest {
     @SuppressWarnings("unchecked")
     private static ListView<Event> getEventList(Region root) {
         return (ListView<Event>) root.lookup("#eventListView");
-    }
-
-    private static void runOnJavaFxThread(Runnable assertion) throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
-            assertion.run();
-            return null;
-        });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     /** Supplies a controllable local date for leave-expiry tests. */
