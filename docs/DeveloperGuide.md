@@ -19,6 +19,7 @@
 * [JUnit 5](https://github.com/junit-team/junit5) supports automated testing.
 * [MarkBind](https://markbind.org/) generates the documentation website.
 * [PlantUML](https://plantuml.com/) generates the UML diagrams in this guide.
+* AI Coding Agents are used throughout the development of this project. 
 
 --------------------------------------------------------------------------------------------------------------------
 
