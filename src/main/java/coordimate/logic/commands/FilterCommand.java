@@ -14,7 +14,7 @@ import coordimate.model.event.EventMembersPredicate;
 import coordimate.model.person.ContactFilterPredicate;
 import coordimate.model.person.FilterCriterion;
 import coordimate.model.person.Person;
-import coordimate.model.tag.TagFilterPredicate;
+import coordimate.model.person.TagFilterPredicate;
 
 /**
  * Filters the displayed contact list to contacts matching every given criterion.

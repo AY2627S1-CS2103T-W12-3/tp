@@ -1,4 +1,4 @@
-package coordimate.model.tag;
+package coordimate.model.person;
 
 import static java.util.Objects.requireNonNull;
 
@@ -6,7 +6,6 @@ import java.util.Locale;
 import java.util.function.Predicate;
 
 import coordimate.commons.util.ToStringBuilder;
-import coordimate.model.person.Person;
 
 /**
  * Tests that a {@code Person} has the tag with the given name, ignoring case.
