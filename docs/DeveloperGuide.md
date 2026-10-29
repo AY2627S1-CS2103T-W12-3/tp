@@ -717,303 +717,469 @@ features from ideas that are not implemented.
 
 ### Use cases
 
-(For all use cases below, the **System** is the `CoordiMate` and the **Actor** is the `user`, unless specified otherwise)
+(For all use cases below, the **System** is `CoordiMate` and the **Actor** is an EXCO member, unless specified otherwise.)
 
-**Use case: Add a contact**
+<box type="info" seamless>
 
-**System:** CoordiMate
+**Note:** In every use case that changes data, if CoordiMate cannot load or save the local data file, it informs
+the EXCO member and makes no changes. This extension is not repeated in each use case below. The only exception is
+dismissing a reminder ([UC12](#uc12-dismiss-an-event-reminder)).
+</box>
 
-**Actor:** University CCA EXCO member
-
-**Preconditions:** CoordiMate is running.
-
-**Main success scenario (MSS)**
-
-1. EXCO member requests to add a contact, providing the contact's name, phone number, email address, role, and any applicable optional details.
-2. CoordiMate validates the supplied fields, registers any new custom tags, saves the contact, and confirms
-   that the contact was saved.
-
-    Use case ends.
-
-**Extensions**
-
-* 1a. A required detail is missing, empty, repeated, or invalid, or the EXCO member provides an unknown field.
-
-  * 1a1. CoordiMate informs the EXCO member of the error.
-  * 1a2. EXCO member corrects the contact details.
-
-    Steps 1a1-1a2 are repeated until the contact details are valid.<br>
-    Use case resumes from step 2.
-
-* 1b. The supplied details would create a [duplicate contact](#glossary).
-
-  * 1b1. CoordiMate informs the EXCO member that the contact already exists and makes no changes.
-
-    Use case ends.
-
-* 2a. CoordiMate cannot write to the local data file.
-
-  * 2a1. CoordiMate informs the EXCO member that the contact could not be saved and makes no changes.
-
-    Use case ends.
-
-* 2b. CoordiMate cannot load the local data file because it is invalid or corrupted.
-
-  * 2b1. CoordiMate informs the EXCO member that the contact data could not be loaded and makes no changes.
-
-    Use case ends.
-
-**Use case: Search contacts**
-
-**System:** CoordiMate
-
-**Actor:** Event lead
-
-**Preconditions:** CoordiMate has been launched and contains at least one contact.
+#### UC01: Add a contact
 
 **MSS**
 
-1. Event lead requests to search contacts using one keyword or phrase.
-2. CoordiMate displays contacts whose name, phone number, email address, address, or organisation contains that
-   keyword, ignoring case. Phone matching uses [normalised phone numbers](#glossary).
+1. EXCO member requests to add a contact, providing the contact's name, phone number, email address, role, and any
+   optional details or tags.
+2. CoordiMate saves the contact, creating any new tags, and confirms that the contact was saved.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. A required detail is missing, a detail is invalid or repeated, or an unknown field is given.
+  * 1a1. CoordiMate informs the EXCO member of the error.
+  * 1a2. EXCO member corrects the contact details.
+
+    Steps 1a1-1a2 are repeated until the details are valid.<br>
+    Use case resumes from step 2.
+
+* 1b. More than 15 tags are given.
+  * 1b1. CoordiMate informs the EXCO member of the tag limit.
+
+    Use case resumes from step 1.
+
+* 1c. The supplied details would create a [duplicate contact](#glossary).
+  * 1c1. CoordiMate informs the EXCO member that the contact already exists and makes no changes.
+
+    Use case ends.
+
+#### UC02: Edit a contact
+
+**MSS**
+
+1. EXCO member requests to edit a contact, identifying it by its member ID or by its exact name, phone number, or
+   email address, and providing the new details.
+2. CoordiMate updates the contact, updates its name in every event it is a member of, and shows the updated
+   details.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. No new details are given, a detail is invalid or repeated, or an unknown field is given.
+  * 1a1. CoordiMate informs the EXCO member of the error.
+  * 1a2. EXCO member corrects the details.
+
+    Steps 1a1-1a2 are repeated until the details are valid.<br>
+    Use case resumes from step 2.
+
+* 1b. No contact matches the given identifier.
+  * 1b1. CoordiMate informs the EXCO member that no matching contact was found.
+
+    Use case ends.
+
+* 1c. More than one contact matches the given name.
+  * 1c1. CoordiMate lists the matching contacts with their member IDs, and requests a member ID, phone number, or
+    email address instead.
+  * 1c2. EXCO member provides one of the requested identifiers.
+
+    Use case resumes from step 2.
+
+* 1d. The proposed changes would create a [duplicate contact](#glossary).
+  * 1d1. CoordiMate informs the EXCO member of the conflict and makes no changes.
+
+    Use case ends.
+
+* 1e. The tag changes would give the contact more than 15 tags.
+  * 1e1. CoordiMate informs the EXCO member of the tag limit and makes no changes.
+
+    Use case ends.
+
+#### UC03: Delete a contact
+
+**MSS**
+
+1. EXCO member requests to delete a contact, identifying it by its member ID or by its exact name, phone number, or
+   email address.
+2. CoordiMate shows the matching contact and requests confirmation.
+3. EXCO member confirms the deletion.
+4. CoordiMate deletes the contact, removes it from every event it is a member of along with its attendance records,
+   and confirms the deletion.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. No identifier, more than one identifier, or an invalid member ID is given.
+  * 1a1. CoordiMate informs the EXCO member of the error.
+  * 1a2. EXCO member provides one valid identifier.
+
+    Use case resumes from step 2.
+
+* 1b. No contact matches the given identifier.
+  * 1b1. CoordiMate informs the EXCO member that no matching contact was found.
+
+    Use case ends.
+
+* 1c. More than one contact matches the given name.
+  * 1c1. CoordiMate lists the matching contacts with their member IDs, and requests a member ID, phone number, or
+    email address instead.
+  * 1c2. EXCO member provides one of the requested identifiers.
+
+    Use case resumes from step 2.
+
+* 3a. EXCO member declines the deletion.
+  * 3a1. CoordiMate cancels the deletion and leaves the contact unchanged.
+
+    Use case ends.
+
+#### UC04: Search contacts
+
+**MSS**
+
+1. EXCO member requests to search contacts using a keyword or phrase.
+2. CoordiMate shows the contacts whose name, phone number, email address, address, or organisation contains the
+   keyword, ignoring case, and the number found. Phone matching uses [normalised phone numbers](#glossary).
    Extra spaces in the keyword and in addresses are treated as one space.
 
    Use case ends.
 
 **Extensions**
 
-* 1a. Event lead provides an empty keyword, including a blank quoted phrase.
-
-  * 1a1. CoordiMate displays an error message.
+* 1a. The keyword is empty.
+  * 1a1. CoordiMate informs the EXCO member of the error.
 
     Use case ends.
 
 * 2a. No contact matches the keyword.
-
-  * 2a1. CoordiMate informs the event lead that no matching contacts were found.
+  * 2a1. CoordiMate shows an empty list and informs the EXCO member that no matching contacts were found.
 
     Use case ends.
 
-**Use case: Delete a contact**
+#### UC05: Filter contacts
 
-**System:** CoordiMate
+**MSS**
 
-**Actor:** University CCA EXCO member
-
-**Preconditions:** CoordiMate is running and at least one contact has been saved.
-
-**Main success scenario (MSS)**
-
-1. EXCO member requests to delete a contact, identifying the contact by its permanent member ID, exact name, phone number, or email address.
-2. CoordiMate displays the matching contact and requests confirmation.
-3. EXCO member confirms the deletion.
-4. CoordiMate saves a model without the selected contact, their assignments in any event roster, or their
-   associated attendance records, then updates the live model and confirms the deletion. Events and other contacts
-   remain unchanged.
+1. EXCO member requests to list the contacts that match one or more criteria, each a tag, an event, or an
+   organisation.
+2. CoordiMate shows the contacts that match every criterion, and the number found.
 
    Use case ends.
 
 **Extensions**
 
-* 1a. The EXCO member provides no identifier, more than one identifier, an unknown field, or an invalid member ID.
+* 1a. No criteria are given, a criterion is empty, or a criterion is not a tag, event, or organisation.
+  * 1a1. CoordiMate informs the EXCO member of the error and leaves the displayed list unchanged.
 
+    Use case ends.
+
+* 1b. A criterion's value does not match any saved tag, event, or organisation.
+  * 1b1. CoordiMate informs the EXCO member that the value was not found and leaves the displayed list unchanged.
+
+    Use case ends.
+
+* 2a. No contact matches every criterion.
+  * 2a1. CoordiMate shows an empty list and informs the EXCO member that no contacts match.
+
+    Use case ends.
+
+#### UC06: Mark a contact as on leave
+
+**MSS**
+
+1. EXCO member requests to mark a contact as on leave until a given date, while adding the contact (UC01) or
+   editing it (UC02).
+2. CoordiMate saves the date and shows the contact as on leave until that date.
+3. After the date has passed, CoordiMate stops showing the contact as on leave, without any action from the EXCO
+   member.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. The date is not a real date, or is in the past.
+  * 1a1. CoordiMate informs the EXCO member of the error and makes no changes.
+
+    Use case resumes from step 1.
+
+* 2a. EXCO member requests to clear the contact's leave before the date has passed.
+  * 2a1. CoordiMate removes the leave date and stops showing the contact as on leave.
+
+    Use case ends.
+
+#### UC07: Create an event
+
+**MSS**
+
+1. EXCO member requests to create an event, providing its name, start date/time, and end date/time.
+2. CoordiMate creates the event and confirms its name, start, and end.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. A detail is missing, empty, repeated, or incorrectly formatted.
   * 1a1. CoordiMate informs the EXCO member of the error.
-  * 1a2. EXCO member provides one valid identifier.
+  * 1a2. EXCO member corrects the details.
 
+    Steps 1a1-1a2 are repeated until the details are valid.<br>
     Use case resumes from step 2.
 
-* 1b. No contact matches the provided identifier.
+* 1b. The start is after the end.
+  * 1b1. CoordiMate informs the EXCO member of the error.
 
-  * 1b1. CoordiMate informs the EXCO member that no matching contact was found.
+    Use case resumes from step 1.
 
-    Use case ends.
-
-* 1c. More than one contact matches the provided name.
-
-  * 1c1. CoordiMate requests a phone number, email address, or member ID to identify the contact.
-  * 1c2. EXCO member provides one of the requested identifiers.
-
-    Use case resumes from step 2.
-
-* 3a. EXCO member declines the deletion.
-
-  * 3a1. CoordiMate leaves the contact unchanged. Only `y` or `Y` confirms; any other input cancels and is consumed.
+* 1c. An event with the same name already exists, ignoring case.
+  * 1c1. CoordiMate informs the EXCO member that the event already exists, and how to restore it if it is
+    [archived](#uc13-archive-and-restore-a-contact).
 
     Use case ends.
 
-**Use case: Create an event**
-
-**Preconditions:** CoordiMate is running.
+#### UC08: Edit an event
 
 **MSS**
 
-1. The Exco member creates an event by entering its name, start date/time, and end date/time using the `addevent` command.
-2. CoordiMate validates the details and creates the event.
-3. CoordiMate displays a confirmation with the event name and its start and end times.
+1. EXCO member requests to change an event's name, start, or end.
+2. CoordiMate updates the event, keeping its members and attendance records, and confirms the new details.
 
    Use case ends.
 
 **Extensions**
 
-* 1a. The event name is empty, a date/time is missing or incorrectly formatted, or a required parameter is repeated.
-  * 1a1. CoordiMate displays the relevant error.
-  * 1a2. The Exco member corrects the details and retries step 1.
-
-* 1b. An event with that name already exists.
-  * 1b1. CoordiMate reports that duplicate event names are not allowed.
-  * 1b2. The Exco member chooses a different name and retries step 1.
-
-* 2a. CoordiMate cannot save the event because the local data file cannot be written or is invalid.
-  * 2a1. CoordiMate displays the relevant error and does not create the event.
+* 1a. No saved event has the given name.
+  * 1a1. CoordiMate informs the EXCO member that the event does not exist.
 
     Use case ends.
 
-**Use case: Assign members to an event**
+* 1b. No new details are given, or a detail is empty or incorrectly formatted.
+  * 1b1. CoordiMate informs the EXCO member of the error.
 
-**Preconditions:** CoordiMate is running. The event and the contacts to be assigned already exist.
+    Use case resumes from step 1.
+
+* 1c. Another event already has the new name, ignoring case.
+  * 1c1. CoordiMate informs the EXCO member of the conflict and makes no changes.
+
+    Use case ends.
+
+* 1d. The new start would be after the end.
+  * 1d1. CoordiMate informs the EXCO member of the error and makes no changes.
+
+    Use case ends.
+
+Deleting an event is similar: the EXCO member identifies the event by name, and CoordiMate deletes it together with
+its member list and attendance records, without asking for confirmation. The contacts themselves are kept.
+Extension 1a also applies.
+
+#### UC09: Assign members to an event
 
 **MSS**
 
-1. The Exco member assigns one or more contacts to an event using the `assign` command, specifying the event name and the permanent member IDs of the contacts.
-2. CoordiMate verifies the event and contacts, then associates the contacts with the event.
-3. CoordiMate confirms how many members were assigned.
+1. EXCO member requests to assign one or more contacts, identified by their member IDs, to an event.
+2. CoordiMate adds the contacts to the event's members, with no attendance marked, and confirms how many were
+   assigned.
 
    Use case ends.
 
 **Extensions**
 
-* 1a. No saved event has the given name, or a member ID is invalid or unknown.
-  * 1a1. CoordiMate displays the relevant error and assigns no contacts.
-  * 1a2. The Exco member corrects the event name or member ID and retries step 1.
+* 1a. No member IDs are given, or a member ID is invalid.
+  * 1a1. CoordiMate informs the EXCO member of the error.
 
-* 1b. No member IDs are provided.
-  * 1b1. CoordiMate reports that at least one contact must be specified.
-  * 1b2. The Exco member provides one or more member IDs and retries step 1.
+    Use case resumes from step 1.
 
-* 2a. A contact is already assigned, or the same member ID appears more than once.
-  * 2a1. CoordiMate avoids creating duplicate assignments and reports the number of newly assigned members.
+* 1b. No saved event has the given name, or no contact has one of the member IDs.
+  * 1b1. CoordiMate informs the EXCO member of the error and assigns no contacts.
 
-* 2b. Every specified contact is already assigned.
-  * 2b1. CoordiMate reports that no changes were made.
+    Use case resumes from step 1.
 
-    Use case ends.
-
-* 2c. CoordiMate cannot save the assignment to the local data file.
-  * 2c1. CoordiMate displays the relevant error and assigns no contacts.
+* 1c. The event or one of the contacts is archived.
+  * 1c1. CoordiMate informs the EXCO member that it must be restored first, and assigns no contacts.
 
     Use case ends.
 
-**Use case: Remove members from an event**
+* 2a. Some of the contacts are already members of the event.
+  * 2a1. CoordiMate assigns only the other contacts, and reports how many were already assigned.
 
-**Preconditions:** CoordiMate is running. The event exists and has at least one member.
+    Use case ends.
+
+* 2b. All of the contacts are already members of the event.
+  * 2b1. CoordiMate informs the EXCO member that no changes were made.
+
+    Use case ends.
+
+Removing members from an event is similar, with these differences:
+
+* In step 2, CoordiMate removes the contacts from the event's members, together with their attendance records for
+  that event.
+* In extensions 2a and 2b, the contacts are not members of the event, instead of already being members.
+* Extension 1c applies only to an archived event. An archived contact can still be removed.
+
+#### UC10: View members of an event
 
 **MSS**
 
-1. The Exco member removes one or more members from an event using the `unassign` command, specifying the event name and the permanent member IDs of the contacts.
-2. CoordiMate verifies the event and contacts, then removes the contacts from the event's members, together with their attendance records for that event.
-3. CoordiMate confirms how many members were removed.
+1. EXCO member requests to view the members of an event.
+2. CoordiMate shows only the event's members in the contact list, and confirms how many are shown.
 
    Use case ends.
 
 **Extensions**
 
-* 1a. No saved event has the given name, or a member ID is invalid or unknown.
-  * 1a1. CoordiMate displays the relevant error and removes no members.
-  * 1a2. The Exco member corrects the event name or member ID and retries step 1.
-
-* 1b. No member IDs are provided.
-  * 1b1. CoordiMate reports that at least one contact must be specified.
-  * 1b2. The Exco member provides one or more member IDs and retries step 1.
-
-* 2a. A specified contact is not assigned to the event, or the same member ID appears more than once.
-  * 2a1. CoordiMate skips those contacts and reports the number of members removed.
-
-* 2b. None of the specified contacts are assigned to the event.
-  * 2b1. CoordiMate reports that no changes were made.
+* 1a. No saved event has the given name.
+  * 1a1. CoordiMate informs the EXCO member that the event does not exist and leaves the contact list unchanged.
 
     Use case ends.
-
-* 2c. CoordiMate cannot save the change to the local data file.
-  * 2c1. CoordiMate displays the relevant error and removes no members.
-
-    Use case ends.
-
-**Use case: View members of an event**
-
-**Preconditions:** CoordiMate is running. The event exists.
-
-**MSS**
-
-1. The Exco member requests to view the members of an event using the `members` command, specifying the event name.
-2. CoordiMate switches to the contact list and shows only the event's members, with their contact details.
-3. CoordiMate confirms how many members are shown.
-
-   Use case ends.
-
-**Extensions**
-
-* 1a. No saved event has the given name, or the command format is invalid.
-  * 1a1. CoordiMate displays the relevant error and leaves the contact list unchanged.
-  * 1a2. The Exco member corrects the command and retries step 1.
 
 * 2a. The event has no members.
-  * 2a1. CoordiMate shows an empty contact list and reports that the event has no members.
+  * 2a1. CoordiMate shows an empty contact list and informs the EXCO member that the event has no members.
 
     Use case ends.
 
-* 3a. The Exco member removes a shown member from the event, or renames the event.
-  * 3a1. CoordiMate updates the shown list to the event's current members.
+* 2b. Some of the event's members are outside the current archive view (archived members in the normal view, or active members in the archived view).
+  * 2b1. CoordiMate shows only the members in the current archive view, and informs the EXCO member how many members are hidden.
+
+    Use case ends.
+
+* 2c. While the members are shown, a member is assigned or removed, or the event is renamed.
+  * 2c1. CoordiMate updates the shown list to the event's current members.
+
+    Use case ends.
+
+#### UC11: Record event attendance
+
+**MSS**
+
+1. EXCO member views the members of an event (UC10).
+2. EXCO member marks a member of the event as present or absent.
+3. CoordiMate records the attendance status and confirms the update.
+4. Steps 2-3 are repeated for each member whose attendance is to be recorded.
+
+   Use case ends.
+
+**Extensions**
+
+* 2a. No saved event has the given name, or the contact is not a member of the event.
+  * 2a1. CoordiMate informs the EXCO member of the error.
+
+    Use case resumes from step 2.
+
+* 2b. The status is neither present nor absent.
+  * 2b1. CoordiMate informs the EXCO member of the valid statuses.
+
+    Use case resumes from step 2.
+
+* 2c. The member already has the given status.
+  * 2c1. CoordiMate informs the EXCO member that no changes were made.
+
+    Use case resumes from step 4.
+
+#### UC12: Dismiss an event reminder
+
+**Preconditions:** At least one event has an eligible, undismissed [reminder](#glossary).
+
+**MSS**
+
+1. CoordiMate shows numbered reminders in the **Upcoming events** panel, in order of start time.
+2. EXCO member requests to dismiss a reminder, identifying it by its number.
+3. CoordiMate hides the reminder, saves the dismissal, and renumbers the remaining reminders.
+
+   Use case ends.
+
+**Extensions**
+
+* 2a. No reminder has the given number.
+  * 2a1. CoordiMate informs the EXCO member of the error.
+
+    Use case resumes from step 2.
+
+* 3a. CoordiMate cannot load or save the local data file.
+  * 3a1. CoordiMate hides the reminder for the current session only, and warns the EXCO member that it may reappear
+    after restarting.
+
+    Use case ends.
+
+* 3b. The EXCO member later changes the event's start.
+  * 3b1. CoordiMate shows the reminder again if the new start qualifies for a [reminder](#glossary).
+
+    Use case ends.
+
+#### UC13: Archive and restore a contact
+
+**MSS**
+
+1. EXCO member requests to archive a contact, identifying it by its member ID.
+2. CoordiMate hides the contact from the contact list, keeping its event memberships and attendance records, and
+   confirms the archiving.
+3. EXCO member requests to view archived contacts and events.
+4. CoordiMate shows only the archived contacts and events.
+5. EXCO member requests to restore the contact, identifying it by its member ID.
+6. CoordiMate returns the contact to the contact list and confirms the restoration.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. No contact has the given member ID.
+  * 1a1. CoordiMate informs the EXCO member of the error.
+
+    Use case ends.
+
+* 1b. The contact is already archived.
+  * 1b1. CoordiMate informs the EXCO member that no changes were made.
+
+    Use case ends.
+
+* 5a. The contact is not archived.
+  * 5a1. CoordiMate informs the EXCO member that no changes were made.
+
+    Use case ends.
+
+Archiving and restoring an event is similar, with the event identified by its name. While an event is archived, it
+has no reminder, its members cannot be changed ([UC09](#uc09-assign-members-to-an-event)), and no new event can
+use its name ([UC07](#uc07-create-an-event)).
+
+#### UC14: Manage tags
+
+**MSS**
+
+1. EXCO member requests to create a tag.
+2. CoordiMate adds the tag to the tag list and confirms its creation.
+3. EXCO member requests to rename a tag.
+4. CoordiMate renames the tag, including on every contact that has it, and confirms the change.
+5. EXCO member requests to delete a tag.
+6. CoordiMate deletes the tag, removes it from every contact that has it, and confirms the deletion.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. The tag name is invalid, for example because it contains spaces or is longer than 30 characters.
+  * 1a1. CoordiMate informs the EXCO member of the error.
+
+    Use case resumes from step 1.
+
+* 1b. A tag with the same name already exists, ignoring case.
+  * 1b1. CoordiMate informs the EXCO member that the tag already exists and makes no changes.
+
+    Use case ends.
+
+* 3a. The tag to rename does not exist.
+  * 3a1. CoordiMate informs the EXCO member that the tag does not exist.
+
+    Use case ends.
+
+* 3b. The new name is invalid, or another tag already has it.
+  * 3b1. CoordiMate informs the EXCO member of the error and makes no changes.
 
     Use case resumes from step 3.
 
-* 3b. The Exco member wants to see all contacts again.
-  * 3b1. The Exco member uses the `list` command, and CoordiMate shows all contacts.
+* 5a. The tag to delete does not exist.
+  * 5a1. CoordiMate informs the EXCO member that the tag does not exist.
 
     Use case ends.
-
-**Use case: Record event attendance**
-
-**Preconditions:** CoordiMate is running. The event exists and has at least one member assigned to it.
-
-**MSS**
-
-1. The Exco member requests to view the list of members assigned to an event (use case: View members of an event).
-2. CoordiMate displays the list of members for that event.
-3. The Exco member marks a member's attendance status as present or absent using the `markattendance` command.
-4. CoordiMate records the attendance status and confirms the update.
-5. Steps 3-4 are repeated for each member whose attendance is to be recorded.
-
-   Use case ends.
-
-**Extensions**
-
-* 1a. The event does not exist.
-  * 1a1. CoordiMate displays the relevant error.
-
-    Use case ends.
-
-* 2a. No members are assigned to the event.
-  * 2a1. CoordiMate informs the Exco member that the event has no members.
-
-    Use case ends.
-
-* 3a. The specified member is not assigned to the event.
-  * 3a1. CoordiMate displays the relevant error.
-  * The Exco member retries step 3.
-
-* 3b. The attendance status given is neither "present" nor "absent".
-  * 3b1. CoordiMate displays an error listing the valid status values.
-  * The Exco member retries step 3.
-
-* 3c. The member already has the specified attendance status recorded.
-  * 3c1. CoordiMate informs the Exco member that no change was made.
-
-    Use case resumes from step 5.
-
-* 4a. CoordiMate cannot save the updated attendance record to the local data file.
-  * 4a1. CoordiMate displays the relevant error and does not update the displayed status.
-
-    Use case resumes from step 5.
 
 ### Non-Functional Requirements
 
