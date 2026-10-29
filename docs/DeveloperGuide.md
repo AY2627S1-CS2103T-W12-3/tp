@@ -1257,125 +1257,112 @@ and an example.
 
 ### Deleting a contact
 
-1. Deleting a contact while all contacts are being shown
+1. Prerequisites: Restore the sample contacts and run `list`. Alex Yeoh has member ID `1`.
 
-   1. Prerequisites: Restore the sample contacts and run `list`. Alex Yeoh has member ID `1`.
+1. Test case: `delete 1`, then `n`<br>
+   Expected: `ID: 1` and Alex Yeoh's name, phone, email, and role are shown, followed by `Confirm deletion? [y/N]`. After `n`, the status message shows `Deletion cancelled. No changes were made.` and no contact is deleted.
 
-   1. Test case: `delete 1`, then `n`<br>
-      Expected: `ID: 1` and Alex Yeoh's name, phone, email, and role are shown, followed by `Confirm deletion? [y/N]`. After `n`, the status message shows `Deletion cancelled. No changes were made.` and no contact is deleted.
+1. Test case: `delete 1`, then `y ` (with a trailing space)<br>
+   Expected: Alex Yeoh (member ID `1`) is deleted. Other contacts keep their IDs. The status message shows `Contact deleted successfully: ` followed by the contact's name.
 
-   1. Test case: `delete 1`, then `y ` (with a trailing space)<br>
-      Expected: Alex Yeoh (member ID `1`) is deleted. Other contacts keep their IDs. The status message shows `Contact deleted successfully: ` followed by the contact's name.
+1. Test case: `delete 0`<br>
+   Expected: No confirmation is requested and no contact is deleted. The status message shows `Invalid member ID. Example: delete 12`.
 
-   1. Test case: `delete 0`<br>
-      Expected: No confirmation is requested and no contact is deleted. The status message shows `Invalid member ID. Example: delete 12`.
-
-   1. Other incorrect delete commands to try: `delete`, `delete x`, `delete 99` (where member ID `99` does not exist)<br>
-      Expected: No confirmation is requested and no contact is deleted. The status message shows error details.
+1. Other incorrect delete commands to try: `delete`, `delete x`, `delete 99` (where member ID `99` does not exist)<br>
+   Expected: No confirmation is requested and no contact is deleted. The status message shows error details.
 
 ### Searching contacts
 
-1. Searching the sample contacts
+1. Prerequisites: The sample contacts are loaded.
 
-   1. Prerequisites: The sample contacts are loaded.
+1. Test case: `search alex`<br>
+   Expected: Only `Alex Yeoh` is listed. The status message shows `1 contact(s) found matching "alex".`
 
-   1. Test case: `search alex`<br>
-      Expected: Only `Alex Yeoh` is listed. The status message shows `1 contact(s) found matching "alex".`
+1. Test case: `search zzz`<br>
+   Expected: The list is empty. The status message shows `No contacts found matching "zzz".`
 
-   1. Test case: `search zzz`<br>
-      Expected: The list is empty. The status message shows `No contacts found matching "zzz".`
-
-   1. Test case: `search`<br>
-      Expected: The list is unchanged. The status message shows `Invalid command format.`
+1. Test case: `search`<br>
+   Expected: The list is unchanged. The status message shows `Invalid command format.`
 
 ### Filtering contacts
 
-1. Filtering by tag, event, and organisation
+1. Prerequisites: Restore the sample data (contact IDs `1` to `6`), with no additional contacts, events, or custom
+   tags. Run these commands in order:<br>
+   `edit 3 o/NUS Student Affairs`<br>
+   `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`<br>
+   `assign evn/Final Concert c/1 2`<br>
+   `addtag t/Publicity`
 
-   1. Prerequisites: Restore the sample data (contact IDs `1` to `6`), with no additional contacts, events, or custom
-      tags. Run these commands in order:<br>
-      `add n/Aisha Tan p/+6591234567 e/aisha@example.com r/Logistics t/EXCO`<br>
-      `add n/Mr Lim p/90801110 e/lim@example.com o/NUS Student Affairs r/University Staff t/UniversityStaff`<br>
-      `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`<br>
-      `assign evn/Final Concert c/1 7`<br>
-      `addtag t/Publicity`
+1. Test case: `filter tag/exco`<br>
+   Expected: `Alex Yeoh`, `Bernice Yu`, and `Irfan Ibrahim` are listed, in that order. The status
+   message shows `3 contact(s) found.`
 
-   1. Test case: `filter tag/exco`<br>
-      Expected: `Alex Yeoh`, `Bernice Yu`, `Irfan Ibrahim`, and `Aisha Tan` are listed, in that order. The status
-      message shows `4 contact(s) found.`
+1. Test case: `filter event/Final Concert tag/EXCO`<br>
+   Expected: `Alex Yeoh` and `Bernice Yu` are listed; both belong to `Final Concert` and have the `EXCO` tag.
 
-   1. Test case: `filter event/Final Concert tag/EXCO`<br>
-      Expected: `Alex Yeoh` and `Aisha Tan` are listed; both belong to `Final Concert` and have the `EXCO` tag.
+1. Test case: `filter organisation/NUS Student Affairs`<br>
+   Expected: Only `Charlotte Oliveiro` is listed.
 
-   1. Test case: `filter organisation/NUS Student Affairs`<br>
-      Expected: Only `Mr Lim` is listed.
+1. Test case: `filter organisation/NUS`<br>
+   Expected: Only `Charlotte Oliveiro` remains listed. The status message shows
+   `No saved tag, event, or organisation matches that value. Use a value from the saved data.`
 
-   1. Test case: `filter organisation/NUS`<br>
-      Expected: Only `Mr Lim` remains listed. The status message shows
-      `No saved tag, event, or organisation matches that value. Use a value from the saved data.`
+1. Test case: `filter tag/Publicity`<br>
+   Expected: The list is empty, as the tag exists but no contact has it. The status message shows `No contacts match the specified filters.`
 
-   1. Test case: `filter tag/Publicity`<br>
-      Expected: The list is empty, as the tag exists but no contact has it. The status message shows `No contacts match the specified filters.`
+1. Test case: `filter role/Logistics`<br>
+   Expected: The list stays empty. The status message shows `Unknown parameter: role/.`
 
-   1. Test case: `filter role/Logistics`<br>
-      Expected: The list stays empty. The status message shows `Unknown parameter: role/.`
-
-   1. Other incorrect filter commands to try: `filter`, `filter tag/`<br>
-      Expected: The list is unchanged. The status message shows error details.
+1. Other incorrect filter commands to try: `filter`, `filter tag/`<br>
+   Expected: The list is unchanged. The status message shows error details.
 
 ### Adding an event
 
-1. Adding events
+1. Prerequisites: No event named `Final Concert` or `Fair` exists.
 
-   1. Prerequisites: No event named `Final Concert` or `Fair` exists.
+1. Test case: `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`<br>
+   Expected: The **Events** tab opens with the new event selected. The status message shows `Created Event Final Concert. Start Time: 08-08-2026 15:00. End Time: 08-08-2026 18:00.`
 
-   1. Test case: `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`<br>
-      Expected: The **Events** tab opens with the new event selected. The status message shows `Created Event Final Concert. Start Time: 08-08-2026 15:00. End Time: 08-08-2026 18:00.`
+1. Test case: `addevent evn/final concert st/09-10-2026 et/10-10-2026`<br>
+   Expected: No event is added. The status message shows `An event with this name already exists.`
 
-   1. Test case: `addevent evn/final concert st/09-10-2026 et/10-10-2026`<br>
-      Expected: No event is added. The status message shows `An event with this name already exists.`
+1. Test case: `addevent evn/Fair st/10-10-2026 et/09-10-2026`<br>
+   Expected: No event is added. The status message shows `Start time must not be after end time.`
 
-   1. Test case: `addevent evn/Fair st/10-10-2026 et/09-10-2026`<br>
-      Expected: No event is added. The status message shows `Start time must not be after end time.`
+1. Test case: `addevent evn/Fair st/10/10/2026 et/11-10-2026`<br>
+   Expected: No event is added. The status message shows the required date and time format.
 
-   1. Test case: `addevent evn/Fair st/10/10/2026 et/11-10-2026`<br>
-      Expected: No event is added. The status message shows the required date and time format.
-
-   1. Other incorrect addevent commands to try: `addevent`, `addevent evn/Fair st/10-10-2026`<br>
-      Expected: No event is added. The status message shows error details.
+1. Other incorrect addevent commands to try: `addevent`, `addevent evn/Fair st/10-10-2026`<br>
+   Expected: No event is added. The status message shows error details.
 
 ### Editing an event
 
-1. Editing an existing event
+1. Prerequisites: Create an event using `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`. Select it in the **Events** tab.
 
-   1. Prerequisites: Create an event using `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`. Select it in the **Events** tab.
+1. Test case: `editevent evn/final concert st/08-08-2026 16:00 et/08-08-2026 19:00`<br>
+   Expected: The event's details show the new times. The status message shows `Edited Event Final Concert. Start Time: 08-08-2026 16:00. End Time: 08-08-2026 19:00.`
 
-   1. Test case: `editevent evn/final concert st/08-08-2026 16:00 et/08-08-2026 19:00`<br>
-      Expected: The event's details show the new times. The status message shows `Edited Event Final Concert. Start Time: 08-08-2026 16:00. End Time: 08-08-2026 19:00.`
+1. Test case: `editevent evn/Final Concert nevn/Grand Concert`<br>
+   Expected: The event is renamed to `Grand Concert` and keeps its times.
 
-   1. Test case: `editevent evn/Final Concert nevn/Grand Concert`<br>
-      Expected: The event is renamed to `Grand Concert` and keeps its times.
+1. Test case: `editevent evn/Grand Concert st/09-08-2026`<br>
+   Expected: No change. The status message shows `Start time must not be after end time.`
 
-   1. Test case: `editevent evn/Grand Concert st/09-08-2026`<br>
-      Expected: No change. The status message shows `Start time must not be after end time.`
-
-   1. Other incorrect editevent commands to try: `editevent evn/Grand Concert`, `editevent evn/Grand Concert nevn/`<br>
-      Expected: No change. The status message shows error details.
+1. Other incorrect editevent commands to try: `editevent evn/Grand Concert`, `editevent evn/Grand Concert nevn/`<br>
+   Expected: No change. The status message shows error details.
 
 ### Deleting an event
 
-1. Deleting an existing event
+1. Prerequisites: An event named `Grand Concert` exists, as created in the previous section.
 
-   1. Prerequisites: An event named `Grand Concert` exists, as created in the previous section.
+1. Test case: `deleteevent evn/Gala`<br>
+   Expected: No event is deleted. The status message shows `Event Gala does not exist.`
 
-   1. Test case: `deleteevent evn/Gala`<br>
-      Expected: No event is deleted. The status message shows `Event Gala does not exist.`
+1. Test case: `deleteevent evn/grand concert`<br>
+   Expected: The event is removed from the **Events** tab. The status message shows `Deleted Event Grand Concert.`
 
-   1. Test case: `deleteevent evn/grand concert`<br>
-      Expected: The event is removed from the **Events** tab. The status message shows `Deleted Event Grand Concert.`
-
-   1. Other incorrect deleteevent commands to try: `deleteevent`, `deleteevent evn/`<br>
-      Expected: No event is deleted. The status message shows error details.
+1. Other incorrect deleteevent commands to try: `deleteevent`, `deleteevent evn/`<br>
+   Expected: No event is deleted. The status message shows error details.
 
 ### Dismissing a reminder
 
@@ -1548,35 +1535,33 @@ and `PAST_DATE` is any date before today, such as `01-01-2020`.
 
 ### Managing tags
 
-1. Adding, renaming, and deleting tags
+1. Prerequisites: The sample contacts are loaded and no additional custom tags have been created.
 
-   1. Prerequisites: The sample contacts are loaded and no additional custom tags have been created.
+1. Test case: Press <kbd>Esc</kbd>, then <kbd>S</kbd> until the Tags view is active.<br>
+   Expected: The Tags view lists `EXCO, Sponsor, UniversityStaff, Logistics, friends, neighbours`. Selecting
+   `EXCO` shows Alex Yeoh, Bernice Yu, and Irfan Ibrahim.
 
-   1. Test case: Press <kbd>Esc</kbd>, then <kbd>S</kbd> until the Tags view is active.<br>
-      Expected: The Tags view lists `EXCO, Sponsor, UniversityStaff, Logistics, friends, neighbours`. Selecting
-      `EXCO` shows Alex Yeoh, Bernice Yu, and Irfan Ibrahim.
+1. Test case: `addtag t/Publicity`<br>
+   Expected: `Publicity` appears in the Tags view. The status message shows `Created tag: Publicity.`
 
-   1. Test case: `addtag t/Publicity`<br>
-      Expected: `Publicity` appears in the Tags view. The status message shows `Created tag: Publicity.`
+1. Test case: `addtag t/publicity`<br>
+   Expected: No tag is added. The status message shows `A tag with this name already exists. No changes were made.`
 
-   1. Test case: `addtag t/publicity`<br>
-      Expected: No tag is added. The status message shows `A tag with this name already exists. No changes were made.`
+1. Test case: `addtag t/Event Crew`<br>
+   Expected: No tag is added. The status message shows `Invalid tag name. Use letters and numbers without spaces. Example: t/Publicity`.
 
-   1. Test case: `addtag t/Event Crew`<br>
-      Expected: No tag is added. The status message shows `Invalid tag name. Use letters and numbers without spaces. Example: t/Publicity`.
+1. Test case: `edit 1 at/Publicity`, then `edittag publicity t/Media`<br>
+   Expected: The Tags view and member ID `1`'s details show `Media`. The status message shows
+   `Publicity successfully renamed to Media.`
 
-   1. Test case: `edit 1 at/Publicity`, then `edittag publicity t/Media`<br>
-      Expected: The Tags view and member ID `1`'s details show `Media`. The status message shows
-      `Publicity successfully renamed to Media.`
+1. Test case: `deletetag t/media`<br>
+   Expected: The tag is removed from the Tags view and from member ID `1`. The status message shows `Media successfully deleted.`
 
-   1. Test case: `deletetag t/media`<br>
-      Expected: The tag is removed from the Tags view and from member ID `1`. The status message shows `Media successfully deleted.`
+1. Test case: `deletetag t/Nope`<br>
+   Expected: No tag is deleted. The status message shows `Tag Nope does not exist. Use a saved tag name.`
 
-   1. Test case: `deletetag t/Nope`<br>
-      Expected: No tag is deleted. The status message shows `Tag Nope does not exist. Use a saved tag name.`
-
-   1. Other incorrect tag commands to try: `addtag`, `edittag EXCO`, `deletetag EXCO`<br>
-      Expected: No change. The status message shows error details.
+1. Other incorrect tag commands to try: `addtag`, `edittag EXCO`, `deletetag EXCO`<br>
+   Expected: No change. The status message shows error details.
 
 ### Archiving contacts and events
 
