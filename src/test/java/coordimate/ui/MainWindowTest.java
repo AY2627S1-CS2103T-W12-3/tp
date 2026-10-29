@@ -932,19 +932,19 @@ public class MainWindowTest {
                 TabPane views = (TabPane) stage.getScene().lookup("#views");
 
                 String keyword = "a".repeat(3000);
+                String noMatchFeedback = "No contacts found matching \"" + keyword + "\".";
                 input.setText("search " + keyword);
                 submit.fire();
                 stage.getScene().getRoot().applyCss();
                 stage.getScene().getRoot().layout();
-                assertEquals("No contacts found matching \"" + keyword + "\".", feedback.getText());
+                assertEquals(noMatchFeedback, feedback.getText());
                 assertLongFeedbackFitsWindow(stage, input, feedbackScroll, views);
 
-                input.setText("listtags");
-                submit.fire();
+                ToggleButton tagsView = (ToggleButton) stage.getScene().lookup("#tagsView");
+                tagsView.fire();
                 stage.getScene().getRoot().applyCss();
                 stage.getScene().getRoot().layout();
-                assertTrue(feedback.getText().startsWith("Here is the list of all existing tags."));
-                assertTrue(feedback.getText().contains("Custom86"));
+                assertEquals(noMatchFeedback, feedback.getText());
                 assertEquals(90, ((ListView<?>) stage.getScene().lookup("#tagListView")).getItems().size());
                 assertLongFeedbackFitsWindow(stage, input, feedbackScroll, views);
                 assertTrue(stage.getScene().lookup("#tagListView").getBoundsInLocal().getHeight() > 30);

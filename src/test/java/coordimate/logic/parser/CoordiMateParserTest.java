@@ -28,7 +28,6 @@ import coordimate.logic.commands.ExitCommand;
 import coordimate.logic.commands.FilterCommand;
 import coordimate.logic.commands.HelpCommand;
 import coordimate.logic.commands.ListCommand;
-import coordimate.logic.commands.ListTagsCommand;
 import coordimate.logic.commands.MarkAttendanceCommand;
 import coordimate.logic.commands.MembersCommand;
 import coordimate.logic.commands.SearchCommand;
@@ -175,12 +174,10 @@ public class CoordiMateParserTest {
 
     @Test
     public void parseCommand_removedCommand_throwsUnknownCommandException() {
-        assertThrows(ParseException.class, withUsage(MESSAGE_UNKNOWN_COMMAND, HelpCommand.MESSAGE_USAGE), () ->
-                parser.parseCommand("find"));
-        assertThrows(ParseException.class, withUsage(MESSAGE_UNKNOWN_COMMAND, HelpCommand.MESSAGE_USAGE), () ->
-                parser.parseCommand("find Alice"));
-        assertThrows(ParseException.class, withUsage(MESSAGE_UNKNOWN_COMMAND, HelpCommand.MESSAGE_USAGE), () ->
-                parser.parseCommand("switch events"));
+        for (String input : List.of("find", "find Alice", "switch events", "listtags", "listtags 1")) {
+            assertThrows(ParseException.class, withUsage(MESSAGE_UNKNOWN_COMMAND, HelpCommand.MESSAGE_USAGE), () ->
+                    parser.parseCommand(input));
+        }
     }
 
     @Test
@@ -235,11 +232,6 @@ public class CoordiMateParserTest {
         SearchCommand command = (SearchCommand) parser.parseCommand(
                 SearchCommand.COMMAND_WORD + " Alice");
         assertEquals(new SearchCommand(new ContactMatchesKeywordPredicate("Alice"), "Alice"), command);
-    }
-
-    @Test
-    public void parseCommand_listTags() throws Exception {
-        assertTrue(parser.parseCommand(ListTagsCommand.COMMAND_WORD) instanceof ListTagsCommand);
     }
 
     @Test

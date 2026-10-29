@@ -29,7 +29,6 @@ import coordimate.logic.commands.ExitCommand;
 import coordimate.logic.commands.FilterCommand;
 import coordimate.logic.commands.HelpCommand;
 import coordimate.logic.commands.ListCommand;
-import coordimate.logic.commands.ListTagsCommand;
 import coordimate.logic.commands.MarkAttendanceCommand;
 import coordimate.logic.commands.MembersCommand;
 import coordimate.logic.commands.SearchCommand;
@@ -102,7 +101,6 @@ public class CoordiMateParser {
                 case FilterCommand.COMMAND_WORD -> new FilterCommandParser().parse(arguments);
                 case ListCommand.COMMAND_WORD -> new ListCommandParser().parse(arguments);
                 case SearchCommand.COMMAND_WORD -> new SearchCommandParser().parse(arguments);
-                case ListTagsCommand.COMMAND_WORD -> new ListTagsCommandParser().parse(arguments);
                 case MarkAttendanceCommand.COMMAND_WORD -> new MarkAttendanceCommandParser().parse(arguments);
                 case ExitCommand.COMMAND_WORD -> parseCommandWithoutArguments(
                         arguments, ExitCommand.MESSAGE_USAGE, new ExitCommand());
@@ -154,7 +152,6 @@ public class CoordiMateParser {
             case FilterCommand.COMMAND_WORD -> FilterCommand.MESSAGE_USAGE;
             case ListCommand.COMMAND_WORD -> ListCommand.MESSAGE_USAGE;
             case SearchCommand.COMMAND_WORD -> SearchCommand.MESSAGE_USAGE;
-            case ListTagsCommand.COMMAND_WORD -> ListTagsCommand.MESSAGE_USAGE;
             case MarkAttendanceCommand.COMMAND_WORD -> MarkAttendanceCommand.MESSAGE_USAGE;
             case ExitCommand.COMMAND_WORD -> ExitCommand.MESSAGE_USAGE;
             case HelpCommand.COMMAND_WORD -> HelpCommand.MESSAGE_USAGE;
