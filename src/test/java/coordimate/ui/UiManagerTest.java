@@ -11,6 +11,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import coordimate.logic.LogicManager;
 import coordimate.model.ModelManager;
 import javafx.application.Platform;
+import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
@@ -74,27 +76,16 @@ public class UiManagerTest {
             String warning = "Deleted 40 saved events:\n\n" + "\"Planning\\u2003c/review\"\n".repeat(40);
             UiManager manager = new UiManager(new LogicManager(model, null), Path.of("data.json"), warning);
             AtomicReference<Throwable> dialogFailure = new AtomicReference<>();
-            Platform.runLater(() -> {
-                Window dialog = Window.getWindows().stream()
-                        .filter(window -> window != primaryStage && window.isShowing()).findFirst().orElse(null);
-                try {
-                    assertTrue(primaryStage.isShowing());
-                    assertTrue(dialog != null);
-                    DialogPane pane = (DialogPane) dialog.getScene().getRoot();
-                    ScrollPane scrollPane = (ScrollPane) pane.getContent();
-                    Label message = (Label) scrollPane.getContent();
-                    assertEquals(warning, message.getText());
-                    assertTrue(message.isWrapText());
-                    assertTrue(scrollPane.isFitToWidth());
-                    assertTrue(message.getHeight() > scrollPane.getViewportBounds().getHeight());
-                    assertTrue(scrollPane.getViewportBounds().getHeight() <= 340);
-                } catch (Throwable error) {
-                    dialogFailure.set(error);
-                } finally {
-                    if (dialog != null) {
-                        dialog.hide();
-                    }
-                }
+            checkVisibleDialogAndClose(primaryStage, dialogFailure, pane -> {
+                assertTrue(primaryStage.isShowing());
+                ScrollPane scrollPane = (ScrollPane) pane.getContent();
+                Label message = (Label) scrollPane.getContent();
+                assertEquals(warning, message.getText());
+                assertTrue(message.isWrapText());
+                assertTrue(scrollPane.isFitToWidth());
+                assertTrue(message.prefHeight(scrollPane.getPrefViewportWidth())
+                        > scrollPane.getPrefViewportHeight());
+                assertTrue(scrollPane.getPrefViewportHeight() <= 340);
             });
             try {
                 manager.start(primaryStage);
@@ -120,26 +111,15 @@ public class UiManagerTest {
             AtomicReference<Throwable> dialogFailure = new AtomicReference<>();
             try {
                 manager.start(primaryStage);
-                Platform.runLater(() -> {
-                    Window dialog = Window.getWindows().stream()
-                            .filter(window -> window != primaryStage && window.isShowing()).findFirst().orElse(null);
-                    try {
-                        assertTrue(dialog != null);
-                        DialogPane pane = (DialogPane) dialog.getScene().getRoot();
-                        ScrollPane scrollPane = (ScrollPane) pane.getContent();
-                        Label message = (Label) scrollPane.getContent();
-                        assertEquals(errorMessage, message.getText());
-                        assertTrue(message.isWrapText());
-                        assertTrue(scrollPane.isFitToWidth());
-                        assertTrue(message.getHeight() > scrollPane.getViewportBounds().getHeight());
-                        assertTrue(scrollPane.getViewportBounds().getHeight() <= 340);
-                    } catch (Throwable error) {
-                        dialogFailure.set(error);
-                    } finally {
-                        if (dialog != null) {
-                            dialog.hide();
-                        }
-                    }
+                checkVisibleDialogAndClose(primaryStage, dialogFailure, pane -> {
+                    ScrollPane scrollPane = (ScrollPane) pane.getContent();
+                    Label message = (Label) scrollPane.getContent();
+                    assertEquals(errorMessage, message.getText());
+                    assertTrue(message.isWrapText());
+                    assertTrue(scrollPane.isFitToWidth());
+                    assertTrue(message.prefHeight(scrollPane.getPrefViewportWidth())
+                            > scrollPane.getPrefViewportHeight());
+                    assertTrue(scrollPane.getPrefViewportHeight() <= 340);
                 });
                 manager.showAlertDialogAndWait(Alert.AlertType.ERROR, "Saved event data", "Load failed",
                         errorMessage);
@@ -365,7 +345,7 @@ public class UiManagerTest {
                     "Invalid JSON type at persons[0].phone: expected a string.", prefsWarning, () -> {});
             Stage stage = new Stage();
             AtomicReference<Throwable> failure = new AtomicReference<>();
-            checkVisibleDialogPathsAndClose(failure, dataPath.toString(), prefsPath.toString());
+            checkVisibleDialogPathsAndClose(stage, failure, dataPath.toString(), prefsPath.toString());
             try {
                 manager.start(stage);
                 if (failure.get() != null) {
@@ -394,7 +374,7 @@ public class UiManagerTest {
             UiManager manager = new UiManager(new LogicManager(model, null), Path.of("data.json"), warning);
             Stage stage = new Stage();
             AtomicReference<Throwable> failure = new AtomicReference<>();
-            checkVisibleDialogPathsAndClose(failure, prefsPath.toString());
+            checkVisibleDialogPathsAndClose(stage, failure, prefsPath.toString());
             try {
                 manager.start(stage);
                 if (failure.get() != null) {
@@ -410,28 +390,60 @@ public class UiManagerTest {
         task.get(10, TimeUnit.SECONDS);
     }
 
-    private static void checkVisibleDialogPathsAndClose(AtomicReference<Throwable> failure, String... paths) {
+    private static void checkVisibleDialogPathsAndClose(Stage owner, AtomicReference<Throwable> failure,
+            String... paths) {
+        checkVisibleDialogAndClose(owner, failure, dialogPane -> {
+            ScrollPane scrollPane = (ScrollPane) dialogPane.getContent();
+            Label message = (Label) scrollPane.getContent();
+            for (String path : paths) {
+                assertTrue(message.getText().contains(path));
+            }
+            double neededHeight = message.prefHeight(scrollPane.getPrefViewportWidth());
+            assertTrue(neededHeight <= scrollPane.getPrefViewportHeight() + 1,
+                    "Message needs " + neededHeight + "px, dialog requests "
+                            + scrollPane.getPrefViewportHeight() + "px, font: " + message.getFont());
+        });
+    }
+
+    /** Measures the dialog after a layout pulse, then closes it outside the pulse's layout processing. */
+    private static void checkVisibleDialogAndClose(Stage owner, AtomicReference<Throwable> failure,
+            Consumer<DialogPane> assertions) {
         Platform.runLater(() -> {
-            DialogPane dialogPane = Window.getWindows().stream().filter(Window::isShowing)
-                    .map(window -> window.getScene().getRoot())
-                    .filter(DialogPane.class::isInstance).map(DialogPane.class::cast)
-                    .findFirst().orElseThrow();
             try {
-                ScrollPane scrollPane = (ScrollPane) dialogPane.getContent();
-                Label message = (Label) scrollPane.getContent();
-                for (String path : paths) {
-                    assertTrue(message.getText().contains(path));
-                }
-                assertTrue(message.getHeight() <= scrollPane.getViewportBounds().getHeight() + 1,
-                        "Message height: " + message.getHeight() + ", viewport: "
-                                + scrollPane.getViewportBounds().getHeight());
+                DialogPane dialogPane = Window.getWindows().stream().filter(Window::isShowing)
+                        .filter(Stage.class::isInstance).map(Stage.class::cast)
+                        .filter(window -> window.getOwner() == owner)
+                        .map(window -> window.getScene().getRoot())
+                        .filter(DialogPane.class::isInstance).map(DialogPane.class::cast)
+                        .findFirst().orElseThrow();
+                checkDialogAfterLayoutAndClose(dialogPane, failure, assertions);
             } catch (Throwable error) {
                 failure.set(error);
-            } finally {
-                Button okButton = (Button) dialogPane.lookupButton(ButtonType.OK);
-                okButton.fire();
+                Window.getWindows().stream().filter(Stage.class::isInstance).map(Stage.class::cast)
+                        .filter(window -> window.getOwner() == owner).toList().forEach(Window::hide);
             }
         });
+    }
+
+    private static void checkDialogAfterLayoutAndClose(DialogPane dialogPane, AtomicReference<Throwable> failure,
+            Consumer<DialogPane> assertions) {
+        Scene scene = dialogPane.getScene();
+        scene.addPostLayoutPulseListener(new Runnable() {
+            @Override
+            public void run() {
+                scene.removePostLayoutPulseListener(this);
+                try {
+                    ScrollPane scrollPane = (ScrollPane) dialogPane.getContent();
+                    assertTrue(scrollPane.getViewportBounds().getHeight() > 0, "Dialog viewport must be laid out");
+                    assertions.accept(dialogPane);
+                } catch (Throwable error) {
+                    failure.set(error);
+                } finally {
+                    Platform.runLater(() -> ((Button) dialogPane.lookupButton(ButtonType.OK)).fire());
+                }
+            }
+        });
+        Platform.requestNextPulse();
     }
 
     @Test
@@ -445,32 +457,16 @@ public class UiManagerTest {
                     isExitRequested[0] = true);
             Stage primaryStage = new Stage();
             AtomicReference<Throwable> failure = new AtomicReference<>();
-            Platform.runLater(() -> {
-                DialogPane dialogPane = null;
-                try {
-                    dialogPane = Window.getWindows().stream().filter(Window::isShowing)
-                            .map(window -> window.getScene().getRoot())
-                            .filter(DialogPane.class::isInstance).map(DialogPane.class::cast)
-                            .findFirst().orElseThrow();
-                    ScrollPane scrollPane = (ScrollPane) dialogPane.getContent();
-                    Label message = (Label) scrollPane.getContent();
-                    assertTrue(message.getText().contains(dataFilePath.toAbsolutePath().toString()));
-                    assertTrue(message.getText().contains("Repair or restore this file"));
-                    assertTrue(message.getLayoutBounds().getHeight() > scrollPane.getViewportBounds().getHeight());
-                    assertTrue(scrollPane.isFitToWidth());
-                    assertTrue(scrollPane.getViewportBounds().getHeight() <= 340,
-                            "Viewport height: " + scrollPane.getViewportBounds().getHeight());
-                } catch (Throwable error) {
-                    failure.set(error);
-                } finally {
-                    if (dialogPane != null) {
-                        Button okButton = (Button) dialogPane.lookupButton(ButtonType.OK);
-                        okButton.fire();
-                    } else {
-                        Window.getWindows().stream().filter(window -> window != primaryStage)
-                                .forEach(Window::hide);
-                    }
-                }
+            checkVisibleDialogAndClose(primaryStage, failure, dialogPane -> {
+                ScrollPane scrollPane = (ScrollPane) dialogPane.getContent();
+                Label message = (Label) scrollPane.getContent();
+                assertTrue(message.getText().contains(dataFilePath.toAbsolutePath().toString()));
+                assertTrue(message.getText().contains("Repair or restore this file"));
+                assertTrue(message.prefHeight(scrollPane.getPrefViewportWidth())
+                        > scrollPane.getPrefViewportHeight());
+                assertTrue(scrollPane.isFitToWidth());
+                assertTrue(scrollPane.getPrefViewportHeight() <= 340,
+                        "Requested viewport height: " + scrollPane.getPrefViewportHeight());
             });
             try {
                 uiManager.start(primaryStage);
