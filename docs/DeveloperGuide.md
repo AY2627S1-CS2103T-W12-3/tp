@@ -13,7 +13,13 @@
 
 ## **Acknowledgements**
 
-* This project is based on the AddressBook-Level3 project created by the [SE-EDU initiative](https://se-education.org).
+* CoordiMate is based on [AddressBook-Level3](https://se-education.org/addressbook-level3/), created by the [SE-EDU initiative](https://se-education.org).
+* [JavaFX](https://openjfx.io/) provides the application's graphical user interface.
+* [Jackson](https://github.com/FasterXML/jackson) handles reading and writing JSON data and preferences.
+* [JUnit 5](https://github.com/junit-team/junit5) supports automated testing.
+* [MarkBind](https://markbind.org/) generates the documentation website.
+* [PlantUML](https://plantuml.com/) generates the UML diagrams in this guide.
+* AI Coding Agents are used throughout the development of this project. 
 
 --------------------------------------------------------------------------------------------------------------------
 
