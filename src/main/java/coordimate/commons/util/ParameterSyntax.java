@@ -2,7 +2,9 @@ package coordimate.commons.util;
 
 import java.util.regex.Pattern;
 
-/** Parameter boundaries shared by command parsing and legacy event cleanup. */
+/**
+ * Parameter boundaries shared by command parsing and legacy event cleanup.
+ */
 public final class ParameterSyntax {
     public static final String BOUNDARY = "(?<![^" + StringUtil.WHITESPACE_CHARACTERS + "])";
     public static final Pattern EVENT_PARAMETER_PATTERN = Pattern.compile(BOUNDARY + "([A-Za-z]+/|/[A-Za-z]+)");

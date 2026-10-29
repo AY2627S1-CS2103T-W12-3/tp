@@ -7,10 +7,15 @@ import coordimate.logic.commands.DismissCommand;
 import coordimate.logic.parser.exceptions.ParseException;
 import coordimate.logic.reminder.ReminderService;
 
-/** Parses a single 1-based reminder index. */
+/**
+ * Parses a single 1-based reminder index.
+ */
 public class DismissCommandParser implements Parser<DismissCommand> {
     private final ReminderService reminderService;
 
+    /**
+     * Creates a parser whose commands dismiss reminders through the supplied service.
+     */
     public DismissCommandParser(ReminderService reminderService) {
         this.reminderService = requireNonNull(reminderService);
     }

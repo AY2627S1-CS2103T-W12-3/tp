@@ -85,6 +85,9 @@ final class EventContactsParser {
         return ParserUtil.parseEventName(argMultimap.getValue(PREFIX_EVENT_NAME).get());
     }
 
+    /**
+     * Parses space-separated permanent IDs, rejecting empty values and invalid integers.
+     */
     private static List<MemberId> parseMemberIds(String value, String noContactsMessage) throws ParseException {
         String trimmedValue = value.strip();
         if (trimmedValue.isEmpty()) {

@@ -1,5 +1,6 @@
 package coordimate.logic;
 
+import static coordimate.testutil.ReminderTestUtil.createClock;
 import static coordimate.testutil.TypicalPersons.ALICE;
 import static coordimate.testutil.TypicalPersons.BENSON;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -14,11 +15,7 @@ import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -44,6 +41,7 @@ import coordimate.model.event.EventTime;
 import coordimate.storage.JsonCoordiMateStorage;
 import coordimate.storage.JsonUserPrefsStorage;
 import coordimate.storage.StorageManager;
+import coordimate.testutil.MutableClock;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 
@@ -70,7 +68,7 @@ public class ReminderLogicIntegrationTest {
         storage = new ControlledStorage(temporaryFolder.resolve("data.json"));
         storage.saveCoordiMate(model.getCoordiMate());
         storage.writes = 0;
-        clock = new MutableClock(ZonedDateTime.parse("2026-10-19T15:00:00+08:00").toInstant());
+        clock = createClock();
         logic = newLogic(model);
     }
 
@@ -451,8 +449,8 @@ public class ReminderLogicIntegrationTest {
         verifyEndOnlyEditAfterRestart(true);
     }
 
-    private void verifyEndOnlyEditAfterRestart(boolean dismissed) throws Exception {
-        if (dismissed) {
+    private void verifyEndOnlyEditAfterRestart(boolean isDismissed) throws Exception {
+        if (isDismissed) {
             logic.dismissReminder(concert);
         }
         ObservableList<Event> view = logic.getReminders();
@@ -461,8 +459,8 @@ public class ReminderLogicIntegrationTest {
 
         assertEquals(new EventTime("22-10-2026 18:00"), savedEvent().getEndTime());
         assertEquals(START, savedEvent().getStartTime());
-        assertEquals(dismissed, savedEvent().isReminderDismissed());
-        assertEquals(dismissed ? List.of() : List.of(savedEvent()), view);
+        assertEquals(isDismissed, savedEvent().isReminderDismissed());
+        assertEquals(isDismissed ? List.of() : List.of(savedEvent()), view);
         List<Event> expected = List.copyOf(view);
         restartFromSavedData();
         assertEquals(expected, logic.getReminders());
@@ -478,8 +476,8 @@ public class ReminderLogicIntegrationTest {
         verifyDeletionAndRecreationAcrossRestarts(true);
     }
 
-    private void verifyDeletionAndRecreationAcrossRestarts(boolean dismissed) throws Exception {
-        if (dismissed) {
+    private void verifyDeletionAndRecreationAcrossRestarts(boolean isDismissed) throws Exception {
+        if (isDismissed) {
             logic.dismissReminder(concert);
         }
         ObservableList<Event> view = logic.getReminders();
@@ -528,8 +526,8 @@ public class ReminderLogicIntegrationTest {
         verifyRejectedEditsAcrossRestart(true);
     }
 
-    private void verifyRejectedEditsAcrossRestart(boolean dismissed) throws Exception {
-        if (dismissed) {
+    private void verifyRejectedEditsAcrossRestart(boolean isDismissed) throws Exception {
+        if (isDismissed) {
             logic.dismissReminder(concert);
         }
         logic.execute("addevent evn/Other st/21-10-2026 16:00 et/21-10-2026 18:00");
@@ -565,8 +563,8 @@ public class ReminderLogicIntegrationTest {
         verifyFailedEditAcrossRestart(true);
     }
 
-    private void verifyFailedEditAcrossRestart(boolean dismissed) throws Exception {
-        if (dismissed) {
+    private void verifyFailedEditAcrossRestart(boolean isDismissed) throws Exception {
+        if (isDismissed) {
             logic.dismissReminder(concert);
         }
         ObservableList<Event> view = logic.getReminders();
@@ -597,8 +595,8 @@ public class ReminderLogicIntegrationTest {
         verifyUnreadableDataPreservesReminderState(true);
     }
 
-    private void verifyUnreadableDataPreservesReminderState(boolean dismissed) throws Exception {
-        if (dismissed) {
+    private void verifyUnreadableDataPreservesReminderState(boolean isDismissed) throws Exception {
+        if (isDismissed) {
             logic.dismissReminder(concert);
         }
         ObservableList<Event> view = logic.getReminders();
@@ -958,33 +956,6 @@ public class ReminderLogicIntegrationTest {
                 throw saveFailure;
             }
             super.saveCoordiMate(data);
-        }
-    }
-
-    private static class MutableClock extends Clock {
-        private Instant current;
-
-        MutableClock(Instant current) {
-            this.current = current;
-        }
-
-        void advance(Duration duration) {
-            current = current.plus(duration);
-        }
-
-        @Override
-        public ZoneId getZone() {
-            return ZoneId.of("Asia/Makassar");
-        }
-
-        @Override
-        public Clock withZone(ZoneId zone) {
-            return Clock.fixed(current, zone);
-        }
-
-        @Override
-        public Instant instant() {
-            return current;
         }
     }
 }

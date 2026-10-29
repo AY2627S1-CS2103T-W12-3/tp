@@ -13,6 +13,9 @@ final class MemberIdResolver {
     private MemberIdResolver() {
     }
 
+    /**
+     * Returns the saved contact with the permanent ID, or throws if no contact has that ID.
+     */
     static Person resolve(Model model, MemberId memberId) throws CommandException {
         return model.getCoordiMate().getPersonList().stream()
                 .filter(person -> person.getMemberId().orElseThrow().equals(memberId))

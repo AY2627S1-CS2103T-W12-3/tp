@@ -3,10 +3,9 @@ package coordimate.logic.commands;
 import static coordimate.logic.commands.CommandTestUtil.assertCommandFailure;
 import static coordimate.logic.commands.CommandTestUtil.assertCommandSuccess;
 import static coordimate.testutil.Assert.assertThrows;
+import static coordimate.testutil.TypicalTags.defaultTagsWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-
-import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -27,8 +26,7 @@ public class AddTagCommandTest {
 
         CommandResult expectedResult = new CommandResult("Created tag: Publicity.", CommandResult.View.TAGS);
         assertCommandSuccess(new AddTagCommand(PUBLICITY), model, expectedResult, expectedModel);
-        assertEquals(List.of("EXCO", "Sponsor", "UniversityStaff", "Logistics", "Publicity"),
-                model.getTagList().stream().map(Tag::getTagName).toList());
+        assertEquals(defaultTagsWith(PUBLICITY), model.getTagList());
     }
 
     @Test

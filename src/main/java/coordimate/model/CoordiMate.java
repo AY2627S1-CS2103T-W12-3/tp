@@ -295,6 +295,9 @@ public class CoordiMate implements ReadOnlyCoordiMate {
         return nextMemberId;
     }
 
+    /**
+     * Creates a permanent member ID, rejecting values beyond the available integer range.
+     */
     private static MemberId createMemberId(long value) {
         if (value > Integer.MAX_VALUE) {
             throw new IllegalStateException("No more member IDs are available.");

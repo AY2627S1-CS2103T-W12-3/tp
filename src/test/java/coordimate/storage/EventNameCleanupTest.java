@@ -55,7 +55,7 @@ public class EventNameCleanupTest {
             names.add("Planning" + spacing + "/review");
         }
         writeLegacyData(path, expected, names);
-        StorageManager storage = storage(new JsonCoordiMateStorage(path));
+        StorageManager storage = createStorage(new JsonCoordiMateStorage(path));
 
         assertEquals(names, storage.cleanUpEventNames().deletedNames());
 
@@ -79,7 +79,7 @@ public class EventNameCleanupTest {
                   {"name":"Planning\u00a0Meeting","startTime":"02-01-2027","endTime":"02-01-2027"}]}
                 """);
         int[] saves = {0};
-        StorageManager storage = storage(new JsonCoordiMateStorage(path) {
+        StorageManager storage = createStorage(new JsonCoordiMateStorage(path) {
             @Override
             public void saveCoordiMate(ReadOnlyCoordiMate data) throws IOException {
                 saves[0]++;
@@ -114,7 +114,7 @@ public class EventNameCleanupTest {
                   {"name":"Planning Meeting","startTime":"01-01-2027","endTime":"01-01-2027",
                    "dismissedReminderStarts":["01-01-0000","01-01-2027"]}]}
                 """);
-        StorageManager storage = storage(new JsonCoordiMateStorage(path));
+        StorageManager storage = createStorage(new JsonCoordiMateStorage(path));
 
         assertTrue(storage.cleanUpEventNames().isEmpty());
 
@@ -136,11 +136,7 @@ public class EventNameCleanupTest {
                   {"name":"Planning\u00a0Meeting","startTime":"02-01-2027","endTime":"02-01-2027"},
                   {"name":"Broken","startTime":"bad","endTime":"01-01-2027"}]}
                 """;
-        Files.writeString(path, original);
-
-        assertThrows(DataLoadingException.class, () -> storage(new JsonCoordiMateStorage(path)).cleanUpEventNames());
-
-        assertEquals(original, Files.readString(path));
+        assertCleanupRejected(path, original);
     }
 
     @Test
@@ -155,7 +151,7 @@ public class EventNameCleanupTest {
         }
         writeLegacyData(path, new CoordiMate(), names);
         String original = Files.readString(path);
-        StorageManager storage = storage(new JsonCoordiMateStorage(path));
+        StorageManager storage = createStorage(new JsonCoordiMateStorage(path));
 
         assertTrue(storage.cleanUpEventNames().isEmpty());
         assertEquals(original, Files.readString(path));
@@ -165,7 +161,7 @@ public class EventNameCleanupTest {
     @Test
     public void cleanup_missingOrUnaffectedFile_doesNotWrite() throws Exception {
         Path path = testFolder.resolve("data.json");
-        StorageManager storage = storage(new JsonCoordiMateStorage(path));
+        StorageManager storage = createStorage(new JsonCoordiMateStorage(path));
         assertTrue(storage.cleanUpEventNames().isEmpty());
         assertFalse(Files.exists(path));
 
@@ -180,7 +176,7 @@ public class EventNameCleanupTest {
         Path path = testFolder.resolve("data.json");
         CoordiMate expected = new CoordiMate(40);
         writeLegacyData(path, expected, List.of("Bad\u2003c/review"));
-        StorageManager storage = storage(new JsonCoordiMateStorage(path));
+        StorageManager storage = createStorage(new JsonCoordiMateStorage(path));
 
         assertEquals(List.of("Bad\u2003c/review"), storage.cleanUpEventNames().deletedNames());
         assertEquals(expected, storage.readCoordiMate().orElseThrow());
@@ -199,11 +195,7 @@ public class EventNameCleanupTest {
                       {"name":"Bad\u2003c/review","startTime":"01-01-2027","endTime":"01-01-2027"},
                       %s]}
                     """.formatted(remaining);
-            Files.writeString(path, original);
-
-            assertThrows(DataLoadingException.class, () ->
-                    storage(new JsonCoordiMateStorage(path)).cleanUpEventNames());
-            assertEquals(original, Files.readString(path));
+            assertCleanupRejected(path, original);
         }
     }
 
@@ -218,7 +210,7 @@ public class EventNameCleanupTest {
         Files.writeString(path, original);
 
         DataLoadingException error = assertThrows(DataLoadingException.class, () ->
-                storage(new JsonCoordiMateStorage(path)).cleanUpEventNames());
+                createStorage(new JsonCoordiMateStorage(path)).cleanUpEventNames());
 
         assertEquals("Invalid JSON type at persons[0].phone: expected a string.", error.getCause().getMessage());
         assertEquals(original, Files.readString(path));
@@ -235,7 +227,7 @@ public class EventNameCleanupTest {
             Files.writeString(path, original);
 
             DataLoadingException error = assertThrows(DataLoadingException.class, () ->
-                    storage(new JsonCoordiMateStorage(path)).cleanUpEventNames());
+                    createStorage(new JsonCoordiMateStorage(path)).cleanUpEventNames());
 
             assertTrue(error.getCause().getMessage().endsWith(": archived must be true or false."));
             assertEquals(original, Files.readString(path));
@@ -254,11 +246,7 @@ public class EventNameCleanupTest {
                 json.withArray(field).addNull();
             }
             String original = JsonUtil.toJsonString(json);
-            Files.writeString(path, original);
-
-            assertThrows(DataLoadingException.class, () ->
-                    storage(new JsonCoordiMateStorage(path)).cleanUpEventNames());
-            assertEquals(original, Files.readString(path));
+            assertCleanupRejected(path, original);
         }
     }
 
@@ -266,14 +254,11 @@ public class EventNameCleanupTest {
     public void cleanup_malformedJsonOrUnreadablePath_preservesOriginalData() throws Exception {
         Path path = testFolder.resolve("data.json");
         for (String invalid : List.of("invalid JSON", "null", "{}")) {
-            Files.writeString(path, invalid);
-            assertThrows(DataLoadingException.class, () ->
-                    storage(new JsonCoordiMateStorage(path)).cleanUpEventNames());
-            assertEquals(invalid, Files.readString(path));
+            assertCleanupRejected(path, invalid);
         }
         Path directory = Files.createDirectory(testFolder.resolve("directory"));
         assertThrows(IOException.class, () ->
-                storage(new JsonCoordiMateStorage(directory)).cleanUpEventNames());
+                createStorage(new JsonCoordiMateStorage(directory)).cleanUpEventNames());
         assertTrue(Files.isDirectory(directory));
     }
 
@@ -290,7 +275,7 @@ public class EventNameCleanupTest {
         };
 
         assertEquals("Cannot save cleanup", assertThrows(IOException.class, () ->
-                storage(failingStorage).cleanUpEventNames()).getMessage());
+                createStorage(failingStorage).cleanUpEventNames()).getMessage());
         assertEquals(original, Files.readString(path));
     }
 
@@ -302,7 +287,7 @@ public class EventNameCleanupTest {
                   {"name":"Year Zero","startTime":"01-01-0000","endTime":"01-01-2027"}]}
                 """;
         Files.writeString(path, original);
-        StorageManager otherWindow = storage(new JsonCoordiMateStorage(path));
+        StorageManager otherWindow = createStorage(new JsonCoordiMateStorage(path));
         assertThrows(DataLoadingException.class, otherWindow::readCoordiMate);
         JsonCoordiMateStorage jsonStorage = new JsonCoordiMateStorage(path) {
             @Override
@@ -312,7 +297,7 @@ public class EventNameCleanupTest {
             }
         };
 
-        assertEquals(List.of("Year Zero"), storage(jsonStorage).cleanUpEventNames().yearZeroDeletedNames());
+        assertEquals(List.of("Year Zero"), createStorage(jsonStorage).cleanUpEventNames().yearZeroDeletedNames());
         assertEquals(new CoordiMate(), jsonStorage.readCoordiMate().orElseThrow());
         assertThrows(DataConflictException.class, () -> otherWindow.saveCoordiMateIfUnchanged(getTypicalCoordiMate()));
     }
@@ -335,7 +320,7 @@ public class EventNameCleanupTest {
             }
         };
 
-        assertThrows(DataConflictException.class, () -> storage(changingStorage).cleanUpEventNames());
+        assertThrows(DataConflictException.class, () -> createStorage(changingStorage).cleanUpEventNames());
         assertEquals(concurrentData, new JsonCoordiMateStorage(path).readCoordiMate().orElseThrow());
     }
 
@@ -344,9 +329,9 @@ public class EventNameCleanupTest {
         Path path = testFolder.resolve("data.json");
         JsonCoordiMateStorage jsonStorage = new JsonCoordiMateStorage(path);
         writeLegacyData(path, new CoordiMate(), List.of("Bad\u2003c/review"));
-        StorageManager storage = storage(jsonStorage);
+        StorageManager storage = createStorage(jsonStorage);
         storage.cleanUpEventNames();
-        StorageManager otherWindow = storage(new JsonCoordiMateStorage(path));
+        StorageManager otherWindow = createStorage(new JsonCoordiMateStorage(path));
         otherWindow.readCoordiMate();
         CoordiMate concurrentData = getTypicalCoordiMate();
         otherWindow.saveCoordiMateIfUnchanged(concurrentData);
@@ -376,7 +361,7 @@ public class EventNameCleanupTest {
         ObjectNode savedSecondEvent = (ObjectNode) json.withArray("events").get(1);
         savedSecondEvent.put("name", "planning\u00a0meeting");
         Files.writeString(path, JsonUtil.toJsonString(json));
-        StorageManager storage = storage(new JsonCoordiMateStorage(path));
+        StorageManager storage = createStorage(new JsonCoordiMateStorage(path));
 
         EventNameCleanupResult changes = storage.cleanUpEventNames();
 
@@ -396,7 +381,7 @@ public class EventNameCleanupTest {
         String name = "\ud83d\ude00".repeat(96) + " X Y";
         List<String> names = List.of(name, name.replace(" X", "\u00a0X"), name.replace(" X", "\u202fX"));
         writeLegacyData(path, new CoordiMate(), names);
-        StorageManager storage = storage(new JsonCoordiMateStorage(path));
+        StorageManager storage = createStorage(new JsonCoordiMateStorage(path));
 
         EventNameCleanupResult changes = storage.cleanUpEventNames();
 
@@ -421,7 +406,7 @@ public class EventNameCleanupTest {
             String original = Files.readString(path);
 
             assertThrows(DataLoadingException.class, () ->
-                    storage(new JsonCoordiMateStorage(path)).cleanUpEventNames());
+                    createStorage(new JsonCoordiMateStorage(path)).cleanUpEventNames());
 
             assertEquals(original, Files.readString(path));
         }
@@ -437,7 +422,8 @@ public class EventNameCleanupTest {
         Files.writeString(path, JsonUtil.toJsonString(json));
         String original = Files.readString(path);
 
-        assertThrows(DataLoadingException.class, () -> storage(new JsonCoordiMateStorage(path)).cleanUpEventNames());
+        assertThrows(DataLoadingException.class, () ->
+                createStorage(new JsonCoordiMateStorage(path)).cleanUpEventNames());
 
         assertEquals(original, Files.readString(path));
     }
@@ -454,7 +440,7 @@ public class EventNameCleanupTest {
             }
         };
 
-        assertThrows(IOException.class, () -> storage(failingStorage).cleanUpEventNames());
+        assertThrows(IOException.class, () -> createStorage(failingStorage).cleanUpEventNames());
 
         assertEquals(original, Files.readString(path));
     }
@@ -480,7 +466,7 @@ public class EventNameCleanupTest {
                 return super.readCoordiMate();
             }
         };
-        StorageManager storage = storage(changingStorage);
+        StorageManager storage = createStorage(changingStorage);
         storage.cleanUpEventNames();
 
         ReadOnlyCoordiMate loaded = storage.readCoordiMate().orElseThrow();
@@ -493,7 +479,7 @@ public class EventNameCleanupTest {
     public void cleanup_storageAlreadyLoaded_updatesRevisionAfterSuccessfulCleanup() throws Exception {
         Path path = testFolder.resolve("data.json");
         writeLegacyData(path, new CoordiMate(), List.of("Bad\u2003c/review"));
-        StorageManager storage = storage(new JsonCoordiMateStorage(path));
+        StorageManager storage = createStorage(new JsonCoordiMateStorage(path));
         storage.readCoordiMate();
 
         assertEquals(List.of("Bad\u2003c/review"), storage.cleanUpEventNames().deletedNames());
@@ -509,7 +495,7 @@ public class EventNameCleanupTest {
         Path path = testFolder.resolve("data.json");
         JsonCoordiMateStorage jsonStorage = new JsonCoordiMateStorage(path);
         jsonStorage.saveCoordiMate(new CoordiMate());
-        StorageManager storage = storage(jsonStorage);
+        StorageManager storage = createStorage(jsonStorage);
         storage.readCoordiMate();
         writeLegacyData(path, getTypicalCoordiMate(), List.of("Bad\u2003c/review"));
         String original = Files.readString(path);
@@ -524,7 +510,7 @@ public class EventNameCleanupTest {
         CoordiMate expected = getTypicalCoordiMate();
         writeLegacyData(path, expected, List.of("Bad\u2003c/review"));
         String original = Files.readString(path);
-        StorageManager storage = storage(new JsonCoordiMateStorage(path));
+        StorageManager storage = createStorage(new JsonCoordiMateStorage(path));
         Path lockPath = path.resolveSibling(path.getFileName() + ".lock");
         try (FileChannel channel = FileChannel.open(lockPath, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
                 FileLock ignored = channel.lock()) {
@@ -535,7 +521,14 @@ public class EventNameCleanupTest {
         assertEquals(expected, storage.readCoordiMate().orElseThrow());
     }
 
-    private StorageManager storage(JsonCoordiMateStorage jsonStorage) {
+    private void assertCleanupRejected(Path path, String original) throws IOException {
+        Files.writeString(path, original);
+        assertThrows(DataLoadingException.class, () ->
+                createStorage(new JsonCoordiMateStorage(path)).cleanUpEventNames());
+        assertEquals(original, Files.readString(path));
+    }
+
+    private StorageManager createStorage(JsonCoordiMateStorage jsonStorage) {
         return new StorageManager(jsonStorage, new JsonUserPrefsStorage(testFolder.resolve("prefs.json")));
     }
 

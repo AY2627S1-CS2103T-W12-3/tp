@@ -61,6 +61,9 @@ public class EditEventCommand extends Command {
                 CommandResult.View.EVENTS);
     }
 
+    /**
+     * Rejects edits with no requested changes or an empty replacement name.
+     */
     private void validateEditRequest() throws CommandException {
         if (newName == null && newStartTime == null && newEndTime == null) {
             throw new CommandException(MESSAGE_NOT_EDITED);
@@ -70,12 +73,18 @@ public class EditEventCommand extends Command {
         }
     }
 
+    /**
+     * Returns the saved event matching the requested name, or throws if none exists.
+     */
     private Event findTargetEvent(Model model) throws CommandException {
         return model.getCoordiMate().getEventList().stream()
                 .filter(event -> event.getName().equalsIgnoreCase(eventName)).findFirst()
                 .orElseThrow(() -> new CommandException(String.format(MESSAGE_EVENT_NOT_FOUND, eventName)));
     }
 
+    /**
+     * Builds the replacement event, reporting invalid details as a command error.
+     */
     private Event createEditedEvent(Event target) throws CommandException {
         try {
             return target.withDetails(newName == null ? target.getName() : newName,

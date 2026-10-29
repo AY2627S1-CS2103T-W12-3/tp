@@ -13,7 +13,9 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 import java.util.Optional;
 
-/** Holds the shared data-file lock and checks revisions before replacement. */
+/**
+ * Holds the shared data-file lock and checks revisions before replacement.
+ */
 final class DataFileGuard implements AutoCloseable {
     private final Path dataPath;
     private final FileChannel channel;
@@ -41,6 +43,9 @@ final class DataFileGuard implements AutoCloseable {
         }
     }
 
+    /**
+     * Returns the current content digest, or an empty optional when the data file is absent.
+     */
     static Optional<String> readRevision(Path dataPath) throws IOException {
         try {
             return Optional.of(revisionOf(Files.readAllBytes(dataPath)));
@@ -49,6 +54,9 @@ final class DataFileGuard implements AutoCloseable {
         }
     }
 
+    /**
+     * Returns the SHA-256 digest used to detect changes to the saved data.
+     */
     static String revisionOf(byte[] contents) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");

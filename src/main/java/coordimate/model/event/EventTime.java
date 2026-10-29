@@ -19,6 +19,9 @@ public final class EventTime {
             + "and an optional time in HH:mm format. "
             + "Example: st/17-09-2026 16:30";
 
+    // Date-only and timed values share the fixed-width dd-MM-uuuu prefix.
+    private static final int DATE_TEXT_LENGTH = 10;
+
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd-MM-uuuu")
             .withResolverStyle(ResolverStyle.STRICT);
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("dd-MM-uuuu HH:mm")
@@ -63,14 +66,15 @@ public final class EventTime {
      * Returns the date, whether or not a time of day is specified.
      */
     public LocalDate getDate() {
-        return LocalDate.parse(value.substring(0, 10), DATE_FORMAT);
+        return LocalDate.parse(value.substring(0, DATE_TEXT_LENGTH), DATE_FORMAT);
     }
 
     /**
      * Returns the specified date and time, or empty for a date-only value.
      */
     public Optional<LocalDateTime> getDateTime() {
-        return value.length() > 10 ? Optional.of(LocalDateTime.parse(value, TIME_FORMAT)) : Optional.empty();
+        return value.length() > DATE_TEXT_LENGTH
+                ? Optional.of(LocalDateTime.parse(value, TIME_FORMAT)) : Optional.empty();
     }
 
     /**
@@ -84,7 +88,7 @@ public final class EventTime {
         if (!date.equals(otherDate)) {
             return date.isAfter(otherDate);
         }
-        return value.length() > 10 && other.value.length() > 10
+        return value.length() > DATE_TEXT_LENGTH && other.value.length() > DATE_TEXT_LENGTH
                 && LocalDateTime.parse(value, TIME_FORMAT).isAfter(LocalDateTime.parse(other.value, TIME_FORMAT));
     }
 

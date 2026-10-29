@@ -146,6 +146,9 @@ public class MainApp extends Application {
                 + String.join("\n", names.stream().map(MainApp::quoteEventName).toList());
     }
 
+    /**
+     * Quotes an event name, escaping whitespace and control characters for the startup notice.
+     */
     private static String quoteEventName(String name) {
         StringBuilder result = new StringBuilder("\"");
         name.codePoints().forEach(codePoint -> {

@@ -1,5 +1,7 @@
 package coordimate.ui;
 
+import static coordimate.testutil.ReminderTestUtil.createClock;
+import static coordimate.testutil.ReminderTestUtil.createFixedClock;
 import static coordimate.testutil.TypicalPersons.ALICE;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -13,10 +15,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Clock;
-import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +42,7 @@ import coordimate.model.event.EventTime;
 import coordimate.storage.JsonCoordiMateStorage;
 import coordimate.storage.JsonUserPrefsStorage;
 import coordimate.storage.StorageManager;
+import coordimate.testutil.MutableClock;
 import coordimate.testutil.PersonBuilder;
 import javafx.animation.Animation;
 import javafx.animation.Timeline;
@@ -111,7 +111,7 @@ public class MainWindowReminderTest {
             model.addEvent(event("Later", "20-10-2026 15:01", "20-10-2026 18:00"));
             ControlledStorage storage = new ControlledStorage(temporaryFolder.resolve("data.json"));
             storage.saveCoordiMate(model.getCoordiMate());
-            Fixture fixture = openWindow(model, storage, new AdjustableClock(), false, 1100, 800);
+            Fixture fixture = openWindow(model, storage, createClock(), false, 1100, 800);
             try {
                 Parent root = fixture.stage().getScene().getRoot();
                 assertPanelHidden(root);
@@ -177,7 +177,7 @@ public class MainWindowReminderTest {
             model.addPerson(new PersonBuilder(ALICE).withoutMemberId().withLeaveDate("19-10-2026").build());
             ControlledStorage storage = new ControlledStorage(temporaryFolder.resolve("data.json"));
             storage.saveCoordiMate(model.getCoordiMate());
-            Fixture fixture = openWindow(model, storage, new AdjustableClock(), true, 1100, 800);
+            Fixture fixture = openWindow(model, storage, createClock(), true, 1100, 800);
             try {
                 Parent root = fixture.stage().getScene().getRoot();
                 assertEquals(List.of("On leave until 19-10-2026"), leaveBadges(root));
@@ -267,7 +267,7 @@ public class MainWindowReminderTest {
         onJavaFxThread(() -> {
             Fixture fixture = openWindow(true);
             try {
-                fixture.storage().failSave = true;
+                fixture.storage().shouldFailSave = true;
                 Parent root = fixture.stage().getScene().getRoot();
                 TextField input = (TextField) root.lookup("#commandTextField");
                 input.setText("dismiss 1");
@@ -451,7 +451,7 @@ public class MainWindowReminderTest {
             try {
                 Parent root = fixture.stage().getScene().getRoot();
                 byte[] before = Files.readAllBytes(fixture.storage().getCoordiMateFilePath());
-                fixture.storage().failSave = true;
+                fixture.storage().shouldFailSave = true;
 
                 Button dismiss = (Button) root.lookup(".reminder-dismiss");
                 dismiss.fire();
@@ -550,8 +550,7 @@ public class MainWindowReminderTest {
     public void uiManagerStop_releasesPanelSubscriptionWithoutClosingStage() throws Exception {
         onJavaFxThread(() -> {
             ModelManager model = new ModelManager();
-            Clock clock = Clock.fixed(ZonedDateTime.parse("2026-10-19T15:00:00+08:00").toInstant(),
-                    ZoneId.of("Asia/Makassar"));
+            Clock clock = createFixedClock();
             LogicManager logic = new LogicManager(model, null, clock);
             UiManager ui = new UiManager(logic, temporaryFolder.resolve("data.json"));
             Stage stage = new Stage();
@@ -586,7 +585,7 @@ public class MainWindowReminderTest {
             model.addEvent(event);
             ControlledStorage storage = new ControlledStorage(temporaryFolder.resolve("data.json"));
             storage.saveCoordiMate(model.getCoordiMate());
-            Fixture fixture = openWindow(model, storage, new AdjustableClock(), true, 1100, 800);
+            Fixture fixture = openWindow(model, storage, createClock(), true, 1100, 800);
             try {
                 Parent root = fixture.stage().getScene().getRoot();
                 ToggleButton eventsView = (ToggleButton) root.lookup("#eventsView");
@@ -634,7 +633,7 @@ public class MainWindowReminderTest {
             model.addEvent(event);
             ControlledStorage storage = new ControlledStorage(temporaryFolder.resolve("data.json"));
             storage.saveCoordiMate(model.getCoordiMate());
-            Fixture fixture = openWindow(model, storage, new AdjustableClock(), true, 1100, 800);
+            Fixture fixture = openWindow(model, storage, createClock(), true, 1100, 800);
             try {
                 Parent root = fixture.stage().getScene().getRoot();
                 ToggleButton eventsView = (ToggleButton) root.lookup("#eventsView");
@@ -671,7 +670,7 @@ public class MainWindowReminderTest {
             model.addEvent(event("Existing Event", "25-10-2026", "25-10-2026"));
             ControlledStorage storage = new ControlledStorage(temporaryFolder.resolve("data.json"));
             storage.saveCoordiMate(model.getCoordiMate());
-            Fixture fixture = openWindow(model, storage, new AdjustableClock(), false, 1100, 800);
+            Fixture fixture = openWindow(model, storage, createClock(), false, 1100, 800);
             try {
                 Parent root = fixture.stage().getScene().getRoot();
                 submitCommand(root, "addevent evn/Planning Session st/25-10-2026 et/25-10-2026");
@@ -720,7 +719,7 @@ public class MainWindowReminderTest {
             model.addEvent(event);
             ControlledStorage storage = new ControlledStorage(temporaryFolder.resolve("data.json"));
             storage.saveCoordiMate(model.getCoordiMate());
-            Fixture fixture = openWindow(model, storage, new AdjustableClock(), true, 1100, 800);
+            Fixture fixture = openWindow(model, storage, createClock(), true, 1100, 800);
             try {
                 Parent root = fixture.stage().getScene().getRoot();
                 ToggleButton eventsView = (ToggleButton) root.lookup("#eventsView");
@@ -728,7 +727,7 @@ public class MainWindowReminderTest {
                 ListView<?> events = (ListView<?>) root.lookup("#eventListView");
                 events.getSelectionModel().selectFirst();
                 byte[] savedBeforeEdit = Files.readAllBytes(storage.getCoordiMateFilePath());
-                storage.failSave = true;
+                storage.shouldFailSave = true;
 
                 submitCommand(root, "edit 1 lv/");
 
@@ -754,21 +753,21 @@ public class MainWindowReminderTest {
         input.fireEvent(new ActionEvent());
     }
 
-    private Fixture openWindow(boolean showBeforeFilling) throws IOException {
-        return openWindow(showBeforeFilling, 1100, 800);
+    private Fixture openWindow(boolean shouldShowBeforeFilling) throws IOException {
+        return openWindow(shouldShowBeforeFilling, 1100, 800);
     }
 
-    private Fixture openWindow(boolean showBeforeFilling, int width, int height) throws IOException {
+    private Fixture openWindow(boolean shouldShowBeforeFilling, int width, int height) throws IOException {
         ModelManager model = new ModelManager();
         model.addEvent(event("Final Concert", "20-10-2026 15:00", "20-10-2026 18:00"));
         ControlledStorage storage = new ControlledStorage(temporaryFolder.resolve("data.json"));
         storage.saveCoordiMate(model.getCoordiMate());
-        AdjustableClock clock = new AdjustableClock();
-        return openWindow(model, storage, clock, showBeforeFilling, width, height);
+        MutableClock clock = createClock();
+        return openWindow(model, storage, clock, shouldShowBeforeFilling, width, height);
     }
 
-    private Fixture openWindow(ModelManager model, ControlledStorage storage, AdjustableClock clock,
-            boolean showBeforeFilling, int width, int height) {
+    private Fixture openWindow(ModelManager model, ControlledStorage storage, MutableClock clock,
+            boolean shouldShowBeforeFilling, int width, int height) {
         LogicManager logic = new LogicManager(model, new StorageManager(storage,
                 new JsonUserPrefsStorage(temporaryFolder.resolve("prefs.json"))), clock);
         Stage stage = new Stage();
@@ -776,11 +775,11 @@ public class MainWindowReminderTest {
         MainWindow window = new MainWindow(stage, logic, storage.getCoordiMateFilePath(), timer, clock);
         stage.setWidth(width);
         stage.setHeight(height);
-        if (showBeforeFilling) {
+        if (shouldShowBeforeFilling) {
             stage.show();
         }
         window.fillInnerParts();
-        if (!showBeforeFilling) {
+        if (!shouldShowBeforeFilling) {
             assertEquals(Animation.Status.STOPPED, timer.getStatus());
             stage.show();
         }
@@ -850,10 +849,10 @@ public class MainWindowReminderTest {
     }
 
     private record Fixture(Stage stage, MainWindow window, ModelManager model, LogicManager logic,
-                           ControlledStorage storage, AdjustableClock clock, Timeline timer) { }
+                           ControlledStorage storage, MutableClock clock, Timeline timer) { }
 
     private static class ControlledStorage extends JsonCoordiMateStorage {
-        private boolean failSave;
+        private boolean shouldFailSave;
 
         ControlledStorage(Path path) {
             super(path);
@@ -861,33 +860,10 @@ public class MainWindowReminderTest {
 
         @Override
         public void saveCoordiMate(ReadOnlyCoordiMate data) throws IOException {
-            if (failSave) {
+            if (shouldFailSave) {
                 throw new IOException("Disk full");
             }
             super.saveCoordiMate(data);
-        }
-    }
-
-    private static class AdjustableClock extends Clock {
-        private Instant current = ZonedDateTime.parse("2026-10-19T15:00:00+08:00").toInstant();
-
-        void advance(java.time.Duration duration) {
-            current = current.plus(duration);
-        }
-
-        @Override
-        public ZoneId getZone() {
-            return ZoneId.of("Asia/Makassar");
-        }
-
-        @Override
-        public Clock withZone(ZoneId zone) {
-            return Clock.fixed(current, zone);
-        }
-
-        @Override
-        public Instant instant() {
-            return current;
         }
     }
 }

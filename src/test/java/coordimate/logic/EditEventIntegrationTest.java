@@ -1,7 +1,10 @@
 package coordimate.logic;
 
+import static coordimate.testutil.PersistenceTestUtil.captureState;
+import static coordimate.testutil.PersistenceTestUtil.failingStorage;
 import static coordimate.testutil.TypicalPersons.AMY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
@@ -16,12 +19,12 @@ import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.logic.parser.exceptions.ParseException;
 import coordimate.model.CoordiMate;
 import coordimate.model.ModelManager;
-import coordimate.model.ReadOnlyCoordiMate;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
 import coordimate.storage.JsonCoordiMateStorage;
 import coordimate.storage.JsonUserPrefsStorage;
 import coordimate.storage.StorageManager;
+import coordimate.testutil.PersistenceTestUtil.SavedState;
 
 public class EditEventIntegrationTest {
     private static final String ADD = "addevent evn/Student Life Fair st/09-10-2026 et/09-10-2026";
@@ -99,18 +102,15 @@ public class EditEventIntegrationTest {
         ModelManager model = new ModelManager();
         Path path = temporaryFolder.resolve("data.json");
         newLogic(model, new JsonCoordiMateStorage(path)).execute(ADD);
-        CoordiMate before = new CoordiMate(model.getCoordiMate());
-        String beforeFile = Files.readString(path);
-        JsonCoordiMateStorage failingStorage = new JsonCoordiMateStorage(path) {
-            @Override
-            public void saveCoordiMate(ReadOnlyCoordiMate data) throws IOException {
-                throw new IOException("Disk full");
-            }
-        };
+        SavedState before = captureState(model, path);
+        IOException failure = new IOException("Disk full");
+        JsonCoordiMateStorage storage = failingStorage(path, failure);
+
+        CommandException error = assertThrows(CommandException.class, () -> newLogic(model, storage).execute(EDIT));
         assertEquals(Messages.withUsage(EditEventCommand.MESSAGE_SAVE_ERROR, EditEventCommand.MESSAGE_USAGE),
-                assertThrows(CommandException.class, () -> newLogic(model, failingStorage).execute(EDIT)).getMessage());
-        assertEquals(before, model.getCoordiMate());
-        assertEquals(beforeFile, Files.readString(path));
+                error.getMessage());
+        assertSame(failure, error.getCause());
+        before.assertUnchanged(model);
     }
 
     private Logic newLogic(ModelManager model, JsonCoordiMateStorage storage) {
