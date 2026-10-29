@@ -14,6 +14,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
@@ -26,7 +28,9 @@ import javafx.scene.text.TextFlow;
 /** A guided introduction shown as an overlay on the main window. */
 public class TutorialWindow extends UiPart<StackPane> {
 
-    public static final String TUTORIAL_SHORTCUT = "Fn + F2";
+    /** The key that opens the tutorial from the main and Help windows. */
+    public static final KeyCombination TUTORIAL_KEY = new KeyCodeCombination(KeyCode.F2);
+    public static final String TUTORIAL_SHORTCUT = "Fn + " + TUTORIAL_KEY.getName();
 
     private static final String FXML = "TutorialWindow.fxml";
     private static final double CARD_MAX_WIDTH = 620;
