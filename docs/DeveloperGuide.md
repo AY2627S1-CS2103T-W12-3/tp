@@ -9,6 +9,8 @@
 <!-- * Table of Contents -->
 <page-nav-print />
 
+Domain terms used throughout this guide are defined in the [glossary](#glossary).
+
 --------------------------------------------------------------------------------------------------------------------
 
 ## **Acknowledgements**
@@ -88,7 +90,7 @@ The `UI` component uses the JavaFX UI framework. The layouts of these UI parts a
 Besides the main window, the `UI` component provides:
 
 * `HelpWindow`, a command quick reference built from the command words of the command classes.
-* `TutorialWindow`, a guided tour shown as an overlay over the main window. `UiManager` opens it on first launch, and
+* `TutorialWindow`, which renders the [tutorial](#glossary) overlay. `UiManager` opens it on first launch, and
   the `tutorial` command or <kbd>F2</kbd> opens it again.
 * Command history in `CommandBox`, which keeps the commands entered in the current session for recall with the Up
   and Down arrow keys.
@@ -198,15 +200,19 @@ This section describes some noteworthy details on how certain features are imple
 
 ### Permanent member IDs
 
-Each saved contact has a unique, permanent `MemberId`, displayed as `ID: <number>`. Commands such as `edit`,
-`delete`, `assign`, and `unassign` identify contacts by this ID, so search results, filters, and list order never
-change which contact an ID refers to.
+The [member ID](#glossary) implementation uses `MemberId`, `MemberIdResolver`, and the persisted `nextMemberId`
+counter.
 
 #### Allocation and editing
 
 `Person` holds an immutable ID. `CoordiMate` allocates new IDs from a `nextMemberId` counter, which only ever
 increases, so deleted IDs are never reused. `UniquePersonList` rejects duplicate IDs and prevents an edit from
 changing a contact's ID. `clear` starts a new empty dataset and resets allocation to `1`.
+
+The object diagram below shows the contacts after three contacts were added, the contact with ID `3` was deleted, and
+another contact was added. The new contact received ID `4`, and `nextMemberId` moved on to `5`, so ID `3` stays unused.
+
+<puml src="diagrams/MemberIdObjectDiagram.puml" width="520" />
 
 #### Command targeting
 
@@ -281,11 +287,20 @@ The activity diagram below summarises the possible outcomes.
 **2. The data file is replaced in one step.**
 [`JsonCoordiMateStorage#saveCoordiMate`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/storage/JsonCoordiMateStorage.java)
 writes the new data to a temporary file in the same folder, then moves it over the data file with an atomic move.
-The data file therefore always holds either the complete old data or the complete new data.
+The move requests `ATOMIC_MOVE` and `REPLACE_EXISTING`. Under the
+[Java API contract](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/nio/file/Files.html#move(java.nio.file.Path,java.nio.file.Path,java.nio.file.CopyOption...)),
+replacing an existing target with an atomic move depends on the filesystem provider. An unsupported atomic move
+throws `AtomicMoveNotSupportedException`; this code has no fallback to a non-atomic overwrite.
+
+When atomic replacement is supported, a process-only interruption leaves the existing target at either the old
+or new complete version while the OS remains running. An interruption can leave a temporary file behind.
+The save path does not explicitly force file contents or directory metadata to durable storage, so this mechanism
+does not establish recovery guarantees after an OS crash or power loss. User preferences use a separate, direct
+JSON write through `JsonUserPrefsStorage` and do not have this atomic-replacement protection.
 
 A confirmed `delete` runs through `executeAtomicCommand` like any other command. Commands that do not change data,
 such as `list`, `search`, `filter`, and `members`, run directly on the live model without saving. Reminder
-dismissal uses its own save path, described in [Dismissing reminders](#dismissing-reminders).
+dismissal uses its own save path, described in [Event reminders](#event-reminders).
 
 #### Design considerations
 
@@ -295,30 +310,97 @@ dismissal uses its own save path, described in [Dismissing reminders](#dismissin
   live model's data.
   * Pros: Works for every command that changes data without command-specific rollback code. The UI never shows
     an edit that was not saved.
-  * Cons: Copies all data for each command, which is acceptable for the expected 250 contacts.
+  * Cons: Copies all data for each command, which is acceptable for the expected [typical load](#glossary).
 
 * **Alternative 2:** Execute the command on the live model, and restore a snapshot if saving fails.
   * Pros: No copy is needed when saving succeeds.
   * Cons: The UI observes the model, so it briefly shows a change that is then reverted.
 
-### Dismissing reminders
+### Event reminders
 
-The **Upcoming events** panel lists reminders for events starting soon, ordered by start time and then by name.
-`dismiss INDEX` and the panel's **Dismiss** button both hide a reminder through the same `ReminderService`, which
-`LogicManager` creates and passes to `DismissCommand`.
+The **Upcoming events** panel lists [reminders](#glossary) for events starting soon, ordered by start time and then by name.
 
-`DismissCommand` checks the index against the current reminder list, then asks `ReminderService` to dismiss that
-event's reminder. Like other commands that change data, the service saves an updated copy of the event before
-changing the live event, and keeps the event's details, members, and attendance unchanged.
+#### Implementation
 
-If the data file cannot be read or saved, the dismissal is still kept for the current session, so the reminder
+Reminders are worked out from the saved events whenever they are needed, rather than being stored.
+
+**Finding upcoming events.** [`UpcomingEventFinder`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/reminder/UpcomingEventFinder.java)
+decides which events qualify, using a `Clock` so that tests can fix the current time:
+
+* An event with a start time qualifies from 24 hours before its start until the start itself, inclusive.
+* An event with only a start date qualifies throughout the day before that date and the date itself.
+
+It returns the qualifying events ordered by start, then by name ignoring case. A date-only start counts as midnight
+for ordering only.
+
+**Keeping the reminder list current.** [`ReminderService`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/logic/reminder/ReminderService.java)
+holds the observable list that `ReminderPanel` displays. `ReminderService#refreshReminders()` rebuilds it from the
+finder's results, leaving out archived events and events whose reminder has been dismissed. The list is refreshed:
+
+* when `LogicManager` is created, so reminders are ready at launch.
+* after every command, in a `finally` block of `LogicManager#execute`, so that adding, editing, archiving, or deleting
+  an event updates the panel straight away, even if the command fails.
+* once a minute by a `Timeline` in `MainWindow`, so that reminders appear and expire as time passes.
+* when the main window is shown again after being hidden.
+
+The list is only replaced when its contents change, which avoids redrawing the panel every minute.
+
+**Remembering dismissals.** Each `Event` stores the start values whose reminders were dismissed, in
+`dismissedReminderStarts`. `Event#isReminderDismissed()` checks whether the current start is among them, so a
+dismissal applies to one particular start:
+
+* Renaming the event or changing only its end keeps the dismissal, because the start is unchanged.
+* `Event#withDetails`, used by `editevent`, clears the history whenever the start changes, including a change back
+  to an earlier start. The reminder for the new start can then appear.
+
+The history is saved with the event, so a dismissal survives restarting the app.
+
+**Dismissing a reminder.** `dismiss INDEX` and the panel's **Dismiss** button both hide a reminder through the same
+`ReminderService`, which `LogicManager` creates and passes to `DismissCommand`.
+
+The sequence diagram below shows `dismiss 1`, both when the dismissal is saved and when saving fails.
+
+<puml src="diagrams/DismissSequenceDiagram.puml" width="700" alt="Interactions when a reminder is dismissed" />
+
+`DismissCommand` checks the index against the reminder list as last shown, so that the index matches the panel, and
+rejects it if that reminder is no longer upcoming. It then asks `ReminderService` to dismiss that event's reminder.
+Like other commands that change data, the service saves an updated copy of the event before changing the live event,
+and keeps the event's details, members, and attendance unchanged. It saves with
+`Storage#saveCoordiMateIfUnchanged`, which refuses to overwrite a data file that another window has changed.
+
+If the data file cannot be read or saved, or another window has changed it, the dismissal is still kept for the current session, so the reminder
 disappears, and the command shows a **Not saved** warning instead of an error. The reminder may then return after a
 restart. Because `ReminderService` handles the save itself, `LogicManager` does not run `dismiss` through
 `executeAtomicCommand`.
 
-### Event attendance
+#### Design considerations
 
-Attendance records whether each member of an event was present or absent.
+**Aspect: How reminders follow the passage of time**
+
+* **Alternative 1 (current choice):** Recompute the reminders once a minute, and after every command.
+  * Pros: Simple, and correct after the computer sleeps or its clock changes, since each refresh reads the current
+    time. Adding, editing, and deleting events need no extra code to update reminders.
+  * Cons: A reminder can appear or disappear up to a minute late.
+
+* **Alternative 2:** Schedule a timer for each event's next eligibility change.
+  * Pros: Reminders change at exactly the right moment.
+  * Cons: Every event change must cancel and reschedule its timers, and timers can fire at the wrong moment after a
+    sleep or clock change.
+
+**Aspect: How a dismissal is remembered**
+
+* **Alternative 1 (current choice):** Store the dismissed start values in the event.
+  * Pros: The dismissal is saved with the event, and stops applying as soon as the start changes, because
+    `Event#isReminderDismissed()` compares against the current start. Code that changes the start without going
+    through `Event#withDetails` therefore cannot leave the moved event dismissed by mistake.
+  * Cons: Adds a field to every event in the data file.
+
+* **Alternative 2:** Store a single "dismissed" flag in the event.
+  * Pros: Simpler data.
+  * Cons: Every code path that changes the start must remember to clear the flag. One that forgets would leave the
+    moved event silently dismissed.
+
+### Event attendance
 
 #### Implementation
 
@@ -402,6 +484,11 @@ are combined into a [`ContactFilterPredicate`](https://github.com/AY2627S1-CS210
 which a contact matches only if it matches every predicate, and passed to `Model#updateFilteredPersonList`.
 `filter` does not change data, so it is executed directly on the live model.
 
+The class diagram below shows how these classes relate. The `organisation` criterion is a plain lambda, so it is not
+shown.
+
+<puml src="diagrams/FilterClassDiagram.puml" width="700" />
+
 The `event` and `tag` predicates identify their event or tag by name. How a filtered list follows later changes to
 that event or tag is described in [Keeping events in sync with contacts](#keeping-events-in-sync-with-contacts).
 
@@ -447,9 +534,13 @@ updates events whenever a contact changes:
 * When a contact is deleted, every event that lists the contact is replaced with a copy without the name or its
   attendance.
 
-All the updated events are built before anything is changed. If an event already has a member with the new name,
-the rename is rejected and no data is changed. When loading, a data file in which an event lists a member who is not
+All the updated events are built before anything is changed. If an event that lists the contact already has a
+member with the new name, the rename is rejected and no data is changed. When loading, a data file in which an event lists a member who is not
 a saved contact is rejected.
+
+The activity diagram below summarises how `CoordiMate` handles a renamed or deleted contact.
+
+<puml src="diagrams/EventSyncActivityDiagram.puml" width="380" />
 
 **Showing an event's members.** `MembersCommand` filters the contact list with
 [`EventMembersPredicate`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/event/EventMembersPredicate.java),
@@ -487,14 +578,12 @@ events when it is tested again. Reversing this order would leave event member vi
 
 ### Marking contacts as on leave
 
-A contact can be marked as on leave until a given date. The status ends by itself once that date has passed.
-
 #### Implementation
 
 [`LeaveDate`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/person/LeaveDate.java)
-holds the **last day** of a contact's leave. `Person` stores it as an optional field, like birthday and note, which
-is set with `lv/` in `add` and `edit`, and cleared with an empty `lv/`. `Person#isOnLeave(LocalDate today)` returns
-true if a date is saved and `today` is not after it.
+implements the date check for the [on leave](#glossary) status. `Person` stores it as an optional field, like
+birthday and note, which is set with `lv/` in `add` and `edit`, and cleared with an empty `lv/`.
+`Person#isOnLeave(LocalDate today)` delegates the date comparison to `LeaveDate#covers`.
 
 A date entered with `lv/` must not be in the past, but any real date is accepted when loading the data file, so
 that leave which has ended can still be loaded.
@@ -503,6 +592,11 @@ that leave which has ended can still be loaded.
 leave on the current date, and shows the **On leave until** badge only if it is. The ended date stays in the data
 file until the user replaces or clears it. Code that copies a contact, such as `CoordiMate#setTag` and
 `CoordiMate#removeTag`, must pass the leave date on so that it is not dropped.
+
+The state diagram below shows how a contact's leave changes. **Leave ended** looks the same as **Not on leave** in the
+app; the difference is only that the old date is still saved.
+
+<puml src="diagrams/LeaveStateDiagram.puml" width="560" />
 
 `PersonListPanel` reads the current date from a `Clock`, which tests replace to control the date. A window left open
 past midnight still needs redrawing, so `MainWindow`'s existing one-minute reminder timer also calls
@@ -537,8 +631,8 @@ In the data file, the date is stored in a `leaveUntil` field. Contacts without t
 
 ### Archiving contacts and events
 
-`archive`, `unarchive`, `archiveevent`, and `unarchiveevent` hide a contact or an event from the normal lists without
-deleting it. `list archived` shows only archived items, and `list` returns to the active ones.
+`archive`, `unarchive`, `archiveevent`, and `unarchiveevent` implement [archiving](#glossary).
+`list archived` selects the archive view, and `list` returns to the active view.
 
 #### Implementation
 
@@ -547,8 +641,7 @@ and [`Event`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/
 each have a boolean `archived` field. Both are immutable, so archiving returns a copy from `withArchived(boolean)`,
 and every other copy method passes the flag on. `Person` takes `archived` as a parameter of its full constructor,
 which every copy of an existing contact uses, so the compiler makes each copy, such as `EditCommand` and the tag
-updates in `CoordiMate`, pass the flag on. Archiving changes nothing else: an archived contact keeps its name in event
-member lists, and an archived event keeps its members and attendance.
+updates in `CoordiMate`, pass the flag on.
 
 **Hiding archived items.** [`ModelManager`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/ModelManager.java)
 keeps an archive view, which is true while archived items are shown, separately from the contact filter set by
@@ -616,6 +709,114 @@ archived.
   * Cons: Duplicate checks, event member lookups, and the data file format would all have to handle two lists, and
     moving an item between lists could break the links between events and contacts.
 
+### First-launch tutorial
+
+The tutorial is a step-by-step tour of the main window, shown automatically on the first launch.
+
+#### Implementation
+
+[`TutorialWindow`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/ui/TutorialWindow.java)
+is an overlay inside the main window, not a separate window. It holds a fixed list of `TutorialStep` records, each
+with a title, a description, where to place the step's card, and a `TutorialTarget` naming the part of the main window
+to highlight.
+
+`TutorialWindow` handles the tour itself, and `MainWindow` connects it to the rest of the window:
+
+* **Changing steps.** When the step changes, `TutorialWindow` calls the step-change handler set by `MainWindow`.
+  `MainWindow#showTutorialStep` switches to the tab that the step needs, finds the node for its `TutorialTarget`, and
+  passes it to `TutorialWindow#highlight`. The overlay then shades everything except that node and places the step's
+  card beside it.
+* **Blocking the app.** While the tutorial is showing, event filters on the overlay and on the main window consume
+  every mouse and key event that is not aimed at the tutorial card. `MainWindow#showTutorial` also disables the command
+  box. This prevents commands from changing the lists that the tour points at.
+* **Keyboard control.** `TutorialWindow#handleShortcut` moves between steps with the Left and Right arrow keys and
+  closes the tour with Esc. Tab cycles focus through the card's buttons without leaving the card.
+* **Normal view.** `MainWindow#showTutorial` calls `Logic#showActiveItems()` first, because the archived view hides
+  the lists and commands that the tour describes.
+
+**Showing it once.** `UserPrefs` stores whether the tutorial has been seen. On launch,
+`MainWindow#showTutorialOnFirstLaunch()` opens the tutorial only if it has not. Finishing or closing the tour calls
+`Logic#setHasSeenTutorial(true)`, and the preference is saved with the other user preferences when the app exits.
+If the preferences file could not be read at launch, `MainApp` does not overwrite it, so the tutorial is shown again
+on the next launch.
+The tutorial can be opened again at any time with the `tutorial` command, the **Tutorial** item in the top bar, or
+F2. `TutorialCommand` returns a `CommandResult` that asks `MainWindow` to show the tutorial.
+
+#### Design considerations
+
+**Aspect: How the tutorial is displayed**
+
+* **Alternative 1 (current choice):** An overlay inside the main window that highlights the real controls.
+  * Pros: Users see the actual tabs, cards, and command box that each step describes, and the overlay can never be
+    separated from the window it explains.
+  * Cons: Each step needs a target node, and the overlay must block input to the window underneath.
+
+* **Alternative 2:** A separate window with screenshots and text.
+  * Pros: Independent of the main window's layout.
+  * Cons: Screenshots go out of date whenever the UI changes, and users must map each picture onto the real window.
+
+### Keyboard navigation and command history
+
+CoordiMate can be used without a mouse. Besides typing commands, users can move between cards and views with single
+keys, and recall earlier commands.
+
+#### Implementation
+
+**Interaction modes.** `MainWindow` keeps track of one of two `InteractionMode`s, shown in the label beside the command
+box:
+
+* **Command mode**, the default, in which keys go to the command box.
+* **Navigation mode**, in which the command box is disabled and single keys act on the selected tab: J and K select the
+  next and previous card, and S switches to the next view.
+
+The state diagram below shows how the user moves between the two modes.
+
+<puml src="diagrams/InteractionModeStateDiagram.puml" width="520" />
+
+`MainWindow#handleKeyboardInput` is a key filter on the whole window. In Command mode it only reacts to Esc, which
+enters Navigation mode. In Navigation mode it handles J, K, and S, and consumes every other unmodified key so that it
+does nothing. Navigation mode returns to Command mode when I is **released**, rather than pressed, so that the I does
+not also appear in the command box. Clicking a card list enters Navigation mode, and clicking the command box or a
+command row in the sidebar returns to Command mode.
+
+Mode changes are ignored while the tutorial is showing, and while a `delete` is waiting for confirmation, so that the
+confirmation stays in the command box.
+
+**Moving between cards.** `CardNavigation` moves the selection of a card list by one card and scrolls it into view.
+With nothing selected, J selects the first card and K the last. At either end of the list, the selection stays where
+it is, rather than wrapping around. `PersonListPanel`, `EventListPanel`, and the tag list all use it, so the three
+tabs behave the same way.
+
+**Command history.** [`CommandBox`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/ui/CommandBox.java)
+keeps every submitted command in a list, including commands that failed, so that they can be corrected and run again.
+The Up and Down keys move through the list. The text being typed before browsing is kept as a draft and restored by
+pressing Down past the newest command. Submitting a command, or inserting one from the sidebar, resets browsing to the
+end of the list. Answers to a `delete` confirmation are not recorded, and Up and Down do nothing while one is pending,
+so that `y` is never recalled as a command. The history is kept only for the current session.
+
+#### Design considerations
+
+**Aspect: How single-key navigation coexists with typing**
+
+* **Alternative 1 (current choice):** A separate Navigation mode, entered with Esc.
+  * Pros: Single keys such as J can move between cards without a modifier, as in many keyboard-driven tools, while
+    the same keys still type normally in Command mode.
+  * Cons: Users must know which mode they are in, so the current mode is always shown beside the command box.
+
+* **Alternative 2:** Shortcuts with a modifier key, such as Ctrl+J, available at all times.
+  * Pros: No modes to learn.
+  * Cons: Common modifier shortcuts already have meanings in text fields and on different operating systems.
+
+**Aspect: Whether command history is saved**
+
+* **Alternative 1 (current choice):** Keep the history only for the current session.
+  * Pros: Nothing extra is written to disk, and the history cannot be corrupted or grow without limit.
+  * Cons: The history is lost when the app closes.
+
+* **Alternative 2:** Save the history with the user preferences.
+  * Pros: Commands can be recalled across sessions.
+  * Cons: Adds another file format to maintain, and saves commands that may contain contacts' personal details.
+
 --------------------------------------------------------------------------------------------------------------------
 
 ## **Documentation, logging, testing, dev-ops**
@@ -648,397 +849,610 @@ archived.
 
 Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unlikely to have) - `*`
 
-| Priority | As a … | I want to … | So that I can …                                                                                 |
-|----------|--------|-------------|-------------------------------------------------------------------------------------------------|
-| `* * *` | first-time user | view a tutorial | learn how to navigate CoordiMate                                                                |
-| `* *` | returning user | access the tutorial again | refresh my memory when I forget how to use CoordiMate                                           |
-| `* * *` | Exco member | save a contact's details | keep track of the people I know                                                                 |
-| `* * *` | Exco member | edit a saved contact | correct or update the contact's information                                                     |
-| `* * *` | Exco member | delete a contact | remove an entry that is no longer needed                                                        |
-| `* * *` | Exco member | save a contact's email address | keep a complete record of the contact's information                                             |
-| `* *` | Exco member | record additional details about a contact | keep relevant background information at hand                                                    |
-| `* *` | Exco member | record a contact's birthday | remember to wish the contact well                                                               |
-| `*` | Exco member | attach multiple phone numbers or email addresses to a contact | record the contact's different personal and work details                                        |
-| `*` | Exco member | attach a photo to a contact | associate the contact's face with their name                                                    |
-| `*` | Exco member entering data quickly | enter phone numbers containing extra whitespace or dashes | avoid manually reformatting phone numbers                                                       |
-| `*` | Exco member entering data quickly | enter Telegram handles with or without the `@` symbol | avoid manually reformatting handles                                                             |
-| `* * *` | event lead | search and filter contacts by name, tag, or role | retrieve specific contact information quickly                                                   |
-| `* *` | Exco member | filter contacts by their assigned colour | search contacts in a particular group quickly                                                   |
-| `*` | Exco member | have urgent contacts appear at the top of the contact list | identify them quickly                                                                           |
-| `* *` | experienced user | colour-code contacts by role or group | identify their roles or groups quickly                                                          |
-| `* *` | Exco member | assign a colour to a contact | distinguish that contact visually                                                               |
-| `*` | Exco member | choose from a set of default colours | assign colours without configuring them myself                                                  |
-| `*` | Exco member | change a contact's assigned colour | keep the colour accurate when the contact's role or group changes                               |
-| `* * *` | Exco member | assign tags to contacts | categorize contacts for later retrieval                                                         |
-| `* *` | Exco member | choose from a set of common default tags | categorize contacts quickly                                                                     |
-| `* *` | Exco member | create custom tags | categorize contacts in ways not covered by the default tags                                     |
-| `* * *` | Exco member | create an event with a name and date | keep a record around which I can organize contacts and attendance                               |
-| `* * *` | Exco member | assign a member to an event | track who is involved in that event                                                             |
-| `* * *` | Exco member | remove a member from an event | correct the assignment when someone is no longer involved                                       |
-| `* * *` | Exco member | view the members assigned to an event | see the committee allocation at a glance                                                        |
-| `* *` | Exco member | create future events and assign members to them | plan committee allocation ahead of time                                                         |
-| `*` | user with limited time | have the most frequently used event appear first | access it without extra navigation                                                              |
-| `*` | forgetful Exco member | receive reminders for upcoming events | avoid missing them                                                                              |
-| `*` | forgetful Exco member | see everyone assigned to an event | avoid overlooking a participant                                                                 |
-| `* * *` | Exco member who organizes events | track attendance for an event | monitor participation                                                                           |
-| `* * *` | Exco member | mark a member as present or absent for an event | keep an accurate attendance record                                                              |
-| `* *` | Exco member | view the counts of present and absent members for an event | gauge overall turnout quickly                                                                   |
-| `* *` | Exco member | view the members marked absent for an event | follow up with them individually                                                                |
-| `*` | Exco member | view the edit history of attendance records | see when a member's status was changed and avoid disputes                                       |
-| `*` | Exco member | export attendance records | use them for reporting or record-keeping                                                        |
-| `*` | Exco member | archive contacts | declutter my active contact list without permanently deleting entries                           |
-| `*` | Exco member | archive past events | keep my event list focused on current and upcoming events                                       |
-| `*` | Exco member | access archived contacts and events | retrieve historical information when needed                                                     |
-| `*` | Exco member | mark a contact as on leave until a specified date | remember that the contact is temporarily unavailable without manually clearing the status later |
-| `* *` | Exco member | switch between the Contacts and Events views | navigate between contact and event information easily                                           |
-| `*` | user who values a pleasant interface | switch between light and dark modes | adjust the display to suit my environment                                                       |
+Priority expresses the importance of a story, not its implementation status. The tables below separate current
+features from ideas that are not implemented.
+
+#### Current features
+
+| Priority | As a … | I want to … | So that I can … |
+|----------|--------|-------------|----------------|
+| `* * *` | first-time user | view a tutorial | learn how to navigate CoordiMate |
+| `* *` | returning user | access the tutorial again | refresh my memory when I forget how to use CoordiMate |
+| `* *` | EXCO member | view command formats and examples in Help | check how to enter an unfamiliar command |
+| `* * *` | EXCO member | save a contact's name, phone number, email address, and role | keep track of the people I know |
+| `* * *` | EXCO member | edit a saved contact | correct or update the contact's information |
+| `* * *` | EXCO member | confirm before deleting a contact | remove an unwanted entry after checking that I selected the right person |
+| `* *` | EXCO member | record a contact's address, organisation, and note | keep relevant background information at hand |
+| `* *` | EXCO member | record a contact's birthday | remember to wish the contact well |
+| `* * *` | EXCO member | have data changes saved automatically | retain my work across restarts without a separate save command |
+| `*` | EXCO member entering data quickly | enter phone numbers containing spaces, hyphens, or brackets | avoid manually removing accepted phone formatting |
+| `* * *` | event lead | search contacts by name, phone number, email address, address, or organisation | retrieve specific contact information quickly |
+| `* * *` | event lead | filter contacts by tag, event membership, or organisation, including combined criteria | retrieve contacts in the groups I need |
+| `* *` | experienced user | recognise tags by their text labels and built-in colours | identify contact categories at a glance |
+| `* * *` | EXCO member | assign tags to contacts | categorise contacts for later retrieval |
+| `* *` | EXCO member | choose from a set of common default tags | categorise contacts quickly |
+| `* *` | EXCO member | create custom tags | categorise contacts in ways not covered by the default tags |
+| `* *` | EXCO member | rename or delete a saved tag | keep the tag list and affected contacts up to date |
+| `* *` | EXCO member | select a tag and view its contacts | see who belongs to that category |
+| `* * *` | EXCO member | create an event with a name, start date/time, and end date/time | organise contacts and attendance around a scheduled activity |
+| `* *` | EXCO member | edit an event's name or schedule | keep event details accurate when plans change |
+| `* *` | EXCO member | delete an event | remove an event and its assignments and attendance records when no longer needed |
+| `* * *` | EXCO member | assign one or more contacts to an event using permanent member IDs | track who is involved in that event |
+| `* * *` | EXCO member | remove one or more contacts from an event | correct assignments when someone is no longer involved |
+| `* * *` | EXCO member | view all members assigned to an event | see the committee allocation without overlooking a participant |
+| `* *` | EXCO member | create future events and assign members to them | plan committee allocation ahead of time |
+| `*` | forgetful EXCO member | see upcoming event reminders while CoordiMate is running | avoid missing events |
+| `*` | EXCO member | dismiss an upcoming event reminder | hide a reminder I have already acknowledged |
+| `* * *` | EXCO member | mark an assigned member as present or absent, and correct that status later | keep an accurate attendance record |
+| `* *` | EXCO member | view the counts of present, absent, and unmarked members for an event | gauge turnout and identify incomplete attendance records |
+| `* *` | EXCO member | see each member's attendance status in the event roster | identify absent members to follow up with |
+| `*` | EXCO member | archive contacts | declutter my active contact list without permanently deleting entries |
+| `*` | EXCO member | archive events | keep my event list focused on current work |
+| `*` | EXCO member | view and restore archived contacts and events | retrieve historical information and return items to active use |
+| `*` | EXCO member | mark a contact as on leave through a specified date | see their temporary unavailability until the leave period ends |
+| `* *` | EXCO member | switch between the Contacts, Events, and Tags views | navigate between related information easily |
+| `* *` | user who prefers the keyboard | browse cards and switch views using keyboard shortcuts | inspect saved information without reaching for the mouse |
+| `* *` | returning user | recall earlier commands from the current session | reuse commands without retyping them |
+| `*` | EXCO member | clear all contacts, events, and custom tags | start a new dataset with the default tags |
+
+#### Future ideas (not implemented)
+
+| Priority | As a … | I want to … | So that I can … |
+|----------|--------|-------------|----------------|
+| `*` | EXCO member | attach multiple phone numbers or email addresses to a contact | record the contact's different personal and work details |
+| `*` | EXCO member | attach a photo to a contact | associate the contact's face with their name |
+| `*` | EXCO member entering data quickly | enter Telegram handles with or without the `@` symbol | avoid manually reformatting handles |
+| `* * *` | event lead | filter contacts by role | retrieve contacts with a particular responsibility |
+| `* *` | EXCO member | filter contacts by an assigned colour | find contacts in a particular colour group quickly |
+| `*` | EXCO member | have urgent contacts appear at the top of the contact list | identify them quickly |
+| `* *` | EXCO member | assign and change a contact's colour, including choosing a default colour | keep visual groupings accurate when roles or groups change |
+| `*` | user with limited time | have the most frequently used event appear first | access it without extra navigation |
+| `*` | EXCO member | view the edit history of attendance records | see when a member's status was changed and avoid disputes |
+| `*` | EXCO member | export attendance records | use them for reporting or record-keeping |
+| `*` | user who values a pleasant interface | switch between light and dark modes | adjust the display to suit my environment |
 
 ### Use cases
 
-(For all use cases below, the **System** is the `CoordiMate` and the **Actor** is the `user`, unless specified otherwise)
+(For all use cases below, the **System** is `CoordiMate` and the **Actor** is an EXCO member, unless specified otherwise.)
 
-**Use case: Add a contact**
+<box type="info" seamless>
 
-**System:** CoordiMate
+**Note:** In every use case that changes data, if CoordiMate cannot load or save the local data file, it informs
+the EXCO member and makes no changes. This extension is not repeated in each use case below. The only exception is
+dismissing a reminder ([UC12](#uc12-dismiss-an-event-reminder)).
+</box>
 
-**Actor:** University CCA EXCO member
-
-**Preconditions:** CoordiMate is running.
-
-**Main success scenario (MSS)**
-
-1. EXCO member requests to add a contact, providing the contact's name, phone number, email address, role, and any applicable optional details.
-2. CoordiMate validates the supplied fields, registers any new custom tags, saves the contact, and confirms
-   that the contact was saved.
-
-    Use case ends.
-
-**Extensions**
-
-* 1a. A required detail is missing, empty, repeated, or invalid, or the EXCO member provides an unknown field.
-
-  * 1a1. CoordiMate informs the EXCO member of the error.
-  * 1a2. EXCO member corrects the contact details.
-
-    Steps 1a1-1a2 are repeated until the contact details are valid.<br>
-    Use case resumes from step 2.
-
-* 1b. A contact with the same name (ignoring case and surrounding spaces), normalised phone number,
-  or email address already exists.
-
-  * 1b1. CoordiMate informs the EXCO member that the contact already exists and makes no changes.
-
-    Use case ends.
-
-* 2a. CoordiMate cannot write to the local data file.
-
-  * 2a1. CoordiMate informs the EXCO member that the contact could not be saved and makes no changes.
-
-    Use case ends.
-
-* 2b. CoordiMate cannot load the local data file because it is invalid or corrupted.
-
-  * 2b1. CoordiMate informs the EXCO member that the contact data could not be loaded and makes no changes.
-
-    Use case ends.
-
-**Use case: Search contacts**
-
-**System:** CoordiMate
-
-**Actor:** Event lead
-
-**Preconditions:** CoordiMate has been launched and contains at least one contact.
+#### UC01: Add a contact
 
 **MSS**
 
-1. Event lead requests to search contacts using one keyword or phrase.
-2. CoordiMate displays contacts whose name, phone number, email address, address, or organisation contains that
-   keyword, ignoring case. Spaces, hyphens, and brackets in phone numbers are ignored when matching.
+1. EXCO member requests to add a contact, providing the contact's name, phone number, email address, role, and any
+   optional details or tags.
+2. CoordiMate saves the contact, creating any new tags, and confirms that the contact was saved.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. A required detail is missing, a detail is invalid or repeated, or an unknown field is given.
+  * 1a1. CoordiMate informs the EXCO member of the error.
+  * 1a2. EXCO member corrects the contact details.
+
+    Steps 1a1-1a2 are repeated until the details are valid.<br>
+    Use case resumes from step 2.
+
+* 1b. More than 15 tags are given.
+  * 1b1. CoordiMate informs the EXCO member of the tag limit.
+
+    Use case resumes from step 1.
+
+* 1c. The supplied details would create a [duplicate contact](#glossary).
+  * 1c1. CoordiMate informs the EXCO member that the contact already exists and makes no changes.
+
+    Use case ends.
+
+#### UC02: Edit a contact
+
+**MSS**
+
+1. EXCO member requests to edit a contact, identifying it by its member ID or by its exact name, phone number, or
+   email address, and providing the new details.
+2. CoordiMate updates the contact, updates its name in every event it is a member of, and shows the updated
+   details.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. No new details are given, a detail is invalid or repeated, or an unknown field is given.
+  * 1a1. CoordiMate informs the EXCO member of the error.
+  * 1a2. EXCO member corrects the details.
+
+    Steps 1a1-1a2 are repeated until the details are valid.<br>
+    Use case resumes from step 2.
+
+* 1b. No contact matches the given identifier.
+  * 1b1. CoordiMate informs the EXCO member that no matching contact was found.
+
+    Use case ends.
+
+* 1c. More than one contact matches the given name.
+  * 1c1. CoordiMate lists the matching contacts with their member IDs, and requests a member ID, phone number, or
+    email address instead.
+  * 1c2. EXCO member provides one of the requested identifiers.
+
+    Use case resumes from step 2.
+
+* 1d. The proposed changes would create a [duplicate contact](#glossary).
+  * 1d1. CoordiMate informs the EXCO member of the conflict and makes no changes.
+
+    Use case ends.
+
+* 1e. The tag changes would give the contact more than 15 tags.
+  * 1e1. CoordiMate informs the EXCO member of the tag limit and makes no changes.
+
+    Use case ends.
+
+#### UC03: Delete a contact
+
+**MSS**
+
+1. EXCO member requests to delete a contact, identifying it by its member ID or by its exact name, phone number, or
+   email address.
+2. CoordiMate shows the matching contact and requests confirmation.
+3. EXCO member confirms the deletion.
+4. CoordiMate deletes the contact, removes it from every event it is a member of along with its attendance records,
+   and confirms the deletion.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. No identifier, more than one identifier, or an invalid member ID is given.
+  * 1a1. CoordiMate informs the EXCO member of the error.
+  * 1a2. EXCO member provides one valid identifier.
+
+    Use case resumes from step 2.
+
+* 1b. No contact matches the given identifier.
+  * 1b1. CoordiMate informs the EXCO member that no matching contact was found.
+
+    Use case ends.
+
+* 1c. More than one contact matches the given name.
+  * 1c1. CoordiMate lists the matching contacts with their member IDs, and requests a member ID, phone number, or
+    email address instead.
+  * 1c2. EXCO member provides one of the requested identifiers.
+
+    Use case resumes from step 2.
+
+* 3a. EXCO member declines the deletion.
+  * 3a1. CoordiMate cancels the deletion and leaves the contact unchanged.
+
+    Use case ends.
+
+#### UC04: Search contacts
+
+**MSS**
+
+1. EXCO member requests to search contacts using a keyword or phrase.
+2. CoordiMate shows the contacts whose name, phone number, email address, address, or organisation contains the
+   keyword, ignoring case, and the number found. Phone matching uses [normalised phone numbers](#glossary).
    Extra spaces in the keyword and in addresses are treated as one space.
 
    Use case ends.
 
 **Extensions**
 
-* 1a. Event lead provides an empty keyword, including a blank quoted phrase.
-
-  * 1a1. CoordiMate displays an error message.
+* 1a. The keyword is empty.
+  * 1a1. CoordiMate informs the EXCO member of the error.
 
     Use case ends.
 
 * 2a. No contact matches the keyword.
-
-  * 2a1. CoordiMate informs the event lead that no matching contacts were found.
+  * 2a1. CoordiMate shows an empty list and informs the EXCO member that no matching contacts were found.
 
     Use case ends.
 
-**Use case: Delete a contact**
+#### UC05: Filter contacts
 
-**System:** CoordiMate
+**MSS**
 
-**Actor:** University CCA EXCO member
-
-**Preconditions:** CoordiMate is running and at least one contact has been saved.
-
-**Main success scenario (MSS)**
-
-1. EXCO member requests to delete a contact, identifying the contact by its permanent member ID, exact name, phone number, or email address.
-2. CoordiMate displays the matching contact and requests confirmation.
-3. EXCO member confirms the deletion.
-4. CoordiMate saves a model without the selected contact, their assignments in any event roster, or their
-   associated attendance records, then updates the live model and confirms the deletion. Events and other contacts
-   remain unchanged.
+1. EXCO member requests to list the contacts that match one or more criteria, each a tag, an event, or an
+   organisation.
+2. CoordiMate shows the contacts that match every criterion, and the number found.
 
    Use case ends.
 
 **Extensions**
 
-* 1a. The EXCO member provides no identifier, more than one identifier, an unknown field, or an invalid member ID.
+* 1a. No criteria are given, a criterion is empty, or a criterion is not a tag, event, or organisation.
+  * 1a1. CoordiMate informs the EXCO member of the error and leaves the displayed list unchanged.
 
+    Use case ends.
+
+* 1b. A criterion's value does not match any saved tag, event, or organisation.
+  * 1b1. CoordiMate informs the EXCO member that the value was not found and leaves the displayed list unchanged.
+
+    Use case ends.
+
+* 2a. No contact matches every criterion.
+  * 2a1. CoordiMate shows an empty list and informs the EXCO member that no contacts match.
+
+    Use case ends.
+
+#### UC06: Mark a contact as on leave
+
+**MSS**
+
+1. EXCO member requests to mark a contact as on leave until a given date, while adding the contact (UC01) or
+   editing it (UC02).
+2. CoordiMate saves the date and shows the contact as on leave until that date.
+3. After the date has passed, CoordiMate stops showing the contact as on leave, without any action from the EXCO
+   member.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. The date is not a real date, or is in the past.
+  * 1a1. CoordiMate informs the EXCO member of the error and makes no changes.
+
+    Use case resumes from step 1.
+
+* 2a. EXCO member requests to clear the contact's leave before the date has passed.
+  * 2a1. CoordiMate removes the leave date and stops showing the contact as on leave.
+
+    Use case ends.
+
+#### UC07: Create an event
+
+**MSS**
+
+1. EXCO member requests to create an event, providing its name, start date/time, and end date/time.
+2. CoordiMate creates the event and confirms its name, start, and end.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. A detail is missing, empty, repeated, or incorrectly formatted.
   * 1a1. CoordiMate informs the EXCO member of the error.
-  * 1a2. EXCO member provides one valid identifier.
+  * 1a2. EXCO member corrects the details.
 
+    Steps 1a1-1a2 are repeated until the details are valid.<br>
     Use case resumes from step 2.
 
-* 1b. No contact matches the provided identifier.
+* 1b. The start is after the end.
+  * 1b1. CoordiMate informs the EXCO member of the error.
 
-  * 1b1. CoordiMate informs the EXCO member that no matching contact was found.
+    Use case resumes from step 1.
 
-    Use case ends.
-
-* 1c. More than one contact matches the provided name.
-
-  * 1c1. CoordiMate requests a phone number, email address, or member ID to identify the contact.
-  * 1c2. EXCO member provides one of the requested identifiers.
-
-    Use case resumes from step 2.
-
-* 3a. EXCO member declines the deletion.
-
-  * 3a1. CoordiMate leaves the contact unchanged. Only `y` or `Y` confirms; any other input cancels and is consumed.
+* 1c. An event with the same name already exists, ignoring case.
+  * 1c1. CoordiMate informs the EXCO member that the event already exists, and how to restore it if it is
+    [archived](#uc13-archive-and-restore-a-contact).
 
     Use case ends.
 
-**Use case: Create an event**
-
-**Preconditions:** CoordiMate is running.
+#### UC08: Edit an event
 
 **MSS**
 
-1. The Exco member creates an event by entering its name, start date/time, and end date/time using the `addevent` command.
-2. CoordiMate validates the details and creates the event.
-3. CoordiMate displays a confirmation with the event name and its start and end times.
+1. EXCO member requests to change an event's name, start, or end.
+2. CoordiMate updates the event, keeping its members and attendance records, and confirms the new details.
 
    Use case ends.
 
 **Extensions**
 
-* 1a. The event name is empty, a date/time is missing or incorrectly formatted, or a required parameter is repeated.
-  * 1a1. CoordiMate displays the relevant error.
-  * 1a2. The Exco member corrects the details and retries step 1.
-
-* 1b. An event with that name already exists.
-  * 1b1. CoordiMate reports that duplicate event names are not allowed.
-  * 1b2. The Exco member chooses a different name and retries step 1.
-
-* 2a. CoordiMate cannot save the event because the local data file cannot be written or is invalid.
-  * 2a1. CoordiMate displays the relevant error and does not create the event.
+* 1a. No saved event has the given name.
+  * 1a1. CoordiMate informs the EXCO member that the event does not exist.
 
     Use case ends.
 
-**Use case: Assign members to an event**
+* 1b. No new details are given, or a detail is empty or incorrectly formatted.
+  * 1b1. CoordiMate informs the EXCO member of the error.
 
-**Preconditions:** CoordiMate is running. The event and the contacts to be assigned already exist.
+    Use case resumes from step 1.
+
+* 1c. Another event already has the new name, ignoring case.
+  * 1c1. CoordiMate informs the EXCO member of the conflict and makes no changes.
+
+    Use case ends.
+
+* 1d. The new start would be after the end.
+  * 1d1. CoordiMate informs the EXCO member of the error and makes no changes.
+
+    Use case ends.
+
+Deleting an event is similar: the EXCO member identifies the event by name, and CoordiMate deletes it together with
+its member list and attendance records, without asking for confirmation. The contacts themselves are kept.
+Extension 1a also applies.
+
+#### UC09: Assign members to an event
 
 **MSS**
 
-1. The Exco member assigns one or more contacts to an event using the `assign` command, specifying the event name and the permanent member IDs of the contacts.
-2. CoordiMate verifies the event and contacts, then associates the contacts with the event.
-3. CoordiMate confirms how many members were assigned.
+1. EXCO member requests to assign one or more contacts, identified by their member IDs, to an event.
+2. CoordiMate adds the contacts to the event's members, with no attendance marked, and confirms how many were
+   assigned.
 
    Use case ends.
 
 **Extensions**
 
-* 1a. No saved event has the given name, or a member ID is invalid or unknown.
-  * 1a1. CoordiMate displays the relevant error and assigns no contacts.
-  * 1a2. The Exco member corrects the event name or member ID and retries step 1.
+* 1a. No member IDs are given, or a member ID is invalid.
+  * 1a1. CoordiMate informs the EXCO member of the error.
 
-* 1b. No member IDs are provided.
-  * 1b1. CoordiMate reports that at least one contact must be specified.
-  * 1b2. The Exco member provides one or more member IDs and retries step 1.
+    Use case resumes from step 1.
 
-* 2a. A contact is already assigned, or the same member ID appears more than once.
-  * 2a1. CoordiMate avoids creating duplicate assignments and reports the number of newly assigned members.
+* 1b. No saved event has the given name, or no contact has one of the member IDs.
+  * 1b1. CoordiMate informs the EXCO member of the error and assigns no contacts.
 
-* 2b. Every specified contact is already assigned.
-  * 2b1. CoordiMate reports that no changes were made.
+    Use case resumes from step 1.
 
-    Use case ends.
-
-* 2c. CoordiMate cannot save the assignment to the local data file.
-  * 2c1. CoordiMate displays the relevant error and assigns no contacts.
+* 1c. The event or one of the contacts is archived.
+  * 1c1. CoordiMate informs the EXCO member that it must be restored first, and assigns no contacts.
 
     Use case ends.
 
-**Use case: Remove members from an event**
+* 2a. Some of the contacts are already members of the event.
+  * 2a1. CoordiMate assigns only the other contacts, and reports how many were already assigned.
 
-**Preconditions:** CoordiMate is running. The event exists and has at least one member.
+    Use case ends.
+
+* 2b. All of the contacts are already members of the event.
+  * 2b1. CoordiMate informs the EXCO member that no changes were made.
+
+    Use case ends.
+
+Removing members from an event is similar, with these differences:
+
+* In step 2, CoordiMate removes the contacts from the event's members, together with their attendance records for
+  that event.
+* In extensions 2a and 2b, the contacts are not members of the event, instead of already being members.
+* Extension 1c applies only to an archived event. An archived contact can still be removed.
+
+#### UC10: View members of an event
 
 **MSS**
 
-1. The Exco member removes one or more members from an event using the `unassign` command, specifying the event name and the permanent member IDs of the contacts.
-2. CoordiMate verifies the event and contacts, then removes the contacts from the event's members, together with their attendance records for that event.
-3. CoordiMate confirms how many members were removed.
+1. EXCO member requests to view the members of an event.
+2. CoordiMate shows only the event's members in the contact list, and confirms how many are shown.
 
    Use case ends.
 
 **Extensions**
 
-* 1a. No saved event has the given name, or a member ID is invalid or unknown.
-  * 1a1. CoordiMate displays the relevant error and removes no members.
-  * 1a2. The Exco member corrects the event name or member ID and retries step 1.
-
-* 1b. No member IDs are provided.
-  * 1b1. CoordiMate reports that at least one contact must be specified.
-  * 1b2. The Exco member provides one or more member IDs and retries step 1.
-
-* 2a. A specified contact is not assigned to the event, or the same member ID appears more than once.
-  * 2a1. CoordiMate skips those contacts and reports the number of members removed.
-
-* 2b. None of the specified contacts are assigned to the event.
-  * 2b1. CoordiMate reports that no changes were made.
+* 1a. No saved event has the given name.
+  * 1a1. CoordiMate informs the EXCO member that the event does not exist and leaves the contact list unchanged.
 
     Use case ends.
-
-* 2c. CoordiMate cannot save the change to the local data file.
-  * 2c1. CoordiMate displays the relevant error and removes no members.
-
-    Use case ends.
-
-**Use case: View members of an event**
-
-**Preconditions:** CoordiMate is running. The event exists.
-
-**MSS**
-
-1. The Exco member requests to view the members of an event using the `members` command, specifying the event name.
-2. CoordiMate switches to the contact list and shows only the event's members, with their contact details.
-3. CoordiMate confirms how many members are shown.
-
-   Use case ends.
-
-**Extensions**
-
-* 1a. No saved event has the given name, or the command format is invalid.
-  * 1a1. CoordiMate displays the relevant error and leaves the contact list unchanged.
-  * 1a2. The Exco member corrects the command and retries step 1.
 
 * 2a. The event has no members.
-  * 2a1. CoordiMate shows an empty contact list and reports that the event has no members.
+  * 2a1. CoordiMate shows an empty contact list and informs the EXCO member that the event has no members.
 
     Use case ends.
 
-* 3a. The Exco member removes a shown member from the event, or renames the event.
-  * 3a1. CoordiMate updates the shown list to the event's current members.
+* 2b. Some of the event's members are outside the current archive view (archived members in the normal view, or active members in the archived view).
+  * 2b1. CoordiMate shows only the members in the current archive view, and informs the EXCO member how many members are hidden.
+
+    Use case ends.
+
+* 2c. While the members are shown, a member is assigned or removed, or the event is renamed.
+  * 2c1. CoordiMate updates the shown list to the event's current members.
+
+    Use case ends.
+
+#### UC11: Record event attendance
+
+**MSS**
+
+1. EXCO member views the members of an event (UC10).
+2. EXCO member marks a member of the event as present or absent.
+3. CoordiMate records the attendance status and confirms the update.
+4. Steps 2-3 are repeated for each member whose attendance is to be recorded.
+
+   Use case ends.
+
+**Extensions**
+
+* 2a. No saved event has the given name, or the contact is not a member of the event.
+  * 2a1. CoordiMate informs the EXCO member of the error.
+
+    Use case resumes from step 2.
+
+* 2b. The status is neither present nor absent.
+  * 2b1. CoordiMate informs the EXCO member of the valid statuses.
+
+    Use case resumes from step 2.
+
+* 2c. The member already has the given status.
+  * 2c1. CoordiMate informs the EXCO member that no changes were made.
+
+    Use case resumes from step 4.
+
+#### UC12: Dismiss an event reminder
+
+**Preconditions:** At least one event has an eligible, undismissed [reminder](#glossary).
+
+**MSS**
+
+1. CoordiMate shows numbered reminders in the **Upcoming events** panel, in order of start time.
+2. EXCO member requests to dismiss a reminder, identifying it by its number.
+3. CoordiMate hides the reminder, saves the dismissal, and renumbers the remaining reminders.
+
+   Use case ends.
+
+**Extensions**
+
+* 2a. No reminder has the given number.
+  * 2a1. CoordiMate informs the EXCO member of the error.
+
+    Use case resumes from step 2.
+
+* 3a. CoordiMate cannot load or save the local data file.
+  * 3a1. CoordiMate hides the reminder for the current session only, and warns the EXCO member that it may reappear
+    after restarting.
+
+    Use case ends.
+
+* 3b. The EXCO member later changes the event's start.
+  * 3b1. CoordiMate shows the reminder again if the new start qualifies for a [reminder](#glossary).
+
+    Use case ends.
+
+#### UC13: Archive and restore a contact
+
+**MSS**
+
+1. EXCO member requests to archive a contact, identifying it by its member ID.
+2. CoordiMate hides the contact from the contact list, keeping its event memberships and attendance records, and
+   confirms the archiving.
+3. EXCO member requests to view archived contacts and events.
+4. CoordiMate shows only the archived contacts and events.
+5. EXCO member requests to restore the contact, identifying it by its member ID.
+6. CoordiMate returns the contact to the contact list and confirms the restoration.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. No contact has the given member ID.
+  * 1a1. CoordiMate informs the EXCO member of the error.
+
+    Use case ends.
+
+* 1b. The contact is already archived.
+  * 1b1. CoordiMate informs the EXCO member that no changes were made.
+
+    Use case ends.
+
+* 5a. The contact is not archived.
+  * 5a1. CoordiMate informs the EXCO member that no changes were made.
+
+    Use case ends.
+
+Archiving and restoring an event is similar, with the event identified by its name. While an event is archived, it
+has no reminder, its members cannot be changed ([UC09](#uc09-assign-members-to-an-event)), and no new event can
+use its name ([UC07](#uc07-create-an-event)).
+
+#### UC14: Manage tags
+
+**MSS**
+
+1. EXCO member requests to create a tag.
+2. CoordiMate adds the tag to the tag list and confirms its creation.
+3. EXCO member requests to rename a tag.
+4. CoordiMate renames the tag, including on every contact that has it, and confirms the change.
+5. EXCO member requests to delete a tag.
+6. CoordiMate deletes the tag, removes it from every contact that has it, and confirms the deletion.
+
+   Use case ends.
+
+**Extensions**
+
+* 1a. The tag name is invalid, for example because it contains spaces or is longer than 30 characters.
+  * 1a1. CoordiMate informs the EXCO member of the error.
+
+    Use case resumes from step 1.
+
+* 1b. A tag with the same name already exists, ignoring case.
+  * 1b1. CoordiMate informs the EXCO member that the tag already exists and makes no changes.
+
+    Use case ends.
+
+* 3a. The tag to rename does not exist.
+  * 3a1. CoordiMate informs the EXCO member that the tag does not exist.
+
+    Use case ends.
+
+* 3b. The new name is invalid, or another tag already has it.
+  * 3b1. CoordiMate informs the EXCO member of the error and makes no changes.
 
     Use case resumes from step 3.
 
-* 3b. The Exco member wants to see all contacts again.
-  * 3b1. The Exco member uses the `list` command, and CoordiMate shows all contacts.
+* 5a. The tag to delete does not exist.
+  * 5a1. CoordiMate informs the EXCO member that the tag does not exist.
 
     Use case ends.
-
-**Use case: Record event attendance**
-
-**Preconditions:** CoordiMate is running. The event exists and has at least one member assigned to it.
-
-**MSS**
-
-1. The Exco member requests to view the list of members assigned to an event (use case: View members of an event).
-2. CoordiMate displays the list of members for that event.
-3. The Exco member marks a member's attendance status as present or absent using the `markattendance` command.
-4. CoordiMate records the attendance status and confirms the update.
-5. Steps 3-4 are repeated for each member whose attendance is to be recorded.
-
-   Use case ends.
-
-**Extensions**
-
-* 1a. The event does not exist.
-  * 1a1. CoordiMate displays the relevant error.
-
-    Use case ends.
-
-* 2a. No members are assigned to the event.
-  * 2a1. CoordiMate informs the Exco member that the event has no members.
-
-    Use case ends.
-
-* 3a. The specified member is not assigned to the event.
-  * 3a1. CoordiMate displays the relevant error.
-  * The Exco member retries step 3.
-
-* 3b. The attendance status given is neither "present" nor "absent".
-  * 3b1. CoordiMate displays an error listing the valid status values.
-  * The Exco member retries step 3.
-
-* 3c. The member already has the specified attendance status recorded.
-  * 3c1. CoordiMate informs the Exco member that no change was made.
-
-    Use case resumes from step 5.
-
-* 4a. CoordiMate cannot save the updated attendance record to the local data file.
-  * 4a1. CoordiMate displays the relevant error and does not update the displayed status.
-
-    Use case resumes from step 5.
 
 ### Non-Functional Requirements
 
-1.  Should work on any _mainstream OS_ (Windows, macOS, Linux) as long as it has Java `25` or above installed.
-2.  Should be able to hold up to 250 contacts and 6 events per semester without a noticeable sluggishness in performance for typical usage.
-3.  A user with above average typing speed for regular English text (i.e. not code, not system admin commands) should be able to accomplish most of the tasks faster using commands than using the mouse.
-4.  Should respond to any user command within 2 seconds under typical load (up to 250 contacts, 6 events).
-5.  Should not require an internet connection to operate, since all contact, event, and attendance data is stored and managed locally.
-6.  Should not lose previously saved data if the application terminates unexpectedly (e.g. crash, power loss) mid-operation.
-7.  Data should be stored in a human-editable, non-proprietary file format (not a DBMS), so users can back up, inspect, or migrate their data manually.
-8.  Should be shipped as a single JAR file that does not require a separate installer.
-9.  A first-time user with no prior experience should be able to complete the in-app tutorial and add their first contact within 10 minutes.
-10. The colour-coding feature should not be the sole means of distinguishing contact categories, so the app remains usable by colour-blind users (e.g. tags are also shown as text).
+These are acceptance targets, not measured results. Performance tests should use one running CoordiMate instance
+and a valid data file on writable local storage. Record the OS, Java version, processor, memory, and dataset with
+the results. Speed and onboarding targets require timed trials with users from the target user profile.
+
+1.  Should run on the [mainstream OS platforms](#glossary) with Java `25`, targeting the OS and Java configurations
+    used by the project's CI workflow. The packaged JAR should also receive a manual launch check on each target
+    platform before release compatibility is claimed.
+2.  Should store and reload a dataset at the maximum [typical load](#glossary). Successfully saved contact details,
+    member IDs, tags, event schedules, assignments, attendance, archive flags, leave dates, and reminder dismissals
+    should survive a normal restart. Performance at this load is assessed using NFR 4.
+    This is a capacity target for the whole local dataset, not an enforced data limit. The app does not partition
+    data by semester.
+3.  For users familiar with CoordiMate's keyboard shortcuts, a short sequence of switching views and selecting
+    adjacent cards should take less time on average using shortcuts than using the mouse. Compare repeated
+    trials by the same user from the same starting view and selection, including keyboard mode changes.
+4.  Under the [typical load](#glossary), common commands such as `add`, `edit`, `search`, `filter`, `list`,
+    `addevent`, `assign`, and `markattendance` should each have a median response time of at most 2 seconds over
+    repeated trials on the recorded test machine. Measure from pressing Enter to visible feedback and completion
+    of the resulting view update, including any save. Exclude application startup and time waiting for user
+    confirmation; measure the prompt and the response after confirmation separately when applicable.
+5.  Contact, tag, event, attendance, archive, and reminder features, including built-in Help and the tutorial,
+    should work without an internet connection. Opening the online User Guide requires internet access.
+6.  If only the application process terminates during a save while the OS remains running, an existing valid
+    local data file should retain either the previous complete dataset or the new complete dataset. This assumes
+    that the filesystem and Java provider support atomic replacement, as described in
+    [Saving data atomically](#saving-data-atomically). It covers application data, excluding user preferences,
+    OS crashes, power loss, storage hardware failure, and external file modification.
+7.  Application data should be stored in human-readable JSON that users can inspect and back up with ordinary
+    file tools. Manual edits should be made with the app closed and must satisfy the saved-data constraints.
+8.  Should be distributed as a single application JAR with no CoordiMate installer, assuming the required Java
+    environment is already installed.
+9.  After completing or closing the tutorial, a first-time user from the target user profile should be able to
+    add one contact within 10 minutes without assistance from another person. Supply valid, unique name, phone,
+    email, and role values as task input. Start timing when the command box is ready for input and stop when
+    the saved contact is visible with those details and a success message. Consulting built-in Help, command
+    hints, or the User Guide and correcting commands count towards the limit; installation, launch, and tutorial
+    reading time do not.
+10. Every [colour-coded tag](#glossary) should display its name as text so that contact categories can be
+    distinguished without relying on colour.
 
 ### Glossary
 
-* **Archive**: To move a contact or event out of the active list without permanently deleting it, so that it can still be retrieved later.
+* **Archive**: To mark a contact or event as archived, hiding it from the active lists while preserving its details, event assignments, and attendance records.
 * **Assigned member**: A contact who has been assigned to a particular event. Also referred to as a *member* of that event.
-* **Attendance status**: Whether an assigned member was `present` or `absent` at an event.
+* **Attendance status**: A recorded value of `present` or `absent` for an assigned member at an event. A member with no attendance record is shown as unmarked, not automatically absent.
 * **CCA (Co-Curricular Activity)**: A student club or society in a university, such as a band, sports team or interest group.
-* **CLI (Command Line Interface)**: A way of using the app by typing text commands, as opposed to clicking buttons in a graphical interface.
-* **Colour-code**: To assign a colour to a contact so that contacts of the same role or group can be recognised visually.
+* **CLI (Command Line Interface)**: An interface operated by typing text commands. CoordiMate accepts these commands in a command box within its graphical window.
+* **Colour-coded tag**: A tag whose display colour is assigned by the app based on its name. `EXCO`, `Logistics`, `Sponsor`, and `UniversityStaff` have distinct built-in colours; other tags share a default colour. Users cannot choose tag or contact colours.
+* **Command mode**: The keyboard mode for entering commands in the command box.
 * **Committee handover**: The transfer of responsibilities and information from an outgoing EXCO to the incoming EXCO.
-* **Contact**: A person saved in CoordiMate, with details such as name, phone number, email address and role.
+* **Contact**: A person whose details are saved in CoordiMate and identified by a member ID.
 * **Custom tag**: A tag created by the user, to categorise contacts in ways not covered by the default tags.
 * **Default tag**: A tag that is available without the user creating it: `EXCO`, `Sponsor`, `UniversityStaff` and `Logistics`.
-* **Member ID**: A unique, permanent positive integer assigned to a contact, displayed as `ID: <number>`, and used to identify them in commands across searches, filters, and restarts.
-* **Duplicate contact**: A contact with the same name (ignoring case and surrounding spaces), normalised phone number, or email address as another saved contact.
-* **Event**: An activity organised by the CCA, such as a concert or fair, with a unique name, a start date/time and an end date/time.
+* **Duplicate contact**: A contact with the same name (ignoring case and normalising spaces), normalised phone number, or email address (ignoring case) as another saved contact, including an archived one.
+* **Event**: A CCA activity recorded in CoordiMate, such as a concert or fair, identified by a name that is unique ignoring case and extra spaces.
 * **Event lead**: An EXCO member who is in charge of organising a particular event.
 * **EXCO (Executive Committee)**: The group of students elected to lead and run a CCA.
 * **External contact**: A contact from outside the CCA, such as a sponsor, university staff member, or EXCO member of a collaborating CCA.
 * **Future event**: An event whose start date/time is later than the current date/time.
 * **Internal contact**: A contact from within the CCA, such as a member, fellow EXCO member or advisor.
 * **JAR file**: A single file that packages a Java application so that it can be run without installation.
-* **Local data file**: The file on the user's computer where CoordiMate automatically saves all contacts, events and attendance records.
-* **Mainstream OS**: Windows, Linux, Unix, or macOS
+* **Local data file**: The JSON file on the user's computer where CoordiMate saves contacts, tags, events, attendance records, and reminder dismissals. Its default path is `data/coordimate.json`, relative to the working directory.
+* **Mainstream OS**: Windows, macOS, or Linux.
+* **Member ID**: A unique, permanent positive integer assigned to a contact, displayed as `ID: <number>`, and used in commands across searches, filters, and restarts.
+* **Navigation mode**: The keyboard mode in which key presses browse cards and switch views.
 * **Normalised phone number**: A phone number with spaces, hyphens and brackets removed, used to detect duplicates. For example, `+65 9123 4567` and `+6591234567` are the same.
-* **On leave**: A temporary status marking a contact as unavailable until a specified date, after which it is cleared automatically.
-* **Organisation**: The external company or body that a contact belongs to, such as a sponsor company or university office.
+* **On leave**: A contact with a saved leave end date is unavailable through that date, inclusive, using the computer's local date.
+* **Organisation**: The company or body that a contact belongs to, such as a CCA, sponsor company, or university office.
 * **Prefix**: The short label before a value in a command that tells CoordiMate which field it belongs to, such as `n/` for name or `t/` for tag.
+* **Reminder**: An in-app notice for an upcoming, non-archived event, shown only while CoordiMate is running. Timed starts qualify from 24 hours before the start through the start time; date-only starts qualify on the preceding day and the start date. Reminders refresh at startup, after commands, and once per minute.
 * **Role**: A contact's responsibility or position in relation to the CCA, such as `Logistics Lead` or `Vice-President`.
 * **Tag**: A short label attached to a contact to categorise it, such as `EXCO` or `Sponsor`. A contact can have multiple tags.
-* **Telegram handle**: A user's username on the Telegram messaging app, such as `@aishatan`.
-* **Tutorial**: An in-app guide that introduces a first-time user to CoordiMate's key features.
-* **Typical usage**: Using CoordiMate with up to 250 contacts and 6 events, as described in the NFRs.
+* **Tutorial**: An in-app introduction to CoordiMate's views, commands, and keyboard navigation.
+* **Typical load**: A local dataset of up to 250 contacts and 6 events in total, including archived items, with up to 250 assigned members and their attendance records per event.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -1068,6 +1482,12 @@ The app then starts with the six sample contacts (member IDs `1` to `6`), the `F
 event, and no custom tags. Deleting contacts by hand is not enough, because member IDs are never reused.
 </box>
 
+<box type="info" seamless>
+
+**Note:** Date placeholders use the computer's local time zone and `dd-MM-yyyy` format. `TODAY` is today's date,
+`TOMORROW` is tomorrow's date, `FUTURE_DATE` is any date after today, and `PAST_DATE` is any date before today.
+</box>
+
 ### Launch and shutdown
 
 1. Initial launch
@@ -1076,7 +1496,7 @@ event, and no custom tags. Deleting contacts by hand is not enough, because memb
 
    1. Double-click the JAR file.<br>
       Expected: The GUI opens maximized with a set of sample contacts and a sample event. The first-launch tutorial
-      can show the event's assigned members and attendance information.
+      opens automatically and can show the event's assigned members and attendance information. Close it before continuing.
 
 1. Saving window preferences
 
@@ -1089,6 +1509,97 @@ event, and no custom tags. Deleting contacts by hand is not enough, because memb
 
    1. Test case: `exit`<br>
       Expected: The app closes. Relaunching it shows the same data as before.
+
+### Tutorial and Help
+
+Closing the tutorial with Esc or **Close** also marks it as seen. Restoring the sample data does not reset this
+preference, which is stored in `preferences.json` in the folder from which CoordiMate is launched.
+
+1. Test case: `tutorial`, then press Right Arrow, Left Arrow, Tab, and Shift+Tab.<br>
+   Expected: The overlay starts at **Step 1 of 16**. Arrow keys change steps and Tab moves focus between the
+   tutorial's enabled buttons. The highlighted area stays bright, and the command box is disabled. Press Esc to close it;
+   F2 (Fn+F2 if required) reopens it at step 1. Close it with Esc again.
+
+1. Test case: Close the app. In `preferences.json`, set `hasSeenTutorial` to `false`, leaving the window settings
+   unchanged. Relaunch the app and complete the automatically opened tutorial by advancing to step 16 and selecting
+   **Finish**, without closing it another way. Close and relaunch the app again.<br>
+   Expected: The tutorial opens automatically after resetting the flag, visits Contacts, Events, Tags, and Help,
+   and closes after Finish. On the final relaunch, it does not open automatically. Contacts, events, and tags are unchanged.
+
+1. Test case: `help`, then resize the window and scroll its command table.<br>
+   Expected: The Help window shows keyboard navigation, command formats, and the User Guide URL. Press Esc to
+   close it; CoordiMate stays open. F1 (Fn+F1 if required) opens Help again; select **Close** to dismiss it.
+
+1. Other incorrect commands to try: `tutorial extra`, `help extra`<br>
+   Expected: Neither window opens. The status message shows `Invalid command format.`
+
+### Keyboard navigation
+
+1. Prerequisites: Restore the sample data. Run `list`, select Alex Yeoh,
+   then click the command box and type `search Bernice` without submitting it.
+
+1. Test case: Press Esc, J, K, then K again.<br>
+   Expected: The indicator shows **NAVIGATION**. Bernice is selected after J, then Alex after K. The extra K
+   keeps Alex selected at the start of the list. The unfinished command remains in the disabled command box.
+
+1. Test case: Press S three times, using J and K in the Events and Tags views.<br>
+   Expected: S cycles Contacts, Events, Tags, then Contacts. J and K navigate the active list; the corresponding
+   details update. Returning to Contacts keeps Alex selected. Enter and Up do not submit or replace the draft.
+
+1. Test case: Press I, then Enter.<br>
+   Expected: The indicator shows **COMMAND**, the command box regains focus with `search Bernice` unchanged,
+   and Enter executes it. Only Bernice Yu is listed.
+
+### Command history
+
+1. Prerequisites: Restore the sample data. Run `list`, then `search alex`.
+
+1. Test case: Type `search Bernice` without submitting it. Press Up twice, then Down twice.<br>
+   Expected: The input shows `search alex`, `list`, `search alex`, then the unfinished `search Bernice`.
+   No command executes while browsing; Alex remains the only result.
+
+1. Test case: Press Up, change the recalled command to `search Charlotte`, and press Enter. Press Up twice.<br>
+   Expected: Charlotte becomes the only result. Up recalls `search Charlotte`, then the original `search alex`;
+   editing a recalled command has not overwritten its earlier entry.
+
+1. Test case: Close and relaunch the app, then press Up in the empty command box.<br>
+   Expected: The box stays empty because commands from the previous session are not retained.
+
+### Adding a contact
+
+1. Prerequisites: Restore the sample data and run `list`.
+
+1. Test case: `add n/Aisha Tan p/+6591234567 e/aisha@example.com r/Logistics`<br>
+   Expected: The Contacts view selects Aisha Tan with `ID: 7` and the supplied details. The status message shows
+   `Contact saved successfully: Aisha Tan`.
+
+1. Test case: Repeat the previous command.<br>
+   Expected: No contact is added. The status message shows
+   `A contact with this name, phone number, or email already exists. No changes were made.`
+
+1. Other incorrect add commands to try: `add n/Ben Ong p/91112222 e/ben@example.com` (missing role),
+   `add n/Ben Ong p/abc e/ben@example.com r/Member`<br>
+   Expected: No contact is added. The missing-role command reports `Invalid command format.`; the invalid-phone
+   command explains the phone-number constraints.
+
+### Editing a contact
+
+1. Prerequisites: Restore the sample data and run `search Charlotte`, showing only member ID `3`.
+
+1. Test case: `edit 3 r/Treasurer o/NUS Student Affairs`<br>
+   Expected: All six contacts are listed and Charlotte is selected with the new role and organisation. Her ID
+   stays `3`, and other fields are unchanged. Feedback shows `Contact updated successfully:` and her details.
+
+1. Test case: `edit 3 o/`<br>
+   Expected: Charlotte's organisation is cleared. Her other details are unchanged.
+
+1. Test case: `edit 3 n/Bernice Yu`<br>
+   Expected: No contact changes. The status message shows
+   `This update conflicts with another saved contact. No changes were made.`
+
+1. Other incorrect edit commands to try: `edit 3`, `edit 99 r/Treasurer` (where member ID `99` does not exist)<br>
+   Expected: No contact changes. The first shows `Provide at least one field or tag operation to edit.`;
+   the second shows `No contact exists with member ID: 99. Use an existing member ID.`
 
 ### Deleting a contact
 
@@ -1118,6 +1629,22 @@ event, and no custom tags. Deleting contacts by hand is not enough, because memb
 
 1. Test case: `search`<br>
    Expected: The list is unchanged. The status message shows `Invalid command format.`
+
+### Listing contacts and events
+
+1. Prerequisites: Restore the sample data and run `search alex`.
+
+1. Test case: `list`<br>
+   Expected: The Contacts view shows all six active contacts again, and Events contains the sample event.
+   The status message shows `Listed all contacts.`
+
+1. Test case: `list archived`, then `list`<br>
+   Expected: The archived contact and event lists are empty, since nothing is archived. `list` restores the active
+   lists. Archiving and restoring entries is tested separately below.
+
+1. Test case: `list all`<br>
+   Expected: The lists are unchanged. The status message shows
+   `Unknown list option: all. Use list, or list archived to show archived contacts and events.`
 
 ### Filtering contacts
 
@@ -1208,10 +1735,12 @@ event, and no custom tags. Deleting contacts by hand is not enough, because memb
 
 1. Selecting by reminder order and saving the dismissal
 
-   1. Prerequisites: Use test data with no active reminders. Replace `TOMORROW` below with tomorrow's date in
-      `dd-MM-yyyy` format, using the computer's local time zone. Create `Zulu Reminder` first with
+   1. Prerequisites: Use test data with no active reminders. Create `Zulu Reminder` first with
       `addevent evn/Zulu Reminder st/TOMORROW et/TOMORROW`, then create `alpha Reminder` with the same dates.
-      The panel should show `alpha Reminder` at index 1 and `Zulu Reminder` at index 2.
+
+   1. Test case: Switch between the Contacts, Events, and Tags views.<br>
+      Expected: The Upcoming events panel appears and stays visible, showing `alpha Reminder` at index 1 and
+      `Zulu Reminder` at index 2, with their saved dates.
 
    1. Test case: Select the **Tags** view, then enter `dismiss 1`.<br>
       Expected: `alpha Reminder` disappears, `Zulu Reminder` becomes index 1, and feedback shows
@@ -1344,12 +1873,6 @@ event, and no custom tags. Deleting contacts by hand is not enough, because memb
 
 ### Marking a contact as on leave
 
-<box type="info" seamless>
-
-**Note:** In these tests, `FUTURE_DATE` is any date after today in `dd-MM-yyyy` format, `TODAY` is today's date,
-and `PAST_DATE` is any date before today, such as `01-01-2020`.
-</box>
-
 1. Setting and clearing leave
 
    1. Prerequisites: Restore the sample data and run `list`.
@@ -1432,8 +1955,8 @@ and `PAST_DATE` is any date before today, such as `01-01-2020`.
 
 1. Archiving and restoring an event
 
-   1. Prerequisites: Run `addevent evn/Orientation st/DATE et/DATE`, where `DATE` is tomorrow in `dd-MM-yyyy`
-      format. Assign the 1st contact with `assign evn/Orientation c/ID`, using its member ID. A reminder for
+   1. Prerequisites: Run `addevent evn/Orientation st/TOMORROW et/TOMORROW`.
+      Assign the 1st contact with `assign evn/Orientation c/ID`, using its member ID. A reminder for
       `Orientation` is shown.
 
    1. Test case: `archiveevent evn/orientation`<br>
@@ -1444,7 +1967,7 @@ and `PAST_DATE` is any date before today, such as `01-01-2020`.
    1. Test case: `assign evn/Orientation c/ID` with another contact's ID<br>
       Expected: No change. The status message says the event is archived and suggests `unarchiveevent`.
 
-   1. Test case: `addevent evn/Orientation st/DATE et/DATE`<br>
+   1. Test case: `addevent evn/Orientation st/TOMORROW et/TOMORROW`<br>
       Expected: No event is added. The status message says an archived event with that name already exists.
 
    1. Test case: Close and relaunch the app, run `list archived`, then open the **Events** tab.<br>
@@ -1468,6 +1991,30 @@ and `PAST_DATE` is any date before today, such as `01-01-2020`.
 
    1. Test case: `unassign evn/Orientation c/ID`<br>
       Expected: The archived contact is removed from the event.
+
+### Clearing all data
+
+<box type="warning" seamless>
+
+**Caution:** `clear` deletes saved data immediately and cannot be undone. Back up `data/coordimate.json` first
+if it contains data you want to keep.
+</box>
+
+1. Prerequisites: Restore the sample data. Run `archive 2`, `archiveevent evn/Freshmen Welcome Night`,
+   `addtag t/ClearTest`, and `addevent evn/ClearTest st/TOMORROW et/TOMORROW`.
+   Bernice Yu and `Freshmen Welcome Night` are archived; `ClearTest` stays active and has a reminder.
+
+1. Test case: `clear extra`<br>
+   Expected: The status message shows `Invalid command format.` No data changes.
+
+1. Test case: `clear`, then `list archived`<br>
+   Expected: `clear` reports `CoordiMate has been cleared!` without confirmation. Active and archived contacts
+   and events are removed, and the reminder panel hides. Tags contains only `EXCO`, `Sponsor`, `UniversityStaff`,
+   and `Logistics`; `ClearTest` is removed. `list archived` shows no archived contacts or events.
+
+1. Test case: Close and relaunch the app, run `list`, then
+   `add n/ID Reset p/91234567 e/idreset@example.com r/Member`.<br>
+   Expected: The contact and event lists are still empty before the add. ID Reset is then added with `ID: 1`.
 
 ### Saving data
 

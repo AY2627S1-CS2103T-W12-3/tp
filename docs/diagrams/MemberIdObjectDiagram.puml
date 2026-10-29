@@ -1,0 +1,38 @@
+@startuml
+!include style.puml
+show members
+skinparam arrowThickness 1.1
+skinparam arrowColor MODEL_COLOR
+
+object "<u>:CoordiMate</u>" as coordiMate {
+  nextMemberId: 5
+}
+
+object "<u>alex:Person</u>" as alex {
+  name: Alex Yeoh
+  memberId: 1
+}
+
+object "<u>bernice:Person</u>" as bernice {
+  name: Bernice Yu
+  memberId: 2
+}
+
+object "<u>david:Person</u>" as david {
+  name: David Li
+  memberId: 4
+}
+
+object "<u>:UniquePersonList</u>" as persons
+
+coordiMate --> persons
+persons --> alex
+persons --> bernice
+persons --> david
+
+note bottom of david
+  Added after the contact with
+  memberId 3 was deleted.
+  ID 3 is never given out again.
+end note
+@enduml

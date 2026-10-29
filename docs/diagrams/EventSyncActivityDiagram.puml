@@ -1,0 +1,25 @@
+@startuml
+skin rose
+skinparam ActivityFontSize 15
+skinparam ArrowFontSize 12
+start
+:A contact is renamed or deleted;
+:Build updated copies of the events
+that list the contact;
+
+'Since the beta syntax does not support placing the condition outside the
+'diamond we place it as the true branch instead.
+
+if () then ([renamed, and one of those events
+already lists the new name])
+    :Reject the rename;
+    :Leave the contact and
+    events unchanged;
+    stop
+else ([else])
+endif
+:Replace or remove the contact;
+:Replace the events with
+the updated copies;
+stop
+@enduml

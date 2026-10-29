@@ -1,0 +1,15 @@
+@startuml
+skin rose
+skinparam ArrowFontSize 12
+hide empty description
+
+[*] --> Command
+
+state "Command mode" as Command
+state "Navigation mode" as Navigation
+
+Command --> Navigation : Esc / click a card list
+Navigation --> Command : release I / click the command box\n/ choose a command row
+Command --> Command : Up, Down / browse history
+Navigation --> Navigation : J, K / move between cards\nS / switch view
+@enduml

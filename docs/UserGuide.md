@@ -143,7 +143,7 @@ A command that breaks a constraint is rejected and makes no changes.
 |---|---|---|
 | `NAME`, `MEMBER_NAME` | `n/`, `mem/` | 1 to 80 characters. Letters, spaces, hyphens (`-`), apostrophes (`'`), and periods (`.`) only, with at least one letter. The words `s/o` and `d/o` (any capitalization) are also allowed, e.g. `Rajesh s/o Kumar`. Digits are not allowed. Several spaces in a row count as one. Contact names are unique, ignoring case and extra spaces. |
 | `PHONE` | `p/` | 7 to 15 digits. May start with `+` or a bracketed country code such as `(+65)`, and may contain spaces, hyphens, and brackets. Brackets must come in pairs that each enclose at least one digit, and cannot be nested. Unique among contacts once spaces, hyphens, and brackets are removed. |
-| `EMAIL` | `e/` | `local-part@domain`. The local part uses letters, digits, and `_`, `%`, `+`, `-`, `.`; it cannot start or end with a period or contain two periods in a row. The domain is made of labels separated by periods; each label uses letters, digits, and hyphens and cannot start or end with a hyphen. The last label has at least 2 letters. Unique among contacts, ignoring case. |
+| `EMAIL` | `e/` | `local-part@domain`, at most 254 characters, with a local part of at most 64 characters. The local part uses letters, digits, and `_`, `%`, `+`, `-`, `.`; it cannot start or end with a period or contain two periods in a row. The domain is made of labels separated by periods; each label uses letters, digits, and hyphens and cannot start or end with a hyphen. The last label has at least 2 letters. Unique among contacts, ignoring case. |
 | `ROLE` | `r/` | 1 to 50 characters. Letters, digits, spaces, hyphens, and `/` only, with at least one letter or digit. |
 | `BIRTHDAY` | `b/` | A real date in `dd-MM-yyyy` format that is not in the future, e.g. `18-06-2004`. |
 | `LEAVE_END_DATE` | `lv/` | A real date in `dd-MM-yyyy` format that is not in the past, e.g. `30-11-2026`. Today's date is allowed. |
@@ -156,6 +156,8 @@ A command that breaks a constraint is rejected and makes no changes.
 | `STATUS` | `att/` | `present` or `absent`, ignoring case. |
 | `MEMBER_ID` | `c/` for `assign` and `unassign`; none for `edit`, `delete`, `archive`, and `unarchive` | A permanent positive integer from 1 to 2147483647 identifying a saved contact, independent of the displayed list. |
 | `KEYWORD` | none | At least one non-space character. |
+
+"Printable" excludes line breaks and other control characters. "Visible" excludes spaces, zero-width and formatting characters, accent marks on their own, and blank filler characters such as `U+3164` Hangul Filler.
 
 <box type="info" seamless>
 
@@ -269,6 +271,9 @@ Format: `exit`
 CoordiMate starts in **Command mode**, with the command box ready for input. The mode indicator below the command box
 shows the current mode and its available shortcuts.
 
+![Navigation mode](images/navigationMode.png)
+*The mode indicator below the command box, showing Navigation mode and its shortcuts.*
+
 Use the following keys to browse Contacts, Events, or Tags without the mouse:
 
 | Key | Result |
@@ -324,40 +329,20 @@ If the local contact data cannot be loaded or saved, CoordiMate reports an error
 
 Format: `add n/NAME p/PHONE e/EMAIL r/ROLE [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [lv/LEAVE_END_DATE] [t/TAG]... [m/NOTE]`
 
-Name, phone, email, and role are required. Each field accepts the following values; surrounding spaces are ignored:
-
-| Field | Constraints |
-|---|---|
-| `NAME` | 1 to 80 characters: letters, spaces, hyphens (`-`), apostrophes (`'`), and periods (`.`), with at least one letter. The words `s/o` and `d/o` are also allowed. |
-| `PHONE` | 7 to 15 digits, optionally starting with `+` or `(+country code)`, with optional spaces, hyphens, and matching brackets around digits, e.g. `(+65) 9123 4567`. |
-| `EMAIL` | `local-part@domain`, at most 254 characters, with a local part of at most 64 characters. |
-| `ROLE` | 1 to 50 characters: letters, digits, spaces, hyphens, and slashes (`/`), with at least one letter or digit. |
-| `BIRTHDAY` | A real date in `dd-MM-yyyy` format that is not in the future. |
-| `LEAVE_END_DATE` | A real date in `dd-MM-yyyy` format that is not in the past. |
-| `ADDRESS` | 1 to 200 printable characters, including at least one visible character. |
-| `ORGANISATION` | 1 to 80 characters: letters, digits, spaces, and `-` `&` `.` `,` `'` `(` `)` `/`, with at least one letter or digit, e.g. `St. John's Ambulance`. Several spaces in a row are saved as one, so `o/NUS  Student Affairs` is saved as `NUS Student Affairs`. |
-| `NOTE` | 1 to 500 printable characters, including at least one visible character. |
-| `TAG` | 1 to 30 letters or digits with no spaces. At most 15 tags per contact. |
-
-"Printable" excludes line breaks and other control characters. "Visible" excludes spaces, zero-width and formatting
-characters, accent marks on their own, and blank filler characters such as `U+3164` Hangul Filler.
-A value that breaks these rules is rejected with a
-message stating the field's constraints, such as
-`Invalid organisation. Use 1 to 80 characters: letters, digits, spaces, and - & . , ' ( ) /, with at least one letter or digit. Example: o/NUS Student Affairs`.
-Birthday, address, organisation, leave end date, and note are optional. An empty `b/`, `a/`, `o/`, `lv/`, or
-`m/` leaves that field unset,
-as does omitting it. Non-tag fields may appear only once; `t/TAG` may repeat. An empty `t/` clears the
-tags collected so far. A tag that matches a saved tag, ignoring capitalization, uses the saved tag's
-capitalization; for example, `t/exco` gives the contact the default `EXCO` tag. A valid new tag keeps its typed
-capitalization and is saved as a custom tag. Successful feedback is
-`Contact saved successfully: NAME`.
-After a successful `add`, CoordiMate selects and reveals the new contact so its details are shown. Unset optional
-values are shown as `— (not specified)` in the details pane, but remain unset in storage.
+* Name, phone, email, and role are required; birthday, address, organisation, leave end date, and note are optional. Surrounding spaces are ignored. Each field follows the constraints in [Parameter constraints](#parameter-constraints).
+* A value that breaks a constraint is rejected with a message stating that field's constraint, such as `Invalid organisation. Use 1 to 80 characters: letters, digits, spaces, and - & . , ' ( ) /, with at least one letter or digit. Example: o/NUS Student Affairs`.
+* An empty `b/`, `a/`, `o/`, `lv/`, or `m/` leaves that field unset, as does omitting it.
+* Non-tag fields may appear only once; `t/TAG` may repeat. An empty `t/` clears the tags collected so far.
+* A tag that matches a saved tag, ignoring capitalization, uses the saved tag's capitalization; for example, `t/exco` gives the contact the default `EXCO` tag. A valid new tag keeps its typed capitalization and is saved as a custom tag.
+* Successful feedback is `Contact saved successfully: NAME`. After a successful `add`, CoordiMate selects and reveals the new contact so its details are shown. Unset optional values are shown as `— (not specified)` in the details pane, but remain unset in storage.
 
 <box type="tip" seamless>
 
 **Tip:** A contact can have up to 15 tags, including zero. Tags that differ only in capitalization count as one. Parameters can be supplied in any order.
 </box>
+
+![Add contact](images/addContact.png)
+*Aisha Tan's contact card and details pane, shown automatically after `add` saves her.*
 
 Examples:
 * `add n/Aisha Tan p/+6591234567 e/aisha@example.com r/Logistics t/EXCO m/Handles venue bookings`
@@ -412,6 +397,9 @@ Phone: +6598765432
 Email: aisha@example.com
 Role: President
 ```
+
+![Edit contact](images/editContact.png)
+*The same contact's details pane after `edit` updates their phone number and email address.*
 
 Examples:
 *  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of member ID `1` to be `91234567` and `johndoe@example.com` respectively.
@@ -483,6 +471,9 @@ Formats: `delete MEMBER_ID` · `delete n/NAME` · `delete p/PHONE` · `delete e/
 * A confirmed deletion is saved before it appears in the contact list. A corrupt data file or failed write leaves the
   contact and events unchanged and reports a contact load or save error.
 
+![Delete contact confirmation](images/deleteContactConfirm.png)
+*The `Confirm deletion? [y/N]` prompt shown after `delete`, before the user responds.*
+
 Examples:
 * `list` followed by `delete 2`, then `y`, deletes the contact with member ID `2`.
 * If Betsy's member ID is `12`, `search Betsy` followed by `delete 12`, then `Y`, deletes Betsy regardless of her position in the results.
@@ -523,6 +514,9 @@ Format: `search KEYWORD`
 * Search checks all saved contacts, including those hidden by the current search or filter.
 * Results replace the displayed contact list. Permanent member IDs remain unchanged; `edit`, `delete`, `assign`, and `unassign` accept those IDs even for hidden contacts. Use `list` to show everyone.
 * If nothing matches, the displayed list is empty and a no-matches message is shown.
+
+![Search contacts](images/searchContact.png)
+*The contact list narrowed down to the one match for `search John`.*
 
 Examples:
 * `search John` matches `John Doe` by name and `john@example.com` by email.
@@ -574,6 +568,9 @@ Format: `filter FIELD/VALUE [FIELD/VALUE]...`
 * A quotation mark with no closing quotation mark, followed by another field, is rejected because it is unclear
   where the value ends: `filter event/"Cali tag/EXCO`.
 
+![Filter contacts](images/filterContact.png)
+*The contact list narrowed down to members matching `filter tag/EXCO`.*
+
 Examples:
 * `filter tag/EXCO` lists contacts tagged `EXCO`.
 * `filter event/Final Concert` lists the members of `Final Concert`.
@@ -619,6 +616,9 @@ While a contact or event is archived:
 * An archived contact cannot be assigned to an event, but can still be removed from one with `unassign`.
 * Its name stays taken: `add` or `addevent` with the same name is rejected as a duplicate.
 
+![Archived contact](images/archiveContact.png)
+*A contact's card marked with the **Archived** badge, shown in the `list archived` view.*
+
 Examples:
 
 * `archive 12` archives the contact with member ID `12`.
@@ -640,88 +640,70 @@ and the existing data file remain unchanged.
 
 ## Managing events
 
+Commands that take `EVENT_NAME` find the saved event ignoring capitalization and extra spaces between words, so
+`evn/final  concert` finds `Final Concert`. See [The main window](#the-main-window) for what the **Events** view shows
+and which view opens after each command.
+
+Errors shared by the event commands are listed here once. Each section below lists only the errors specific to that
+command.
+
+| Condition | Error message |
+|---|---|
+| A required prefix is missing, or there is text before the first prefix. | `Invalid command format.` |
+| A prefix is repeated. | `Parameter {PREFIX} may only be specified once.` |
+| An unknown prefix is used. | `Unknown parameter: {PREFIX}.` |
+| A value is empty or contains only whitespace. | A message naming the field, such as `Event name must not be empty. Example: evn/Final Concert` |
+| A value breaks its rule in [Parameter constraints](#parameter-constraints). | A message stating the rule, such as `Invalid event time. Use dd-MM-yyyy with a year from 0001 to 9999 and an optional time in HH:mm format. Example: st/17-09-2026 16:30` |
+| No saved event has the supplied name. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
+| No contact has a supplied member ID. | `No contact exists with member ID: {MEMBER_ID}. Use an existing member ID.` |
+| The change cannot be saved. | A message ending in `No changes were made.`, such as `Event could not be saved. No changes were made.` |
+
 ### Adding an event: `addevent`
 
-Creates an event and saves it to the local data file.
+Creates an event.
 
 Format: `addevent evn/EVENT_NAME st/START_TIME et/END_TIME`
 
-Each parameter must appear once. Leading and trailing whitespace is removed before an event name is checked, and
-several spaces in a row are saved as one, so `evn/Final  Concert` is saved as `Final Concert`.
-The resulting name must contain 1 to 100 printable characters, including at least one visible character;
-line breaks and other control characters within the name are rejected. Names must be unique, ignoring case and
-extra spaces.
-An overlong name reports `Event name must not exceed 100 characters. Example: evn/Final Concert`.
-An invalid character reports `Invalid event name. Use letters, digits, spaces, or punctuation. Example: evn/Final-Concert`.
-Different events may share the same start and end times.
+* Event names must be unique, ignoring case and extra spaces. Several spaces in a row are saved as one.
+* Times use `dd-MM-yyyy`, optionally followed by a 24-hour time in `HH:mm` format, e.g. `17-09-2026` or
+  `17-09-2026 16:30`.
+* The start must not be after the end. Equal values are allowed. On the same date, times are compared only when both
+  are given.
 
-Start and end times use `dd-MM-yyyy`, optionally followed by `HH:mm` in 24-hour format.
-Date-only values are saved without a time of day.
-
-The start must not be after the end. Equal start and end values are allowed.
-Dates are compared first. On the same date, times are compared only when both are
-specified.
+![Add event](images/addEvent.png)
+*The new `Student Life Fair` event selected in the Events view, with its start, end, and duration in the details pane.*
 
 Examples:
 
 * `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`
 * `addevent evn/Student Life Fair st/09-10-2026 et/10-10-2026`
 
-Success: `Created Event Student Life Fair. Start Time: 09-10-2026. End Time: 10-10-2026.`
+Success: `Created Event Student Life Fair. Start Time: 09-10-2026. End Time: 10-10-2026.` The new event is selected in
+the **Events** view.
 
-A successful `addevent` opens the **Events** tab and selects the new event. See [The main window](#the-main-window)
-for what the event details show.
+The event details show its duration:
 
-The duration depends on whether the start and end include a time of day:
-
-* **Both date-only:** count calendar dates inclusively, including both the start and end dates.
-  An event on a single date lasts `1 day`.
-* **Both timed:** show elapsed time in days, hours, and minutes, with each day representing 24 hours.
-  Omit zero-value units and use singular or plural as appropriate. Identical timestamps show `0 minutes`.
-* **One date-only and one timed:** the event remains valid, but its duration is
-  `Unknown (start time not specified)` or `Unknown (end time not specified)`, identifying the missing time.
-
-| Start | End | Duration |
-|---|---|---|
-| `27-10-2026` | `27-10-2026` | `1 day` |
-| `27-10-2026` | `29-10-2026` | `3 days` |
-| `27-10-2026 09:00` | `29-10-2026 10:30` | `2 days 1 hour 30 minutes` |
-| `27-10-2026 09:00` | `29-10-2026 09:00` | `2 days` |
-| `27-10-2026` | `29-10-2026 10:30` | `Unknown (start time not specified)` |
-| `27-10-2026 09:00` | `29-10-2026` | `Unknown (end time not specified)` |
+* **Both dates only:** the number of calendar days, counting both the start and end dates, e.g. `27-10-2026` to
+  `29-10-2026` is `3 days`.
+* **Both with times:** the elapsed days, hours, and minutes, e.g. `27-10-2026 09:00` to `29-10-2026 10:30` is
+  `2 days 1 hour 30 minutes`.
+* **Only one with a time:** `Unknown (start time not specified)` or `Unknown (end time not specified)`.
 
 | Condition | Error message |
 |---|---|
-| An event with the same name already exists, ignoring case and extra spaces. | `An event with this name already exists. No changes were made.` |
-| An archived event with the same name already exists, ignoring case and extra spaces. | `An archived event named {EVENT_NAME} already exists. No changes were made. To restore it, use: unarchiveevent evn/{EVENT_NAME}` |
-| The event name is empty. | `Event name must not be empty. Example: evn/Final Concert` |
-| All required parameters are present, but `st/` contains only whitespace. | `Start time must not be empty. Example: st/17-09-2026 16:30` |
-| All required parameters are present, but `et/` contains only whitespace. | `End time must not be empty. Example: et/17-09-2026 18:30` |
-| A time is invalid or incorrectly formatted. | `Invalid event time. Use dd-MM-yyyy with an optional time in HH:mm format. Example: st/17-09-2026 16:30` |
+| An event with the same name exists. | `An event with this name already exists. No changes were made.` |
+| An archived event with the same name exists. | `An archived event named {EVENT_NAME} already exists. No changes were made. To restore it, use: unarchiveevent evn/{EVENT_NAME}` |
 | The start is after the end. | `Start time must not be after end time. Example: st/17-09-2026 16:30 et/17-09-2026 18:30` |
-| Any required parameter (`evn/`, `st/`, or `et/`) is missing, or there is text before the first parameter. | `Invalid command format.` |
-| A parameter is repeated. | `Parameter {PREFIX} may only be specified once.` |
-| An unknown parameter is used. | `Unknown parameter: {PREFIX}.` |
-
-If saving fails, no event is added and the command reports `Event could not be saved. No changes were made.`
-If the existing data file is invalid, the command reports a load error and leaves the file untouched.
 
 ### Editing an event: `editevent`
 
-Edits the name, start time, and/or end time of an existing event and saves the changes.
+Changes the name, start time, or end time of an event.
 
 Format: `editevent evn/EVENT_NAME [nevn/NEW_EVENT_NAME] [st/NEW_START_TIME] [et/NEW_END_TIME]`
 
-`EVENT_NAME` must match the saved name, ignoring case and extra spaces between words. Leading and trailing
-whitespace is removed. Several spaces in a row in `nevn/` are saved as one. Lookup capitalization does not change the saved display name; `nevn/`
-sets the new display name using the supplied capitalization.
-Provide at least one field to edit; omitted fields
-keep their existing values. Each parameter may appear only once.
-
-The new name follows the same rules as in `addevent`: 1 to 100 printable characters, not duplicating
-another event's name, ignoring case and extra spaces. Start and end times use `dd-MM-yyyy [HH:mm]`; a date is
-required and a 24-hour time is optional. The updated start must not be after the
-updated end, using the same ordering rules as `addevent`.
+* Supply at least one of `nevn/`, `st/`, and `et/`. Omitted fields keep their values.
+* The new name and times follow the same rules as in `addevent`.
+* `nevn/` keeps the capitalization you type, so it can also change only the capitalization of a name.
 
 Examples:
 
@@ -733,403 +715,203 @@ Success: `Edited Event NUS Student Life Fair. Start Time: 09-10-2026. End Time: 
 
 | Condition | Error message |
 |---|---|
-| `evn/` is missing, or there is text before the first parameter. | `Invalid command format.` |
-| No saved event has the supplied name, ignoring case and extra spaces. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
-| The event name is empty or contains only whitespace. | `Event name must not be empty. Example: evn/Final Concert` |
-| The new event name is empty or contains only whitespace. | `New event name must not be empty. Example: nevn/Final Concert` |
-| The event name is longer than 100 characters. | `Event name must not exceed 100 characters. Example: evn/Final Concert` |
-| The new event name is longer than 100 characters. | `Event name must not exceed 100 characters. Example: nevn/Final Concert` |
-| The event name has no visible characters, or contains a line break or other control character. | `Invalid event name. Use letters, digits, spaces, or punctuation. Example: evn/Final-Concert` |
-| The new event name has no visible characters, or contains a line break or other control character. | `Invalid event name. Use letters, digits, spaces, or punctuation. Example: nevn/Final-Concert` |
-| `st/` is supplied, but its value is empty or contains only whitespace. | `Start time must not be empty. Example: st/17-09-2026 16:30` |
-| `et/` is supplied, but its value is empty or contains only whitespace. | `End time must not be empty. Example: et/17-09-2026 18:30` |
-| The new start time is invalid or incorrectly formatted. | `Invalid event time. Use dd-MM-yyyy with an optional time in HH:mm format. Example: st/17-09-2026 16:30` |
-| The new end time is invalid or incorrectly formatted. | `Invalid event time. Use dd-MM-yyyy with an optional time in HH:mm format. Example: et/17-09-2026 16:30` |
-| The new name duplicates another event. | `This update conflicts with another saved event. No changes were made.` |
-| `evn/` has a valid name, but none of `nevn/`, `st/`, or `et/` is supplied. | `Provide at least one field to edit.` |
-| A parameter is repeated. | `Parameter {PREFIX} may only be specified once.` |
-| An unknown parameter is used. | `Unknown parameter: {PREFIX}.` |
+| None of `nevn/`, `st/`, and `et/` is supplied. | `Provide at least one field to edit.` |
+| The new name matches another event. | `This update conflicts with another saved event. No changes were made.` |
 | The updated start is after the updated end. | `Start time must not be after end time. Example: st/17-09-2026 16:30 et/17-09-2026 18:30` |
-
-If saving fails, the command reports `Event could not be saved. No changes were made.`
-The event and existing data file remain unchanged.
 
 ### Deleting an event: `deleteevent`
 
-Deletes the event with the supplied name, ignoring capitalization and extra spaces between words.
+Deletes an event, together with its members list, attendance records, and reminder. The contacts themselves are not
+deleted.
 
 Format: `deleteevent evn/EVENT_NAME`
 
-Examples:
-
-* `deleteevent evn/Final Concert`
-* `deleteevent evn/Student Life Fair`
+Example: `deleteevent evn/Final Concert`
 
 Success: `Deleted Event Final Concert.`
 
-| Condition | Error message |
-|---|---|
-| `evn/` is missing, or there is text before `evn/`. | `Invalid command format.` |
-| The event name is empty or contains only whitespace. | `Event name must not be empty. Example: evn/Final Concert` |
-| No saved event has the supplied name, ignoring case and extra spaces. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
-| The event name is longer than 100 characters. | `Event name must not exceed 100 characters. Example: evn/Final Concert` |
-| The event name has no visible characters, or contains a line break or other control character. | `Invalid event name. Use letters, digits, spaces, or punctuation. Example: evn/Final-Concert` |
-| `evn/` is repeated. | `Parameter evn/ may only be specified once.` |
-| An unknown parameter is used. | `Unknown parameter: {PREFIX}.` |
+### Assigning and removing members: `assign`, `unassign`
 
-If saving fails, the command reports `Event could not be deleted. No changes were made.`
-The event and existing data file remain unchanged.
+`assign` adds contacts to an event as members. `unassign` removes members from an event; the contacts themselves are
+not deleted.
 
-### Assigning members to an event: `assign`
+Formats:
 
-Assigns one or more contacts to an existing event as members and saves the change.
+* `assign evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]...`
+* `unassign evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]...`
 
-Format: `assign evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]...`
+Notes:
 
-* `EVENT_NAME` must match a saved event name, ignoring case and extra spaces between words. Leading and trailing whitespace is removed.
-* `MEMBER_ID` is a contact's permanent numeric ID, from `1` to `2147483647`. Separate several IDs with spaces.
-  IDs resolve across all saved contacts, including those hidden by searches, filters, or an empty results list.
-* Each parameter may appear only once.
-* All IDs are checked before any change is made. If any ID is invalid or does not exist, no contacts are assigned.
-* Contacts who are already assigned to the event are skipped, and an ID repeated in the same command is counted once.
+* `MEMBER_ID` is the contact's permanent ID, shown as `ID: <number>`. Separate several IDs with spaces. An ID works
+  even when a search or filter hides the contact.
+* All IDs are checked first. If any of them is invalid, nothing changes.
+* Contacts that are already assigned (for `assign`) or not assigned (for `unassign`) are skipped. An ID repeated in
+  the same command counts once.
 * New members are added after the existing members, in the order given.
+* `unassign` also removes the member's attendance for that event.
 
-Selecting the event in the **Events** tab shows its members under **Members**.
-
-Examples:
-
-* `assign evn/Final Concert c/2` assigns the contact with member ID `2` to `Final Concert`.
-* `assign evn/student life fair c/1 4 5` assigns the contacts with member IDs `1`, `4`, and `5` to `Student Life Fair`.
-* If Bernice has member ID `12`, `search Bernice` followed by `assign evn/Final Concert c/12` assigns Bernice regardless of her position in the results.
-
-Success: `Assigned 2 member(s) to Final Concert.`
-
-If some contacts were already assigned: `Assigned 1 member(s) to Final Concert. 1 contact(s) were already assigned.`
-
-| Condition | Error message |
-|---|---|
-| No saved event has the supplied name, ignoring case and extra spaces. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
-| The event is archived. | `Event {EVENT_NAME} is archived, so its members cannot be changed. Unarchive it first with: unarchiveevent evn/{EVENT_NAME}` |
-| A member ID does not exist. | `No contact exists with member ID: {MEMBER_ID}. Use an existing member ID.` |
-| A member ID is not written as digits representing a value from 1 to 2147483647. | `Member IDs must be positive integers separated by spaces. Example: c/1 3 5` |
-| A specified contact is archived. | `{NAME} is archived, so it cannot be assigned. No changes were made. Unarchive it first with: unarchive {MEMBER_ID}` |
-| Every specified contact is already assigned. | `All specified contacts are already assigned to {EVENT_NAME}. No changes were made.` |
-| The event name is empty. | `Event name must not be empty. Example: evn/Final Concert` |
-| The event name is longer than 100 characters. | `Event name must not exceed 100 characters. Example: evn/Final Concert` |
-| The event name has no visible characters, or contains a line break or other control character. | `Invalid event name. Use letters, digits, spaces, or punctuation. Example: evn/Final-Concert` |
-| `c/` has no member IDs. | `Member IDs must not be empty. Example: c/1 3 5` |
-| `evn/` or `c/` is missing, or there is text before the first parameter. | `Invalid command format.` |
-| A parameter is repeated. | `Parameter {PREFIX} may only be specified once.` |
-| An unknown parameter is used. | `Unknown parameter: {PREFIX}.` |
-
-If saving fails, the command reports `Assignment could not be saved. No changes were made.`
-No contacts are assigned and the existing data file remains unchanged.
-
-### Removing members from an event: `unassign`
-
-Removes one or more members from an existing event and saves the change. The contacts themselves are not deleted.
-
-Format: `unassign evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]...`
-
-* `EVENT_NAME` must match a saved event name, ignoring case and extra spaces between words. Leading and trailing whitespace is removed.
-* `MEMBER_ID` is a contact's permanent numeric ID, from `1` to `2147483647`. Separate several IDs with spaces.
-  IDs resolve across all saved contacts, including those hidden by searches, filters, or an empty results list.
-* Each parameter may appear only once.
-* All IDs are checked before any change is made. If any ID is invalid or does not exist, no members are removed.
-* Contacts who are not assigned to the event are skipped, and an ID repeated in the same command is counted once.
-* The remaining members keep their order.
-* A removed member's attendance record for the event, if any, is also removed. Other members' attendance is kept.
+![Assign members](images/assignMembers.png)
+*`Freshmen Welcome Night` with 4 members after `assign evn/Freshmen Welcome Night c/3 4` adds two more.*
 
 Examples:
 
-* `unassign evn/Final Concert c/2` removes the contact with member ID `2` from `Final Concert`.
-* `unassign evn/student life fair c/1 3` removes the contacts with member IDs `1` and `3` from `Student Life Fair`.
-* If Bernice has member ID `12`, `search Bernice` followed by `unassign evn/Final Concert c/12` removes Bernice regardless of her position in the results.
+* `assign evn/Final Concert c/1 4 5` assigns the contacts with IDs `1`, `4`, and `5` to `Final Concert`.
+* `unassign evn/final concert c/2` removes the contact with ID `2` from `Final Concert`.
 
-Success: `Removed 2 member(s) from Final Concert.`
-
-If some contacts were not assigned: `Removed 1 member(s) from Final Concert. 1 contact(s) were not assigned.`
+Success: `Assigned 2 member(s) to Final Concert.` or `Removed 2 member(s) from Final Concert.` If some contacts were
+skipped, the message ends with `1 contact(s) were already assigned.` or `1 contact(s) were not assigned.`
 
 | Condition | Error message |
 |---|---|
-| No saved event has the supplied name, ignoring case and extra spaces. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
 | The event is archived. | `Event {EVENT_NAME} is archived, so its members cannot be changed. Unarchive it first with: unarchiveevent evn/{EVENT_NAME}` |
-| A member ID does not exist. | `No contact exists with member ID: {MEMBER_ID}. Use an existing member ID.` |
-| A member ID is not written as digits representing a value from 1 to 2147483647. | `Member IDs must be positive integers separated by spaces. Example: c/1 3 5` |
-| None of the specified contacts are assigned. | `None of the specified contacts are assigned to {EVENT_NAME}. No changes were made.` |
-| The event name is empty. | `Event name must not be empty. Example: evn/Final Concert` |
-| The event name is longer than 100 characters. | `Event name must not exceed 100 characters. Example: evn/Final Concert` |
-| The event name has no visible characters, or contains a line break or other control character. | `Invalid event name. Use letters, digits, spaces, or punctuation. Example: evn/Final-Concert` |
-| `c/` has no member IDs. | `Member IDs must not be empty. Example: c/1 3 5` |
-| `evn/` or `c/` is missing, or there is text before the first parameter. | `Invalid command format.` |
-| A parameter is repeated. | `Parameter {PREFIX} may only be specified once.` |
-| An unknown parameter is used. | `Unknown parameter: {PREFIX}.` |
-
-If saving fails, the command reports `Unassignment could not be saved. No changes were made.`
-No members are removed and the existing data file remains unchanged.
+| `assign`: a contact is archived. | `{NAME} is archived, so it cannot be assigned. No changes were made. Unarchive it first with: unarchive {MEMBER_ID}` |
+| `assign`: every contact is already assigned. | `All specified contacts are already assigned to {EVENT_NAME}. No changes were made.` |
+| `unassign`: none of the contacts are assigned. | `None of the specified contacts are assigned to {EVENT_NAME}. No changes were made.` |
 
 ### Viewing members of an event: `members`
 
-Shows only the members of an event in the contact list, with their full contact details.
+Shows the members of an event in the **Contacts** view, with their full contact details.
 
 Format: `members evn/EVENT_NAME`
 
-* `EVENT_NAME` must match a saved event name, ignoring case and extra spaces between words. Leading and trailing whitespace is removed.
-* CoordiMate switches to the **Contacts** view and lists the event's members in contact list order.
-* Use the members' permanent IDs in `assign`, `unassign`, `edit`, and `delete`, independently of the displayed list.
-* The list stays up to date while it is shown: members removed with `unassign` disappear from it, and renaming the event with `editevent` keeps showing its members. If the event is deleted, the list becomes empty.
-* `add` and `edit` show all contacts again afterwards, so that you can see the contact you changed.
-* Use `list` to show all contacts again.
+* The list stays up to date while it is shown: members removed with `unassign` disappear, and renaming the event
+  keeps its members shown.
+* Only members in the current view are listed: archived members appear only after `list archived`, and active members
+  only in the normal view. The message says how many members are in the other view.
+* Use `list` to show all contacts again. `add` and `edit` also show all contacts again.
+* To see attendance, select the event in the **Events** view instead.
 
-Selecting an event in the **Events** tab also shows its members under **Members**, in the order they were assigned. Each member shows **Present**, **Absent**, or **Not marked** if attendance has not been recorded. The counts above the list show how many members have each status. They update as soon as attendance is successfully marked or changed with `markattendance`.
+Example: `members evn/Final Concert`
 
-Members who are currently on leave also show **On leave until LEAVE_END_DATE** beneath their role. This reflects
-their leave as of today, regardless of the event date. It updates when their leave is edited or cleared, and disappears
-after their last day of leave. Leave status is separate from attendance and does not change the attendance counts.
-
-Examples:
-
-* `members evn/Final Concert` shows the members of `Final Concert`.
-* `members evn/student life fair` shows the members of `Student Life Fair`.
-* `members evn/Final Concert` followed by `unassign evn/Final Concert c/2` removes the contact with member ID `2`, even if they are not the second result.
-
-Success: `Listed 2 member(s) of Final Concert. Use list to show all contacts.`
-
-If the event has no members, the contact list is empty: `Final Concert has no members assigned. Use list to show all contacts.`
-
-The contact list shows only members in the current view, so [archived](#archiving-contacts-archive-unarchive)
-members are not listed in the normal view, and active members are not listed after `list archived`. The message says how
-many members are in the other view:
-
-| Condition | Message |
-|---|---|
-| Some members are archived, in the normal view. | `Listed 1 member(s) of Final Concert. 1 member(s) are archived. Use list archived to show archived contacts.` |
-| All members are archived, in the normal view. | `No active members of Final Concert are shown. 2 member(s) are archived. Use list archived to show archived contacts.` |
-| Some members are active, after `list archived`. | `Listed 1 member(s) of Final Concert. 1 member(s) are active. Use list to show all contacts.` |
-| All members are active, after `list archived`. | `No archived members of Final Concert are shown. 2 member(s) are active. Use list to show all contacts.` |
-
-| Condition | Error message |
-|---|---|
-| No saved event has the supplied name, ignoring case and extra spaces. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
-| The event name is empty. | `Event name must not be empty. Example: evn/Final Concert` |
-| The event name is longer than 100 characters. | `Event name must not exceed 100 characters. Example: evn/Final Concert` |
-| The event name has no visible characters, or contains a line break or other control character. | `Invalid event name. Use letters, digits, spaces, or punctuation. Example: evn/Final-Concert` |
-| `evn/` is missing, or there is text before it. | `Invalid command format.` |
-| `evn/` is repeated. | `Parameter evn/ may only be specified once.` |
-| An unknown parameter is used. | `Unknown parameter: {PREFIX}.` |
-
-If an error occurs, the contact list stays as it was.
+Success: `Listed 2 member(s) of Final Concert. Use list to show all contacts.` If the event has no members:
+`Final Concert has no members assigned. Use list to show all contacts.`
 
 ### Marking attendance: `markattendance`
 
-Records whether a member assigned to an event was present or absent.
+Records whether a member of an event was present or absent.
 
 Format: `markattendance evn/EVENT_NAME mem/MEMBER_NAME att/STATUS`
 
-* `EVENT_NAME` and `MEMBER_NAME` must match saved values, ignoring case and extra spaces between words.
-* `MEMBER_NAME` must be assigned to the event.
-* `MEMBER_NAME` must be at most 80 characters, contain at least one letter, and use only letters, spaces,
-  hyphens, apostrophes, periods, or the words `s/o` and `d/o`.
-* `STATUS` must be `present` or `absent`, ignoring case.
-* Marking a member again replaces their previous attendance status.
+* `MEMBER_NAME` is the contact's name, ignoring case and extra spaces. The contact must be assigned to the event.
+* `STATUS` is `present` or `absent`, ignoring case.
+* Marking a member again replaces their previous status.
+
+![Mark attendance](images/markAttendance.png)
+*Each member's attendance beside their name, with the counts above the list, after marking Charlotte Oliveiro absent.*
 
 Examples:
 
-* `markattendance evn/Final Concert mem/Alex Yeoh att/present` marks Alex Yeoh as present.
-* `markattendance evn/final concert mem/alex yeoh att/ABSENT` marks the same member as absent.
+* `markattendance evn/Final Concert mem/Alex Yeoh att/present`
+* `markattendance evn/final concert mem/alex yeoh att/ABSENT` changes Alex Yeoh to absent.
 
-Success: `Marked Alex Yeoh as present for Event Final Concert.`
-
-If the member already has the requested status, no changes are made:
+Success: `Marked Alex Yeoh as present for Event Final Concert.` If the member already has that status:
 `Alex Yeoh is already marked as present for event Final Concert. No changes were made.`
 
 | Condition | Error message |
 |---|---|
-| No saved event has the supplied name, ignoring case and extra spaces. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
-| The supplied member is not assigned to the event, ignoring case and extra spaces. | `{MEMBER_NAME} is not assigned to event {EVENT_NAME}. Assign the contact to the event before marking attendance.` |
-| The member name violates the constraints above. | `Invalid name. Use 1 to 80 characters: letters, spaces, hyphens, apostrophes, periods, and s/o or d/o, with at least one letter. Example: mem/Aisha Tan` |
-| `STATUS` is not `present` or `absent`, ignoring case. | `Invalid attendance status. Use present or absent. Example: att/present` |
-| The event name is empty. | `Event name must not be empty. Example: evn/Final Concert` |
-| The event name is longer than 100 characters. | `Event name must not exceed 100 characters. Example: evn/Final Concert` |
-| The event name has no visible characters, or contains a line break or other control character. | `Invalid event name. Use letters, digits, spaces, or punctuation. Example: evn/Final-Concert` |
-| Any required parameter (`evn/`, `mem/`, or `att/`) is missing, or there is text before the first parameter. | `Invalid command format.` |
-| The member name is empty. | `Member name must not be empty. Example: mem/Aisha Tan` |
-| The attendance status is empty. | `Attendance status must not be empty. Example: att/present` |
-| A parameter is repeated. | `Parameter {PREFIX} may only be specified once.` |
-| An unknown parameter is used. | `Unknown parameter: {PREFIX}.` |
-
-Attendance is shown beside each member when the event is selected in the **Events** tab.
-Removing a member with `unassign`, or deleting the contact, also removes that member's attendance for the event.
-If saving fails, the attendance is not changed and the command reports
-`Attendance could not be saved. No changes were made.`
+| The member is not assigned to the event. | `{MEMBER_NAME} is not assigned to event {EVENT_NAME}. Assign the contact to the event before marking attendance.` |
 
 ### Archiving events: `archiveevent`, `unarchiveevent`
 
-Archiving an event hides it from the **Events** tab and from reminders without deleting it. The event keeps its
+Archiving an event hides it from the **Events** view and from reminders without deleting it. The event keeps its
 details, members, and attendance records. Archived events are shown and hidden in the same way as archived contacts;
 see [Archiving contacts](#archiving-contacts-archive-unarchive).
 
 Formats:
 
-* `archiveevent evn/EVENT_NAME` archives the event with the supplied name, ignoring capitalization.
-* `unarchiveevent evn/EVENT_NAME` restores the event with the supplied name.
-
-Both commands work from any view and then open the **Events** tab, so you can see the change.
+* `archiveevent evn/EVENT_NAME`
+* `unarchiveevent evn/EVENT_NAME`
 
 While an event is archived:
 
-* An archived event does not produce reminders. Archiving an event removes its reminder from the
-  **Upcoming events** panel, and unarchiving it shows the reminder again if it is still upcoming and not dismissed.
-* Contacts cannot be assigned to or removed from an archived event. You can still use `editevent`,
-  `markattendance`, and `deleteevent` on it, for example to correct its records.
+* It produces no reminder. Unarchiving it shows the reminder again if the event is still upcoming and the reminder was
+  not dismissed.
+* Its members cannot be changed with `assign` or `unassign`. `editevent`, `markattendance`, and `deleteevent` still
+  work on it.
 
 Examples:
 
-* `archiveevent evn/Orientation 2025` archives that event.
-* `unarchiveevent evn/orientation 2025` restores it.
+* `archiveevent evn/Orientation 2025`
+* `unarchiveevent evn/orientation 2025`
 
-Success: `Archived Event {EVENT_NAME}.` or `Unarchived Event {EVENT_NAME}.` The change is saved immediately and stays
-after restarting.
+Success: `Archived Event {EVENT_NAME}.` or `Unarchived Event {EVENT_NAME}.`
 
 | Condition | Error message |
 |---|---|
-| `evn/` is missing, or there is text before `evn/`. | `Invalid command format.` |
-| The event name is empty or contains only whitespace. | `Event name must not be empty. Example: evn/Final Concert` |
-| No saved event has the supplied name, ignoring case and extra spaces. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
 | `archiveevent` is used on an event that is already archived. | `Event {EVENT_NAME} is already archived. No changes were made.` |
 | `unarchiveevent` is used on an event that is not archived. | `Event {EVENT_NAME} is not archived. No changes were made.` |
-| The event name is longer than 100 characters. | `Event name must not exceed 100 characters. Example: evn/Final Concert` |
-| The event name has no visible characters, or contains a line break or other control character. | `Invalid event name. Use letters, digits, spaces, or punctuation. Example: evn/Final-Concert` |
-| `evn/` is repeated. | `Parameter evn/ may only be specified once.` |
-| An unknown parameter is used. | `Unknown parameter: {PREFIX}.` |
-
-If saving fails, the command reports `Event archive status could not be saved. No changes were made.` The event and
-the existing data file remain unchanged.
 
 ### Automatic event reminders
 
-CoordiMate shows reminders in the **Upcoming events** panel below the menu bar and above the workspace.
-The panel appears when reminders are available and stays visible across the **Contacts**, **Events**, and
-**Tags** views. It hides when no reminders remain. No command is needed to receive reminders, which appear
-only while CoordiMate is running.
+The **Upcoming events** panel lists events that are about to start. It is shown in every view while it has reminders,
+and updates after each command and every minute while CoordiMate is open.
 
-CoordiMate checks saved events on startup and once per minute while the window is open. It also refreshes
-reminders after commands, including event edits and deletions. A reminder becoming eligible or expiring
-as time passes updates at the next periodic check. [Archived](#archiving-events-archiveevent-unarchiveevent)
-events do not produce reminders.
+An event is listed:
 
-Reminder timing follows your computer's local time zone:
+* **If its start has a time:** from 24 hours before the start until the start time.
+* **If its start is a date only:** throughout the day before and the start date.
 
-* For a start with a time of day, the reminder becomes eligible exactly **24 hours before the start**.
-  It remains eligible at the exact start time. Once the start has passed, the next check removes it,
-  even if the event has not ended.
-* For a start with only a date, the reminder is eligible throughout **the preceding calendar day and
-  the event's start date**. For example, a start of `20-10-2026` qualifies from midnight at the beginning
-  of `19-10-2026` until midnight at the beginning of `21-10-2026`, excluding that final midnight.
+For example, an event starting at `20-10-2026 15:00` is listed from `19-10-2026 15:00` to `20-10-2026 15:00`.
+Reminders are numbered from 1 in order of start time. [Archived](#archiving-events-archiveevent-unarchiveevent) events
+have no reminders.
 
-Each reminder displays its index and the saved event name, start, and end. For example:
+![Event reminder](images/eventReminder.png)
+*The Upcoming events panel with a reminder for `Committee Meeting`, which starts the next day.*
 
-```text
-1. Upcoming event: Final Concert
-Starts: 20-10-2026 15:00
-Ends: 20-10-2026 18:00
-```
-
-This timed event qualifies from `19-10-2026 15:00` through `20-10-2026 15:00`, including both boundaries.
-Several reminders appear in ascending order of start time, with ties ordered by name, ignoring case.
-For ordering, a date-only start counts as the beginning of its date; the reminder still displays the
-saved date without adding a time. Each event has at most one active reminder.
-Indexes start at **1** and follow this order. They update whenever the reminder list changes.
-
-Click **Dismiss** beside a reminder or use [`dismiss INDEX`](#dismissing-a-reminder-dismiss) to hide it.
-CoordiMate saves the dismissal immediately, so it stays
-dismissed after restarting. Renaming the event, editing only its end, or supplying the same start value
-keeps the dismissal. Changing its start date or time resets the dismissal, including when switching
-between a timed and date-only start or reverting to a previously dismissed start. The revised reminder
-appears if its new start qualifies under the timing rules above. Rejected or unsaved edits leave reminders
-unchanged.
-
-Deleting an event removes its reminder. The `clear` command removes all events and their reminders.
-Deleting and then recreating an event creates a new reminder if its start qualifies, even when the name
-and schedule match the deleted event.
-
-If CoordiMate cannot save a dismissal, it hides the reminder for the current session and shows
-`Reminder dismissal could not be saved and may reappear after restarting.` with a **Not saved** status
-in the feedback area above the command input. The dismissal has not been saved, so the reminder may
-return after restarting.
-
-If the saved data file is invalid, CoordiMate shows a recovery warning and closes without showing event reminders.
-See [Editing the data file](#editing-the-data-file) for the recovery steps.
+Click **Dismiss** beside a reminder, or use [`dismiss`](#dismissing-a-reminder-dismiss), to hide it. Dismissals are
+saved and stay after restarting. Changing the event's start date or time shows the reminder again if the new start is
+upcoming; other edits keep it dismissed.
 
 ### Dismissing a reminder: `dismiss`
 
-Dismisses one reminder using its current index in the **Upcoming events** panel and saves the dismissal.
-The event, its members, and its attendance records remain available. The current tab and contact filter
-stay selected.
+Hides one reminder from the **Upcoming events** panel. The event itself is not changed, and the current view stays
+open.
 
 Format: `dismiss INDEX`
 
-* `INDEX` is required and must be a positive integer starting at **1**.
-* Use the index shown beside the reminder in the **Upcoming events** panel. The contact and event lists
-  have their own ordering.
-* Remaining reminders are renumbered after dismissal. Use their current indexes for subsequent commands.
+* `INDEX` is the number beside the reminder in the panel. The remaining reminders are renumbered after each dismissal.
 
-Examples:
+Example: `dismiss 1` dismisses the first reminder.
 
-* `dismiss 1` dismisses the first reminder in the panel.
-* `dismiss 2` dismisses the second reminder, if at least two reminders are shown.
+Success: `Reminder dismissed: {EVENT_NAME}.`
 
-Success: `Reminder dismissed: {EVENT_NAME}.` The reminder disappears immediately and stays dismissed after
-restarting. Changing the event's start resets its dismissal as described in
-[Automatic event reminders](#automatic-event-reminders).
+If the dismissal cannot be saved, the reminder is hidden until CoordiMate closes, and the feedback shows
+`Reminder dismissal could not be saved and may reappear after restarting.` with a **Not saved** status.
 
 | Condition | Error message |
 |---|---|
-| The index is missing. | `Invalid command format.` |
-| The index is zero, negative, non-integer, greater than 2147483647, or followed by extra arguments. | `Index must be a positive integer. Example: 1` |
-| No reminder has that index, including when the panel is empty. | `No reminder exists at index {INDEX}. Use an index from the Upcoming events panel.` |
-| The reminder at that index is no longer upcoming (for example, its event has started) because the panel had not yet updated. | `Reminder {INDEX} is no longer upcoming, so it was not dismissed. Check the updated Upcoming events panel.` |
-
-Invalid input dismisses no reminder. If loading or saving the data file fails, the reminder is hidden for
-the current session and feedback shows `Reminder dismissal could not be saved and may reappear after restarting.`
-with a **Not saved** status. The saved dismissal history remains unchanged, so the reminder may return after
-restarting. This is the same behavior as the **Dismiss** button.
+| The index is not a positive whole number. | `Index must be a positive integer. Example: 1` |
+| No reminder has that index. | `No reminder exists at index {INDEX}. Use an index from the Upcoming events panel.` |
+| The event started before the panel updated. | `Reminder {INDEX} is no longer upcoming, so it was not dismissed. Check the updated Upcoming events panel.` |
 
 --------------------------------------------------------------------------------------------------------------------
 
 ## Managing tags
 
-### Adding a tag: `addtag`
-
-Creates a custom tag and opens the Tags view. Tag names must contain 1 to 30 alphanumeric characters without spaces.
-Leading and trailing whitespace is trimmed. Tag names preserve their capitalization, but are unique regardless of
-capitalization.
-
-Format: `addtag t/TAG`
-
-Examples:
-
-* `addtag t/ProductionCrew`
-* `addtag t/Publicity`
-
-If a tag named `Publicity` already exists, commands such as `addtag t/publicity` are rejected as duplicates.
-
-Success: `Created tag: Publicity.`
+### Managing tags: `addtag`, `edittag`, `deletetag`
 
 | Condition | Error message |
 |---|---|
 | The tag name already exists, ignoring capitalization. | `A tag with this name already exists. No changes were made.` |
 
-If saving fails, the command reports `Tag could not be saved. No changes were made.`
+Formats:
 
-### Editing a tag: `edittag`
+* `addtag t/TAG` creates `TAG`.
+* `edittag OLD_TAG t/NEW_TAG` renames `OLD_TAG` to `NEW_TAG`.
+* `deletetag t/TAG` deletes `TAG`.
 
-Renames an existing tag, including a default tag, and updates it wherever it is applied across contacts.
+* `TAG` and `NEW_TAG` must contain 1 to 30 alphanumeric characters without spaces. Leading and trailing whitespace
+  is trimmed. Tag names preserve their capitalization, but are unique regardless of capitalization, so `addtag
+  t/publicity` is rejected as a duplicate if `Publicity` already exists.
+* `OLD_TAG`, and the `TAG` given to `deletetag`, must match an existing tag, ignoring capitalization.
 
-Format: `edittag OLD_TAG t/NEW_TAG`
+![Add tag](images/addTag.png)
+*The Tags tab showing the new `ProductionCrew` tag after `addtag`.*
 
 Examples:
 
+* `addtag t/ProductionCrew`
+* `addtag t/Publicity`
 * `edittag Production t/ProductionCrew`
 * `edittag Media t/Publicity`
 
@@ -1157,9 +939,8 @@ Examples:
 * `deletetag t/ProductionCrew`
 * `deletetag t/Publicity`
 
-The tag name is matched case-insensitively.
-
-Success: `{TAG_NAME} successfully deleted.`
+Success: `Created tag: Publicity.` (`addtag`) · `Media successfully renamed to Publicity.` (`edittag`) ·
+`Publicity successfully deleted.` (`deletetag`)
 
 | Condition | Error message |
 |---|---|
@@ -1175,8 +956,7 @@ the Tags view.
 
 Select a tag in the **Tags** tab to see the contacts assigned to it and the member count. The member list includes
 all saved contacts, regardless of the current contact search or filter, and is ordered by name. Each member shows
-their tags, role, and organisation. Archived contacts are included and marked `(archived)`. Every tag assigned to a
-contact is included in this global tag list, including tags recovered from older saved data.
+their tags, role, and organisation. Archived contacts are included and marked `(archived)`. Every tag assigned to a contact is included in this global tag list.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -1209,38 +989,30 @@ CoordiMate data is saved automatically as a JSON file `[JAR file location]/data/
 
 <box type="warning" seamless>
 
-**Caution:**
-If your changes make the data file invalid, CoordiMate shows a warning at the next launch and leaves the original file
-unchanged. Select **OK** to close CoordiMate, repair or restore the file path shown in the warning, then restart the
-app. When a saved value fails validation, the warning also shows the reason and identifies the contact or event when
-possible. CoordiMate does not open its normal interface or accept commands until the file can be loaded.<br>
-Each name in an event's `members` list must exactly match the name of a saved contact, or the data file is invalid.<br>
-Contact and event names are read with several spaces in a row treated as one. If two contacts, or two events, have
-names that differ only in letter case or spacing (e.g. `Alex Yeoh` and `Alex  Yeoh`), they are duplicates and the data
-file is invalid; rename or remove one of them.<br>
-Event names containing Unicode space separators, including em and non-breaking spaces, are normalised to ordinary
-spaces when loaded. At startup, saved events whose names contain whitespace followed by parameter-like text
-(for example, `Planning` followed by an em space and `c/review`) are deleted because those names cannot be used
-in event commands. This also applies to archived events. A warning lists the deleted names, showing non-ordinary
-whitespace as codes such as `\u2003`. If event names were distinct under the older Unicode whitespace rules but
-now normalise to the same name, all events are kept: later collisions receive an available suffix such as ` (2)`.
-Long names are shortened to fit the suffix within the 100-character limit. The warning lists the old and new names;
-members, attendance, reminder dismissal history, and archive status are preserved. These migrations are saved before
-the data is loaded. Other contacts and events are preserved. If the remaining data is invalid or cleanup cannot be
-saved, the file is left unchanged.<br>
-Each contact's `memberId` must be a unique integer from `1` to `2147483647`. Keep existing IDs unchanged.
-Keep the top-level `nextMemberId` field: it must exceed every saved ID, must not be reduced after deleting contacts,
-and cannot exceed `2147483648`.<br>
-Each contact and event has an `archived` value of the JSON boolean `true` or `false`, without quotes. A missing or
-`null` value is read as `false`; quoted strings such as `"false"`, numbers such as `17`, and other values make the
-data file invalid.<br>
-Other saved values must also use the correct JSON type. For example, a phone number must be a quoted string, even
-when it contains only digits; event attendance values must be strings. Numbers or booleans in text fields, and quoted
-booleans in boolean fields, make the file invalid. The warning identifies the affected field when possible.<br>
-If a contact uses a tag that is missing from the top-level `tags` list, CoordiMate adds it to the global tag list when
-the file is loaded. Existing top-level tags, including unused tags, retain their saved order and capitalization.<br>
-A contact saved with more than 15 tags still loads with all of its tags, but commands cannot give it more tags.<br>
-Furthermore, certain edits can cause CoordiMate to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
+**If the file becomes invalid:** CoordiMate shows a warning at the next launch and leaves the original file unchanged. Select **OK** to close CoordiMate, repair or restore the file path shown in the warning, then restart the app. When a saved value fails validation, the warning also shows the reason and identifies the contact or event when possible. CoordiMate does not open its normal interface or accept commands until the file can be loaded.
+
+**Names:**
+* Each name in an event's `members` list must exactly match the name of a saved contact, or the data file is invalid.
+* Contact and event names are read with several spaces in a row treated as one. If two contacts, or two events, have names that differ only in letter case or spacing (e.g. `Alex Yeoh` and `Alex  Yeoh`), they are duplicates and the data file is invalid; rename or remove one of them.
+
+**Event name migration:**
+* Event names containing Unicode space separators, including em and non-breaking spaces, are normalised to ordinary spaces when loaded. At startup, saved events whose names contain whitespace followed by parameter-like text (for example, `Planning` followed by an em space and `c/review`) are deleted because those names cannot be used in event commands. This also applies to archived events. A warning lists the deleted names, showing non-ordinary whitespace as codes such as `\u2003`.
+* If event names were distinct under the older Unicode whitespace rules but now normalise to the same name, all events are kept: later collisions receive an available suffix such as ` (2)`. Long names are shortened to fit the suffix within the 100-character limit. The warning lists the old and new names; members, attendance, reminder dismissal history, and archive status are preserved.
+* These migrations are saved before the data is loaded. Other contacts and events are preserved. If the remaining data is invalid or cleanup cannot be saved, the file is left unchanged.
+
+**Contact IDs:**
+* Each contact's `memberId` must be a unique integer from `1` to `2147483647`. Keep existing IDs unchanged.
+* Keep the top-level `nextMemberId` field: it must exceed every saved ID, must not be reduced after deleting contacts, and cannot exceed `2147483648`.
+
+**Archived status:** Each contact and event has an `archived` value of the JSON boolean `true` or `false`, without quotes. A missing or `null` value is read as `false`; quoted strings such as `"false"`, numbers such as `17`, and other values make the data file invalid.
+
+**Other field types:** Other saved values must also use the correct JSON type. For example, a phone number must be a quoted string, even when it contains only digits; event attendance values must be strings. Numbers or booleans in text fields, and quoted booleans in boolean fields, make the file invalid. The warning identifies the affected field when possible.
+
+**Tags:**
+* If a contact uses a tag that is missing from the top-level `tags` list, CoordiMate adds it to the global tag list when the file is loaded. Existing top-level tags, including unused tags, retain their saved order and capitalization.
+* A contact saved with more than 15 tags still loads with all of its tags, but commands cannot give it more tags.
+
+Certain edits can cause CoordiMate to behave in unexpected ways, for example if a value entered is outside the acceptable range. Edit the data file only if you are confident that you can update it correctly.
 </box>
 
 If `preferences.json` contains invalid JSON or a value of the wrong type, CoordiMate warns you and uses default
