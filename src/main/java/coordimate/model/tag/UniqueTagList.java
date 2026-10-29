@@ -36,6 +36,7 @@ public class UniqueTagList implements Iterable<Tag> {
             throw new DuplicateTagException();
         }
         internalTags.add(toAdd);
+        assert contains(toAdd) : "Added tag should be in the list";
     }
 
     /**

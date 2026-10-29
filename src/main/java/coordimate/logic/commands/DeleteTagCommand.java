@@ -2,8 +2,6 @@ package coordimate.logic.commands;
 
 import static java.util.Objects.requireNonNull;
 
-import java.util.Optional;
-
 import coordimate.logic.Messages;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.Model;
@@ -33,14 +31,7 @@ public class DeleteTagCommand extends MutatingTagCommand {
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
-        Optional<Tag> tagToDelete = model.getTagList().stream()
-                .filter(tag -> tag.getTagName().equalsIgnoreCase(tagName))
-                .findFirst();
-        if (tagToDelete.isEmpty()) {
-            throw new CommandException(String.format(MESSAGE_TAG_NOT_FOUND, tagName));
-        }
-
-        Tag target = tagToDelete.get();
+        Tag target = findTag(model, tagName);
         model.deleteTag(target);
         return new CommandResult(String.format(MESSAGE_SUCCESS, target.getTagName()), CommandResult.View.TAGS);
     }

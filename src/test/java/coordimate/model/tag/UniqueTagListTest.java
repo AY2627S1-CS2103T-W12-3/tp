@@ -12,6 +12,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import coordimate.model.tag.exceptions.DuplicateTagException;
+import coordimate.testutil.TagWithFixedMatch;
 
 public class UniqueTagListTest {
 
@@ -120,5 +121,11 @@ public class UniqueTagListTest {
 
         assertEquals(copy.hashCode(), uniqueTagList.hashCode());
         assertEquals(List.of(EXCO, SPONSOR).toString(), uniqueTagList.toString());
+    }
+
+    @Test
+    public void add_tagNotFoundAfterAdding_triggersAssertion() {
+        Tag neverMatchingTag = new TagWithFixedMatch("Publicity", false);
+        assertThrows(AssertionError.class, () -> uniqueTagList.add(neverMatchingTag));
     }
 }

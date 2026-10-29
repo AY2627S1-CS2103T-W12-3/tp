@@ -7,11 +7,11 @@ import java.util.logging.Logger;
 import coordimate.commons.core.LogsCenter;
 import coordimate.logic.commands.AddCommand;
 import coordimate.logic.commands.AddEventCommand;
+import coordimate.logic.commands.AddTagCommand;
 import coordimate.logic.commands.ArchiveCommand;
 import coordimate.logic.commands.ArchiveEventCommand;
 import coordimate.logic.commands.AssignCommand;
 import coordimate.logic.commands.ClearCommand;
-import coordimate.logic.commands.CreateTagCommand;
 import coordimate.logic.commands.DeleteCommand;
 import coordimate.logic.commands.DeleteEventCommand;
 import coordimate.logic.commands.DeleteTagCommand;
@@ -60,7 +60,7 @@ public class HelpWindow extends UiPart<Stage> {
                     "n/NAME p/PHONE e/EMAIL r/ROLE [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [lv/LEAVE_END_DATE] "
                             + "[t/TAG]... [m/NOTE]"),
             commandUsage(AddEventCommand.COMMAND_WORD, "evn/EVENT_NAME st/START_TIME et/END_TIME"),
-            commandUsage(CreateTagCommand.COMMAND_WORD, "t/TAG"),
+            commandUsage(AddTagCommand.COMMAND_WORD, "t/TAG"),
             commandUsage(ArchiveCommand.COMMAND_WORD, "MEMBER_ID"),
             commandUsage(ArchiveEventCommand.COMMAND_WORD, "evn/EVENT_NAME"),
             commandUsage(AssignCommand.COMMAND_WORD,

@@ -43,7 +43,7 @@ public class CommandResult {
     /** The view requested by the command. */
     private final View viewToShow;
 
-    private final boolean warning;
+    private final boolean isWarning;
 
     private final Person contactToFocus;
 
@@ -71,14 +71,14 @@ public class CommandResult {
     }
 
     private CommandResult(String feedbackToUser, boolean shouldShowHelp, boolean shouldExit,
-            boolean shouldShowTutorial, View viewToShow, boolean warning, Person contactToFocus,
+            boolean shouldShowTutorial, View viewToShow, boolean isWarning, Person contactToFocus,
             int contactIndexToFocus) {
         this.feedbackToUser = requireNonNull(feedbackToUser);
         this.shouldShowHelp = shouldShowHelp;
         this.shouldExit = shouldExit;
         this.shouldShowTutorial = shouldShowTutorial;
         this.viewToShow = requireNonNull(viewToShow);
-        this.warning = warning;
+        this.isWarning = isWarning;
         this.contactToFocus = contactToFocus;
         this.contactIndexToFocus = contactIndexToFocus;
     }
@@ -116,7 +116,7 @@ public class CommandResult {
     }
 
     public boolean isWarning() {
-        return warning;
+        return isWarning;
     }
 
     public Optional<Person> getContactToFocus() {
@@ -176,14 +176,14 @@ public class CommandResult {
                 && shouldExit == otherCommandResult.shouldExit
                 && shouldShowTutorial == otherCommandResult.shouldShowTutorial
                 && viewToShow == otherCommandResult.viewToShow
-                && warning == otherCommandResult.warning
+                && isWarning == otherCommandResult.isWarning
                 && Objects.equals(contactToFocus, otherCommandResult.contactToFocus)
                 && contactIndexToFocus == otherCommandResult.contactIndexToFocus;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(feedbackToUser, shouldShowHelp, shouldExit, shouldShowTutorial, viewToShow, warning,
+        return Objects.hash(feedbackToUser, shouldShowHelp, shouldExit, shouldShowTutorial, viewToShow, isWarning,
                 contactToFocus, contactIndexToFocus);
     }
 
@@ -195,7 +195,7 @@ public class CommandResult {
                 .add("exit", shouldExit)
                 .add("showTutorial", shouldShowTutorial)
                 .add("viewToShow", viewToShow)
-                .add("warning", warning)
+                .add("isWarning", isWarning)
                 .add("contactToFocus", contactToFocus)
                 .add("contactIndexToFocus", contactIndexToFocus)
                 .toString();

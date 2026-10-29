@@ -25,10 +25,10 @@ import org.junit.jupiter.api.io.TempDir;
 
 import coordimate.commons.exceptions.DataLoadingException;
 import coordimate.logic.commands.AddCommand;
+import coordimate.logic.commands.AddTagCommand;
 import coordimate.logic.commands.ArchiveCommand;
 import coordimate.logic.commands.ArchiveEventCommand;
 import coordimate.logic.commands.CommandResult;
-import coordimate.logic.commands.CreateTagCommand;
 import coordimate.logic.commands.DeleteCommand;
 import coordimate.logic.commands.DeleteTagCommand;
 import coordimate.logic.commands.EditTagCommand;
@@ -101,7 +101,7 @@ public class LogicManagerTest {
         Tag publicity = new Tag("Publicity");
 
         assertThrows(CommandException.class, Messages.withUsage(MutatingTagCommand.MESSAGE_SAVE_ERROR,
-                CreateTagCommand.MESSAGE_USAGE), () -> logic.execute("addtag t/Publicity"));
+                AddTagCommand.MESSAGE_USAGE), () -> logic.execute("addtag t/Publicity"));
         assertFalse(model.hasTag(publicity));
 
         CommandResult retryResult = logic.execute("addtag t/Publicity");
@@ -156,7 +156,7 @@ public class LogicManagerTest {
         logic = new LogicManager(model, new StorageManager(coordiMateStorage, userPrefsStorage));
 
         assertThrows(CommandException.class, Messages.withUsage(MutatingTagCommand.MESSAGE_LOAD_ERROR,
-                CreateTagCommand.MESSAGE_USAGE), () -> logic.execute("addtag t/Publicity"));
+                AddTagCommand.MESSAGE_USAGE), () -> logic.execute("addtag t/Publicity"));
         assertFalse(model.hasTag(new Tag("Publicity")));
     }
 
@@ -456,12 +456,12 @@ public class LogicManagerTest {
     private void useStorageThatFailsNextSave() {
         Path dataPath = temporaryFolder.resolve("coordiMate.json");
         JsonCoordiMateStorage coordiMateStorage = new JsonCoordiMateStorage(dataPath) {
-            private boolean failNextSave = true;
+            private boolean shouldFailNextSave = true;
 
             @Override
             public void saveCoordiMate(ReadOnlyCoordiMate coordiMate) throws IOException {
-                if (failNextSave) {
-                    failNextSave = false;
+                if (shouldFailNextSave) {
+                    shouldFailNextSave = false;
                     throw DUMMY_IO_EXCEPTION;
                 }
                 super.saveCoordiMate(coordiMate);

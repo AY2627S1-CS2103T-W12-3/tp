@@ -2,7 +2,7 @@ package coordimate.logic.commands;
 
 import static java.util.Objects.requireNonNull;
 
-import java.util.Optional;
+import java.util.Objects;
 
 import coordimate.logic.Messages;
 import coordimate.logic.commands.exceptions.CommandException;
@@ -23,7 +23,7 @@ public class EditTagCommand extends MutatingTagCommand {
     public static final String MESSAGE_SUCCESS = "%s successfully renamed to %s.";
     public static final String MESSAGE_TAG_NOT_FOUND = Messages.MESSAGE_TAG_NOT_FOUND;
     public static final String MESSAGE_SAME_TAG = "Tag %s already has that name. No changes were made.";
-    public static final String MESSAGE_DUPLICATE_TAG = CreateTagCommand.MESSAGE_DUPLICATE_TAG;
+    public static final String MESSAGE_DUPLICATE_TAG = AddTagCommand.MESSAGE_DUPLICATE_TAG;
 
     private final String currentTagName;
     private final Tag editedTag;
@@ -39,14 +39,7 @@ public class EditTagCommand extends MutatingTagCommand {
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
-        Optional<Tag> currentTag = model.getTagList().stream()
-                .filter(tag -> tag.getTagName().equalsIgnoreCase(currentTagName))
-                .findFirst();
-        if (currentTag.isEmpty()) {
-            throw new CommandException(String.format(MESSAGE_TAG_NOT_FOUND, currentTagName));
-        }
-
-        Tag tagToEdit = currentTag.get();
+        Tag tagToEdit = findTag(model, currentTagName);
         if (tagToEdit.isSameTag(editedTag)) {
             throw new CommandException(String.format(MESSAGE_SAME_TAG, tagToEdit.getTagName()));
         }
@@ -82,6 +75,6 @@ public class EditTagCommand extends MutatingTagCommand {
 
     @Override
     public int hashCode() {
-        return java.util.Objects.hash(currentTagName, editedTag);
+        return Objects.hash(currentTagName, editedTag);
     }
 }

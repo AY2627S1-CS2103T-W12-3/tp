@@ -62,7 +62,7 @@ public class CommandResultTest {
                 + commandResult.getFeedbackToUser() + ", showHelp=" + commandResult.shouldShowHelp()
                 + ", exit=" + commandResult.shouldExit() + ", showTutorial=" + commandResult.shouldShowTutorial()
                 + ", viewToShow=" + commandResult.getViewToShow()
-                + ", warning=" + commandResult.isWarning() + ", contactToFocus=null, contactIndexToFocus=-1}";
+                + ", isWarning=" + commandResult.isWarning() + ", contactToFocus=null, contactIndexToFocus=-1}";
         assertEquals(expected, commandResult.toString());
     }
 
