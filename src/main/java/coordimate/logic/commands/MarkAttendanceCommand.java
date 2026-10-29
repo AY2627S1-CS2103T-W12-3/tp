@@ -60,6 +60,9 @@ public class MarkAttendanceCommand extends Command {
                 CommandResult.View.EVENTS);
     }
 
+    /**
+     * Returns the named event, or throws if it is not saved in the model.
+     */
     private Event findMatchingEvent(Model model) throws CommandException {
         return model.getCoordiMate().getEventList().stream()
                 .filter(event -> event.getName().equalsIgnoreCase(eventName))
@@ -67,6 +70,9 @@ public class MarkAttendanceCommand extends Command {
                 .orElseThrow(() -> new CommandException(String.format(MESSAGE_EVENT_NOT_FOUND, eventName)));
     }
 
+    /**
+     * Returns the assigned member matching the requested name, or throws if none exists.
+     */
     private Name findMatchingMember(Event event) throws CommandException {
         return event.getMembers().stream()
                 .filter(member -> member.getFullName().equalsIgnoreCase(memberName.getFullName()))

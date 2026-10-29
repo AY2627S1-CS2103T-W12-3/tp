@@ -12,7 +12,9 @@ import coordimate.logic.commands.DeleteCommand;
 import coordimate.logic.commands.DeleteCommand.IdentifierType;
 import coordimate.logic.parser.exceptions.ParseException;
 
-/** Parses a permanent member ID, name, phone number, or email address for deletion. */
+/**
+ * Parses a permanent member ID, name, phone number, or email address for deletion.
+ */
 public class DeleteCommandParser implements Parser<DeleteCommand> {
     public static final String MESSAGE_UNKNOWN_PARAMETER =
             Messages.MESSAGE_UNKNOWN_PARAMETER + "\n" + DeleteCommand.MESSAGE_USAGE;

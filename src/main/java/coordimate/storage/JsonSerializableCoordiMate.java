@@ -39,6 +39,9 @@ class JsonSerializableCoordiMate {
     public static final String MESSAGE_DUPLICATE_TAG = "Tags list contains duplicate tag name(s).";
     public static final String MESSAGE_UNKNOWN_MEMBER = "Event members must refer to existing contacts.";
 
+    // The unsuffixed name is the first occurrence, so renamed collisions start at "(2)".
+    private static final int FIRST_COLLISION_SUFFIX = 2;
+
     private static final Pattern LEGACY_WHITESPACE_RUN = Pattern.compile("\\p{javaWhitespace}+");
 
     private final List<JsonAdaptedPerson> persons = new ArrayList<>();
@@ -123,15 +126,16 @@ class JsonSerializableCoordiMate {
 
     /**
      * Removes year-zero dismissal history from events that remain after cleanup.
+     * Returns true if any history was removed.
      */
     boolean removeYearZeroReminderStarts() {
-        boolean removed = false;
+        boolean hasRemovedHistory = false;
         for (JsonAdaptedEvent event : events) {
             if (event != null && event.removeYearZeroReminderStarts()) {
-                removed = true;
+                hasRemovedHistory = true;
             }
         }
-        return removed;
+        return hasRemovedHistory;
     }
 
     /**
@@ -217,9 +221,31 @@ class JsonSerializableCoordiMate {
      * Names already present anywhere in the file are reserved before choosing replacements.
      */
     List<EventNameCleanupResult.Rename> renameEventsWithCollidingNames() throws IllegalValueException {
+        List<Event> modelEvents = readEventsForNameCleanup();
+        Set<String> reservedNames = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        modelEvents.forEach(event -> reservedNames.add(event.getName()));
+
+        List<EventNameCleanupResult.Rename> renamedEvents = new ArrayList<>();
+        Set<String> seenNames = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        for (int i = 0; i < modelEvents.size(); i++) {
+            Event event = modelEvents.get(i);
+            if (seenNames.add(event.getName())) {
+                continue;
+            }
+            String newName = reserveUniqueEventName(event.getName(), reservedNames);
+            renamedEvents.add(new EventNameCleanupResult.Rename(events.get(i).getName(), newName));
+            events.set(i, new JsonAdaptedEvent(event.withDetails(newName, event.getStartTime(), event.getEndTime())));
+        }
+        return renamedEvents;
+    }
+
+    /**
+     * Converts all saved events and rejects names that were duplicates under the legacy whitespace rules.
+     * Completes validation before any saved event is renamed.
+     */
+    private List<Event> readEventsForNameCleanup() throws IllegalValueException {
         List<Event> modelEvents = new ArrayList<>();
         Set<String> legacyNames = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
-        Set<String> reservedNames = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
         for (JsonAdaptedEvent savedEvent : events) {
             if (savedEvent == null) {
                 throw new IllegalValueException("Events list must not contain null entries.");
@@ -230,25 +256,15 @@ class JsonSerializableCoordiMate {
                 throw new IllegalValueException(MESSAGE_DUPLICATE_EVENT);
             }
             modelEvents.add(event);
-            reservedNames.add(event.getName());
         }
-
-        List<EventNameCleanupResult.Rename> renamedEvents = new ArrayList<>();
-        Set<String> seenNames = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
-        for (int i = 0; i < modelEvents.size(); i++) {
-            Event event = modelEvents.get(i);
-            if (seenNames.add(event.getName())) {
-                continue;
-            }
-            String newName = uniqueEventName(event.getName(), reservedNames);
-            renamedEvents.add(new EventNameCleanupResult.Rename(events.get(i).getName(), newName));
-            events.set(i, new JsonAdaptedEvent(event.withDetails(newName, event.getStartTime(), event.getEndTime())));
-        }
-        return renamedEvents;
+        return modelEvents;
     }
 
-    private static String uniqueEventName(String name, Set<String> reservedNames) {
-        for (int number = 2; ; number++) {
+    /**
+     * Reserves an unused numbered name, truncating its stem to fit the event name limit.
+     */
+    private static String reserveUniqueEventName(String name, Set<String> reservedNames) {
+        for (int number = FIRST_COLLISION_SUFFIX; ; number++) {
             String suffix = " (" + number + ")";
             int stemLength = Math.min(name.codePointCount(0, name.length()), Event.MAX_NAME_LENGTH - suffix.length());
             String candidate = name.substring(0, name.offsetByCodePoints(0, stemLength)).stripTrailing() + suffix;
@@ -258,6 +274,9 @@ class JsonSerializableCoordiMate {
         }
     }
 
+    /**
+     * Returns the saved allocation counter, rejecting counters that could reuse a member ID.
+     */
     private long resolveNextMemberId(long minimumNextId) throws IllegalValueException {
         if (nextMemberId == null || nextMemberId.isNull()) {
             return minimumNextId;

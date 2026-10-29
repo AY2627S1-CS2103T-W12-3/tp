@@ -14,10 +14,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.OptionalInt;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import coordimate.logic.commands.CommandResult;
 import coordimate.logic.commands.DeleteCommand;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.CoordiMate;
@@ -209,9 +212,11 @@ public class PermanentMemberIdCommandsTest {
         startApplication();
         for (int i = 0; i < VIEWS.size(); i++) {
             logic.execute(VIEWS.get(i));
-            logic.execute("edit 12 m/Update " + i);
-            assertEquals(new PersonBuilder(ALICE_12).withNote("Update " + i).build(),
-                    model.getCoordiMate().getPersonList().get(1));
+            Person expectedAlice = new PersonBuilder(ALICE_12).withNote("Update " + i).build();
+            CommandResult result = logic.execute("edit 12 m/Update " + i);
+            assertEquals(Optional.of(expectedAlice), result.getContactToFocus(), VIEWS.get(i));
+            assertEquals(OptionalInt.empty(), result.getContactIndexToFocus(), VIEWS.get(i));
+            assertEquals(expectedAlice, model.getCoordiMate().getPersonList().get(1));
             assertEquals(BENSON_45, model.getCoordiMate().getPersonList().getFirst());
             assertEquals(CARL_99, model.getCoordiMate().getPersonList().getLast());
             assertEquals(model.getCoordiMate(), storage.readCoordiMate().orElseThrow());
@@ -220,11 +225,26 @@ public class PermanentMemberIdCommandsTest {
 
     @Test
     public void deleteId_acrossSearchesFiltersAndEmptyResults_targetsSameSavedMember() throws Exception {
+        Map<String, OptionalInt> expectedFocusIndexes = Map.of(
+                "list", OptionalInt.of(1),
+                "search Alice", OptionalInt.of(0),
+                "search Benson", OptionalInt.empty(),
+                "filter tag/Sponsor", OptionalInt.empty(),
+                "members evn/Concert", OptionalInt.of(1),
+                "search Nobody", OptionalInt.empty());
         for (String view : VIEWS) {
             startApplication();
             logic.execute(view);
-            assertEquals(DeleteCommand.confirmationPrompt(ALICE_12), logic.execute("delete 12").getFeedbackToUser());
-            logic.execute("y");
+            CommandResult request = logic.execute("delete 12");
+            assertEquals(DeleteCommand.confirmationPrompt(ALICE_12), request.getFeedbackToUser());
+            assertEquals(Optional.empty(), request.getContactToFocus(), view);
+            assertEquals(OptionalInt.empty(), request.getContactIndexToFocus(), view);
+            assertTrue(logic.isAwaitingDeleteConfirmation());
+
+            CommandResult confirmed = logic.execute("y");
+            assertEquals(Optional.empty(), confirmed.getContactToFocus(), view);
+            assertEquals(expectedFocusIndexes.get(view), confirmed.getContactIndexToFocus(), view);
+            assertFalse(logic.isAwaitingDeleteConfirmation());
             assertEquals(List.of(BENSON_45, CARL_99), model.getCoordiMate().getPersonList(), view);
             assertEquals(List.of(BENSON_45.getName()), model.getCoordiMate().getEventList().getFirst().getMembers());
             assertEquals(model.getCoordiMate(), storage.readCoordiMate().orElseThrow());

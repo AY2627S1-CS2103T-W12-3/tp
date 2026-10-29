@@ -853,6 +853,9 @@ public class MainWindow extends UiPart<Stage> {
                 shown, logic.showingArchivedProperty());
     }
 
+    /**
+     * Dismisses the reminder and displays any save failure before restoring workspace focus.
+     */
     private void dismissReminder(Event reminder) {
         try {
             logic.dismissReminder(reminder);

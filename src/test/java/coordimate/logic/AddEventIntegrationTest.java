@@ -1,7 +1,10 @@
 package coordimate.logic;
 
+import static coordimate.testutil.PersistenceTestUtil.captureState;
+import static coordimate.testutil.PersistenceTestUtil.failingStorage;
 import static coordimate.testutil.TypicalPersons.AMY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -18,11 +21,11 @@ import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.logic.parser.exceptions.ParseException;
 import coordimate.model.CoordiMate;
 import coordimate.model.ModelManager;
-import coordimate.model.ReadOnlyCoordiMate;
 import coordimate.model.event.Event;
 import coordimate.storage.JsonCoordiMateStorage;
 import coordimate.storage.JsonUserPrefsStorage;
 import coordimate.storage.StorageManager;
+import coordimate.testutil.PersistenceTestUtil.SavedState;
 
 public class AddEventIntegrationTest {
     private static final String COMMAND = "addevent evn/Fair st/09-10-2026 et/10-10-2026";
@@ -57,18 +60,15 @@ public class AddEventIntegrationTest {
             ModelManager model = new ModelManager();
             model.addPerson(AMY);
             new JsonCoordiMateStorage(path).saveCoordiMate(model.getCoordiMate());
-            String beforeFile = Files.readString(path);
-            CoordiMate beforeModel = new CoordiMate(model.getCoordiMate());
-            JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path) {
-                @Override
-                public void saveCoordiMate(ReadOnlyCoordiMate data) throws IOException {
-                    throw failure;
-                }
-            };
+            SavedState before = captureState(model, path);
+            JsonCoordiMateStorage storage = failingStorage(path, failure);
+
+            CommandException error = assertThrows(CommandException.class, () ->
+                    newLogic(model, storage).execute(COMMAND));
             assertEquals(Messages.withUsage(AddEventCommand.MESSAGE_SAVE_ERROR, AddEventCommand.MESSAGE_USAGE),
-                    assertThrows(CommandException.class, () -> newLogic(model, storage).execute(COMMAND)).getMessage());
-            assertEquals(beforeModel, model.getCoordiMate());
-            assertEquals(beforeFile, Files.readString(path));
+                    error.getMessage());
+            assertSame(failure, error.getCause());
+            before.assertUnchanged(model);
         }
     }
 

@@ -112,7 +112,9 @@ public class EventListPanel extends UiPart<Region> {
         this(events, persons, Clock.systemDefaultZone());
     }
 
-    /** Shows assigned members' leave status as of the date supplied by {@code clock}. */
+    /**
+     * Shows assigned members' leave status as of the date supplied by {@code clock}.
+     */
     EventListPanel(ObservableList<Event> events, ObservableList<Person> persons, Clock clock) {
         super(FXML);
         this.persons = getPersonSource(persons);
@@ -167,7 +169,9 @@ public class EventListPanel extends UiPart<Region> {
         CardNavigation.selectPrevious(eventListView);
     }
 
-    /** Refreshes leave indicators when the calendar date changes. */
+    /**
+     * Refreshes leave indicators when the calendar date changes.
+     */
     void refreshIfDateChanged() {
         LocalDate today = LocalDate.now(clock);
         if (today.equals(shownDate)) {
@@ -323,6 +327,9 @@ public class EventListPanel extends UiPart<Region> {
         return hint;
     }
 
+    /**
+     * Builds a member row with its permanent ID, contact details, and attendance status.
+     */
     private HBox createMemberRow(Name member, AttendanceStatus status, Person person) {
         Label memberId = new Label(person == null ? "ID: unavailable" : "ID: " + person.getMemberId().orElseThrow());
         memberId.setMinWidth(Region.USE_PREF_SIZE);
@@ -452,6 +459,13 @@ public class EventListPanel extends UiPart<Region> {
             return "Unknown (end time not specified)";
         }
         long minutes = Duration.between(startDateTime.orElseThrow(), endDateTime.orElseThrow()).toMinutes();
+        return formatTimedDuration(minutes);
+    }
+
+    /**
+     * Formats elapsed minutes as nonzero day, hour, and minute units, using 24-hour days.
+     */
+    private String formatTimedDuration(long minutes) {
         if (minutes == 0) {
             return "0 minutes";
         }

@@ -39,13 +39,16 @@ public final class UpcomingEventFinder {
     public List<Event> findUpcomingEvents(List<Event> events) {
         requireNonNull(events);
         ZonedDateTime now = ZonedDateTime.now(clock);
-        Comparator<Event> byStart = Comparator.comparing(event -> startInstant(event, now.getZone()));
+        Comparator<Event> byStart = Comparator.comparing(event -> getStartInstant(event, now.getZone()));
         return events.stream()
                 .filter(event -> isEligible(event, now))
                 .sorted(byStart.thenComparing(Event::getName, String.CASE_INSENSITIVE_ORDER))
                 .toList();
     }
 
+    /**
+     * Returns whether the start falls within the timed or date-only reminder window.
+     */
     private boolean isEligible(Event event, ZonedDateTime now) {
         EventTime start = event.getStartTime();
         if (start.getDateTime().isEmpty()) {
@@ -53,12 +56,15 @@ public final class UpcomingEventFinder {
             LocalDate today = now.toLocalDate();
             return startDate.equals(today) || startDate.equals(today.plusDays(1));
         }
-        Instant startTime = startInstant(event, now.getZone());
+        Instant startTime = getStartInstant(event, now.getZone());
         Instant currentTime = now.toInstant();
         return !startTime.isBefore(currentTime) && !startTime.isAfter(currentTime.plus(REMINDER_WINDOW));
     }
 
-    private Instant startInstant(Event event, ZoneId zone) {
+    /**
+     * Returns the start instant in the given zone, using midnight for date-only values.
+     */
+    private Instant getStartInstant(Event event, ZoneId zone) {
         EventTime start = event.getStartTime();
         return start.getDateTime().map(time -> time.atZone(zone).toInstant())
                 .orElseGet(() -> start.getDate().atStartOfDay(zone).toInstant());
