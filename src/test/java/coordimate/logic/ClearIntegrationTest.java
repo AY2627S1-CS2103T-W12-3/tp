@@ -2,7 +2,6 @@ package coordimate.logic;
 
 import static coordimate.testutil.TypicalPersons.AMY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
@@ -23,8 +22,6 @@ import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
 import coordimate.model.tag.Tag;
 import coordimate.storage.JsonCoordiMateStorage;
-import coordimate.storage.JsonUserPrefsStorage;
-import coordimate.storage.StorageManager;
 
 public class ClearIntegrationTest {
     @TempDir
@@ -36,7 +33,8 @@ public class ClearIntegrationTest {
         JsonCoordiMateStorage storage = new JsonCoordiMateStorage(temporaryFolder.resolve("data.json"));
         storage.saveCoordiMate(model.getCoordiMate());
 
-        assertEquals(ClearCommand.MESSAGE_SUCCESS, newLogic(model, storage).execute("clear").getFeedbackToUser());
+        assertEquals(ClearCommand.MESSAGE_SUCCESS,
+                PersistenceTestUtil.newLogic(model, storage, temporaryFolder).execute("clear").getFeedbackToUser());
         assertEquals(new CoordiMate(), model.getCoordiMate());
         ReadOnlyCoordiMate reloaded = storage.readCoordiMate().orElseThrow();
         assertEquals(new CoordiMate(), reloaded);
@@ -47,24 +45,15 @@ public class ClearIntegrationTest {
     public void execute_saveFailure_modelAndFileUnchanged() throws Exception {
         ModelManager model = newModel();
         Path path = temporaryFolder.resolve("data.json");
-        new JsonCoordiMateStorage(path).saveCoordiMate(model.getCoordiMate());
-        CoordiMate beforeModel = new CoordiMate(model.getCoordiMate());
-        String beforeFile = Files.readString(path);
+        PersistenceTestUtil.BeforeState before = PersistenceTestUtil.seedThenCapture(model, path);
         IOException failure = new IOException("Disk full");
-        JsonCoordiMateStorage failingStorage = new JsonCoordiMateStorage(path) {
-            @Override
-            public void saveCoordiMate(ReadOnlyCoordiMate data) throws IOException {
-                throw failure;
-            }
-        };
+        JsonCoordiMateStorage failingStorage = PersistenceTestUtil.failingStorage(path, failure);
 
         CommandException exception = assertThrows(CommandException.class, () ->
-                newLogic(model, failingStorage).execute("clear"));
+                PersistenceTestUtil.newLogic(model, failingStorage, temporaryFolder).execute("clear"));
         assertEquals(Messages.withUsage(ClearCommand.MESSAGE_SAVE_ERROR,
                 ClearCommand.MESSAGE_USAGE), exception.getMessage());
-        assertSame(failure, exception.getCause());
-        assertEquals(beforeModel, model.getCoordiMate());
-        assertEquals(beforeFile, Files.readString(path));
+        PersistenceTestUtil.assertSaveFailurePreservedState(exception, failure, model, before);
     }
 
     @Test
@@ -76,7 +65,8 @@ public class ClearIntegrationTest {
         CoordiMate beforeModel = new CoordiMate(model.getCoordiMate());
 
         CommandException exception = assertThrows(CommandException.class, () ->
-                newLogic(model, new JsonCoordiMateStorage(path)).execute("clear"));
+                PersistenceTestUtil.newLogic(model, new JsonCoordiMateStorage(path), temporaryFolder)
+                        .execute("clear"));
         assertEquals(Messages.withUsage(ClearCommand.MESSAGE_LOAD_ERROR,
                 ClearCommand.MESSAGE_USAGE), exception.getMessage());
         assertEquals(beforeModel, model.getCoordiMate());
@@ -93,7 +83,7 @@ public class ClearIntegrationTest {
         String beforeFile = Files.readString(path);
 
         ParseException exception = assertThrows(ParseException.class, () ->
-                newLogic(model, storage).execute("clear garbage"));
+                PersistenceTestUtil.newLogic(model, storage, temporaryFolder).execute("clear garbage"));
 
         assertEquals(String.format(Messages.MESSAGE_INVALID_COMMAND_FORMAT, ClearCommand.MESSAGE_USAGE),
                 exception.getMessage());
@@ -108,10 +98,5 @@ public class ClearIntegrationTest {
         model.addEvent(new Event("Final Concert", new EventTime("08-08-2026"),
                 new EventTime("08-08-2026"), List.of(AMY.getName())));
         return model;
-    }
-
-    private Logic newLogic(ModelManager model, JsonCoordiMateStorage storage) {
-        return new LogicManager(model, new StorageManager(storage,
-                new JsonUserPrefsStorage(temporaryFolder.resolve("prefs.json"))));
     }
 }

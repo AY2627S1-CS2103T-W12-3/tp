@@ -4,7 +4,6 @@ import static coordimate.testutil.TypicalPersons.ALICE;
 import static coordimate.testutil.TypicalPersons.BENSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -23,12 +22,9 @@ import coordimate.logic.commands.DeleteCommand;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.CoordiMate;
 import coordimate.model.ModelManager;
-import coordimate.model.ReadOnlyCoordiMate;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
 import coordimate.storage.JsonCoordiMateStorage;
-import coordimate.storage.JsonUserPrefsStorage;
-import coordimate.storage.StorageManager;
 
 public class DeleteCommandIntegrationTest {
     @TempDir
@@ -39,17 +35,15 @@ public class DeleteCommandIntegrationTest {
         ModelManager model = modelWithEvent();
         Path path = temporaryFolder.resolve("contacts.json");
         JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path);
-        storage.saveCoordiMate(model.getCoordiMate());
-        String beforeFile = Files.readString(path);
-        CoordiMate beforeModel = new CoordiMate(model.getCoordiMate());
-        Logic logic = newLogic(model, storage);
+        PersistenceTestUtil.BeforeState before = PersistenceTestUtil.seedThenCapture(model, path);
+        Logic logic = PersistenceTestUtil.newLogic(model, storage, temporaryFolder);
 
         CommandResult confirmation = logic.execute("delete n/alice pauline");
         assertEquals(DeleteCommand.confirmationPrompt(ALICE), confirmation.getFeedbackToUser());
         assertEquals(CommandResult.View.CONTACTS, confirmation.getViewToShow());
         assertTrue(logic.isAwaitingDeleteConfirmation());
-        assertEquals(beforeModel, model.getCoordiMate());
-        assertEquals(beforeFile, Files.readString(path));
+        assertEquals(before.model(), model.getCoordiMate());
+        assertEquals(before.fileContent(), Files.readString(path));
 
         CommandResult deletion = logic.execute("y");
         assertEquals("Contact deleted successfully: Alice Pauline.", deletion.getFeedbackToUser());
@@ -65,7 +59,8 @@ public class DeleteCommandIntegrationTest {
     @Test
     public void execute_uppercaseConfirmation_deletesContact() throws Exception {
         ModelManager model = modelWithEvent();
-        Logic logic = newLogic(model, new JsonCoordiMateStorage(temporaryFolder.resolve("uppercase.json")));
+        Logic logic = PersistenceTestUtil.newLogic(model,
+                new JsonCoordiMateStorage(temporaryFolder.resolve("uppercase.json")), temporaryFolder);
 
         logic.execute("delete p/(9435) 1253");
         assertEquals("Contact deleted successfully: Alice Pauline.", logic.execute("Y").getFeedbackToUser());
@@ -79,7 +74,7 @@ public class DeleteCommandIntegrationTest {
             Path path = temporaryFolder.resolve("padded-confirmation.json");
             JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path);
             storage.saveCoordiMate(model.getCoordiMate());
-            Logic logic = newLogic(model, storage);
+            Logic logic = PersistenceTestUtil.newLogic(model, storage, temporaryFolder);
 
             logic.execute("delete 1");
             assertEquals("Contact deleted successfully: Alice Pauline.", logic.execute(input).getFeedbackToUser());
@@ -99,7 +94,7 @@ public class DeleteCommandIntegrationTest {
             storage.saveCoordiMate(model.getCoordiMate());
             String beforeFile = Files.readString(path);
             CoordiMate beforeModel = new CoordiMate(model.getCoordiMate());
-            Logic logic = newLogic(model, storage);
+            Logic logic = PersistenceTestUtil.newLogic(model, storage, temporaryFolder);
 
             logic.execute("delete 1");
             CommandResult cancellation = logic.execute(input);
@@ -118,7 +113,8 @@ public class DeleteCommandIntegrationTest {
     public void execute_filteredList_usesPermanentId() throws Exception {
         ModelManager model = modelWithEvent();
         model.updateFilteredPersonList(person -> person.equals(BENSON));
-        Logic logic = newLogic(model, new JsonCoordiMateStorage(temporaryFolder.resolve("filtered.json")));
+        Logic logic = PersistenceTestUtil.newLogic(model,
+                new JsonCoordiMateStorage(temporaryFolder.resolve("filtered.json")), temporaryFolder);
 
         assertEquals(DeleteCommand.confirmationPrompt(BENSON), logic.execute("delete 2").getFeedbackToUser());
         logic.execute("y");
@@ -132,7 +128,8 @@ public class DeleteCommandIntegrationTest {
     public void execute_emailOutsideDisplayedList_findsSavedContact() throws Exception {
         ModelManager model = modelWithEvent();
         model.updateFilteredPersonList(person -> false);
-        Logic logic = newLogic(model, new JsonCoordiMateStorage(temporaryFolder.resolve("hidden.json")));
+        Logic logic = PersistenceTestUtil.newLogic(model,
+                new JsonCoordiMateStorage(temporaryFolder.resolve("hidden.json")), temporaryFolder);
 
         assertEquals(DeleteCommand.confirmationPrompt(ALICE),
                 logic.execute("delete e/ALICE@EXAMPLE.COM").getFeedbackToUser());
@@ -148,26 +145,17 @@ public class DeleteCommandIntegrationTest {
         for (IOException failure : failures) {
             ModelManager model = modelWithEvent();
             Path path = temporaryFolder.resolve("failed.json");
-            new JsonCoordiMateStorage(path).saveCoordiMate(model.getCoordiMate());
-            String beforeFile = Files.readString(path);
-            CoordiMate beforeModel = new CoordiMate(model.getCoordiMate());
-            JsonCoordiMateStorage failingStorage = new JsonCoordiMateStorage(path) {
-                @Override
-                public void saveCoordiMate(ReadOnlyCoordiMate data) throws IOException {
-                    throw failure;
-                }
-            };
-            Logic logic = newLogic(model, failingStorage);
+            PersistenceTestUtil.BeforeState before = PersistenceTestUtil.seedThenCapture(model, path);
+            JsonCoordiMateStorage failingStorage = PersistenceTestUtil.failingStorage(path, failure);
+            Logic logic = PersistenceTestUtil.newLogic(model, failingStorage, temporaryFolder);
             logic.execute("delete 1");
 
             CommandException exception = assertThrows(CommandException.class, () -> logic.execute("y"));
 
             assertEquals(Messages.withUsage(DeleteCommand.MESSAGE_SAVE_ERROR,
                     DeleteCommand.MESSAGE_USAGE), exception.getMessage());
-            assertSame(failure, exception.getCause());
+            PersistenceTestUtil.assertSaveFailurePreservedState(exception, failure, model, before);
             assertFalse(logic.isAwaitingDeleteConfirmation());
-            assertEquals(beforeModel, model.getCoordiMate());
-            assertEquals(beforeFile, Files.readString(path));
         }
     }
 
@@ -177,7 +165,7 @@ public class DeleteCommandIntegrationTest {
         Files.writeString(path, "not json");
         ModelManager model = modelWithEvent();
         CoordiMate beforeModel = new CoordiMate(model.getCoordiMate());
-        Logic logic = newLogic(model, new JsonCoordiMateStorage(path));
+        Logic logic = PersistenceTestUtil.newLogic(model, new JsonCoordiMateStorage(path), temporaryFolder);
 
         CommandException firstError = assertThrows(CommandException.class, () -> logic.execute("delete 1"));
         assertEquals(Messages.withUsage(DeleteCommand.MESSAGE_LOAD_ERROR,
@@ -204,10 +192,5 @@ public class DeleteCommandIntegrationTest {
         EventTime date = new EventTime("08-08-2026");
         model.addEvent(new Event("Concert", date, date, List.of(ALICE.getName(), BENSON.getName())));
         return model;
-    }
-
-    private Logic newLogic(ModelManager model, JsonCoordiMateStorage contactStorage) {
-        return new LogicManager(model, new StorageManager(contactStorage,
-                new JsonUserPrefsStorage(temporaryFolder.resolve("prefs.json"))));
     }
 }
