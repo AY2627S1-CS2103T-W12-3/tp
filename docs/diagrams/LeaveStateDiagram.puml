@@ -1,0 +1,22 @@
+@startuml
+skin rose
+skinparam ArrowFontSize 12
+hide empty description
+
+state "Not on leave" as NotOnLeave
+state "On leave" as OnLeave
+state "Leave ended" as Ended
+Ended : The date stays in the data file,
+Ended : but the contact is shown
+Ended : as not on leave.
+
+[*] --> NotOnLeave : add without lv/
+[*] --> OnLeave : add with lv/DATE
+
+NotOnLeave --> OnLeave : edit lv/DATE
+OnLeave --> OnLeave : edit lv/NEW_DATE
+OnLeave --> Ended : the day after DATE begins
+OnLeave --> NotOnLeave : edit lv/
+Ended --> OnLeave : edit lv/DATE
+Ended --> NotOnLeave : edit lv/
+@enduml

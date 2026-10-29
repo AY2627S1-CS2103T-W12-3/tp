@@ -1,0 +1,30 @@
+@startuml
+!include style.puml
+skinparam arrowThickness 1.1
+skinparam arrowColor LOGIC_COLOR_T4
+skinparam classBackgroundColor LOGIC_COLOR
+
+package Logic as LogicPackage <<Rectangle>> {
+Class FilterCommandParser
+Class FilterCommand
+}
+
+package Model as ModelPackage <<Rectangle>> {
+Class FilterCriterion MODEL_COLOR
+Class "<<enumeration>>\nFilterField" as FilterField MODEL_COLOR
+Class ContactFilterPredicate MODEL_COLOR
+Class TagFilterPredicate MODEL_COLOR
+Class EventMembersPredicate MODEL_COLOR
+Class "<<interface>>\nPredicate<Person>" as Predicate MODEL_COLOR
+}
+
+FilterCommandParser ..> FilterCommand : creates >
+FilterCommand --> "1..*" FilterCriterion
+FilterCriterion --> "1" FilterField
+FilterCommand ..> ContactFilterPredicate : creates >
+
+ContactFilterPredicate ..|> Predicate
+ContactFilterPredicate --> "1..* criteria" Predicate
+TagFilterPredicate ..|> Predicate
+EventMembersPredicate ..|> Predicate
+@enduml
