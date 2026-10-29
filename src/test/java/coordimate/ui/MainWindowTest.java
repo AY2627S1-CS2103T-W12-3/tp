@@ -8,9 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -78,7 +76,7 @@ public class MainWindowTest {
 
     @Test
     public void switchViews_updatesWorkspaceAndCommandHints() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Stage stage = new Stage();
             ModelManager model = new ModelManager();
             model.addPerson(new PersonBuilder(TypicalPersons.ALICE).withTags("EXCO").build());
@@ -121,15 +119,12 @@ public class MainWindowTest {
             assertEquals("Bold", contacts.getFont().getStyle());
             assertTrue(getPrefixHelpText(prefixHelp).contains("n/Name"));
             stage.close();
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void topMenuHelpItem_opensOwnedHelpWindowAndShowsShortcutTooltip() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Stage stage = new Stage();
             MainWindow window = new MainWindow(stage, new LogicManager(new ModelManager(), null),
                     Path.of("data", "coordimate.json"));
@@ -189,15 +184,12 @@ public class MainWindowTest {
             assertTrue(stage.getScene().lookup("#tutorialOverlay").isVisible());
             window.stop();
             stage.close();
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void topMenuTutorialItem_opensTutorialOverlay() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Stage stage = new Stage();
             ModelManager model = new ModelManager();
             Person contact = new PersonBuilder(TypicalPersons.ALICE).build();
@@ -308,15 +300,12 @@ public class MainWindowTest {
             assertEquals("Step 1 of 16", ((Label) stage.getScene().lookup("#stepCounter")).getText());
             window.stop();
             stage.close();
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void tutorialKeyboardShortcuts_blockAppAndRestoreInputOnClose() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Stage stage = new Stage();
             LogicManager logic = new LogicManager(new ModelManager(), null);
             MainWindow window = new MainWindow(stage, logic, Path.of("data", "coordimate.json"));
@@ -357,15 +346,12 @@ public class MainWindowTest {
             assertTrue(commandInput.isDisabled());
             window.stop();
             stage.close();
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void tutorialCommandAndShortcut_openTutorialFromFirstStep() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Stage stage = new Stage();
             MainWindow window = null;
             try {
@@ -407,25 +393,22 @@ public class MainWindowTest {
                 }
                 stage.close();
             }
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void tutorialCardAndMemberSteps_rehighlightAfterJavaFxLayout() throws Exception {
-        FutureTask<MainWindow> setup = new FutureTask<>(() -> {
+        MainWindow window = JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Stage stage = new Stage();
             ModelManager model = new ModelManager();
             Person contact = new PersonBuilder(TypicalPersons.ALICE).build();
             model.addPerson(contact);
             EventTime time = new EventTime("25-10-2026");
             model.addEvent(new Event("Welcome Fair", time, time, List.of(contact.getName()), Map.of()));
-            MainWindow window = new MainWindow(stage, new LogicManager(model, null),
+            MainWindow mainWindow = new MainWindow(stage, new LogicManager(model, null),
                     Path.of("data", "coordimate.json"));
-            window.fillInnerParts();
-            window.show();
+            mainWindow.fillInnerParts();
+            mainWindow.show();
             Label tutorialLabel = (Label) stage.getScene().lookup("#tutorialLabel");
             tutorialLabel.fireEvent(mouseClickEvent());
             Button nextButton = (Button) stage.getScene().lookup("#nextButton");
@@ -433,12 +416,10 @@ public class MainWindowTest {
                 nextButton.fire();
             }
             assertEquals("Step 5 of 16", ((Label) stage.getScene().lookup("#stepCounter")).getText());
-            return window;
+            return mainWindow;
         });
-        Platform.runLater(setup);
-        MainWindow window = setup.get(10, TimeUnit.SECONDS);
 
-        FutureTask<Void> verifyCard = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Stage stage = window.getPrimaryStage();
             ListView<?> contacts = (ListView<?>) stage.getScene().lookup("#personListView");
             Node highlight = stage.getScene().lookup("#targetHighlight");
@@ -451,23 +432,19 @@ public class MainWindowTest {
             assertEquals("Step 10 of 16", ((Label) stage.getScene().lookup("#stepCounter")).getText());
             return null;
         });
-        Platform.runLater(verifyCard);
-        verifyCard.get(10, TimeUnit.SECONDS);
 
-        FutureTask<Void> verifyMembers = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Stage stage = window.getPrimaryStage();
             assertTutorialHighlights(stage, "#members");
             window.stop();
             stage.close();
             return null;
         });
-        Platform.runLater(verifyMembers);
-        verifyMembers.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void tutorialWithoutContacts_highlightsEmptyListAndKeepsDetailsHint() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Stage stage = new Stage();
             MainWindow window = new MainWindow(stage, new LogicManager(new ModelManager(), null),
                     Path.of("data", "coordimate.json"));
@@ -506,10 +483,7 @@ public class MainWindowTest {
             assertTrue(stage.getScene().lookup("#targetHighlight").isVisible());
             window.stop();
             stage.close();
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     private static void assertTutorialHighlights(Stage stage, String targetId) {
@@ -534,7 +508,7 @@ public class MainWindowTest {
 
     @Test
     public void cardNavigation_routesShortcutsToActiveView() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Stage stage = new Stage();
             MainWindow window = null;
             try {
@@ -664,15 +638,12 @@ public class MainWindowTest {
                 }
                 stage.close();
             }
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void cardNavigation_consumesUnsupportedKeysAndLeavesModifiedShortcutsAlone() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Stage stage = new Stage();
             MainWindow window = null;
             try {
@@ -747,15 +718,12 @@ public class MainWindowTest {
                 }
                 stage.close();
             }
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void cardNavigation_emptyListsConsumeNavigationKeysWithoutChangingSelection() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Stage stage = new Stage();
             MainWindow window = null;
             try {
@@ -782,15 +750,12 @@ public class MainWindowTest {
                 }
                 stage.close();
             }
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void cardNavigation_deleteConfirmationLeavesNavigationKeysForInput() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Stage stage = new Stage();
             MainWindow window = null;
             try {
@@ -826,15 +791,12 @@ public class MainWindowTest {
                 }
                 stage.close();
             }
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void listCommand_opensContactsView() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Stage stage = new Stage();
             try {
                 StorageManager storage = new StorageManager(
@@ -850,10 +812,7 @@ public class MainWindowTest {
             } finally {
                 stage.close();
             }
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     private static void assertListCommandOpensContactsView(MainWindow window, Stage stage) {
@@ -896,7 +855,7 @@ public class MainWindowTest {
 
     @Test
     public void longFeedback_atMinimumWindowSize_keepsWorkspaceAndCommandInputVisible() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Stage stage = new Stage();
             ModelManager model = new ModelManager();
             model.setGuiSettings(new GuiSettings(WindowBounds.PREFERRED_MIN_WIDTH,
@@ -967,9 +926,7 @@ public class MainWindowTest {
                 stage.close();
             }
             return null;
-        });
-        Platform.runLater(task);
-        task.get(20, TimeUnit.SECONDS);
+        }, 20, TimeUnit.SECONDS);
     }
 
     private static void assertLongFeedbackFitsWindow(Stage stage, TextField input, ScrollPane feedbackScroll,
@@ -986,7 +943,7 @@ public class MainWindowTest {
 
     @Test
     public void feedbackLayout_longSentenceAndRepeatedMediumMessage_staysConsistent() throws Exception {
-        MainWindow window = runOnJavaFxThread(() -> {
+        MainWindow window = JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Stage stage = new Stage();
             ModelManager model = new ModelManager();
             model.setGuiSettings(new GuiSettings(WindowBounds.PREFERRED_MIN_WIDTH,
@@ -1005,14 +962,14 @@ public class MainWindowTest {
         try {
             submitFeedbackCommand(stage, "list");
             submitFeedbackCommand(stage, mediumSearch);
-            double mediumWidth = runOnJavaFxThread(() -> {
+            double mediumWidth = JavaFxTestSupport.runOnFxThreadAndWait(() -> {
                 ScrollPane scroll = (ScrollPane) stage.getScene().lookup("#feedbackMessageScroll");
                 assertFalse(stage.getScene().lookup("#feedbackScrollHint").isVisible());
                 return scroll.getWidth();
             });
 
             submitFeedbackCommand(stage, "search " + "a".repeat(3000));
-            runOnJavaFxThread(() -> {
+            JavaFxTestSupport.runOnFxThreadAndWait(() -> {
                 ScrollPane scroll = (ScrollPane) stage.getScene().lookup("#feedbackMessageScroll");
                 assertTrue(scroll.getHeight() >= 60);
                 assertTrue(scroll.getHeight() <= 220);
@@ -1021,14 +978,14 @@ public class MainWindowTest {
             });
 
             submitFeedbackCommand(stage, mediumSearch);
-            runOnJavaFxThread(() -> {
+            JavaFxTestSupport.runOnFxThreadAndWait(() -> {
                 ScrollPane scroll = (ScrollPane) stage.getScene().lookup("#feedbackMessageScroll");
                 assertFalse(stage.getScene().lookup("#feedbackScrollHint").isVisible());
                 assertEquals(mediumWidth, scroll.getWidth(), 1);
                 return null;
             });
         } finally {
-            runOnJavaFxThread(() -> {
+            JavaFxTestSupport.runOnFxThreadAndWait(() -> {
                 window.stop();
                 stage.close();
                 return null;
@@ -1037,7 +994,7 @@ public class MainWindowTest {
     }
 
     private static void submitFeedbackCommand(Stage stage, String command) throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             TextField input = (TextField) stage.getScene().lookup("#commandTextField");
             Button submit = (Button) stage.getScene().lookup("#submitButton");
             input.setText(command);
@@ -1063,15 +1020,9 @@ public class MainWindowTest {
         assertTrue(completed.await(10, TimeUnit.SECONDS));
     }
 
-    private static <T> T runOnJavaFxThread(Callable<T> action) throws Exception {
-        FutureTask<T> task = new FutureTask<>(action);
-        Platform.runLater(task);
-        return task.get(10, TimeUnit.SECONDS);
-    }
-
     @Test
     public void minimumWindowSize_keepsDetailsBesideListsAndEventTimingVisible() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             if (Screen.getPrimary().getVisualBounds().getWidth() < WindowBounds.PREFERRED_MIN_WIDTH
                     || Screen.getPrimary().getVisualBounds().getHeight() < WindowBounds.PREFERRED_MIN_HEIGHT) {
                 return null;
@@ -1126,14 +1077,12 @@ public class MainWindowTest {
                 stage.close();
             }
             return null;
-        });
-        Platform.runLater(task);
-        task.get(20, TimeUnit.SECONDS);
+        }, 20, TimeUnit.SECONDS);
     }
 
     @Test
     public void assignmentCommands_keepCurrentView() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Stage stage = new Stage();
             ModelManager model = new ModelManager();
             model.addPerson(TypicalPersons.ALICE);
@@ -1170,15 +1119,12 @@ public class MainWindowTest {
                 window.stop();
                 stage.close();
             }
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void deleteCommand_opensContactsForConfirmation() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Stage stage = new Stage();
             ModelManager model = new ModelManager();
             model.addPerson(TypicalPersons.ALICE);
@@ -1213,15 +1159,12 @@ public class MainWindowTest {
                 window.stop();
                 stage.close();
             }
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void contactCommands_switchToContactsAndFocusAffectedContact() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Stage stage = new Stage();
             MainWindow window = null;
             try {
@@ -1277,15 +1220,12 @@ public class MainWindowTest {
                 }
                 stage.close();
             }
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void showWindow_startsMaximized() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Stage stage = new Stage();
             MainWindow window = new MainWindow(stage, new LogicManager(new ModelManager(), null),
                     Path.of("data", "coordimate.json"));
@@ -1298,14 +1238,12 @@ public class MainWindowTest {
 
             Platform.runLater(stage::close);
             return null;
-        });
-        Platform.runLater(task);
-        task.get(20, TimeUnit.SECONDS);
+        }, 20, TimeUnit.SECONDS);
     }
 
     @Test
     public void showWindow_savedAsNotMaximized_startsNotMaximized() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Stage stage = new Stage();
             ModelManager model = new ModelManager();
             model.setGuiSettings(new GuiSettings(900, 700, 0, 0, false));
@@ -1336,15 +1274,12 @@ public class MainWindowTest {
 
             assertEquals(new GuiSettings(expectedWidth, expectedHeight, expectedX, expectedY, false),
                     model.getGuiSettings());
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void createWindow_savedPositionOutsideAllScreens_usesPrimaryScreen() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Stage stage = new Stage();
             ModelManager model = new ModelManager();
             model.setGuiSettings(new GuiSettings(900, 700, Integer.MAX_VALUE, Integer.MAX_VALUE, false));
@@ -1354,15 +1289,12 @@ public class MainWindowTest {
             Rectangle2D screenBounds = Screen.getPrimary().getVisualBounds();
             assertTrue(screenBounds.contains(stage.getX(), stage.getY()));
             stage.close();
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void closeWindow_whileMaximized_savesNormalBoundsAndMaximizedState() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Stage stage = new Stage();
             ModelManager model = new ModelManager();
             MainWindow window = new MainWindow(stage, new LogicManager(model, null),
@@ -1377,15 +1309,12 @@ public class MainWindowTest {
             stage.fireEvent(new WindowEvent(stage, WindowEvent.WINDOW_CLOSE_REQUEST));
 
             assertEquals(new GuiSettings(normalWidth, normalHeight, normalX, normalY, true), model.getGuiSettings());
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void clickCommandRow_insertsCommandAndShowsFormatAndExample() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Stage stage = new Stage();
             MainWindow window = new MainWindow(stage, new LogicManager(new ModelManager(), null),
                     Path.of("data", "coordimate.json"));
@@ -1403,15 +1332,12 @@ public class MainWindowTest {
             assertTrue(hintText.contains("\nExample: add n/Aisha Tan"));
 
             stage.close();
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void clickFilterCommandRow_showsExampleWithFullOrganisationName() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Stage stage = new Stage();
             MainWindow window = new MainWindow(stage, new LogicManager(new ModelManager(), null),
                     Path.of("data", "coordimate.json"));
@@ -1429,15 +1355,12 @@ public class MainWindowTest {
                     + "Example: filter tag/EXCO organisation/NUS Student Affairs", getPrefixHelpText(prefixHelp));
 
             stage.close();
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void tagMembers_showRolesOrganisationsAndTagColors() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Stage stage = new Stage();
             ModelManager model = new ModelManager();
             model.addPerson(new PersonBuilder().withName("Aisha Tan").withPhone("91234567")
@@ -1493,15 +1416,12 @@ public class MainWindowTest {
             assertEquals(Orientation.VERTICAL, tagSplitPane.getOrientation());
 
             stage.close();
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void commandRow_supportsKeyboardActivation() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Stage stage = new Stage();
             MainWindow window = new MainWindow(stage, new LogicManager(new ModelManager(), null),
                     Path.of("data", "coordimate.json"));
@@ -1529,10 +1449,7 @@ public class MainWindowTest {
             assertFalse(otherKey.isConsumed());
             assertEquals("add", commandInput.getText());
             stage.close();
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     private static KeyEvent keyEvent(KeyCode keyCode) {
@@ -1588,7 +1505,7 @@ public class MainWindowTest {
 
     @Test
     public void archivedContacts_markedInTagsViewAndCommandPanelListsArchiveCommands() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Stage stage = new Stage();
             ModelManager model = new ModelManager();
             model.addPerson(TypicalPersons.ALICE);
@@ -1621,15 +1538,12 @@ public class MainWindowTest {
                 window.stop();
                 stage.close();
             }
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void listArchived_showsArchivedMessagesHeaderAndCommands() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Stage stage = new Stage();
             Path dataPath = temporaryFolder.resolve("archived-empty-data.json");
             StorageManager storage = new StorageManager(new JsonCoordiMateStorage(dataPath),
@@ -1675,15 +1589,12 @@ public class MainWindowTest {
                 window.stop();
                 stage.close();
             }
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void openingTutorialInArchivedView_returnsToActiveView() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Stage stage = new Stage();
             ModelManager model = new ModelManager();
             model.addPerson(TypicalPersons.ALICE);
@@ -1711,10 +1622,7 @@ public class MainWindowTest {
                 window.stop();
                 stage.close();
             }
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     private static List<String> visibleCommandNames(Stage stage) {

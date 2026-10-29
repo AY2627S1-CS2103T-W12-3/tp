@@ -6,8 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -34,7 +32,7 @@ public class UiManagerTest {
 
     @Test
     public void start_startupWarning_showsDeletedNamesAfterWindowOpens() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             ModelManager model = new ModelManager();
             Stage primaryStage = new Stage();
             String warning = "Deleted 1 saved event:\n\n\"Planning\\u2003c/review\"";
@@ -59,15 +57,12 @@ public class UiManagerTest {
                 manager.stop();
                 primaryStage.close();
             }
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void start_startupWarning_dialogShowsScrollableDeletionList() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             ModelManager model = new ModelManager();
             model.setHasSeenTutorial(true);
             Stage primaryStage = new Stage();
@@ -92,15 +87,12 @@ public class UiManagerTest {
                 manager.stop();
                 primaryStage.close();
             }
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void showAlertDialogAndWait_errorMessage_keepsCompleteScrollableContent() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             ModelManager model = new ModelManager();
             model.setHasSeenTutorial(true);
             Stage primaryStage = new Stage();
@@ -126,10 +118,7 @@ public class UiManagerTest {
                 manager.stop();
                 primaryStage.close();
             }
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @BeforeAll
@@ -139,7 +128,7 @@ public class UiManagerTest {
 
     @Test
     public void start_startupWarning_notifiesAfterWindowIsShown() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             ModelManager model = new ModelManager();
             model.setHasSeenTutorial(true);
             Stage primaryStage = new Stage();
@@ -163,15 +152,12 @@ public class UiManagerTest {
                 manager.stop();
                 primaryStage.close();
             }
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void start_unseenTutorial_opensAndRecordsPreferenceWhenClosed() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             ModelManager model = new ModelManager();
             LogicManager logic = new LogicManager(model, null);
             Stage primaryStage = new Stage();
@@ -206,15 +192,12 @@ public class UiManagerTest {
             assertFalse(primaryStage.getScene().lookup("#commandTextField").isDisabled());
             uiManager.stop();
             primaryStage.close();
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void start_tutorialAlreadySeen_doesNotOpenAutomatically() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             ModelManager model = new ModelManager();
             model.setHasSeenTutorial(true);
             LogicManager logic = new LogicManager(model, null);
@@ -228,15 +211,12 @@ public class UiManagerTest {
             assertFalse(tutorialOverlay.isVisible());
             uiManager.stop();
             primaryStage.close();
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void start_dataRecoveryMode_showsWarningAndExits() throws Exception {
-        FutureTask<RecordingUiManager> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             ModelManager model = new ModelManager();
             LogicManager logic = new LogicManager(model, null);
             Path dataFilePath = Path.of("data", "coordimate.json");
@@ -261,13 +241,11 @@ public class UiManagerTest {
             primaryStage.close();
             return uiManager;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void start_dataRecoveryModeWithDetail_showsReasonAndExits() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             LogicManager logic = new LogicManager(new ModelManager(), null);
             Path dataFilePath = Path.of("data", "coordimate.json");
             String detail = "Contact \"Alex Yeoh\": archived must be true or false.";
@@ -283,15 +261,12 @@ public class UiManagerTest {
             assertTrue(isExitRequested[0]);
             uiManager.stop();
             primaryStage.close();
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void start_dataAndPreferencesRecovery_showsBothProblemsAndExits() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             LogicManager logic = new LogicManager(new ModelManager(), null);
             Path dataFilePath = Path.of("data", "coordimate.json");
             Path prefsFilePath = Path.of("preferences.json");
@@ -315,15 +290,12 @@ public class UiManagerTest {
             assertTrue(isExitRequested[0]);
             uiManager.stop();
             primaryStage.close();
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void start_standardRecoveryMessage_showsBothRepairPathsWithoutScrolling() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             LogicManager logic = new LogicManager(new ModelManager(), null);
             Path dataPath = Path.of("data", "coordimate.json").toAbsolutePath();
             Path prefsPath = Path.of("preferences.json").toAbsolutePath();
@@ -345,15 +317,12 @@ public class UiManagerTest {
                 manager.stop();
                 stage.close();
             }
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void start_preferenceWarning_showsRepairPathWithoutScrolling() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             ModelManager model = new ModelManager();
             model.setHasSeenTutorial(true);
             Path prefsPath = Path.of("preferences.json").toAbsolutePath();
@@ -374,10 +343,7 @@ public class UiManagerTest {
                 manager.stop();
                 stage.close();
             }
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     private static void checkVisibleDialogPathsAndClose(Stage owner, AtomicReference<Throwable> failure,
@@ -438,7 +404,7 @@ public class UiManagerTest {
 
     @Test
     public void start_longRecoveryMessage_isScrollableAndKeepsRepairPath() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             LogicManager logic = new LogicManager(new ModelManager(), null);
             Path dataFilePath = Path.of("data", "coordimate.json");
             String detail = "Invalid JSON type at persons[0].phone. ".repeat(30);
@@ -468,15 +434,12 @@ public class UiManagerTest {
                 uiManager.stop();
                 primaryStage.close();
             }
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void finishingTutorial_recordsPreferenceAndClosesOverlay() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             LogicManager logic = new LogicManager(new ModelManager(), null);
             Stage primaryStage = new Stage();
             UiManager uiManager = new UiManager(logic, Path.of("data", "coordimate.json"));
@@ -496,10 +459,7 @@ public class UiManagerTest {
             assertTrue(((ToggleButton) primaryStage.getScene().lookup("#tagsView")).isSelected());
             uiManager.stop();
             primaryStage.close();
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     private static class RecordingUiManager extends UiManager {
