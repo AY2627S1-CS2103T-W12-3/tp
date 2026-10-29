@@ -24,27 +24,48 @@ activate DismissCommand
 
 DismissCommand -> ReminderService : getShownReminders()
 activate ReminderService
-ReminderService --> DismissCommand : reminders
+ReminderService --> DismissCommand : shown reminders
 deactivate ReminderService
+
+note right of DismissCommand
+  e is reminder 1 as shown in the panel.
+end note
+
+DismissCommand -> ReminderService : getReminders()
+activate ReminderService
+ReminderService --> DismissCommand : current reminders
+deactivate ReminderService
+
+note right of DismissCommand
+  If e is no longer upcoming, a
+  CommandException is thrown instead.
+end note
 
 DismissCommand -> ReminderService : dismissReminder(e)
 activate ReminderService
 
-ReminderService -> Storage : saveCoordiMate(copy with e dismissed)
+ReminderService -> Storage : readCoordiMate()
 activate Storage
 Storage --> ReminderService
 deactivate Storage
 
+ReminderService -> Storage : saveCoordiMateIfUnchanged(copy with e dismissed)
+activate Storage
+
 alt save succeeded
+    Storage --> ReminderService
+    deactivate Storage
     ReminderService -> Model : setEvent(e, dismissed)
     activate Model
     Model --> ReminderService
     deactivate Model
     ReminderService --> DismissCommand
     DismissCommand --> LogicManager : success result
-else save failed
+else the file changed in another window, or could not be saved
+    Storage --> ReminderService : exception
+    deactivate Storage
     ReminderService -> ReminderService : hide e for this session
-    ReminderService --> DismissCommand : ReminderDismissalException
+    ReminderService --> DismissCommand : throw ReminderDismissalException
     DismissCommand --> LogicManager : "Not saved" warning result
 end
 deactivate ReminderService
