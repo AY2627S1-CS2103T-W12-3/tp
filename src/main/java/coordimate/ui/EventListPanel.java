@@ -154,42 +154,17 @@ public class EventListPanel extends UiPart<Region> {
     /**
      * Selects and reveals the next displayed event. If no event is selected, selects the first event.
      * At the end of the list, keeps the last event selected.
-     *
-     * @return {@code true} if the list contains an event and handled the navigation request
      */
-    boolean selectNextCard() {
-        int itemCount = eventListView.getItems().size();
-        if (itemCount == 0) {
-            return false;
-        }
-
-        int selectedIndex = eventListView.getSelectionModel().getSelectedIndex();
-        int targetIndex = selectedIndex < 0 ? 0 : Math.min(selectedIndex + 1, itemCount - 1);
-        selectAndReveal(targetIndex);
-        return true;
+    void selectNextCard() {
+        CardNavigation.selectNext(eventListView);
     }
 
     /**
      * Selects and reveals the previous displayed event. If no event is selected, selects the last event.
      * At the start of the list, keeps the first event selected.
-     *
-     * @return {@code true} if the list contains an event and handled the navigation request
      */
-    boolean selectPreviousCard() {
-        int itemCount = eventListView.getItems().size();
-        if (itemCount == 0) {
-            return false;
-        }
-
-        int selectedIndex = eventListView.getSelectionModel().getSelectedIndex();
-        int targetIndex = selectedIndex < 0 ? itemCount - 1 : Math.max(selectedIndex - 1, 0);
-        selectAndReveal(targetIndex);
-        return true;
-    }
-
-    private void selectAndReveal(int targetIndex) {
-        eventListView.getSelectionModel().select(targetIndex);
-        eventListView.scrollTo(targetIndex);
+    void selectPreviousCard() {
+        CardNavigation.selectPrevious(eventListView);
     }
 
     /** Refreshes leave indicators when the calendar date changes. */
@@ -263,7 +238,7 @@ public class EventListPanel extends UiPart<Region> {
 
     private void selectTutorialEventIfNeeded() {
         if (!eventListView.getItems().isEmpty() && eventListView.getSelectionModel().isEmpty()) {
-            selectAndReveal(0);
+            CardNavigation.selectAndReveal(eventListView, 0);
         }
     }
 

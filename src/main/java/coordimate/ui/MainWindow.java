@@ -531,34 +531,27 @@ public class MainWindow extends UiPart<Stage> {
         views.getSelectionModel().select((selectedIndex + 1) % tabCount);
     }
 
-    private boolean navigateCards(boolean forwards) {
-        int selectedView = views.getSelectionModel().getSelectedIndex();
-        return switch (selectedView) {
-            case 0 -> forwards ? personListPanel.selectNextCard() : personListPanel.selectPreviousCard();
-            case 1 -> forwards ? eventListPanel.selectNextCard() : eventListPanel.selectPreviousCard();
-            case 2 -> navigateTags(forwards);
-            default -> false;
-        };
-    }
-
-    private boolean navigateTags(boolean forwards) {
-        int itemCount = tagListView.getItems().size();
-        if (itemCount == 0) {
-            return false;
+    private void navigateCards(boolean isForward) {
+        Tab selectedTab = views.getSelectionModel().getSelectedItem();
+        if (selectedTab == contactsTab) {
+            if (isForward) {
+                personListPanel.selectNextCard();
+            } else {
+                personListPanel.selectPreviousCard();
+            }
+        } else if (selectedTab == eventsTab) {
+            if (isForward) {
+                eventListPanel.selectNextCard();
+            } else {
+                eventListPanel.selectPreviousCard();
+            }
+        } else if (selectedTab == tagsTab) {
+            if (isForward) {
+                CardNavigation.selectNext(tagListView);
+            } else {
+                CardNavigation.selectPrevious(tagListView);
+            }
         }
-
-        int selectedIndex = tagListView.getSelectionModel().getSelectedIndex();
-        int targetIndex;
-        if (selectedIndex < 0) {
-            targetIndex = forwards ? 0 : itemCount - 1;
-        } else {
-            targetIndex = forwards
-                    ? Math.min(selectedIndex + 1, itemCount - 1)
-                    : Math.max(selectedIndex - 1, 0);
-        }
-        tagListView.getSelectionModel().select(targetIndex);
-        tagListView.scrollTo(targetIndex);
-        return true;
     }
 
     private enum InteractionMode {

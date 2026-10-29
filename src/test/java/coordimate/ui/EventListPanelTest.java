@@ -243,24 +243,28 @@ public class EventListPanelTest {
 
             assertNull(list.getSelectionModel().getSelectedItem());
             assertFalse(((VBox) root.lookup("#eventDetails")).isVisible());
-            assertTrue(panel.selectPreviousCard());
+            panel.selectPreviousCard();
             assertEquals(second, list.getSelectionModel().getSelectedItem());
-            assertTrue(panel.selectPreviousCard());
+            panel.selectPreviousCard();
             assertEquals(first, list.getSelectionModel().getSelectedItem());
-            assertTrue(panel.selectPreviousCard());
+            panel.selectPreviousCard();
             assertEquals(first, list.getSelectionModel().getSelectedItem());
 
             list.getSelectionModel().clearSelection();
-            assertTrue(panel.selectNextCard());
+            panel.selectNextCard();
             assertEquals(first, list.getSelectionModel().getSelectedItem());
-            assertTrue(panel.selectNextCard());
+            panel.selectNextCard();
             assertEquals(second, list.getSelectionModel().getSelectedItem());
-            assertTrue(panel.selectNextCard());
+            panel.selectNextCard();
             assertEquals(second, list.getSelectionModel().getSelectedItem());
 
             EventListPanel emptyPanel = new EventListPanel(FXCollections.observableArrayList());
-            assertFalse(emptyPanel.selectNextCard());
-            assertFalse(emptyPanel.selectPreviousCard());
+            Region emptyRoot = emptyPanel.getRoot();
+            new Scene(emptyRoot);
+            emptyRoot.applyCss();
+            emptyPanel.selectNextCard();
+            emptyPanel.selectPreviousCard();
+            assertNull(getEventList(emptyRoot).getSelectionModel().getSelectedItem());
         });
     }
 
@@ -356,7 +360,7 @@ public class EventListPanelTest {
             assertFalse(((VBox) root.lookup("#eventDetails")).isVisible());
             assertTrue(((Label) root.lookup("#selectionHint")).isVisible());
 
-            assertTrue(panel.selectNextCard());
+            panel.selectNextCard();
             Event selectedEvent = events.getFirst();
             events.add(new Event("Planning Session", DATE, DATE, List.of(), Map.of()));
             assertEquals(selectedEvent, getEventList(root).getSelectionModel().getSelectedItem());
