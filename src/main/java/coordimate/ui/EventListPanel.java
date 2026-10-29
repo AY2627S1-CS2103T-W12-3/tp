@@ -165,13 +165,14 @@ public class EventListPanel extends UiPart<Region> {
             if (selection.getSelectedIndex() != chosenIndex) {
                 selection.select(chosenIndex);
             }
-        } else if (lastSelectedIndex >= 0 && !items.isEmpty()) {
+        } else if (chosenEvent != null && !items.isEmpty()) {
+            // Choosing an event also records its position, so lastSelectedIndex is valid here.
             int previousPosition = Math.min(lastSelectedIndex, items.size() - 1);
             if (selection.getSelectedIndex() != previousPosition) {
                 selection.select(previousPosition);
             }
             Event selected = items.get(previousPosition);
-            if (chosenEvent == null || selected.isArchived() == chosenEvent.isArchived()) {
+            if (selected.isArchived() == chosenEvent.isArchived()) {
                 chosenEvent = selected;
             }
         }
