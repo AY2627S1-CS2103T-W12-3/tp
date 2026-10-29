@@ -92,6 +92,11 @@ public class EventListPanel extends UiPart<Region> {
     private Label selectionHint;
 
     private int lastSelectedIndex = -1;
+    /** The event the user last selected, or null if none, kept while the event list is being replaced. */
+    private Event chosenEvent;
+    /** True while the event list is changing, when the list view may move the selection by itself. */
+    private boolean isListChanging;
+    private int shownEventCount;
     private final ObservableList<Person> persons;
     private final Clock clock;
     private LocalDate shownDate;
@@ -118,13 +123,21 @@ public class EventListPanel extends UiPart<Region> {
         this.persons = getPersonSource(persons);
         this.clock = Objects.requireNonNull(clock);
         shownDate = LocalDate.now(clock);
+        // Registered before the list view's own listener, so that its selection changes during a list change
+        // are not taken as the user's choice.
+        events.addListener((ListChangeListener<Event>) change -> isListChanging = true);
         eventListView.setItems(events);
+        shownEventCount = events.size();
         eventListView.setCellFactory(list -> new EventListCell());
         eventListView.setPlaceholder(emptyListMessage);
         eventCount.textProperty().bind(Bindings.createStringBinding(() -> countText(events.size()),
                 events, showingArchived));
-        eventListView.getSelectionModel().selectedItemProperty().addListener((observable, oldEvent, event) ->
-                showDetails(event));
+        eventListView.getSelectionModel().selectedItemProperty().addListener((observable, oldEvent, event) -> {
+            if (event != null && !isListChanging) {
+                chosenEvent = event;
+            }
+            showDetails(event);
+        });
         eventListView.getSelectionModel().selectedIndexProperty().addListener((observable, oldIndex, index) -> {
             if (index.intValue() >= 0) {
                 lastSelectedIndex = index.intValue();
@@ -140,15 +153,42 @@ public class EventListPanel extends UiPart<Region> {
     }
 
     /**
-     * Keeps an event selected after the list changes, since the list view clears its selection when
-     * events are replaced, and refreshes the details so they show the updated event.
+     * Keeps the chosen event selected after the list changes, since the list view keeps only the selected
+     * position when events are replaced, and refreshes the details so they show the updated event.
+     * The chosen event is reselected by name, wherever it now is. If it is no longer listed, the event at its
+     * previous position is selected. When the list has the same length, that event took the chosen event's place,
+     * as after a rename, so it becomes the chosen event. Otherwise the chosen event is remembered for when it is
+     * listed again, such as after leaving the archived view.
      */
     private void keepSelectionAfterChange() {
         MultipleSelectionModel<Event> selection = eventListView.getSelectionModel();
-        if (lastSelectedIndex >= 0 && selection.getSelectedIndex() < 0 && !eventListView.getItems().isEmpty()) {
-            selection.select(Math.max(0, Math.min(lastSelectedIndex, eventListView.getItems().size() - 1)));
+        ObservableList<Event> items = eventListView.getItems();
+        int chosenIndex = indexOfChosenEvent(items);
+        if (chosenIndex >= 0) {
+            if (selection.getSelectedIndex() != chosenIndex) {
+                selection.select(chosenIndex);
+            }
+        } else if (lastSelectedIndex >= 0 && !items.isEmpty()) {
+            int previousPosition = Math.min(lastSelectedIndex, items.size() - 1);
+            if (selection.getSelectedIndex() != previousPosition) {
+                selection.select(previousPosition);
+            }
+            if (items.size() == shownEventCount) {
+                chosenEvent = items.get(previousPosition);
+            }
         }
+        shownEventCount = items.size();
+        isListChanging = false;
         showDetails(selection.getSelectedItem());
+    }
+
+    private int indexOfChosenEvent(ObservableList<Event> items) {
+        for (int i = 0; i < items.size(); i++) {
+            if (items.get(i).isSameEvent(chosenEvent)) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     /**

@@ -954,6 +954,86 @@ public class EventListPanelTest {
     }
 
     @SuppressWarnings("unchecked")
+    @Test
+    public void earlierEventRemovedOrArchived_keepsChosenEventSelected() throws Exception {
+        runOnJavaFxThread(() -> {
+            Event alpha = new Event("Alpha", DATE, DATE);
+            Event bravo = new Event("Bravo", DATE, DATE);
+            Event charlie = new Event("Charlie", DATE, DATE);
+            ObservableList<Event> events = FXCollections.observableArrayList(alpha, bravo, charlie);
+            ListView<Event> list = createEventList(events);
+            list.getSelectionModel().select(bravo);
+
+            // Saving a command replaces the whole event list, as CoordiMate#resetData does.
+            events.setAll(bravo, charlie);
+            assertSame(bravo, list.getSelectionModel().getSelectedItem());
+
+            Event updatedBravo = new Event("Bravo", new EventTime("26-10-2026"), new EventTime("26-10-2026"));
+            events.setAll(updatedBravo, charlie);
+            assertSame(updatedBravo, list.getSelectionModel().getSelectedItem());
+        });
+    }
+
+    @Test
+    public void chosenEventRenamed_followsRenamedEvent() throws Exception {
+        runOnJavaFxThread(() -> {
+            Event alpha = new Event("Alpha", DATE, DATE);
+            Event bravo = new Event("Bravo", DATE, DATE);
+            Event charlie = new Event("Charlie", DATE, DATE);
+            ObservableList<Event> events = FXCollections.observableArrayList(alpha, bravo, charlie);
+            ListView<Event> list = createEventList(events);
+            list.getSelectionModel().select(bravo);
+
+            Event renamed = new Event("Bravo Night", DATE, DATE);
+            events.setAll(alpha, renamed, charlie);
+            assertSame(renamed, list.getSelectionModel().getSelectedItem());
+
+            events.setAll(renamed, charlie);
+            assertSame(renamed, list.getSelectionModel().getSelectedItem());
+        });
+    }
+
+    @Test
+    public void chosenEventHiddenThenShownAgain_reselectsChosenEvent() throws Exception {
+        runOnJavaFxThread(() -> {
+            Event alpha = new Event("Alpha", DATE, DATE);
+            Event bravo = new Event("Bravo", DATE, DATE);
+            Event charlie = new Event("Charlie", DATE, DATE);
+            Event archived = new Event("Old Camp", DATE, DATE);
+            ObservableList<Event> events = FXCollections.observableArrayList(alpha, bravo, charlie);
+            ListView<Event> list = createEventList(events);
+            list.getSelectionModel().select(bravo);
+
+            events.setAll(archived); // list archived
+            assertSame(archived, list.getSelectionModel().getSelectedItem());
+
+            events.setAll(alpha, bravo, charlie); // list
+            assertSame(bravo, list.getSelectionModel().getSelectedItem());
+        });
+    }
+
+    @Test
+    public void chosenEventDeleted_selectsEventNowAtItsPosition() throws Exception {
+        runOnJavaFxThread(() -> {
+            Event alpha = new Event("Alpha", DATE, DATE);
+            Event bravo = new Event("Bravo", DATE, DATE);
+            Event charlie = new Event("Charlie", DATE, DATE);
+            ObservableList<Event> events = FXCollections.observableArrayList(alpha, bravo, charlie);
+            ListView<Event> list = createEventList(events);
+            list.getSelectionModel().select(bravo);
+
+            events.setAll(alpha, charlie);
+            assertSame(charlie, list.getSelectionModel().getSelectedItem());
+        });
+    }
+
+    private static ListView<Event> createEventList(ObservableList<Event> events) {
+        Region root = new EventListPanel(events).getRoot();
+        new Scene(root);
+        root.applyCss();
+        return getEventList(root);
+    }
+
     private static ListView<Event> getEventList(Region root) {
         return (ListView<Event>) root.lookup("#eventListView");
     }
