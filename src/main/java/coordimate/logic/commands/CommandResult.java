@@ -14,6 +14,9 @@ import coordimate.model.person.Person;
  */
 public class CommandResult {
 
+    /** Marks a result that does not ask the UI to focus a contact by index. */
+    private static final int NO_CONTACT_INDEX = -1;
+
     /** The view to display after a command, if any. */
     public enum View {
         NONE(""), CONTACTS("Contacts"), EVENTS("Events"), TAGS("Tags");
@@ -67,7 +70,7 @@ public class CommandResult {
      * Constructs a {@code CommandResult} with the specified fields.
      */
     public CommandResult(String feedbackToUser, boolean shouldShowHelp, boolean shouldExit, View viewToShow) {
-        this(feedbackToUser, shouldShowHelp, shouldExit, false, viewToShow, false, null, -1);
+        this(feedbackToUser, shouldShowHelp, shouldExit, false, viewToShow, false, null, NO_CONTACT_INDEX);
     }
 
     private CommandResult(String feedbackToUser, boolean shouldShowHelp, boolean shouldExit,
@@ -93,13 +96,13 @@ public class CommandResult {
 
     /** Reports an operation that took effect for this session but could not be saved. */
     public static CommandResult warning(String feedbackToUser) {
-        return new CommandResult(feedbackToUser, false, false, false, View.NONE, true, null, -1);
+        return new CommandResult(feedbackToUser, false, false, false, View.NONE, true, null, NO_CONTACT_INDEX);
     }
 
     /** Returns a command result that asks the UI to focus a saved contact. */
     public static CommandResult withContactToFocus(String feedbackToUser, View viewToShow, Person contact) {
         return new CommandResult(feedbackToUser, false, false, false, viewToShow, false, requireNonNull(contact),
-                -1);
+                NO_CONTACT_INDEX);
     }
 
     /** Returns a command result that asks the UI to focus the contact now at a removed contact's index. */
@@ -112,7 +115,7 @@ public class CommandResult {
 
     /** Returns a command result that asks the UI to open the guided tutorial. */
     public static CommandResult showingTutorial(String feedbackToUser) {
-        return new CommandResult(feedbackToUser, false, false, true, View.NONE, false, null, -1);
+        return new CommandResult(feedbackToUser, false, false, true, View.NONE, false, null, NO_CONTACT_INDEX);
     }
 
     public boolean isWarning() {
@@ -125,7 +128,7 @@ public class CommandResult {
 
     /** Returns the zero-based displayed index to focus, if a deleted contact occupied that position. */
     public OptionalInt getContactIndexToFocus() {
-        return contactIndexToFocus < 0 ? OptionalInt.empty() : OptionalInt.of(contactIndexToFocus);
+        return contactIndexToFocus == NO_CONTACT_INDEX ? OptionalInt.empty() : OptionalInt.of(contactIndexToFocus);
     }
 
     public String getFeedbackToUser() {

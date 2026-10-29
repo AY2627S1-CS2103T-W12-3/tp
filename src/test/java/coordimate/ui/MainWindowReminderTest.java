@@ -354,7 +354,7 @@ public class MainWindowReminderTest {
 
                 dismiss.fireEvent(keyEvent(KeyCode.ESCAPE));
 
-                assertEquals("NAVIGATION · j/k move · s switch view · i to type", mode.getText());
+                assertEquals(MainWindow.NAVIGATION_MODE_TEXT, mode.getText());
                 assertSame(mode, fixture.stage().getScene().getFocusOwner());
                 List<String> remindersBeforeBlockedKeys = names(root);
                 for (KeyCode blockedKey : List.of(KeyCode.ENTER, KeyCode.SPACE, KeyCode.TAB,

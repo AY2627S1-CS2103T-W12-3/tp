@@ -67,9 +67,13 @@ import javafx.util.Duration;
  */
 public class MainWindow extends UiPart<Stage> {
 
+    static final String COMMAND_MODE_TEXT = "COMMAND · Esc to navigate";
+    static final String NAVIGATION_MODE_TEXT = "NAVIGATION · j/k move · s switch view · i to type";
+
     private static final String FXML = "MainWindow.fxml";
-    private static final String COMMAND_MODE_TEXT = "COMMAND · Esc to navigate";
-    private static final String NAVIGATION_MODE_TEXT = "NAVIGATION · j/k move · s switch view · i to type";
+    private static final String COMMAND_MODE_ACCESSIBLE_TEXT = "Command mode. Press Escape to navigate cards.";
+    private static final String NAVIGATION_MODE_ACCESSIBLE_TEXT = "Navigation mode. Press J or K to move between"
+            + " cards, S to switch views, or I to type a command. Other unmodified keys are disabled.";
     private static final Map<String, String> COMMAND_HELP_TEXT = Map.ofEntries(
             Map.entry("add", "Format: add n/NAME p/PHONE e/EMAIL r/ROLE [b/BIRTHDAY] [a/ADDRESS]"
                     + " [o/ORGANISATION] [lv/LEAVE_END_DATE] [t/TAG]... [m/NOTE]\n"
@@ -296,8 +300,8 @@ public class MainWindow extends UiPart<Stage> {
     }
 
     private void setAccelerators() {
-        KeyCombination helpShortcut = KeyCombination.valueOf("F1");
-        KeyCombination tutorialShortcut = KeyCombination.valueOf("F2");
+        KeyCombination helpShortcut = HelpWindow.HELP_KEY;
+        KeyCombination tutorialShortcut = TutorialWindow.TUTORIAL_KEY;
         getRoot().addEventFilter(KeyEvent.ANY, event -> {
             if (tutorialWindow != null && tutorialWindow.isShowing()) {
                 if (tutorialWindow.handleShortcut(event)
@@ -517,9 +521,7 @@ public class MainWindow extends UiPart<Stage> {
         interactionModeLabel.setFocusTraversable(!isCommandMode);
         interactionModeLabel.setText(isCommandMode ? COMMAND_MODE_TEXT : NAVIGATION_MODE_TEXT);
         interactionModeLabel.setAccessibleText(isCommandMode
-                ? "Command mode. Press Escape to navigate cards."
-                : "Navigation mode. Press J or K to move between cards, S to switch views, or I to type a command."
-                        + " Other unmodified keys are disabled.");
+                ? COMMAND_MODE_ACCESSIBLE_TEXT : NAVIGATION_MODE_ACCESSIBLE_TEXT);
     }
 
     private void switchToNextView() {
@@ -531,34 +533,27 @@ public class MainWindow extends UiPart<Stage> {
         views.getSelectionModel().select((selectedIndex + 1) % tabCount);
     }
 
-    private boolean navigateCards(boolean forwards) {
-        int selectedView = views.getSelectionModel().getSelectedIndex();
-        return switch (selectedView) {
-            case 0 -> forwards ? personListPanel.selectNextCard() : personListPanel.selectPreviousCard();
-            case 1 -> forwards ? eventListPanel.selectNextCard() : eventListPanel.selectPreviousCard();
-            case 2 -> navigateTags(forwards);
-            default -> false;
-        };
-    }
-
-    private boolean navigateTags(boolean forwards) {
-        int itemCount = tagListView.getItems().size();
-        if (itemCount == 0) {
-            return false;
+    private void navigateCards(boolean isForward) {
+        Tab selectedTab = views.getSelectionModel().getSelectedItem();
+        if (selectedTab == contactsTab) {
+            if (isForward) {
+                personListPanel.selectNextCard();
+            } else {
+                personListPanel.selectPreviousCard();
+            }
+        } else if (selectedTab == eventsTab) {
+            if (isForward) {
+                eventListPanel.selectNextCard();
+            } else {
+                eventListPanel.selectPreviousCard();
+            }
+        } else if (selectedTab == tagsTab) {
+            if (isForward) {
+                CardNavigation.selectNext(tagListView);
+            } else {
+                CardNavigation.selectPrevious(tagListView);
+            }
         }
-
-        int selectedIndex = tagListView.getSelectionModel().getSelectedIndex();
-        int targetIndex;
-        if (selectedIndex < 0) {
-            targetIndex = forwards ? 0 : itemCount - 1;
-        } else {
-            targetIndex = forwards
-                    ? Math.min(selectedIndex + 1, itemCount - 1)
-                    : Math.max(selectedIndex - 1, 0);
-        }
-        tagListView.getSelectionModel().select(targetIndex);
-        tagListView.scrollTo(targetIndex);
-        return true;
     }
 
     private enum InteractionMode {
@@ -821,8 +816,9 @@ public class MainWindow extends UiPart<Stage> {
     private Screen getScreenOrPrimary(List<Screen> screens, String fallbackWarning) {
         if (screens.isEmpty()) {
             logger.warning(fallbackWarning);
+            return Screen.getPrimary();
         }
-        return screens.isEmpty() ? Screen.getPrimary() : screens.getFirst();
+        return screens.getFirst();
     }
 
     private void rememberNormalWindowBounds() {

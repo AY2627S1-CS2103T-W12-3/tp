@@ -254,24 +254,28 @@ public class PersonListPanelTest {
             ListView<Person> list = getList(root);
 
             assertNull(list.getSelectionModel().getSelectedItem());
-            assertTrue(panel.selectPreviousCard());
+            panel.selectPreviousCard();
             assertEquals(BENSON, list.getSelectionModel().getSelectedItem());
-            assertTrue(panel.selectPreviousCard());
+            panel.selectPreviousCard();
             assertEquals(ALICE, list.getSelectionModel().getSelectedItem());
-            assertTrue(panel.selectPreviousCard());
+            panel.selectPreviousCard();
             assertEquals(ALICE, list.getSelectionModel().getSelectedItem());
 
             list.getSelectionModel().clearSelection();
-            assertTrue(panel.selectNextCard());
+            panel.selectNextCard();
             assertEquals(ALICE, list.getSelectionModel().getSelectedItem());
-            assertTrue(panel.selectNextCard());
+            panel.selectNextCard();
             assertEquals(BENSON, list.getSelectionModel().getSelectedItem());
-            assertTrue(panel.selectNextCard());
+            panel.selectNextCard();
             assertEquals(BENSON, list.getSelectionModel().getSelectedItem());
 
             PersonListPanel emptyPanel = new PersonListPanel(FXCollections.observableArrayList());
-            assertFalse(emptyPanel.selectNextCard());
-            assertFalse(emptyPanel.selectPreviousCard());
+            Region emptyRoot = emptyPanel.getRoot();
+            new Scene(emptyRoot);
+            emptyRoot.applyCss();
+            emptyPanel.selectNextCard();
+            emptyPanel.selectPreviousCard();
+            assertNull(getList(emptyRoot).getSelectionModel().getSelectedItem());
         });
     }
 

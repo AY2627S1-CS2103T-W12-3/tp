@@ -39,6 +39,8 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Region;
@@ -51,51 +53,52 @@ import javafx.stage.Stage;
 public class HelpWindow extends UiPart<Stage> {
 
     public static final String USERGUIDE_URL = "https://ay2627s1-cs2103t-w12-3.github.io/tp/";
-    public static final String HELP_SHORTCUT = "Fn + F1";
+    /** The key that opens the Help window from the main window. */
+    public static final KeyCombination HELP_KEY = new KeyCodeCombination(KeyCode.F1);
+    public static final String HELP_SHORTCUT = "Fn + " + HELP_KEY.getName();
     public static final String HELP_MESSAGE = "Keyboard shortcuts: " + HELP_SHORTCUT + " for Help, "
             + TutorialWindow.TUTORIAL_SHORTCUT + " for the tutorial. Refer to the user guide: " + USERGUIDE_URL;
 
     static final List<CommandUsage> COMMAND_USAGES = List.of(
-            commandUsage(AddCommand.COMMAND_WORD,
+            createCommandUsage(AddCommand.COMMAND_WORD,
                     "n/NAME p/PHONE e/EMAIL r/ROLE [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [lv/LEAVE_END_DATE] "
                             + "[t/TAG]... [m/NOTE]"),
-            commandUsage(AddEventCommand.COMMAND_WORD, "evn/EVENT_NAME st/START_TIME et/END_TIME"),
-            commandUsage(AddTagCommand.COMMAND_WORD, "t/TAG"),
-            commandUsage(ArchiveCommand.COMMAND_WORD, "MEMBER_ID"),
-            commandUsage(ArchiveEventCommand.COMMAND_WORD, "evn/EVENT_NAME"),
-            commandUsage(AssignCommand.COMMAND_WORD,
+            createCommandUsage(AddEventCommand.COMMAND_WORD, "evn/EVENT_NAME st/START_TIME et/END_TIME"),
+            createCommandUsage(AddTagCommand.COMMAND_WORD, "t/TAG"),
+            createCommandUsage(ArchiveCommand.COMMAND_WORD, "MEMBER_ID"),
+            createCommandUsage(ArchiveEventCommand.COMMAND_WORD, "evn/EVENT_NAME"),
+            createCommandUsage(AssignCommand.COMMAND_WORD,
                     "evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]..."),
-            commandUsage(ClearCommand.COMMAND_WORD, ""),
-            commandUsage(DeleteCommand.COMMAND_WORD,
+            createCommandUsage(ClearCommand.COMMAND_WORD, ""),
+            createCommandUsage(DeleteCommand.COMMAND_WORD,
                     "MEMBER_ID | delete n/NAME | delete p/PHONE | delete e/EMAIL"),
-            commandUsage(DeleteEventCommand.COMMAND_WORD, "evn/EVENT_NAME"),
-            commandUsage(DeleteTagCommand.COMMAND_WORD, "t/TAG"),
-            commandUsage(DismissCommand.COMMAND_WORD, "INDEX"),
-            commandUsage(EditCommand.COMMAND_WORD,
+            createCommandUsage(DeleteEventCommand.COMMAND_WORD, "evn/EVENT_NAME"),
+            createCommandUsage(DeleteTagCommand.COMMAND_WORD, "t/TAG"),
+            createCommandUsage(DismissCommand.COMMAND_WORD, "INDEX"),
+            createCommandUsage(EditCommand.COMMAND_WORD,
                     "(MEMBER_ID | target/IDENTIFIER) [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] "
                             + "[a/ADDRESS] [o/ORGANISATION] [m/NOTE] [lv/LEAVE_END_DATE] [t/TAG]... [at/TAG]... "
                             + "[rt/TAG]..."),
-            commandUsage(EditEventCommand.COMMAND_WORD,
+            createCommandUsage(EditEventCommand.COMMAND_WORD,
                     "evn/EVENT_NAME [nevn/NEW_EVENT_NAME] [st/NEW_START_TIME] [et/NEW_END_TIME]"),
-            commandUsage(EditTagCommand.COMMAND_WORD, "OLD_TAG t/NEW_TAG"),
-            commandUsage(ExitCommand.COMMAND_WORD, ""),
-            commandUsage(FilterCommand.COMMAND_WORD, "FIELD/VALUE [FIELD/VALUE]..."),
-            commandUsage(HelpCommand.COMMAND_WORD, ""),
-            commandUsage(ListCommand.COMMAND_WORD, "[archived]"),
-            commandUsage(MarkAttendanceCommand.COMMAND_WORD,
+            createCommandUsage(EditTagCommand.COMMAND_WORD, "OLD_TAG t/NEW_TAG"),
+            createCommandUsage(ExitCommand.COMMAND_WORD, ""),
+            createCommandUsage(FilterCommand.COMMAND_WORD, "FIELD/VALUE [FIELD/VALUE]..."),
+            createCommandUsage(HelpCommand.COMMAND_WORD, ""),
+            createCommandUsage(ListCommand.COMMAND_WORD, "[archived]"),
+            createCommandUsage(MarkAttendanceCommand.COMMAND_WORD,
                     "evn/EVENT_NAME mem/MEMBER_NAME att/STATUS\n"
                             + "STATUS must be present or absent (case-insensitive)."),
-            commandUsage(MembersCommand.COMMAND_WORD, "evn/EVENT_NAME"),
-            commandUsage(SearchCommand.COMMAND_WORD, "KEYWORD"),
-            commandUsage(TutorialCommand.COMMAND_WORD, ""),
-            commandUsage(UnassignCommand.COMMAND_WORD,
+            createCommandUsage(MembersCommand.COMMAND_WORD, "evn/EVENT_NAME"),
+            createCommandUsage(SearchCommand.COMMAND_WORD, "KEYWORD"),
+            createCommandUsage(TutorialCommand.COMMAND_WORD, ""),
+            createCommandUsage(UnassignCommand.COMMAND_WORD,
                     "evn/EVENT_NAME c/MEMBER_ID [MORE_MEMBER_IDS]..."),
-            commandUsage(ArchiveCommand.UNARCHIVE_COMMAND_WORD, "MEMBER_ID"),
-            commandUsage(ArchiveEventCommand.UNARCHIVE_COMMAND_WORD, "evn/EVENT_NAME"));
+            createCommandUsage(ArchiveCommand.UNARCHIVE_COMMAND_WORD, "MEMBER_ID"),
+            createCommandUsage(ArchiveEventCommand.UNARCHIVE_COMMAND_WORD, "evn/EVENT_NAME"));
 
     private static final Logger logger = LogsCenter.getLogger(HelpWindow.class);
     private static final String FXML = "HelpWindow.fxml";
-    private static final KeyCombination TUTORIAL_KEY = KeyCombination.valueOf("F2");
 
     private Runnable tutorialShortcutHandler = () -> { };
 
@@ -125,7 +128,7 @@ public class HelpWindow extends UiPart<Stage> {
     public HelpWindow(Stage root) {
         super(FXML, root);
         root.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
-            if (TUTORIAL_KEY.match(event)) {
+            if (TutorialWindow.TUTORIAL_KEY.match(event)) {
                 tutorialShortcutHandler.run();
                 event.consume();
             }
@@ -217,7 +220,7 @@ public class HelpWindow extends UiPart<Stage> {
         getRoot().close();
     }
 
-    private static CommandUsage commandUsage(String commandWord, String parameters) {
+    private static CommandUsage createCommandUsage(String commandWord, String parameters) {
         String separator = parameters.isEmpty() ? "" : " ";
         return new CommandUsage(commandWord, commandWord + separator + parameters);
     }
