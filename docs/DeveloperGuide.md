@@ -1221,8 +1221,10 @@ Given below are instructions to test the app manually.
 
 <box type="info" seamless>
 
-**Note:** These instructions only provide a starting point for testers to work on;
-testers are expected to do more *exploratory* testing.
+**Note:** Use these tests as a starting point for further *exploratory* testing.
+
+For every command error below, check that the feedback also includes the command's usage, with its parameters
+and an example.
 </box>
 
 <box type="info" seamless>
@@ -1256,44 +1258,6 @@ event, and no custom tags. Deleting contacts by hand is not enough, because memb
    1. Relaunch the app by double-clicking the JAR file.<br>
        Expected: The app opens unmaximized with the most recent window size and location.
 
-1. Saving maximized state without losing normal bounds
-
-   1. Unmaximize the window. Resize and move it, then maximize and close it.
-
-   1. Relaunch the app by double-clicking the JAR file.<br>
-      Expected: The app opens maximized. Unmaximizing it restores the size and position set in the previous step.
-
-1. Saving the monitor used by a maximized window
-
-   1. With two monitors connected, unmaximize the app on the first monitor and give it a distinctive size and position.
-      Maximize it, move the maximized window to the second monitor, and close it.
-
-   1. Relaunch the app by double-clicking the JAR file.<br>
-      Expected: The app opens maximized on the second monitor. Unmaximizing it retains the previous normal size and
-      relative position on the second monitor.
-
-1. Recovering from unavailable window bounds
-
-   1. Close the app. Open `preferences.json` in the folder containing the JAR file and replace its contents with:
-
-      ```json
-      {
-        "guiSettings": {
-          "windowWidth": 5000.0,
-          "windowHeight": 4000.0,
-          "windowCoordinates": {
-            "x": 99999,
-            "y": 99999
-          },
-          "windowMaximized": false
-        }
-      }
-      ```
-
-   1. Relaunch the app by double-clicking the JAR file.<br>
-      Expected: The app opens unmaximized on the primary screen, entirely within its usable area. The title bar and
-      window controls remain visible.
-
 1. Shutting down
 
    1. Test case: `exit`<br>
@@ -1301,155 +1265,117 @@ event, and no custom tags. Deleting contacts by hand is not enough, because memb
 
 ### Deleting a contact
 
-1. Deleting a contact while all contacts are being shown
+1. Prerequisites: Restore the sample data and run `list`. Alex Yeoh has member ID `1`.
 
-   1. Prerequisites: Restore the sample data and run `list`. Alex Yeoh has member ID `1`.
+1. Test case: `delete 1`, then `n`<br>
+   Expected: `ID: 1` and Alex Yeoh's name, phone, email, and role are shown, followed by `Confirm deletion? [y/N]`. After `n`, the status message shows `Deletion cancelled. No changes were made.` and no contact is deleted.
 
-   1. Test case: `delete 1`, then `n`<br>
-      Expected: `ID: 1` and Alex Yeoh's name, phone, email, and role are shown, followed by `Confirm deletion? [y/N]`. After `n`, the status message shows `Deletion cancelled. No changes were made.` and no contact is deleted.
+1. Test case: `delete 1`, then `y ` (with a trailing space)<br>
+   Expected: Alex Yeoh (member ID `1`) is deleted. Other contacts keep their IDs. The status message shows `Contact deleted successfully: ` followed by the contact's name.
 
-   1. Test case: `delete 1`, then `y ` (with a trailing space)<br>
-      Expected: Alex Yeoh (member ID `1`) is deleted. Other contacts keep their IDs. The status message shows `Contact deleted successfully: ` followed by the contact's name.
+1. Test case: `delete 0`<br>
+   Expected: No confirmation is requested and no contact is deleted. The status message shows `Invalid member ID. Example: delete 12`.
 
-   1. Test case: `delete 0`<br>
-      Expected: No confirmation is requested and no contact is deleted. The status message shows `Invalid member ID. Example: delete 12` followed by the usage.
-
-   1. Other incorrect delete commands to try: `delete`, `delete x`, `delete 99` (where member ID `99` does not exist)<br>
-      Expected: No confirmation is requested and no contact is deleted. The status message shows error details.
+1. Other incorrect delete commands to try: `delete`, `delete x`, `delete 99` (where member ID `99` does not exist)<br>
+   Expected: No confirmation is requested and no contact is deleted. The status message shows error details.
 
 ### Searching contacts
 
-1. Searching the sample contacts
+1. Prerequisites: Restore the sample data.
 
-   1. Prerequisites: Restore the sample data.
+1. Test case: `search alex`<br>
+   Expected: Only `Alex Yeoh` is listed. The status message shows `1 contact(s) found matching "alex".`
 
-   1. Test case: `search alex`<br>
-      Expected: Only `Alex Yeoh` is listed. The status message shows `1 contact(s) found matching "alex".`
+1. Test case: `search zzz`<br>
+   Expected: The list is empty. The status message shows `No contacts found matching "zzz".`
 
-   1. Test case: `search serangoon`<br>
-      Expected: `Bernice Yu` and `David Li` are listed, matched by their addresses.
-
-   1. Test case: `search "Serangoon Gardens"`<br>
-      Expected: The same two contacts are listed.
-
-   1. Test case: `search 9927`<br>
-      Expected: Only `Bernice Yu` is listed, matched by phone number.
-
-   1. Test case: `search example.com`<br>
-      Expected: All six contacts are listed, matched by email address.
-
-   1. Test case: `search zzz`<br>
-      Expected: The list is empty. The status message shows `No contacts found matching "zzz".`
-
-   1. Test case: `search`<br>
-      Expected: The list is unchanged. The status message shows `Invalid command format.` followed by the usage.
-
-1. Searching by organisation
-
-   1. Prerequisites: Run `add n/Mr Lim p/90801110 e/lim@example.com o/NUS Student Affairs r/University Staff t/UniversityStaff`.
-
-   1. Test case: `search student affairs`<br>
-      Expected: Only `Mr Lim` is listed.
+1. Test case: `search`<br>
+   Expected: The list is unchanged. The status message shows `Invalid command format.`
 
 ### Filtering contacts
 
-1. Filtering by tag, event, and organisation
+1. Prerequisites: Restore the sample data (contact IDs `1` to `6`), with no additional contacts, events, or custom
+   tags. Run these commands in order:<br>
+   `edit 3 o/NUS Student Affairs`<br>
+   `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`<br>
+   `assign evn/Final Concert c/1 2`<br>
+   `addtag t/Publicity`
 
-   1. Prerequisites: Restore the sample data, so that contact IDs are `1` to `6` and there are no additional
-      contacts, events, or custom tags. Run these commands in order:<br>
-      `add n/Aisha Tan p/+6591234567 e/aisha@example.com r/Logistics t/EXCO`<br>
-      `add n/Mr Lim p/90801110 e/lim@example.com o/NUS Student Affairs r/University Staff t/UniversityStaff`<br>
-      `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`<br>
-      `assign evn/Final Concert c/1 7`<br>
-      `addtag t/Publicity`
+1. Test case: `filter tag/exco`<br>
+   Expected: `Alex Yeoh`, `Bernice Yu`, and `Irfan Ibrahim` are listed, in that order. The status
+   message shows `3 contact(s) found.`
 
-   1. Test case: `filter tag/exco`<br>
-      Expected: `Alex Yeoh`, `Bernice Yu`, `Irfan Ibrahim`, and `Aisha Tan` are listed, in that order. The status
-      message shows `4 contact(s) found.`
+1. Test case: `filter event/Final Concert tag/EXCO`<br>
+   Expected: `Alex Yeoh` and `Bernice Yu` are listed; both belong to `Final Concert` and have the `EXCO` tag.
 
-   1. Test case: `filter event/"Final Concert"`<br>
-      Expected: `Alex Yeoh` and `Aisha Tan` are listed.
+1. Test case: `filter organisation/NUS Student Affairs`<br>
+   Expected: Only `Charlotte Oliveiro` is listed.
 
-   1. Test case: `filter event/Final Concert tag/EXCO`<br>
-      Expected: `Alex Yeoh` and `Aisha Tan` are listed, as both have the `EXCO` tag and belong to `Final Concert`.
+1. Test case: `filter organisation/NUS`<br>
+   Expected: Only `Charlotte Oliveiro` remains listed. The status message shows
+   `No saved tag, event, or organisation matches that value. Use a value from the saved data.`
 
-   1. Test case: `filter organisation/NUS Student Affairs`<br>
-      Expected: Only `Mr Lim` is listed.
+1. Test case: `filter tag/Publicity`<br>
+   Expected: The list is empty, as the tag exists but no contact has it. The status message shows `No contacts match the specified filters.`
 
-   1. Test case: `filter organisation/NUS`<br>
-      Expected: Only `Mr Lim` remains listed. The status message shows
-      `No saved tag, event, or organisation matches that value. Use a value from the saved data.` followed by the usage.
+1. Test case: `filter role/Logistics`<br>
+   Expected: The list stays empty. The status message shows `Unknown parameter: role/.`
 
-   1. Test case: `filter tag/Publicity`<br>
-      Expected: The list is empty, as the tag exists but no contact has it. The status message shows `No contacts match the specified filters.`
+1. Other incorrect filter commands to try: `filter`, `filter tag/`<br>
+   Expected: The list is unchanged. The status message shows error details.
 
-   1. Test case: `filter role/Logistics`<br>
-      Expected: The list stays empty. The status message shows `Unknown parameter: role/.` followed by the usage.
-
-   1. Other incorrect filter commands to try: `filter`, `filter tag/`, `filter event/"Final Concert tag/EXCO`<br>
-      Expected: The list is unchanged. The status message shows error details.
-
-   1. Cleanup: Run `deletetag t/Publicity`, then `deleteevent evn/Final Concert`.<br>
-      Expected: The `Publicity` tag and the `Final Concert` event are removed, as later sections create them again.
+1. Cleanup: Run `deletetag t/Publicity`, then `deleteevent evn/Final Concert`.<br>
+   Expected: The `Publicity` tag and the `Final Concert` event are removed, as later sections create them again.
 
 ### Adding an event
 
-1. Adding events
+1. Prerequisites: No event named `Final Concert` or `Fair` exists.
 
-   1. Prerequisites: No event named `Final Concert` or `Fair` exists.
+1. Test case: `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`<br>
+   Expected: The **Events** tab opens with the new event selected. The status message shows `Created Event Final Concert. Start Time: 08-08-2026 15:00. End Time: 08-08-2026 18:00.`
 
-   1. Test case: `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`<br>
-      Expected: The **Events** tab opens with the new event selected. The status message shows `Created Event Final Concert. Start Time: 08-08-2026 15:00. End Time: 08-08-2026 18:00.`
+1. Test case: `addevent evn/final concert st/09-10-2026 et/10-10-2026`<br>
+   Expected: No event is added. The status message shows `An event with this name already exists.`
 
-   1. Test case: `addevent evn/final concert st/09-10-2026 et/10-10-2026`<br>
-      Expected: No event is added. The status message shows `An event with this name already exists.`
+1. Test case: `addevent evn/Fair st/10-10-2026 et/09-10-2026`<br>
+   Expected: No event is added. The status message shows `Start time must not be after end time.`
 
-   1. Test case: `addevent evn/Fair st/10-10-2026 et/09-10-2026`<br>
-      Expected: No event is added. The status message shows `Start time must not be after end time.`
+1. Test case: `addevent evn/Fair st/10/10/2026 et/11-10-2026`<br>
+   Expected: No event is added. The status message shows the required date and time format.
 
-   1. Test case: `addevent evn/Fair st/10/10/2026 et/11-10-2026`<br>
-      Expected: No event is added. The status message shows the required date and time format.
-
-   1. Other incorrect addevent commands to try: `addevent`, `addevent evn/Fair st/10-10-2026`, `addevent evn/Fair st/10-10-2026 st/10-10-2026 et/11-10-2026`<br>
-      Expected: No event is added. The status message shows error details.
+1. Other incorrect addevent commands to try: `addevent`, `addevent evn/Fair st/10-10-2026`<br>
+   Expected: No event is added. The status message shows error details.
 
 ### Editing an event
 
-1. Editing an existing event
+1. Prerequisites: An event named `Final Concert` exists from 08-08-2026 15:00 to 08-08-2026 18:00, as created in
+   the previous section. If it does not, create it using `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`.
+   Select it in the **Events** tab.
 
-   1. Prerequisites: An event named `Final Concert` exists from 08-08-2026 15:00 to 08-08-2026 18:00, as created in
-      the previous section. If it does not, create it using `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`.
-      Select it in the **Events** tab.
+1. Test case: `editevent evn/final concert st/08-08-2026 16:00 et/08-08-2026 19:00`<br>
+   Expected: The event's details show the new times. The status message shows `Edited Event Final Concert. Start Time: 08-08-2026 16:00. End Time: 08-08-2026 19:00.`
 
-   1. Test case: `editevent evn/final concert st/08-08-2026 16:00 et/08-08-2026 19:00`<br>
-      Expected: The event's details show the new times. The status message shows `Edited Event Final Concert. Start Time: 08-08-2026 16:00. End Time: 08-08-2026 19:00.`
+1. Test case: `editevent evn/Final Concert nevn/Grand Concert`<br>
+   Expected: The event is renamed to `Grand Concert` and keeps its times.
 
-   1. Test case: `editevent evn/Final Concert nevn/Grand Concert`<br>
-      Expected: The event is renamed to `Grand Concert` and keeps its times.
+1. Test case: `editevent evn/Grand Concert st/09-08-2026`<br>
+   Expected: No change. The status message shows `Start time must not be after end time.`
 
-   1. Test case: `editevent evn/Grand Concert st/09-08-2026`<br>
-      Expected: No change. The status message shows `Start time must not be after end time.`
-
-   1. Test case: `editevent evn/Gala nevn/Ball`<br>
-      Expected: No change. The status message shows `Event Gala does not exist.`
-
-   1. Other incorrect editevent commands to try: `editevent evn/Grand Concert`, `editevent evn/Grand Concert nevn/`<br>
-      Expected: No change. The status message shows error details.
+1. Other incorrect editevent commands to try: `editevent evn/Grand Concert`, `editevent evn/Grand Concert nevn/`<br>
+   Expected: No change. The status message shows error details.
 
 ### Deleting an event
 
-1. Deleting an existing event
+1. Prerequisites: An event named `Grand Concert` exists, as created in the previous section.
 
-   1. Prerequisites: An event named `Grand Concert` exists, as created in the previous section.
+1. Test case: `deleteevent evn/Gala`<br>
+   Expected: No event is deleted. The status message shows `Event Gala does not exist.`
 
-   1. Test case: `deleteevent evn/Gala`<br>
-      Expected: No event is deleted. The status message shows `Event Gala does not exist.`
+1. Test case: `deleteevent evn/grand concert`<br>
+   Expected: The event is removed from the **Events** tab. The status message shows `Deleted Event Grand Concert.`
 
-   1. Test case: `deleteevent evn/grand concert`<br>
-      Expected: The event is removed from the **Events** tab. The status message shows `Deleted Event Grand Concert.`
-
-   1. Other incorrect deleteevent commands to try: `deleteevent`, `deleteevent evn/`<br>
-      Expected: No event is deleted. The status message shows error details.
+1. Other incorrect deleteevent commands to try: `deleteevent`, `deleteevent evn/`<br>
+   Expected: No event is deleted. The status message shows error details.
 
 ### Dismissing a reminder
 
@@ -1470,7 +1396,7 @@ event, and no custom tags. Deleting contacts by hand is not enough, because memb
 
    1. Test case: `dismiss 2`<br>
       Expected: No reminder is dismissed. Feedback shows
-      `No reminder exists at index 2. Use an index from the Upcoming events panel.` followed by usage.
+      `No reminder exists at index 2. Use an index from the Upcoming events panel.`
 
    1. Test case: `dismiss 1`, then `dismiss 1` again.<br>
       Expected: The first command dismisses `Zulu Reminder` and hides the empty panel. The second command
@@ -1480,36 +1406,10 @@ event, and no custom tags. Deleting contacts by hand is not enough, because memb
 
    1. Prerequisites: At least one reminder is shown.
 
-   1. Test cases: `dismiss`, `dismiss 0`, `dismiss -1`, `dismiss abc`, `dismiss 1.5`, `dismiss 1 2`,
-      `dismiss 2147483648`<br>
-      Expected: No reminders or saved events change. Feedback shows **Rejected** and an explanation with
-      `dismiss` usage. A missing index gives `Invalid command format.`; the other inputs give
+   1. Test cases: `dismiss`, `dismiss 0`<br>
+      Expected: No reminders or saved events change. Feedback shows **Rejected** and an explanation.
+      A missing index gives `Invalid command format.`; `dismiss 0` gives
       `Index must be a positive integer. Example: 1`.
-
-1. Handling a failed save
-
-   1. Prerequisites: An active reminder exists. Record its index and use the failed-save setup in
-      [Saving data](#saving-data) to prevent writes to the test data file.
-
-   1. Test case: `dismiss INDEX`, replacing `INDEX` with the recorded reminder index.<br>
-      Expected: The reminder disappears. Feedback shows
-      `Reminder dismissal could not be saved and may reappear after restarting.` with **Not saved** status.
-      Event details and the saved data file remain unchanged.
-
-   1. Test case: Restore write permissions, then close and reopen the app while the event still qualifies.<br>
-      Expected: The reminder appears again because its dismissal was only retained for the previous session.
-
-1. Handling a failed read
-
-   1. Prerequisites: An active reminder exists and its index is recorded. Keep a copy of the test data file.
-      While the app remains open, make the JSON invalid by removing its first `{` and save the file.
-
-   1. Test case: `dismiss INDEX`, replacing `INDEX` with the recorded reminder index.<br>
-      Expected: The reminder disappears for the session, the **Not saved** warning appears, and the invalid
-      data file is not overwritten. The event in memory retains its saved details.
-
-   1. Test case: Close the app, restore the copy of the data file, and reopen it while the event still qualifies.<br>
-      Expected: The reminder appears again.
 
 1. Cleaning up
 
@@ -1528,34 +1428,16 @@ event, and no custom tags. Deleting contacts by hand is not enough, because memb
    1. Test case: `assign evn/final concert c/2 3`<br>
       Expected: Only Charlotte Oliveiro (`ID: 3`) is added. The status message also shows `1 contact(s) were already assigned.`
 
-   1. Test case: `assign evn/Final Concert c/1`<br>
-      Expected: No change. The status message shows that all specified contacts are already assigned.
-
-   1. Test case: `assign evn/Gala c/1`<br>
-      Expected: No change. The status message shows `Event Gala does not exist.`
-
-   1. Other incorrect assign commands to try: `assign evn/Final Concert c/0`, `assign evn/Final Concert c/99` (where member ID `99` does not exist), `assign evn/Final Concert c/1 c/2`, `assign evn/Final Concert`<br>
+   1. Other incorrect assign commands to try: `assign evn/Final Concert c/0`, `assign evn/Final Concert c/99` (where member ID `99` does not exist)<br>
       Expected: No change. The status message shows error details.
 
 1. Assigning contacts from a filtered list
 
    1. Prerequisites: The sample contacts are loaded. Create an empty event using `addevent evn/Filtered Fair st/08-08-2026 et/08-08-2026`. Run `search Charlotte`, showing only `ID: 3`.
 
-   1. Test case: `assign evn/Filtered Fair c/3`<br>
-      Expected: Charlotte Oliveiro is assigned with `ID: 3` unchanged, even though she is the first result.
-
-   1. Test case: `assign evn/Filtered Fair c/1`<br>
-      Expected: Alex Yeoh (`ID: 1`) is assigned despite being hidden by the search. Charlotte stays assigned.
-
-1. Keeping members in sync with contacts
-
-   1. Prerequisites: The `Final Concert` event has at least one member.
-
-   1. Test case: `edit` a member to change their name, using `n/`.<br>
-      Expected: The event's members show the new name in the same position.
-
-   1. Test case: `delete` a member.<br>
-      Expected: The person is removed from the event's members. Closing and relaunching the app keeps the data.
+   1. Test case: `assign evn/Filtered Fair c/3 1`<br>
+      Expected: Charlotte Oliveiro (`ID: 3`) and Alex Yeoh (`ID: 1`) are assigned, in that order. Their IDs stay
+      unchanged although Charlotte is the first search result and Alex is hidden.
 
 ### Removing members from an event
 
@@ -1566,13 +1448,7 @@ event, and no custom tags. Deleting contacts by hand is not enough, because memb
    1. Test case: `unassign evn/final concert c/2 4`<br>
       Expected: The status message shows `Removed 1 member(s) from Final Concert. 1 contact(s) were not assigned.` The event's details list member IDs `1` and `3` under **Members (2)**, in that order.
 
-   1. Test case: `unassign evn/Final Concert c/4`<br>
-      Expected: No change. The status message shows that none of the specified contacts are assigned.
-
-   1. Test case: `unassign evn/Gala c/1`<br>
-      Expected: No change. The status message shows `Event Gala does not exist.`
-
-   1. Other incorrect unassign commands to try: `unassign evn/Final Concert c/0`, `unassign evn/Final Concert c/1 99` (where member ID `99` does not exist), `unassign evn/Final Concert c/1 c/3`, `unassign evn/Final Concert`<br>
+   1. Other incorrect unassign commands to try: `unassign evn/Final Concert c/0`, `unassign evn/Final Concert c/1 99` (where member ID `99` does not exist)<br>
       Expected: No change. The status message shows error details.
 
 1. Removing members from a filtered list
@@ -1591,21 +1467,16 @@ event, and no custom tags. Deleting contacts by hand is not enough, because memb
    1. Test case: `members evn/final concert`<br>
       Expected: CoordiMate switches to the **Contacts** view and shows Alex Yeoh (`ID: 1`) and Charlotte Oliveiro (`ID: 3`), in contact list order. The status message shows `Listed 2 member(s) of Final Concert. Use list to show all contacts.`
 
-   1. Test case: `members evn/Gala`<br>
-      Expected: The contact list is unchanged. The status message shows `Event Gala does not exist.`
-
-   1. Other incorrect members commands to try: `members`, `members evn/`, `members evn/Final Concert c/1`, `members evn/Final Concert evn/Fair`<br>
+   1. Other incorrect members commands to try: `members`, `members evn/Final Concert c/1`<br>
       Expected: The contact list is unchanged. The status message shows error details.
 
 1. Keeping the shown members up to date
 
    1. Prerequisites: The members of `Final Concert` are shown, as above.
 
-   1. Test case: `unassign evn/Final Concert c/1`<br>
-      Expected: Alex Yeoh disappears from the list straight away. Charlotte Oliveiro keeps `ID: 3` as the only result.
-
-   1. Test case: `editevent evn/Final Concert nevn/Grand Concert`<br>
-      Expected: The list still shows the event's members.
+   1. Test case: `unassign evn/Final Concert c/1`, then `editevent evn/Final Concert nevn/Grand Concert`<br>
+      Expected: Alex Yeoh disappears after `unassign`. Charlotte Oliveiro keeps `ID: 3` as the only result
+      after both commands.
 
    1. Test case: `deleteevent evn/Grand Concert`, then `list`<br>
       Expected: The list becomes empty after the event is deleted, then shows all persons after `list`.
@@ -1622,27 +1493,15 @@ event, and no custom tags. Deleting contacts by hand is not enough, because memb
    1. Test case: `markattendance evn/final concert mem/alex yeoh att/ABSENT`<br>
       Expected: `Alex Yeoh` shows **Absent**. The counts show 0 present, 1 absent, and 1 not marked.
 
-   1. Test case: Repeat the previous command.<br>
-      Expected: No change. The status message shows `Alex Yeoh is already marked as absent for event Final Concert. No changes were made.`
-
    1. Test case: `markattendance evn/Final Concert mem/David Li att/present`<br>
-      Expected: No change. The status message shows `David Li is not assigned to event Final Concert. Assign the contact to the event before marking attendance.` followed by the usage.
+      Expected: No change. The status message shows `David Li is not assigned to event Final Concert. Assign the contact to the event before marking attendance.`
 
-   1. Test case: `markattendance evn/Gala mem/Alex Yeoh att/present`<br>
-      Expected: No change. The status message shows `Event Gala does not exist. Use a saved event name.` followed by the usage.
-
-   1. Other incorrect markattendance commands to try: `markattendance evn/Final Concert mem/Alex Yeoh att/late`, `markattendance evn/Final Concert mem/Alex Yeoh`, `markattendance evn/Final Concert mem/Alex Yeoh att/present att/absent`<br>
+   1. Other incorrect markattendance commands to try: `markattendance evn/Final Concert mem/Alex Yeoh att/late`, `markattendance evn/Final Concert mem/Alex Yeoh`<br>
       Expected: No change. The status message shows error details.
 
-1. Keeping attendance in sync with members
+1. Keeping members and attendance in sync with contacts
 
    1. Prerequisites: Continue from the previous test, with `Alex Yeoh` marked absent. List all contacts using `list`.
-
-   1. Test case: `assign evn/Final Concert c/3`<br>
-      Expected: Charlotte Oliveiro (`ID: 3`) is added as **Not marked**. `Alex Yeoh` is still **Absent**.
-
-   1. Test case: `editevent evn/Final Concert et/08-08-2026 20:00`<br>
-      Expected: The end time changes. `Alex Yeoh` is still **Absent**.
 
    1. Test case: `edit 1 n/Alex Tan`<br>
       Expected: The event's members show `Alex Tan` in the same position, still **Absent**.
@@ -1650,8 +1509,11 @@ event, and no custom tags. Deleting contacts by hand is not enough, because memb
    1. Test case: `unassign evn/Final Concert c/1`, then `assign evn/Final Concert c/1`<br>
       Expected: `Alex Tan` is removed, then added again at the end of the members as **Not marked**.
 
-   1. Test case: Mark any member's attendance, then close and relaunch the app.<br>
-      Expected: The attendance is retained.
+   1. Test case: `markattendance evn/Final Concert mem/Alex Tan att/present`, then close and relaunch the app.<br>
+      Expected: `Alex Tan` is still **Present**.
+
+   1. Test case: `delete 1`, then `y`.<br>
+      Expected: `Alex Tan` and his attendance are removed from the event. Other members are unchanged.
 
 ### Marking a contact as on leave
 
@@ -1668,19 +1530,13 @@ and `PAST_DATE` is any date before today, such as `01-01-2020`.
    1. Test case: `edit 1 lv/FUTURE_DATE`<br>
       Expected: The card of the contact with member ID `1` shows **On leave until FUTURE_DATE**. Selecting the contact shows `FUTURE_DATE` under **On leave until**.
 
-   1. Test case: `edit 1 lv/TODAY`<br>
-      Expected: The contact is still shown as on leave, now until today.
-
    1. Test case: `edit 1 lv/`<br>
       Expected: The badge disappears and the details pane shows `— (not on leave)`.
-
-   1. Test case: `add n/Ben Ong p/91112222 e/ben@example.com r/Publicity lv/FUTURE_DATE`<br>
-      Expected: The new contact is added and shown as on leave.
 
    1. Test case: `edit 1 lv/PAST_DATE`<br>
       Expected: No change. The status message shows `Invalid leave end date. Use a real date in dd-MM-yyyy format that is not in the past. Example: lv/30-11-2026`
 
-   1. Other incorrect commands to try: `edit 1 lv/31-11-2030`, `edit 1 lv/next week`, `edit 1 lv/FUTURE_DATE lv/FUTURE_DATE`<br>
+   1. Other incorrect commands to try: `edit 1 lv/31-11-2030`, `edit 1 lv/next week`<br>
       Expected: No change. The status message shows error details.
 
 1. Leave ending by itself
@@ -1690,61 +1546,52 @@ and `PAST_DATE` is any date before today, such as `01-01-2020`.
    1. Test case: In `data/coordimate.json`, change that contact's `leaveUntil` value to `PAST_DATE`, save, then launch the app.<br>
       Expected: The app loads the data. The contact is not shown as on leave, and the details pane shows `— (not on leave)`. The `leaveUntil` value is still in the data file.
 
-   1. Test case: Close the app, change `leaveUntil` to `31-02-2030`, save, then launch the app.<br>
-      Expected: CoordiMate warns that the saved data could not be loaded and that the original file is unchanged.
-      The warning shows the file path. Selecting **OK** closes the app. Restore the file before launching again.
-
    1. Test case: Run `edit 1 lv/TODAY` and select that contact. Leave the app open past midnight, or set your
       computer's date to the next day.<br>
-      Expected: Within a minute, without running a command, the badge disappears and the details pane shows
-      `— (not on leave)`.
+      Expected: The contact initially shows **On leave until TODAY**. Within a minute after midnight, without
+      running a command, the badge disappears and the details pane shows `— (not on leave)`.
 
 ### Managing tags
 
-1. Adding, renaming, and deleting tags
+1. Prerequisites: Restore the sample data.
 
-   1. Prerequisites: Restore the sample data.
+1. Test case: Press <kbd>Esc</kbd>, then <kbd>S</kbd> until the Tags view is active.<br>
+   Expected: The Tags view lists `EXCO, Sponsor, UniversityStaff, Logistics, friends, neighbours`. Selecting
+   `EXCO` shows Alex Yeoh, Bernice Yu, and Irfan Ibrahim.
 
-   1. Test case: Press <kbd>Esc</kbd>, then <kbd>S</kbd> until the Tags view is active.<br>
-      Expected: The Tags view lists `EXCO, Sponsor, UniversityStaff, Logistics, friends, neighbours`. Selecting
-      `EXCO` shows Alex Yeoh, Bernice Yu, and Irfan Ibrahim.
+1. Test case: `addtag t/Publicity`<br>
+   Expected: `Publicity` appears in the Tags view. The status message shows `Created tag: Publicity.`
 
-   1. Test case: `addtag t/Publicity`<br>
-      Expected: `Publicity` appears in the Tags view. The status message shows `Created tag: Publicity.`
+1. Test case: `addtag t/publicity`<br>
+   Expected: No tag is added. The status message shows `A tag with this name already exists. No changes were made.`
 
-   1. Test case: `addtag t/publicity`<br>
-      Expected: No tag is added. The status message shows `A tag with this name already exists. No changes were made.` followed by the usage.
+1. Test case: `addtag t/Event Crew`<br>
+   Expected: No tag is added. The status message shows `Invalid tag name. Use letters and numbers without spaces. Example: t/Publicity`.
 
-   1. Test case: `addtag t/Event Crew`<br>
-      Expected: No tag is added. The status message shows `Invalid tag name. Use letters and numbers without spaces. Example: t/Publicity` followed by the usage.
+1. Test case: `edit 1 at/Publicity`, then `edittag publicity t/Media`<br>
+   Expected: The Tags view and member ID `1`'s details show `Media`. The status message shows
+   `Publicity successfully renamed to Media.`
 
-   1. Test case: `edittag Publicity t/Media`<br>
-      Expected: The tag is renamed. The status message shows `Publicity successfully renamed to Media.`
+1. Test case: `deletetag t/media`<br>
+   Expected: The tag is removed from the Tags view and from member ID `1`. The status message shows `Media successfully deleted.`
 
-   1. Test case: `edit 1 at/Media`, then `edittag media t/Press`<br>
-      Expected: The details of member ID `1` show the tag `Press`.
+1. Test case: `deletetag t/Nope`<br>
+   Expected: No tag is deleted. The status message shows `Tag Nope does not exist. Use a saved tag name.`
 
-   1. Test case: `deletetag t/press`<br>
-      Expected: The tag is removed from the Tags view and from member ID `1`. The status message shows `Press successfully deleted.`
-
-   1. Test case: `deletetag t/Nope`<br>
-      Expected: No tag is deleted. The status message shows `Tag Nope does not exist. Use a saved tag name.` followed by the usage.
-
-   1. Other incorrect tag commands to try: `addtag`, `addtag Publicity`, `edittag EXCO`, `deletetag EXCO`<br>
-      Expected: No change. The status message shows error details.
+1. Other incorrect tag commands to try: `addtag`, `edittag EXCO`, `deletetag EXCO`<br>
+   Expected: No change. The status message shows error details.
 
 ### Archiving contacts and events
 
 1. Archiving and restoring a contact
 
-   1. Prerequisites: The sample contacts are loaded. Run `list`. Note the member ID shown on the 2nd contact; the steps
-      below assume it is `2`.
+   1. Prerequisites: Restore the sample data and run `list`. Bernice Yu has member ID `2`.
 
    1. Test case: `archive 2`<br>
       Expected: The contact disappears from the contact list, and the **Contacts** tab count drops by 1. The status
       message shows `Archived contact: {NAME}.`
 
-   1. Test case: `list archived`<br>
+   1. Test case: Close and relaunch the app, then run `list archived`.<br>
       Expected: The tabs are titled **Archived contacts (1)** and **Archived events (0)**. Only the archived contact
       is shown, with an **Archived** badge. The sidebar lists only `unarchive` and `list`.
 
@@ -1752,10 +1599,7 @@ and `PAST_DATE` is any date before today, such as `01-01-2020`.
       Expected: The contact leaves the archived view, which shows `No archived contacts.` After `list`, the contact is
       back in the contact list and the sidebar shows all contact commands again.
 
-   1. Test case: `search` for another contact, then `archive 2` and `unarchive 2`<br>
-      Expected: Both succeed although the contact is not displayed.
-
-   1. Other incorrect commands to try: `archive`, `archive 0`, `archive x`, `archive 999`, `unarchive 2` on an active
+   1. Other incorrect commands to try: `archive`, `archive 0`, `unarchive 2` on an active
       contact, `list archive`<br>
       Expected: No change. The status message shows error details.
 
@@ -1776,7 +1620,7 @@ and `PAST_DATE` is any date before today, such as `01-01-2020`.
    1. Test case: `addevent evn/Orientation st/DATE et/DATE`<br>
       Expected: No event is added. The status message says an archived event with that name already exists.
 
-   1. Test case: `list archived`, then open the **Events** tab<br>
+   1. Test case: Close and relaunch the app, run `list archived`, then open the **Events** tab.<br>
       Expected: The tab and list heading read **Archived events (1)**. The sidebar lists only `unarchiveevent` and
       `list`.
 
@@ -1798,13 +1642,6 @@ and `PAST_DATE` is any date before today, such as `01-01-2020`.
    1. Test case: `unassign evn/Orientation c/ID`<br>
       Expected: The archived contact is removed from the event.
 
-1. Keeping the archive status after restarting
-
-   1. Prerequisites: Archive a contact and an event as above.
-
-   1. Test case: Close and relaunch the app.<br>
-      Expected: The contact and event are still hidden from the normal lists, and appear in `list archived`.
-
 ### Saving data
 
 <box type="warning" seamless>
@@ -1817,17 +1654,14 @@ want to keep.
 
    1. Prerequisites: The app is closed and `data/coordimate.json` exists.
 
-   1. Test case: Delete `data/coordimate.json`, then launch the app.<br>
-      Expected: The app starts with the sample contacts and the `Freshmen Welcome Night` sample event. The event
-      has two assigned contacts, with Alex Yeoh marked present.
-
-   1. Test case: Run `list`, then check the `data` folder.<br>
-      Expected: `data/coordimate.json` has not been created, because commands that do not change data do not save.
+   1. Test case: Delete `data/coordimate.json`, launch the app, then run `list`.<br>
+      Expected: The app shows the sample contacts and `Freshmen Welcome Night`, with two assigned contacts and
+      Alex Yeoh marked present. `data/coordimate.json` is not created by launching or running `list`.
 
    1. Test case: Run `addtag t/Test`, then check the `data` folder.<br>
       Expected: `data/coordimate.json` has been created again, containing the sample data and the `Test` tag.
 
-1. Migrating legacy member IDs and keeping command targets across restarts
+1. Migrating legacy member IDs
 
    1. Prerequisites: Restore the sample data, then run `edit 1 r/President` so that
       `data/coordimate.json` is created (Alex Yeoh is already President, so the data is unchanged). Close the app.
@@ -1835,36 +1669,27 @@ want to keep.
       remove every contact's `memberId` property and the top-level `nextMemberId` property, keeping valid JSON.
 
    1. Test case: Relaunch the app.<br>
-      Expected: The six contacts receive distinct IDs `1` to `6` in file order. Cards and selected-contact details
-      show the same `ID: <number>`. Loading alone has not changed the file.
+      Expected: Contacts receive IDs `1` to `6` in file order. Cards and details show the same IDs. The file is unchanged.
 
-   1. Test case: Run `search Charlotte`, then `edit 3 r/Treasurer`, then `filter tag/neighbours`.<br>
-      Expected: Charlotte keeps `ID: 3` and shows the new role, including as the only result. The successful save
-      records all member IDs and `nextMemberId: 7` in the file.
+   1. Test case: Run `search Charlotte`, then `edit 3 r/Treasurer`. Delete IDs `2` and `6`, confirming each with `y`.
+      Close and relaunch, then run `add n/ID Test p/91234567 e/idtest@example.com r/Member`.<br>
+      Expected: Charlotte keeps `ID: 3` and the new role; Bernice and Roy are absent. The new contact receives
+      `ID: 7`, so deleted IDs are not reused. Saved contacts include their IDs.
 
-   1. Test case: Run `addevent evn/ID Check st/08-08-2026 et/08-08-2026`, `assign evn/ID Check c/3 1`, then
-      `unassign evn/ID Check c/1`.<br>
-      Expected: Charlotte stays assigned with `ID: 3`. Alex (`ID: 1`) is assigned and removed despite being hidden
-      by the tag filter. The event roster and the neighbours tag's member list show Charlotte with `ID: 3`.
+   1. Test case: `edit 2 r/President`, then `delete 2`.<br>
+      Expected: Both report `No contact exists with member ID: 2. Use an existing member ID.`
+      No confirmation is requested, and contacts and the file remain unchanged.
 
-   1. Test case: Run `delete 2`, then `y`, followed by `delete 6`, then `y`. Close and relaunch the app.<br>
-      Expected: Bernice and Roy are absent. Charlotte still has `ID: 3`; remaining contacts keep their IDs.
+1. Dealing with invalid saved data
 
-   1. Test case: Run `add n/ID Test p/91234567 e/idtest@example.com r/Member`, then `members evn/ID Check`.<br>
-      Expected: The new contact has `ID: 7`, so neither deleted ID is reused. Charlotte is the only event member,
-      still showing `ID: 3`.
+   1. Prerequisites: Close the app and keep a copy of `data/coordimate.json` containing sample contacts and an
+      event with at least one member. Restore the copy before trying each corruption below.
 
-   1. Test case: Run `list`, then try `edit 2 r/President`, `delete 2`, `assign evn/ID Check c/7 2`, and
-      `unassign evn/ID Check c/3 2`.<br>
-      Expected: Each command reports `No contact exists with member ID: 2. Use an existing member ID.` followed
-      by usage. No confirmation is requested, no contact changes, neither batch partially changes membership,
-      and the data file is unchanged. In particular, Charlotte remains the second saved contact with `ID: 3`.
+   1. Test cases: Make one of these changes in a text editor, save, then launch the app:
+      * Delete the first `{`.
+      * Change an event's `members` entry to a name that no contact has.
+      * Add `"leaveUntil": "31-02-2030"` to a contact.
 
-1. Dealing with a corrupted data file
-
-   1. Prerequisites: The app is closed and `data/coordimate.json` contains at least one contact. Keep a copy of the file.
-
-   1. Test case: Open `data/coordimate.json` in a text editor, delete the first `{`, save, then launch the app.<br>
       Expected: CoordiMate warns that the saved data could not be loaded and that the original file is unchanged.
       The warning shows the path to `data/coordimate.json` and says that CoordiMate will close.
 
@@ -1874,14 +1699,6 @@ want to keep.
 
    1. Test case: Restore the copy of the file, then launch the app again.<br>
       Expected: The recovery warning does not appear. The original contacts and events are shown again.
-
-1. Dealing with an event member who is not a contact
-
-   1. Prerequisites: The app is closed and `data/coordimate.json` contains an event with at least one member. Keep a copy of the file.
-
-   1. Test case: In the data file, change one name in an event's `members` list to a name that no contact has, save, then launch the app.<br>
-      Expected: CoordiMate shows the recovery warning and closes after **OK** is selected. The invalid file remains
-      unchanged. Restore the copy before launching again.
 
 1. Dealing with a failed save
 
