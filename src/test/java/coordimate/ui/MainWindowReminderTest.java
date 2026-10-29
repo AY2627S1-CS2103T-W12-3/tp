@@ -13,7 +13,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Clock;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -43,6 +42,7 @@ import coordimate.model.event.EventTime;
 import coordimate.storage.JsonCoordiMateStorage;
 import coordimate.storage.JsonUserPrefsStorage;
 import coordimate.storage.StorageManager;
+import coordimate.testutil.MutableClock;
 import coordimate.testutil.PersonBuilder;
 import javafx.animation.Animation;
 import javafx.animation.Timeline;
@@ -868,26 +868,9 @@ public class MainWindowReminderTest {
         }
     }
 
-    private static class AdjustableClock extends Clock {
-        private Instant current = ZonedDateTime.parse("2026-10-19T15:00:00+08:00").toInstant();
-
-        void advance(java.time.Duration duration) {
-            current = current.plus(duration);
-        }
-
-        @Override
-        public ZoneId getZone() {
-            return ZoneId.of("Asia/Makassar");
-        }
-
-        @Override
-        public Clock withZone(ZoneId zone) {
-            return Clock.fixed(current, zone);
-        }
-
-        @Override
-        public Instant instant() {
-            return current;
+    private static class AdjustableClock extends MutableClock {
+        AdjustableClock() {
+            super(ZonedDateTime.parse("2026-10-19T15:00:00+08:00").toInstant(), ZoneId.of("Asia/Makassar"));
         }
     }
 }

@@ -14,9 +14,7 @@ import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -44,6 +42,7 @@ import coordimate.model.event.EventTime;
 import coordimate.storage.JsonCoordiMateStorage;
 import coordimate.storage.JsonUserPrefsStorage;
 import coordimate.storage.StorageManager;
+import coordimate.testutil.MutableClock;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 
@@ -70,7 +69,8 @@ public class ReminderLogicIntegrationTest {
         storage = new ControlledStorage(temporaryFolder.resolve("data.json"));
         storage.saveCoordiMate(model.getCoordiMate());
         storage.writes = 0;
-        clock = new MutableClock(ZonedDateTime.parse("2026-10-19T15:00:00+08:00").toInstant());
+        clock = new MutableClock(ZonedDateTime.parse("2026-10-19T15:00:00+08:00").toInstant(),
+                ZoneId.of("Asia/Makassar"));
         logic = newLogic(model);
     }
 
@@ -958,33 +958,6 @@ public class ReminderLogicIntegrationTest {
                 throw saveFailure;
             }
             super.saveCoordiMate(data);
-        }
-    }
-
-    private static class MutableClock extends Clock {
-        private Instant current;
-
-        MutableClock(Instant current) {
-            this.current = current;
-        }
-
-        void advance(Duration duration) {
-            current = current.plus(duration);
-        }
-
-        @Override
-        public ZoneId getZone() {
-            return ZoneId.of("Asia/Makassar");
-        }
-
-        @Override
-        public Clock withZone(ZoneId zone) {
-            return Clock.fixed(current, zone);
-        }
-
-        @Override
-        public Instant instant() {
-            return current;
         }
     }
 }

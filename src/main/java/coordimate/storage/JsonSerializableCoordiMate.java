@@ -218,21 +218,9 @@ class JsonSerializableCoordiMate {
      * Names already present anywhere in the file are reserved before choosing replacements.
      */
     List<EventNameCleanupResult.Rename> renameEventsWithCollidingNames() throws IllegalValueException {
-        List<Event> modelEvents = new ArrayList<>();
-        Set<String> legacyNames = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        List<Event> modelEvents = readEventsForNameCleanup();
         Set<String> reservedNames = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
-        for (JsonAdaptedEvent savedEvent : events) {
-            if (savedEvent == null) {
-                throw new IllegalValueException("Events list must not contain null entries.");
-            }
-            Event event = savedEvent.toModelType();
-            String legacyName = LEGACY_WHITESPACE_RUN.matcher(savedEvent.getName().strip()).replaceAll(" ");
-            if (!legacyNames.add(legacyName)) {
-                throw new IllegalValueException(MESSAGE_DUPLICATE_EVENT);
-            }
-            modelEvents.add(event);
-            reservedNames.add(event.getName());
-        }
+        modelEvents.forEach(event -> reservedNames.add(event.getName()));
 
         List<EventNameCleanupResult.Rename> renamedEvents = new ArrayList<>();
         Set<String> seenNames = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
@@ -246,6 +234,27 @@ class JsonSerializableCoordiMate {
             events.set(i, new JsonAdaptedEvent(event.withDetails(newName, event.getStartTime(), event.getEndTime())));
         }
         return renamedEvents;
+    }
+
+    /**
+     * Converts all saved events and rejects names that were duplicates under the legacy whitespace rules.
+     * Completes validation before any saved event is renamed.
+     */
+    private List<Event> readEventsForNameCleanup() throws IllegalValueException {
+        List<Event> modelEvents = new ArrayList<>();
+        Set<String> legacyNames = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        for (JsonAdaptedEvent savedEvent : events) {
+            if (savedEvent == null) {
+                throw new IllegalValueException("Events list must not contain null entries.");
+            }
+            Event event = savedEvent.toModelType();
+            String legacyName = LEGACY_WHITESPACE_RUN.matcher(savedEvent.getName().strip()).replaceAll(" ");
+            if (!legacyNames.add(legacyName)) {
+                throw new IllegalValueException(MESSAGE_DUPLICATE_EVENT);
+            }
+            modelEvents.add(event);
+        }
+        return modelEvents;
     }
 
     /**

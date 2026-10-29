@@ -484,6 +484,13 @@ public class EventListPanel extends UiPart<Region> {
             return "Unknown (end time not specified)";
         }
         long minutes = Duration.between(startDateTime.orElseThrow(), endDateTime.orElseThrow()).toMinutes();
+        return formatTimedDuration(minutes);
+    }
+
+    /**
+     * Formats elapsed minutes as nonzero day, hour, and minute units, using 24-hour days.
+     */
+    private String formatTimedDuration(long minutes) {
         if (minutes == 0) {
             return "0 minutes";
         }
