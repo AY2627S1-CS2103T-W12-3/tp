@@ -1,5 +1,6 @@
 package coordimate.logic;
 
+import static coordimate.testutil.ReminderTestUtil.createClock;
 import static coordimate.testutil.TypicalPersons.ALICE;
 import static coordimate.testutil.TypicalPersons.BENSON;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -15,8 +16,6 @@ import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -69,8 +68,7 @@ public class ReminderLogicIntegrationTest {
         storage = new ControlledStorage(temporaryFolder.resolve("data.json"));
         storage.saveCoordiMate(model.getCoordiMate());
         storage.writes = 0;
-        clock = new MutableClock(ZonedDateTime.parse("2026-10-19T15:00:00+08:00").toInstant(),
-                ZoneId.of("Asia/Makassar"));
+        clock = createClock();
         logic = newLogic(model);
     }
 
