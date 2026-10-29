@@ -559,8 +559,9 @@ turns each criterion into a `Predicate<Person>` using the model:
 | `event` | the name of a saved event | it is a member of the event with that name |
 | `organisation` | the organisation of at least one saved contact | its organisation is that value |
 
-If a value matches nothing, the command throws a `CommandException` with `No matching value found.` before the
-displayed list is changed. This tells the user about a mistyped value instead of showing an empty list. Otherwise
+If a value matches nothing, the command throws a `CommandException` with
+`No saved tag, event, or organisation matches that value. Use a value from the saved data.` before the displayed
+list is changed. This tells the user about a mistyped value instead of showing an empty list. Otherwise
 the predicates are combined into a [`ContactFilterPredicate`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/person/ContactFilterPredicate.java),
 which a contact matches only if it matches every predicate, and passed to `Model#updateFilteredPersonList`.
 
@@ -598,7 +599,8 @@ brackets from both, the same normalisation that `delete p/`, `edit target/`, and
 
 **Aspect: What happens when a value does not exist**
 
-* **Alternative 1 (current choice):** Reject the command with `No matching value found.`
+* **Alternative 1 (current choice):** Reject the command with
+  `No saved tag, event, or organisation matches that value. Use a value from the saved data.`
   * Pros: Distinguishes a mistyped value from a valid value that no contact has.
   * Cons: The command must look the value up in the model before filtering.
 
@@ -666,9 +668,10 @@ already sees the new events.
   * Cons: `Person` is immutable and is replaced on every edit, so every event would need updating on any edit, not
     only on a rename.
 
-* **Alternative 3:** By a generated contact ID.
+* **Alternative 3:** By the contact's existing permanent member ID.
   * Pros: Renaming a contact would not affect events.
-  * Cons: Needs a new ID field and a change to the data file format, and makes the data file harder to edit by hand.
+  * Cons: Requires migrating event member and attendance references from names to IDs in the data file, and
+    looking up contacts to display member names.
 
 ### Marking contacts as on leave
 
@@ -953,7 +956,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 ### Use cases
 
-(For all use cases below, the **System** is the `Coordimate` and the **Actor** is the `user`, unless specified otherwise)
+(For all use cases below, the **System** is the `CoordiMate` and the **Actor** is the `user`, unless specified otherwise)
 
 **Use case: Add a contact**
 
@@ -1010,26 +1013,21 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 
 **MSS**
 
-1. Event lead requests to search contacts using one or more names, tags, or roles.
-2. CoordiMate displays the contacts that match the given criteria.
+1. Event lead requests to search contacts using one keyword or phrase.
+2. CoordiMate displays contacts whose name, phone number, email address, address, or organisation contains that
+   keyword, ignoring case. Spaces, hyphens, and brackets in phone numbers are ignored when matching.
 
    Use case ends.
 
 **Extensions**
 
-* 1a. Event lead provides no search criteria.
+* 1a. Event lead provides an empty keyword, including a blank quoted phrase.
 
   * 1a1. CoordiMate displays an error message.
 
     Use case ends.
 
-* 1b. One or more search criteria are invalid.
-
-  * 1b1. CoordiMate displays an error message identifying the invalid criteria.
-
-    Use case ends.
-
-* 2a. No contact matches the given criteria.
+* 2a. No contact matches the keyword.
 
   * 2a1. CoordiMate informs the event lead that no matching contacts were found.
 
@@ -1423,7 +1421,7 @@ testers are expected to do more *exploratory* testing.
       Expected: The list is empty. The status message shows `No contacts found matching "zzz".`
 
    1. Test case: `search`<br>
-      Expected: The list is unchanged. The status message shows `Search keyword cannot be empty.` followed by the usage.
+      Expected: The list is unchanged. The status message shows `Invalid command format.` followed by the usage.
 
 1. Searching by organisation
 
@@ -1436,32 +1434,36 @@ testers are expected to do more *exploratory* testing.
 
 1. Filtering by tag, event, and organisation
 
-   1. Prerequisites: The sample contacts are loaded. Run these commands in order:<br>
+   1. Prerequisites: Restore the sample data (contact IDs `1` to `6`), with no additional contacts, events, or custom
+      tags. Run these commands in order:<br>
       `add n/Aisha Tan p/+6591234567 e/aisha@example.com r/Logistics t/EXCO`<br>
       `add n/Mr Lim p/90801110 e/lim@example.com o/NUS Student Affairs r/University Staff t/UniversityStaff`<br>
       `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`<br>
-      `assign evn/Final Concert c/1 7`
+      `assign evn/Final Concert c/1 7`<br>
+      `addtag t/Publicity`
 
    1. Test case: `filter tag/exco`<br>
-      Expected: Only `Aisha Tan` is listed. The status message shows `1 contact(s) found.`
+      Expected: `Alex Yeoh`, `Bernice Yu`, `Irfan Ibrahim`, and `Aisha Tan` are listed, in that order. The status
+      message shows `4 contact(s) found.`
 
    1. Test case: `filter event/"Final Concert"`<br>
       Expected: `Alex Yeoh` and `Aisha Tan` are listed.
 
    1. Test case: `filter event/Final Concert tag/EXCO`<br>
-      Expected: Only `Aisha Tan` is listed, as she is the only contact matching both filters.
+      Expected: `Alex Yeoh` and `Aisha Tan` are listed, as both have the `EXCO` tag and belong to `Final Concert`.
 
    1. Test case: `filter organisation/NUS Student Affairs`<br>
       Expected: Only `Mr Lim` is listed.
 
    1. Test case: `filter organisation/NUS`<br>
-      Expected: The list is unchanged. The status message shows `No matching value found.`
+      Expected: Only `Mr Lim` remains listed. The status message shows
+      `No saved tag, event, or organisation matches that value. Use a value from the saved data.`
 
-   1. Test case: `filter tag/Sponsor`<br>
+   1. Test case: `filter tag/Publicity`<br>
       Expected: The list is empty, as the tag exists but no contact has it. The status message shows `No contacts match the specified filters.`
 
    1. Test case: `filter role/Logistics`<br>
-      Expected: The list is unchanged. The status message shows `Invalid filter field. Supported fields: tag, event, organisation.`
+      Expected: The list stays empty. The status message shows `Unknown parameter: role/.` followed by the usage.
 
    1. Other incorrect filter commands to try: `filter`, `filter tag/`, `filter event/"Final Concert tag/EXCO`<br>
       Expected: The list is unchanged. The status message shows error details.
@@ -1690,13 +1692,13 @@ testers are expected to do more *exploratory* testing.
       Expected: `Alex Yeoh` shows **Absent**. The counts show 0 present, 1 absent, and 1 not marked.
 
    1. Test case: Repeat the previous command.<br>
-      Expected: No change. The status message shows `Alex Yeoh is already marked as absent for Event Final Concert. No changes were made.`
+      Expected: No change. The status message shows `Alex Yeoh is already marked as absent for event Final Concert. No changes were made.`
 
    1. Test case: `markattendance evn/Final Concert mem/David Li att/present`<br>
-      Expected: No change. The status message shows `Error! David Li is not assigned to event Final Concert!`
+      Expected: No change. The status message shows `David Li is not assigned to event Final Concert. Assign the contact to the event before marking attendance.` followed by the usage.
 
    1. Test case: `markattendance evn/Gala mem/Alex Yeoh att/present`<br>
-      Expected: No change. The status message shows `Error! Event Gala does not exist!`
+      Expected: No change. The status message shows `Event Gala does not exist. Use a saved event name.` followed by the usage.
 
    1. Other incorrect markattendance commands to try: `markattendance evn/Final Concert mem/Alex Yeoh att/late`, `markattendance evn/Final Concert mem/Alex Yeoh`, `markattendance evn/Final Concert mem/Alex Yeoh att/present att/absent`<br>
       Expected: No change. The status message shows error details.
@@ -1780,10 +1782,10 @@ and `PAST_DATE` is any date before today, such as `01-01-2020`.
       Expected: `Publicity` appears in the Tags view. The status message shows `Created tag: Publicity.`
 
    1. Test case: `addtag t/publicity`<br>
-      Expected: No tag is added. The status message shows `This tag already exists.`
+      Expected: No tag is added. The status message shows `A tag with this name already exists. No changes were made.` followed by the usage.
 
    1. Test case: `addtag t/Event Crew`<br>
-      Expected: No tag is added. The status message shows `Tag names should be alphanumeric with no spaces.`
+      Expected: No tag is added. The status message shows `Invalid tag name. Use letters and numbers without spaces. Example: t/Publicity` followed by the usage.
 
    1. Test case: `edittag Publicity t/Media`<br>
       Expected: The tag is renamed. The status message shows `Publicity successfully renamed to Media.`
@@ -1795,7 +1797,7 @@ and `PAST_DATE` is any date before today, such as `01-01-2020`.
       Expected: The tag is removed from the Tags view and from member ID `1`. The status message shows `Press successfully deleted.`
 
    1. Test case: `deletetag t/Nope`<br>
-      Expected: No tag is deleted. The status message shows `No such tag exists: Nope.`
+      Expected: No tag is deleted. The status message shows `Tag Nope does not exist. Use a saved tag name.` followed by the usage.
 
    1. Other incorrect tag commands to try: `addtag`, `addtag Publicity`, `edittag EXCO`, `deletetag EXCO`<br>
       Expected: No change. The status message shows error details.
