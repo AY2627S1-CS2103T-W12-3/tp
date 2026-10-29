@@ -1016,6 +1016,7 @@ Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unli
 1. Event lead requests to search contacts using one keyword or phrase.
 2. CoordiMate displays contacts whose name, phone number, email address, address, or organisation contains that
    keyword, ignoring case. Spaces, hyphens, and brackets in phone numbers are ignored when matching.
+   Extra spaces in the keyword and in addresses are treated as one space.
 
    Use case ends.
 
@@ -1457,7 +1458,7 @@ testers are expected to do more *exploratory* testing.
 
    1. Test case: `filter organisation/NUS`<br>
       Expected: Only `Mr Lim` remains listed. The status message shows
-      `No saved tag, event, or organisation matches that value. Use a value from the saved data.`
+      `No saved tag, event, or organisation matches that value. Use a value from the saved data.` followed by the usage.
 
    1. Test case: `filter tag/Publicity`<br>
       Expected: The list is empty, as the tag exists but no contact has it. The status message shows `No contacts match the specified filters.`
