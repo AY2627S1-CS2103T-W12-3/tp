@@ -239,7 +239,6 @@ public class UiManagerTest {
             assertFalse(primaryStage.getScene().lookup("#tutorialOverlay").isVisible());
             uiManager.stop();
             primaryStage.close();
-            return uiManager;
         });
     }
 

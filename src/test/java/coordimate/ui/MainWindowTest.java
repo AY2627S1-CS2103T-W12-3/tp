@@ -68,8 +68,7 @@ import javafx.stage.WindowEvent;
 public class MainWindowTest {
 
     private static final Path DEFAULT_DATA_PATH = Path.of("data", "coordimate.json");
-    private static final int DEFAULT_TIMEOUT_SECONDS = 10;
-    private static final int LAYOUT_TIMEOUT_SECONDS = 20;
+    private static final long LAYOUT_TIMEOUT_SECONDS = 20;
 
     private static final Person FIRST_CONTACT = new PersonBuilder(TypicalPersons.ALICE).withTags("Alpha").build();
     private static final Person SECOND_CONTACT = new PersonBuilder(TypicalPersons.BENSON).withTags("Beta").build();
@@ -225,14 +224,14 @@ public class MainWindowTest {
     }
 
     /**
-     * Opens the tutorial overlay by clicking the Tutorial label while the Events tab is selected
-     * and the Help window is open, matching the entry point every split-out test below starts from.
+     * Opens the tutorial overlay on an already-created, already-filled {@code window} by clicking
+     * the Tutorial label while the Events tab is selected and the Help window is open, matching
+     * the entry point every split-out test below starts from. Takes the window/stage from the
+     * caller's {@link #runInWindow} invocation so cleanup stays guaranteed by that helper even if
+     * a step here throws, instead of registering cleanup only after this factory returns.
      */
-    private static TutorialFixture openTutorialFromEventsWithHelpOpen() {
-        Stage stage = new Stage();
-        LogicManager logic = new LogicManager(createModelWithAssignedEvent(), null);
-        MainWindow window = new MainWindow(stage, logic, DEFAULT_DATA_PATH);
-        window.fillInnerParts();
+    private static TutorialFixture openTutorialFromEventsWithHelpOpen(MainWindow window, Stage stage,
+            LogicManager logic) {
         window.show();
         TabPane views = lookupNode(stage, "#views");
         views.getSelectionModel().select(1);
@@ -250,136 +249,126 @@ public class MainWindowTest {
 
     @Test
     public void topMenuTutorialItem_opensOverlayAndHidesHelp() throws Exception {
-        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
-            TutorialFixture fixture = openTutorialFromEventsWithHelpOpen();
-            try (AutoCloseable closeStage = JavaFxTestSupport.closing(fixture.stage()::close);
-                    AutoCloseable stopWindow = JavaFxTestSupport.closing(fixture.window()::stop)) {
-                assertTrue(fixture.tutorialOverlay().isVisible());
-                assertFalse(fixture.helpStage().isShowing());
-                assertTutorialStep(fixture.stage(), 1);
-                assertEquals(0, fixture.views().getSelectionModel().getSelectedIndex());
-            }
+        LogicManager logic = new LogicManager(createModelWithAssignedEvent(), null);
+        runInWindow(windowFor(logic), (window, stage) -> {
+            TutorialFixture fixture = openTutorialFromEventsWithHelpOpen(window, stage, logic);
+            assertTrue(fixture.tutorialOverlay().isVisible());
+            assertFalse(fixture.helpStage().isShowing());
+            assertTutorialStep(fixture.stage(), 1);
+            assertEquals(0, fixture.views().getSelectionModel().getSelectedIndex());
         });
     }
 
     @Test
     public void tutorialOverlay_blocksCommandInputAndSubmission() throws Exception {
-        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
-            TutorialFixture fixture = openTutorialFromEventsWithHelpOpen();
-            try (AutoCloseable closeStage = JavaFxTestSupport.closing(fixture.stage()::close);
-                    AutoCloseable stopWindow = JavaFxTestSupport.closing(fixture.window()::stop)) {
-                Stage stage = fixture.stage();
-                TextField commandInput = lookupNode(stage, "#commandTextField");
-                Button submitButton = lookupNode(stage, "#submitButton");
-                assertEquals("", commandInput.getText());
-                assertTrue(commandInput.isDisabled());
-                assertTrue(submitButton.isDisabled());
-                commandInput.setText("add n/Tom p/9081811 e/tomjohn@email.com r/EXCO");
-                commandInput.fireEvent(new ActionEvent());
-                assertEquals(1, fixture.logic().getPersonList().size());
-                assertTrue(lookupNode(stage, "#commandExamples") == null);
-            }
+        LogicManager logic = new LogicManager(createModelWithAssignedEvent(), null);
+        runInWindow(windowFor(logic), (window, stage) -> {
+            openTutorialFromEventsWithHelpOpen(window, stage, logic);
+            TextField commandInput = lookupNode(stage, "#commandTextField");
+            Button submitButton = lookupNode(stage, "#submitButton");
+            assertEquals("", commandInput.getText());
+            assertTrue(commandInput.isDisabled());
+            assertTrue(submitButton.isDisabled());
+            commandInput.setText("add n/Tom p/9081811 e/tomjohn@email.com r/EXCO");
+            commandInput.fireEvent(new ActionEvent());
+            assertEquals(1, logic.getPersonList().size());
+            assertTrue(lookupNode(stage, "#commandExamples") == null);
         });
     }
 
     @Test
     public void tutorialOverlay_highlightsEachStepAcrossContactsEventsAndTags() throws Exception {
-        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
-            TutorialFixture fixture = openTutorialFromEventsWithHelpOpen();
-            try (AutoCloseable closeStage = JavaFxTestSupport.closing(fixture.stage()::close);
-                    AutoCloseable stopWindow = JavaFxTestSupport.closing(fixture.window()::stop)) {
-                Stage stage = fixture.stage();
-                TabPane views = fixture.views();
-                Button nextButton = lookupNode(stage, "#nextButton");
-                fireRepeatedly(nextButton, 4);
-                assertTutorialStep(stage, 5);
-                assertTrue(lookupNode(stage, "#targetHighlight").isVisible());
-                nextButton.fire();
-                assertTutorialStep(stage, 6);
-                ListView<?> contactList = lookupNode(stage, "#personListView");
-                assertEquals(0, contactList.getSelectionModel().getSelectedIndex());
-                assertTrue(lookupNode(stage, "#targetHighlight").isVisible());
-                nextButton.fire();
-                assertTutorialStep(stage, 7);
-                assertEquals(1, views.getSelectionModel().getSelectedIndex());
-                refreshLayout(stage);
-                nextButton.fire();
-                assertTutorialStep(stage, 8);
-                ListView<?> eventList = lookupNode(stage, "#eventListView");
-                assertEquals(0, eventList.getSelectionModel().getSelectedIndex());
-                // The list is the fallback target until JavaFX creates the selected card on the next pulse.
-                assertTutorialHighlights(stage, "#eventListView");
-                nextButton.fire();
-                assertTutorialStep(stage, 9);
-                assertTrue(lookupNode(stage, "#targetHighlight").isVisible());
-                nextButton.fire();
-                assertTutorialStep(stage, 10);
-                VBox members = lookupNode(stage, "#members");
-                assertEquals(1, members.getChildren().size());
-                Bounds memberBounds = members.localToScene(members.getLayoutBounds());
-                Node highlight = lookupNode(stage, "#targetHighlight");
-                Bounds highlightBounds = highlight.localToScene(highlight.getLayoutBounds());
-                assertTrue(highlightBounds.intersects(memberBounds));
-                Label memberCount = lookupNode(stage, "#memberCount");
-                assertFalse(highlightBounds.intersects(memberCount.localToScene(memberCount.getLayoutBounds())));
-                nextButton.fire();
-                assertTutorialStep(stage, 11);
-                assertEquals(2, views.getSelectionModel().getSelectedIndex());
-                assertTrue(((ToggleButton) lookupNode(stage, "#tagsView")).isSelected());
-                assertTutorialHighlights(stage, "#tagsView");
-                nextButton.fire();
-                assertTutorialStep(stage, 12);
-                assertTutorialHighlights(stage, "#tagListView");
-                nextButton.fire();
-                assertTutorialStep(stage, 13);
-                assertEquals(0, ((ListView<?>) lookupNode(stage, "#tagListView"))
-                        .getSelectionModel().getSelectedIndex());
-                assertTutorialHighlights(stage, "#tagDetailsPane");
-                nextButton.fire();
-                assertTutorialStep(stage, 14);
-                assertEquals(2, views.getSelectionModel().getSelectedIndex());
-                assertFalse(lookupNode(stage, "#targetHighlight").isVisible());
-                nextButton.fire();
-                assertTutorialStep(stage, 15);
-                assertEquals(2, views.getSelectionModel().getSelectedIndex());
-                assertTutorialHighlights(stage, "#helpLabel");
-                nextButton.fire();
-                assertTutorialStep(stage, 16);
-                assertEquals(2, views.getSelectionModel().getSelectedIndex());
-                assertTutorialHighlights(stage, "#tutorialLabel");
-                assertEquals("Finish →", nextButton.getText());
-            }
+        LogicManager logic = new LogicManager(createModelWithAssignedEvent(), null);
+        runInWindow(windowFor(logic), (window, stage) -> {
+            TutorialFixture fixture = openTutorialFromEventsWithHelpOpen(window, stage, logic);
+            TabPane views = fixture.views();
+            Button nextButton = lookupNode(stage, "#nextButton");
+            fireRepeatedly(nextButton, 4);
+            assertTutorialStep(stage, 5);
+            assertTrue(lookupNode(stage, "#targetHighlight").isVisible());
+            nextButton.fire();
+            assertTutorialStep(stage, 6);
+            ListView<?> contactList = lookupNode(stage, "#personListView");
+            assertEquals(0, contactList.getSelectionModel().getSelectedIndex());
+            assertTrue(lookupNode(stage, "#targetHighlight").isVisible());
+            nextButton.fire();
+            assertTutorialStep(stage, 7);
+            assertEquals(1, views.getSelectionModel().getSelectedIndex());
+            refreshLayout(stage);
+            nextButton.fire();
+            assertTutorialStep(stage, 8);
+            ListView<?> eventList = lookupNode(stage, "#eventListView");
+            assertEquals(0, eventList.getSelectionModel().getSelectedIndex());
+            // The list is the fallback target until JavaFX creates the selected card on the next pulse.
+            assertTutorialHighlights(stage, "#eventListView");
+            nextButton.fire();
+            assertTutorialStep(stage, 9);
+            assertTrue(lookupNode(stage, "#targetHighlight").isVisible());
+            nextButton.fire();
+            assertTutorialStep(stage, 10);
+            VBox members = lookupNode(stage, "#members");
+            assertEquals(1, members.getChildren().size());
+            Bounds memberBounds = members.localToScene(members.getLayoutBounds());
+            Node highlight = lookupNode(stage, "#targetHighlight");
+            Bounds highlightBounds = highlight.localToScene(highlight.getLayoutBounds());
+            assertTrue(highlightBounds.intersects(memberBounds));
+            Label memberCount = lookupNode(stage, "#memberCount");
+            assertFalse(highlightBounds.intersects(memberCount.localToScene(memberCount.getLayoutBounds())));
+            nextButton.fire();
+            assertTutorialStep(stage, 11);
+            assertEquals(2, views.getSelectionModel().getSelectedIndex());
+            assertTrue(((ToggleButton) lookupNode(stage, "#tagsView")).isSelected());
+            assertTutorialHighlights(stage, "#tagsView");
+            nextButton.fire();
+            assertTutorialStep(stage, 12);
+            assertTutorialHighlights(stage, "#tagListView");
+            nextButton.fire();
+            assertTutorialStep(stage, 13);
+            assertEquals(0, ((ListView<?>) lookupNode(stage, "#tagListView"))
+                    .getSelectionModel().getSelectedIndex());
+            assertTutorialHighlights(stage, "#tagDetailsPane");
+            nextButton.fire();
+            assertTutorialStep(stage, 14);
+            assertEquals(2, views.getSelectionModel().getSelectedIndex());
+            assertFalse(lookupNode(stage, "#targetHighlight").isVisible());
+            nextButton.fire();
+            assertTutorialStep(stage, 15);
+            assertEquals(2, views.getSelectionModel().getSelectedIndex());
+            assertTutorialHighlights(stage, "#helpLabel");
+            nextButton.fire();
+            assertTutorialStep(stage, 16);
+            assertEquals(2, views.getSelectionModel().getSelectedIndex());
+            assertTutorialHighlights(stage, "#tutorialLabel");
+            assertEquals("Finish →", nextButton.getText());
         });
     }
 
     @Test
     public void tutorialOverlay_completingTourRecordsPreferenceAndReopensAtStepOne() throws Exception {
-        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
-            TutorialFixture fixture = openTutorialFromEventsWithHelpOpen();
-            try (AutoCloseable closeStage = JavaFxTestSupport.closing(fixture.stage()::close);
-                    AutoCloseable stopWindow = JavaFxTestSupport.closing(fixture.window()::stop)) {
-                Stage stage = fixture.stage();
-                LogicManager logic = fixture.logic();
-                TabPane views = fixture.views();
-                Button nextButton = lookupNode(stage, "#nextButton");
-                Button submitButton = lookupNode(stage, "#submitButton");
-                fireRepeatedly(nextButton, 15);
-                assertTutorialStep(stage, 16);
-                assertEquals(1, logic.getEventList().size());
-                Button closeButton = lookupNode(stage, "#closeButton");
-                closeButton.fire();
-                assertTrue(logic.hasSeenTutorial());
-                assertFalse(submitButton.isDisabled());
-                assertEquals(2, views.getSelectionModel().getSelectedIndex());
+        LogicManager logic = new LogicManager(createModelWithAssignedEvent(), null);
+        runInWindow(windowFor(logic), (window, stage) -> {
+            TutorialFixture fixture = openTutorialFromEventsWithHelpOpen(window, stage, logic);
+            TabPane views = fixture.views();
+            Button nextButton = lookupNode(stage, "#nextButton");
+            Button submitButton = lookupNode(stage, "#submitButton");
+            fireRepeatedly(nextButton, 6);
+            refreshLayout(stage);
+            fireRepeatedly(nextButton, 9);
+            assertTutorialStep(stage, 16);
+            assertEquals(1, logic.getEventList().size());
+            Button closeButton = lookupNode(stage, "#closeButton");
+            closeButton.fire();
+            assertTrue(logic.hasSeenTutorial());
+            assertFalse(submitButton.isDisabled());
+            assertEquals(2, views.getSelectionModel().getSelectedIndex());
 
-                fixture.window().handleHelp();
-                KeyEvent enterEvent = createKeyEvent(KeyCode.ENTER);
-                fixture.tutorialLabel().getOnKeyPressed().handle(enterEvent);
-                assertTrue(enterEvent.isConsumed());
-                assertTrue(fixture.tutorialOverlay().isVisible());
-                assertFalse(fixture.helpStage().isShowing());
-                assertTutorialStep(stage, 1);
-            }
+            fixture.window().handleHelp();
+            KeyEvent enterEvent = createKeyEvent(KeyCode.ENTER);
+            fixture.tutorialLabel().getOnKeyPressed().handle(enterEvent);
+            assertTrue(enterEvent.isConsumed());
+            assertTrue(fixture.tutorialOverlay().isVisible());
+            assertFalse(fixture.helpStage().isShowing());
+            assertTutorialStep(stage, 1);
         });
     }
 
@@ -481,18 +470,13 @@ public class MainWindowTest {
                 assertTrue(highlight.localToScene(highlight.getLayoutBounds()).getHeight() < contacts.getHeight());
                 fireRepeatedly(lookupNode(stage, "#nextButton"), 5);
                 assertTutorialStep(stage, 10);
-                return null;
             });
 
-            JavaFxTestSupport.runOnFxThreadAndWait(() -> {
-                assertTutorialHighlights(stage, "#members");
-                return null;
-            });
+            JavaFxTestSupport.runOnFxThreadAndWait(() -> assertTutorialHighlights(stage, "#members"));
         } finally {
             JavaFxTestSupport.runOnFxThreadAndWait(() -> {
                 window.stop();
                 stage.close();
-                return null;
             });
         }
     }
@@ -1000,7 +984,6 @@ public class MainWindowTest {
                 assertTrue(scroll.getHeight() >= 60);
                 assertTrue(scroll.getHeight() <= 220);
                 assertTrue(lookupNode(stage, "#feedbackScrollHint").isVisible());
-                return null;
             });
 
             submitFeedbackCommand(stage, mediumSearch);
@@ -1008,13 +991,11 @@ public class MainWindowTest {
                 ScrollPane scroll = lookupNode(stage, "#feedbackMessageScroll");
                 assertFalse(lookupNode(stage, "#feedbackScrollHint").isVisible());
                 assertEquals(mediumWidth, scroll.getWidth(), 1);
-                return null;
             });
         } finally {
             JavaFxTestSupport.runOnFxThreadAndWait(() -> {
                 window.stop();
                 stage.close();
-                return null;
             });
         }
     }
@@ -1032,7 +1013,6 @@ public class MainWindowTest {
             Button submit = lookupNode(stage, "#submitButton");
             input.setText(command);
             submit.fire();
-            return null;
         });
         waitForJavaFxPulses();
     }
@@ -1253,7 +1233,6 @@ public class MainWindowTest {
 
             assertEquals(new GuiSettings(expectedWidth, expectedHeight, expectedX, expectedY, false),
                     model.getGuiSettings());
-            return null;
         });
     }
 
@@ -1269,7 +1248,6 @@ public class MainWindowTest {
             Rectangle2D screenBounds = Screen.getPrimary().getVisualBounds();
             assertTrue(screenBounds.contains(stage.getX(), stage.getY()));
             stage.close();
-            return null;
         });
     }
 
@@ -1289,7 +1267,6 @@ public class MainWindowTest {
             stage.fireEvent(new WindowEvent(stage, WindowEvent.WINDOW_CLOSE_REQUEST));
 
             assertEquals(new GuiSettings(normalWidth, normalHeight, normalX, normalY, true), model.getGuiSettings());
-            return null;
         });
     }
 
@@ -1525,14 +1502,14 @@ public class MainWindowTest {
     }
 
     private static void runInWindow(WindowFactory factory, WindowTest test) throws Exception {
-        runInWindow(factory, test, DEFAULT_TIMEOUT_SECONDS);
+        runInWindow(factory, test, JavaFxTestSupport.DEFAULT_TIMEOUT_SECONDS);
     }
 
     /**
      * Creates a main window on the JavaFX thread, fills its inner parts and runs {@code test} on it,
      * then stops the window and closes its stage even if the test fails.
      */
-    private static void runInWindow(WindowFactory factory, WindowTest test, int timeoutSeconds) throws Exception {
+    private static void runInWindow(WindowFactory factory, WindowTest test, long timeoutSeconds) throws Exception {
         JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Stage stage = new Stage();
             MainWindow window = null;

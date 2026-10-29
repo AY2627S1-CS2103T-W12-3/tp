@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.awt.GraphicsEnvironment;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 
@@ -51,6 +52,11 @@ public final class JavaFxTestSupport {
      * Runs {@code action} on the FX application thread and blocks for its result until
      * {@code timeout}. Rejects reentrant calls from the FX thread itself, since those would
      * deadlock waiting for a task queued behind the caller.
+     *
+     * <p>Unwraps {@code action}'s own failure from the {@link ExecutionException} that
+     * {@link FutureTask#get} would otherwise throw, so a failing assertion reaches JUnit as the
+     * same {@code AssertionError} it threw (reported as a failure, with its expected/actual diff
+     * intact) rather than as an error with the real cause buried under "Caused by".
      */
     public static <T> T runOnFxThreadAndWait(Callable<T> action, long timeout, TimeUnit unit) throws Exception {
         if (Platform.isFxApplicationThread()) {
@@ -59,7 +65,15 @@ public final class JavaFxTestSupport {
         }
         FutureTask<T> task = new FutureTask<>(action);
         Platform.runLater(task);
-        return task.get(timeout, unit);
+        try {
+            return task.get(timeout, unit);
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof Error error) {
+                throw error;
+            }
+            throw (Exception) cause;
+        }
     }
 
     /**
