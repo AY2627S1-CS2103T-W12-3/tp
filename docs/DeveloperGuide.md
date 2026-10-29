@@ -1917,7 +1917,7 @@ want to keep.
 
 1. Migrating legacy member IDs and keeping command targets across restarts
 
-   1. Prerequisites: Restore the sample data, run `list`, then run `edit 1 r/President` so that
+   1. Prerequisites: Restore the sample data, then run `edit 1 r/President` so that
       `data/coordimate.json` is created (Alex Yeoh is already President, so the data is unchanged). Close the app.
       In `data/coordimate.json`,
       remove every contact's `memberId` property and the top-level `nextMemberId` property, keeping valid JSON.
