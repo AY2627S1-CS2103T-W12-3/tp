@@ -1342,6 +1342,51 @@ public class MainWindowTest {
     }
 
     @Test
+    public void tagMembers_switchingTags_clearsStaleContentAndShowsNewMembers() throws Exception {
+        ModelManager model = new ModelManager();
+        model.addPerson(new PersonBuilder().withName("Aisha Tan").withPhone("91234567")
+                .withEmail("aisha@example.com").withRole("Logistics Lead")
+                .withOrganisation("NUS").withTags("Logistics").build());
+        model.addPerson(new PersonBuilder().withName("Ben Lim").withPhone("91234568")
+                .withEmail("ben@example.com").withRole("Sponsor Liaison")
+                .withOrganisation("Student Union").withTags("Sponsor").build());
+        model.updateFilteredPersonList(person -> false);
+        runInWindow(windowFor(model), (window, stage) -> {
+            window.show();
+            refreshLayout(stage);
+            ToggleButton tags = lookupNode(stage, "#tagsView");
+            tags.fire();
+            ListView<String> tagList = lookupNode(stage, "#tagListView");
+            Node root = stage.getScene().getRoot();
+
+            tagList.getSelectionModel().select("Logistics");
+            refreshLayout(stage);
+            assertEquals(List.of("Aisha Tan"), root.lookupAll(".tag-member-row .event-member-name").stream()
+                    .map(node -> ((Label) node).getText()).toList());
+            assertEquals(1, root.lookupAll(".event-member-avatar-teal").size());
+            assertEquals(0, root.lookupAll(".event-member-avatar-amber").size());
+
+            tagList.getSelectionModel().select("Sponsor");
+            refreshLayout(stage);
+            assertEquals(List.of("Ben Lim"), root.lookupAll(".tag-member-row .event-member-name").stream()
+                    .map(node -> ((Label) node).getText()).toList());
+            assertEquals(0, root.lookupAll(".event-member-avatar-teal").size());
+            assertEquals(1, root.lookupAll(".event-member-avatar-amber").size());
+
+            tagList.getSelectionModel().clearSelection();
+            refreshLayout(stage);
+            assertEquals(0, root.lookupAll(".tag-member-row").size());
+
+            tagList.getSelectionModel().select("Logistics");
+            refreshLayout(stage);
+            assertEquals(List.of("Aisha Tan"), root.lookupAll(".tag-member-row .event-member-name").stream()
+                    .map(node -> ((Label) node).getText()).toList());
+            assertEquals(1, root.lookupAll(".event-member-avatar-teal").size());
+            assertEquals(0, root.lookupAll(".event-member-avatar-amber").size());
+        });
+    }
+
+    @Test
     public void commandRow_supportsKeyboardActivation() throws Exception {
         runInWindow(windowFor(new ModelManager()), (window, stage) -> {
             stage.getScene().getRoot().applyCss();
