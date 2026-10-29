@@ -28,18 +28,6 @@ You can run tests in two ways.
 **Link**: Read [this Gradle Tutorial from the se-edu/guides](https://se-education.org/guides/tutorials/gradle.html) to learn more about using Gradle.
 </box>
 
-### JavaFX UI tests
-
-UI tests require a graphical display and are skipped in a headless environment. On Linux, run
-`xvfb-run -a ./gradlew check coverage` to provide a virtual display and execute the CI checks.
-
-When a test measures a shown dialog's content or viewport, wait for a JavaFX layout pulse before reading its bounds.
-`Platform.runLater` alone does not guarantee that the window's layout has completed. `UiManagerTest` registers a
-[post-layout pulse listener](https://openjfx.io/javadoc/17/javafx.graphics/javafx/scene/Scene.html#addPostLayoutPulseListener(java.lang.Runnable))
-and requests a pulse for both short warnings that must fit without scrolling and long messages that must remain
-scrollable. The listener is removed after the inspection, and the dialog is closed through `Platform.runLater`
-so closing happens outside layout processing. Each test bounds its wait with `FutureTask.get` and a timeout.
-
 --------------------------------------------------------------------------------------------------------------------
 
 ## Types of tests
