@@ -1408,7 +1408,7 @@ event, and no custom tags. Deleting contacts by hand is not enough, because memb
 
    1. Test cases: `dismiss`, `dismiss 0`<br>
       Expected: No reminders or saved events change. Feedback shows **Rejected** and an explanation.
-      A missing index gives `Invalid command format.`; the other inputs give
+      A missing index gives `Invalid command format.`; `dismiss 0` gives
       `Index must be a positive integer. Example: 1`.
 
 1. Cleaning up
@@ -1688,7 +1688,7 @@ want to keep.
    1. Test cases: Make one of these changes in a text editor, save, then launch the app:
       * Delete the first `{`.
       * Change an event's `members` entry to a name that no contact has.
-      * Set a contact's `leaveUntil` to `31-02-2030`.
+      * Add `"leaveUntil": "31-02-2030"` to a contact.
 
       Expected: CoordiMate warns that the saved data could not be loaded and that the original file is unchanged.
       The warning shows the path to `data/coordimate.json` and says that CoordiMate will close.
