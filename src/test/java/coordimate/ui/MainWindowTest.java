@@ -1570,12 +1570,12 @@ public class MainWindowTest {
     }
 
     private static boolean keyReachesTarget(Node target, KeyEvent event) {
-        AtomicBoolean reachedTarget = new AtomicBoolean();
-        EventHandler<KeyEvent> observer = ignored -> reachedTarget.set(true);
+        AtomicBoolean hasReachedTarget = new AtomicBoolean();
+        EventHandler<KeyEvent> observer = ignored -> hasReachedTarget.set(true);
         target.addEventHandler(event.getEventType(), observer);
         target.fireEvent(event.copyFor(target, target));
         target.removeEventHandler(event.getEventType(), observer);
-        return reachedTarget.get();
+        return hasReachedTarget.get();
     }
 
     private static void fireMousePress(Node target) {
