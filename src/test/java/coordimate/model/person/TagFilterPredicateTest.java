@@ -1,4 +1,4 @@
-package coordimate.model.tag;
+package coordimate.model.person;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
-import coordimate.model.person.Person;
 import coordimate.testutil.PersonBuilder;
 
 public class TagFilterPredicateTest {
