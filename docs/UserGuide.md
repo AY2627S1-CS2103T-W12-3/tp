@@ -317,14 +317,19 @@ If the local contact data cannot be loaded or saved, CoordiMate reports an error
 
 Format: `add n/NAME p/PHONE e/EMAIL r/ROLE [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [lv/LEAVE_END_DATE] [t/TAG]... [m/NOTE]`
 
-Name, phone, email, and role are required; birthday, address, organisation, leave end date, and note are optional. Surrounding spaces are ignored. Each field follows the constraints in [Parameter constraints](#parameter-constraints). A value that breaks a constraint is rejected with a message stating that field's constraint, such as `Invalid organisation. Use 1 to 80 characters: letters, digits, spaces, and - & . , ' ( ) /, with at least one letter or digit. Example: o/NUS Student Affairs`. An empty `b/`, `a/`, `o/`, `lv/`, or `m/` leaves that field unset, as does omitting it. Non-tag fields may appear only once; `t/TAG` may repeat. An empty `t/` clears the tags collected so far. A tag that matches a saved tag, ignoring capitalization, uses the saved tag's capitalization; for example, `t/exco` gives the contact the default `EXCO` tag. A valid new tag keeps its typed capitalization and is saved as a custom tag. Successful feedback is `Contact saved successfully: NAME`. After a successful `add`, CoordiMate selects and reveals the new contact so its details are shown. Unset optional values are shown as `— (not specified)` in the details pane, but remain unset in storage.
+* Name, phone, email, and role are required; birthday, address, organisation, leave end date, and note are optional. Surrounding spaces are ignored. Each field follows the constraints in [Parameter constraints](#parameter-constraints).
+* A value that breaks a constraint is rejected with a message stating that field's constraint, such as `Invalid organisation. Use 1 to 80 characters: letters, digits, spaces, and - & . , ' ( ) /, with at least one letter or digit. Example: o/NUS Student Affairs`.
+* An empty `b/`, `a/`, `o/`, `lv/`, or `m/` leaves that field unset, as does omitting it.
+* Non-tag fields may appear only once; `t/TAG` may repeat. An empty `t/` clears the tags collected so far.
+* A tag that matches a saved tag, ignoring capitalization, uses the saved tag's capitalization; for example, `t/exco` gives the contact the default `EXCO` tag. A valid new tag keeps its typed capitalization and is saved as a custom tag.
+* Successful feedback is `Contact saved successfully: NAME`. After a successful `add`, CoordiMate selects and reveals the new contact so its details are shown. Unset optional values are shown as `— (not specified)` in the details pane, but remain unset in storage.
 
 <box type="tip" seamless>
 
 **Tip:** A contact can have up to 15 tags, including zero. Tags that differ only in capitalization count as one. Parameters can be supplied in any order.
 </box>
 
-<!-- TODO: screenshot — contact details pane after a successful `add` -->
+![Add contact](images/addContact.png)
 *Aisha Tan's contact card and details pane, shown automatically after `add` saves her.*
 
 Examples:
@@ -400,7 +405,7 @@ Email: aisha@example.com
 Role: President
 ```
 
-<!-- TODO: screenshot — contact details pane after a successful `edit` -->
+![Edit contact](images/editContact.png)
 *The same contact's details pane after `edit` updates their phone number and email address.*
 
 Examples:
@@ -487,7 +492,7 @@ Formats: `delete MEMBER_ID` · `delete n/NAME` · `delete p/PHONE` · `delete e/
 * A confirmed deletion is saved before it appears in the contact list. A corrupt data file or failed write leaves the
   contact and events unchanged and reports a contact load or save error.
 
-<!-- TODO: screenshot — the confirmation prompt shown before a `delete` -->
+![Delete contact confirmation](images/deleteContactConfirm.png)
 *The `Confirm deletion? [y/N]` prompt shown after `delete`, before the user responds.*
 
 Examples:
@@ -537,8 +542,8 @@ Format: `search KEYWORD`
 * Results replace the displayed contact list. Permanent member IDs remain unchanged; `edit`, `delete`, `assign`, and `unassign` accept those IDs even for hidden contacts. Use `list` to show everyone.
 * If nothing matches, the displayed list is empty and a no-matches message is shown.
 
-<!-- TODO: screenshot — the contact list filtered by a `search` result -->
-*The contact list narrowed down to matches for `search John`.*
+![Search contacts](images/searchContact.png)
+*The contact list narrowed down to the one match for `search John`.*
 
 Examples:
 * `search John` matches `John Doe` by name and `john@example.com` by email.
@@ -594,7 +599,7 @@ Format: `filter FIELD/VALUE [FIELD/VALUE]...`
 * A quotation mark with no closing quotation mark, followed by another field, is rejected because it is unclear
   where the value ends: `filter event/"Cali tag/EXCO`.
 
-<!-- TODO: screenshot — the contact list filtered by a `filter` result -->
+![Filter contacts](images/filterContact.png)
 *The contact list narrowed down to members matching `filter tag/EXCO`.*
 
 Examples:
@@ -647,7 +652,7 @@ While a contact or event is archived:
 * An archived contact cannot be assigned to an event, but can still be removed from one with `unassign`.
 * Its name stays taken: `add` or `addevent` with the same name is rejected as a duplicate.
 
-<!-- TODO: screenshot — a contact card showing the Archived badge in `list archived` -->
+![Archived contact](images/archiveContact.png)
 *A contact's card marked with the **Archived** badge, shown in the `list archived` view.*
 
 Examples:
@@ -1140,7 +1145,7 @@ capitalization.
 
 Format: `addtag t/TAG`
 
-<!-- TODO: screenshot — the Tags tab after a successful `addtag` -->
+![Add tag](images/addTag.png)
 *The Tags tab showing the new `ProductionCrew` tag after `addtag`.*
 
 Examples:
