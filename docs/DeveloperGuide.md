@@ -200,8 +200,7 @@ This section describes some noteworthy details on how certain features are imple
 
 ### Permanent member IDs
 
-The [member ID](#glossary) implementation uses `MemberId`, `MemberIdResolver`, and the persisted `nextMemberId`
-counter.
+The [member ID](#glossary) implementation uses `MemberId`, `MemberIdResolver`, and the persisted `nextMemberId` counter.
 
 #### Allocation and editing
 
@@ -985,7 +984,7 @@ dismissing a reminder ([UC12](#uc12-dismiss-an-event-reminder)).
 * 1e. The tag changes would give the contact more than 15 tags.
   * 1e1. CoordiMate informs the EXCO member of the tag limit and makes no changes.
 
-    Use case ends.
+    Use case resumes from step 1.
 
 #### UC03: Delete a contact
 
@@ -994,7 +993,7 @@ dismissing a reminder ([UC12](#uc12-dismiss-an-event-reminder)).
 1. EXCO member requests to delete a contact, identifying it by its member ID or by its exact name, phone number, or
    email address.
 2. CoordiMate shows the matching contact and requests confirmation.
-3. EXCO member confirms the deletion.
+3. EXCO member confirms the deletion by entering `y` or `Y`, ignoring surrounding whitespace.
 4. CoordiMate deletes the contact, removes it from every event it is a member of along with its attendance records,
    and confirms the deletion.
 
@@ -1020,8 +1019,8 @@ dismissing a reminder ([UC12](#uc12-dismiss-an-event-reminder)).
 
     Use case resumes from step 2.
 
-* 3a. EXCO member declines the deletion.
-  * 3a1. CoordiMate cancels the deletion and leaves the contact unchanged.
+* 3a. EXCO member enters anything other than `y` or `Y`, ignoring surrounding whitespace.
+  * 3a1. CoordiMate cancels the deletion and leaves the contact unchanged. The input is consumed and is not executed as a command.
 
     Use case ends.
 
@@ -1038,7 +1037,7 @@ dismissing a reminder ([UC12](#uc12-dismiss-an-event-reminder)).
 
 **Extensions**
 
-* 1a. The keyword is empty.
+* 1a. The keyword is empty or blank, including a blank quoted phrase such as `search ""` or `search "   "`.
   * 1a1. CoordiMate informs the EXCO member of the error.
 
     Use case ends.
@@ -1110,7 +1109,7 @@ dismissing a reminder ([UC12](#uc12-dismiss-an-event-reminder)).
 
 **Extensions**
 
-* 1a. A detail is missing, empty, repeated, or incorrectly formatted.
+* 1a. A detail is missing, empty, repeated, or incorrectly formatted, or an unknown field is given.
   * 1a1. CoordiMate informs the EXCO member of the error.
   * 1a2. EXCO member corrects the details.
 
@@ -1139,15 +1138,15 @@ dismissing a reminder ([UC12](#uc12-dismiss-an-event-reminder)).
 
 **Extensions**
 
-* 1a. No saved event has the given name.
-  * 1a1. CoordiMate informs the EXCO member that the event does not exist.
-
-    Use case ends.
-
-* 1b. No new details are given, or a detail is empty or incorrectly formatted.
-  * 1b1. CoordiMate informs the EXCO member of the error.
+* 1a. No new details are given, or a detail is empty or incorrectly formatted.
+  * 1a1. CoordiMate informs the EXCO member of the error.
 
     Use case resumes from step 1.
+
+* 1b. No saved event has the given name.
+  * 1b1. CoordiMate informs the EXCO member that the event does not exist.
+
+    Use case ends.
 
 * 1c. Another event already has the new name, ignoring case.
   * 1c1. CoordiMate informs the EXCO member of the conflict and makes no changes.
@@ -1161,7 +1160,7 @@ dismissing a reminder ([UC12](#uc12-dismiss-an-event-reminder)).
 
 Deleting an event is similar: the EXCO member identifies the event by name, and CoordiMate deletes it together with
 its member list and attendance records, without asking for confirmation. The contacts themselves are kept.
-Extension 1a also applies.
+Extension 1b also applies.
 
 #### UC09: Assign members to an event
 
@@ -1189,6 +1188,11 @@ Extension 1a also applies.
   * 1c1. CoordiMate informs the EXCO member that it must be restored first, and assigns no contacts.
 
     Use case ends.
+
+* 1d. The same member ID is given more than once.
+  * 1d1. CoordiMate processes each distinct member ID once, without reporting an error for repeated IDs.
+
+    Use case resumes from step 2.
 
 * 2a. Some of the contacts are already members of the event.
   * 2a1. CoordiMate assigns only the other contacts, and reports how many were already assigned.
@@ -1388,11 +1392,7 @@ the results. Speed and onboarding targets require timed trials with users from t
 3.  For users familiar with CoordiMate's keyboard shortcuts, a short sequence of switching views and selecting
     adjacent cards should take less time on average using shortcuts than using the mouse. Compare repeated
     trials by the same user from the same starting view and selection, including keyboard mode changes.
-4.  Under the [typical load](#glossary), common commands such as `add`, `edit`, `search`, `filter`, `list`,
-    `addevent`, `assign`, and `markattendance` should each have a median response time of at most 2 seconds over
-    repeated trials on the recorded test machine. Measure from pressing Enter to visible feedback and completion
-    of the resulting view update, including any save. Exclude application startup and time waiting for user
-    confirmation; measure the prompt and the response after confirmation separately when applicable.
+4.  Under the [typical load](#glossary), every command that reads or changes contact, tag, event, attendance, or reminder data should have a median response time of at most 2 seconds over repeated trials on the recorded test machine. This includes `delete`, `unassign`, `archiveevent`, `unarchiveevent`, `dismiss`, and `clear`. Measure from pressing Enter to visible feedback and completion of the resulting view update, including any save. Exclude application startup and time waiting for user confirmation; measure the prompt and the response after confirmation separately when applicable.
 5.  Contact, tag, event, attendance, archive, and reminder features, including built-in Help and the tutorial,
     should work without an internet connection. Opening the online User Guide requires internet access.
 6.  If only the application process terminates during a save while the OS remains running, an existing valid
@@ -1434,7 +1434,7 @@ the results. Speed and onboarding targets require timed trials with users from t
 * **Future event**: An event whose start date/time is later than the current date/time.
 * **Internal contact**: A contact from within the CCA, such as a member, fellow EXCO member or advisor.
 * **JAR file**: A single file that packages a Java application so that it can be run without installation.
-* **Local data file**: The JSON file on the user's computer where CoordiMate saves contacts, tags, events, attendance records, and reminder dismissals. Its default path is `data/coordimate.json`, relative to the working directory.
+* **Local data file**: The JSON file on the user's computer where CoordiMate saves the application data listed in NFR 2 under [Non-Functional Requirements](#non-functional-requirements). Its default path is `data/coordimate.json`, relative to the application's working directory.
 * **Mainstream OS**: Windows, macOS, or Linux.
 * **Member ID**: A unique, permanent positive integer assigned to a contact, displayed as `ID: <number>`, and used in commands across searches, filters, and restarts.
 * **Navigation mode**: The keyboard mode in which key presses browse cards and switch views.
@@ -1454,6 +1454,8 @@ the results. Speed and onboarding targets require timed trials with users from t
 
 Given below are instructions to test the app manually.
 
+All relative file paths below are relative to the application's working directory. When launching with `java -jar`, this is the terminal's current directory. Use the same working directory when relaunching the app to reload the same data.
+
 <box type="info" seamless>
 
 **Note:** Use these tests as a starting point for further *exploratory* testing.
@@ -1469,7 +1471,7 @@ sections is not always cleaned up, so when a section's prerequisites say **Resto
 continuing:
 
 1. Close the app.
-1. Delete `data/coordimate.json` from the folder containing the JAR file.
+1. Delete `data/coordimate.json` from the application's working directory.
 1. Relaunch the app.
 
 The app then starts with the six sample contacts (member IDs `1` to `6`), the `Freshmen Welcome Night` sample
@@ -1506,8 +1508,7 @@ event, and no custom tags. Deleting contacts by hand is not enough, because memb
 
 ### Tutorial and Help
 
-Closing the tutorial with Esc or **Close** also marks it as seen. Restoring the sample data does not reset this
-preference, which is stored in `preferences.json` in the folder from which CoordiMate is launched.
+Closing the tutorial with Esc or **Close** also marks it as seen. Restoring the sample data does not reset this preference, which is stored in `preferences.json` in the application's working directory.
 
 1. Test case: `tutorial`, then press Right Arrow, Left Arrow, Tab, and Shift+Tab.<br>
    Expected: The overlay starts at **Step 1 of 16**. Arrow keys change steps and Tab moves focus between the
@@ -2070,7 +2071,7 @@ want to keep.
 
 1. Dealing with a failed save
 
-   1. Prerequisites: The app is running and `data/coordimate.json` exists. Make the data impossible to save: on Windows, open the properties of `data/coordimate.json` and tick **Read-only**; on macOS or Linux, run `chmod a-w data` in the folder containing the JAR file.
+   1. Prerequisites: The app is running and `data/coordimate.json` exists. Make the data impossible to save: on Windows, open the properties of `data/coordimate.json` and tick **Read-only**; on macOS or Linux, run `chmod a-w data` in the application's working directory.
 
    1. Test case: `addevent evn/Test st/01-01-2027 et/01-01-2027`<br>
       Expected: No event is added and the **Events** tab is unchanged. The status message shows `Event could not be saved. No changes were made.`
