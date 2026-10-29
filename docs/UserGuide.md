@@ -157,6 +157,8 @@ A command that breaks a constraint is rejected and makes no changes.
 | `MEMBER_ID` | `c/` for `assign` and `unassign`; none for `edit`, `delete`, `archive`, and `unarchive` | A permanent positive integer from 1 to 2147483647 identifying a saved contact, independent of the displayed list. |
 | `KEYWORD` | none | At least one non-space character. |
 
+"Printable" excludes line breaks and other control characters. "Visible" excludes spaces, zero-width and formatting characters, accent marks on their own, and blank filler characters such as `U+3164` Hangul Filler.
+
 <box type="info" seamless>
 
 **Note:** In commands that accept multiple prefixed parameters, such as `add` and `addevent`, text within
@@ -315,40 +317,15 @@ If the local contact data cannot be loaded or saved, CoordiMate reports an error
 
 Format: `add n/NAME p/PHONE e/EMAIL r/ROLE [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [lv/LEAVE_END_DATE] [t/TAG]... [m/NOTE]`
 
-Name, phone, email, and role are required. Each field accepts the following values; surrounding spaces are ignored:
-
-| Field | Constraints |
-|---|---|
-| `NAME` | 1 to 80 characters: letters, spaces, hyphens (`-`), apostrophes (`'`), and periods (`.`), with at least one letter. The words `s/o` and `d/o` are also allowed. |
-| `PHONE` | 7 to 15 digits, optionally starting with `+` or `(+country code)`, with optional spaces, hyphens, and matching brackets around digits, e.g. `(+65) 9123 4567`. |
-| `EMAIL` | `local-part@domain`, at most 254 characters, with a local part of at most 64 characters. |
-| `ROLE` | 1 to 50 characters: letters, digits, spaces, hyphens, and slashes (`/`), with at least one letter or digit. |
-| `BIRTHDAY` | A real date in `dd-MM-yyyy` format that is not in the future. |
-| `LEAVE_END_DATE` | A real date in `dd-MM-yyyy` format that is not in the past. |
-| `ADDRESS` | 1 to 200 printable characters, including at least one visible character. |
-| `ORGANISATION` | 1 to 80 characters: letters, digits, spaces, and `-` `&` `.` `,` `'` `(` `)` `/`, with at least one letter or digit, e.g. `St. John's Ambulance`. Several spaces in a row are saved as one, so `o/NUS  Student Affairs` is saved as `NUS Student Affairs`. |
-| `NOTE` | 1 to 500 printable characters, including at least one visible character. |
-| `TAG` | 1 to 30 letters or digits with no spaces. At most 15 tags per contact. |
-
-"Printable" excludes line breaks and other control characters. "Visible" excludes spaces, zero-width and formatting
-characters, accent marks on their own, and blank filler characters such as `U+3164` Hangul Filler.
-A value that breaks these rules is rejected with a
-message stating the field's constraints, such as
-`Invalid organisation. Use 1 to 80 characters: letters, digits, spaces, and - & . , ' ( ) /, with at least one letter or digit. Example: o/NUS Student Affairs`.
-Birthday, address, organisation, leave end date, and note are optional. An empty `b/`, `a/`, `o/`, `lv/`, or
-`m/` leaves that field unset,
-as does omitting it. Non-tag fields may appear only once; `t/TAG` may repeat. An empty `t/` clears the
-tags collected so far. A tag that matches a saved tag, ignoring capitalization, uses the saved tag's
-capitalization; for example, `t/exco` gives the contact the default `EXCO` tag. A valid new tag keeps its typed
-capitalization and is saved as a custom tag. Successful feedback is
-`Contact saved successfully: NAME`.
-After a successful `add`, CoordiMate selects and reveals the new contact so its details are shown. Unset optional
-values are shown as `— (not specified)` in the details pane, but remain unset in storage.
+Name, phone, email, and role are required; birthday, address, organisation, leave end date, and note are optional. Surrounding spaces are ignored. Each field follows the constraints in [Parameter constraints](#parameter-constraints). A value that breaks a constraint is rejected with a message stating that field's constraint, such as `Invalid organisation. Use 1 to 80 characters: letters, digits, spaces, and - & . , ' ( ) /, with at least one letter or digit. Example: o/NUS Student Affairs`. An empty `b/`, `a/`, `o/`, `lv/`, or `m/` leaves that field unset, as does omitting it. Non-tag fields may appear only once; `t/TAG` may repeat. An empty `t/` clears the tags collected so far. A tag that matches a saved tag, ignoring capitalization, uses the saved tag's capitalization; for example, `t/exco` gives the contact the default `EXCO` tag. A valid new tag keeps its typed capitalization and is saved as a custom tag. Successful feedback is `Contact saved successfully: NAME`. After a successful `add`, CoordiMate selects and reveals the new contact so its details are shown. Unset optional values are shown as `— (not specified)` in the details pane, but remain unset in storage.
 
 <box type="tip" seamless>
 
 **Tip:** A contact can have up to 15 tags, including zero. Tags that differ only in capitalization count as one. Parameters can be supplied in any order.
 </box>
+
+<!-- TODO: screenshot — contact details pane after a successful `add` -->
+*Aisha Tan's contact card and details pane, shown automatically after `add` saves her.*
 
 Examples:
 * `add n/Aisha Tan p/+6591234567 e/aisha@example.com r/Logistics t/EXCO m/Handles venue bookings`
@@ -422,6 +399,9 @@ Phone: +6598765432
 Email: aisha@example.com
 Role: President
 ```
+
+<!-- TODO: screenshot — contact details pane after a successful `edit` -->
+*The same contact's details pane after `edit` updates their phone number and email address.*
 
 Examples:
 *  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of member ID `1` to be `91234567` and `johndoe@example.com` respectively.
@@ -507,6 +487,9 @@ Formats: `delete MEMBER_ID` · `delete n/NAME` · `delete p/PHONE` · `delete e/
 * A confirmed deletion is saved before it appears in the contact list. A corrupt data file or failed write leaves the
   contact and events unchanged and reports a contact load or save error.
 
+<!-- TODO: screenshot — the confirmation prompt shown before a `delete` -->
+*The `Confirm deletion? [y/N]` prompt shown after `delete`, before the user responds.*
+
 Examples:
 * `list` followed by `delete 2`, then `y`, deletes the contact with member ID `2`.
 * If Betsy's member ID is `12`, `search Betsy` followed by `delete 12`, then `Y`, deletes Betsy regardless of her position in the results.
@@ -553,6 +536,9 @@ Format: `search KEYWORD`
 * Search checks all saved contacts, including those hidden by the current search or filter.
 * Results replace the displayed contact list. Permanent member IDs remain unchanged; `edit`, `delete`, `assign`, and `unassign` accept those IDs even for hidden contacts. Use `list` to show everyone.
 * If nothing matches, the displayed list is empty and a no-matches message is shown.
+
+<!-- TODO: screenshot — the contact list filtered by a `search` result -->
+*The contact list narrowed down to matches for `search John`.*
 
 Examples:
 * `search John` matches `John Doe` by name and `john@example.com` by email.
@@ -608,6 +594,9 @@ Format: `filter FIELD/VALUE [FIELD/VALUE]...`
 * A quotation mark with no closing quotation mark, followed by another field, is rejected because it is unclear
   where the value ends: `filter event/"Cali tag/EXCO`.
 
+<!-- TODO: screenshot — the contact list filtered by a `filter` result -->
+*The contact list narrowed down to members matching `filter tag/EXCO`.*
+
 Examples:
 * `filter tag/EXCO` lists contacts tagged `EXCO`.
 * `filter event/Final Concert` lists the members of `Final Concert`.
@@ -657,6 +646,9 @@ While a contact or event is archived:
   lists in the **Tags** tab, and an archived event in the event list of each of its members' details.
 * An archived contact cannot be assigned to an event, but can still be removed from one with `unassign`.
 * Its name stays taken: `add` or `addevent` with the same name is rejected as a duplicate.
+
+<!-- TODO: screenshot — a contact card showing the Archived badge in `list archived` -->
+*A contact's card marked with the **Archived** badge, shown in the `list archived` view.*
 
 Examples:
 
@@ -1148,6 +1140,9 @@ capitalization.
 
 Format: `addtag t/TAG`
 
+<!-- TODO: screenshot — the Tags tab after a successful `addtag` -->
+*The Tags tab showing the new `ProductionCrew` tag after `addtag`.*
+
 Examples:
 
 * `addtag t/ProductionCrew`
@@ -1235,8 +1230,7 @@ the Tags view.
 
 Select a tag in the **Tags** tab to see the contacts assigned to it and the member count. The member list includes
 all saved contacts, regardless of the current contact search or filter, and is ordered by name. Each member shows
-their tags, role, and organisation. Archived contacts are included and marked `(archived)`. Every tag assigned to a
-contact is included in this global tag list, including tags recovered from older saved data.
+their tags, role, and organisation. Archived contacts are included and marked `(archived)`. Every tag assigned to a contact is included in this global tag list.
 
 --------------------------------------------------------------------------------------------------------------------
 
