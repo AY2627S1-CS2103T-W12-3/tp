@@ -694,7 +694,7 @@ command.
 | A prefix is repeated. | `Parameter {PREFIX} may only be specified once.` |
 | An unknown prefix is used. | `Unknown parameter: {PREFIX}.` |
 | A value is empty or contains only whitespace. | A message naming the field, such as `Event name must not be empty. Example: evn/Final Concert` |
-| A value breaks its rule in [Parameter constraints](#parameter-constraints). | A message stating the rule, such as `Invalid event time. Use dd-MM-yyyy with an optional time in HH:mm format. Example: st/17-09-2026 16:30` |
+| A value breaks its rule in [Parameter constraints](#parameter-constraints). | A message stating the rule, such as `Invalid event time. Use dd-MM-yyyy with a year from 0001 to 9999 and an optional time in HH:mm format. Example: st/17-09-2026 16:30` |
 | No saved event has the supplied name. | `Event {EVENT_NAME} does not exist. Use a saved event name.` |
 | No contact has a supplied member ID. | `No contact exists with member ID: {MEMBER_ID}. Use an existing member ID.` |
 | The change cannot be saved. | A message ending in `No changes were made.`, such as `Event could not be saved. No changes were made.` |
@@ -710,6 +710,9 @@ Format: `addevent evn/EVENT_NAME st/START_TIME et/END_TIME`
   `17-09-2026 16:30`.
 * The start must not be after the end. Equal values are allowed. On the same date, times are compared only when both
   are given.
+
+![Add event](images/addEvent.png)
+*The new `Student Life Fair` event selected in the Events view, with its start, end, and duration in the details pane.*
 
 Examples:
 
@@ -788,6 +791,9 @@ Notes:
 * New members are added after the existing members, in the order given.
 * `unassign` also removes the member's attendance for that event.
 
+![Assign members](images/assignMembers.png)
+*`Freshmen Welcome Night` with 4 members after `assign evn/Freshmen Welcome Night c/3 4` adds two more.*
+
 Examples:
 
 * `assign evn/Final Concert c/1 4 5` assigns the contacts with IDs `1`, `4`, and `5` to `Final Concert`.
@@ -831,6 +837,9 @@ Format: `markattendance evn/EVENT_NAME mem/MEMBER_NAME att/STATUS`
 * `STATUS` is `present` or `absent`, ignoring case.
 * Marking a member again replaces their previous status.
 
+![Mark attendance](images/markAttendance.png)
+*Each member's attendance beside their name, with the counts above the list, after marking Charlotte Oliveiro absent.*
+
 Examples:
 
 * `markattendance evn/Final Concert mem/Alex Yeoh att/present`
@@ -866,8 +875,12 @@ Examples:
 * `archiveevent evn/Orientation 2025`
 * `unarchiveevent evn/orientation 2025`
 
-Success: `Archived Event {EVENT_NAME}.` or `Unarchived Event {EVENT_NAME}.` Archiving an event that is already archived,
-or unarchiving one that is not, makes no changes.
+Success: `Archived Event {EVENT_NAME}.` or `Unarchived Event {EVENT_NAME}.`
+
+| Condition | Error message |
+|---|---|
+| `archiveevent` is used on an event that is already archived. | `Event {EVENT_NAME} is already archived. No changes were made.` |
+| `unarchiveevent` is used on an event that is not archived. | `Event {EVENT_NAME} is not archived. No changes were made.` |
 
 ### Automatic event reminders
 
@@ -882,6 +895,9 @@ An event is listed:
 For example, an event starting at `20-10-2026 15:00` is listed from `19-10-2026 15:00` to `20-10-2026 15:00`.
 Reminders are numbered from 1 in order of start time. [Archived](#archiving-events-archiveevent-unarchiveevent) events
 have no reminders.
+
+![Event reminder](images/eventReminder.png)
+*The Upcoming events panel with a reminder for `Committee Meeting`, which starts the next day.*
 
 Click **Dismiss** beside a reminder, or use [`dismiss`](#dismissing-a-reminder-dismiss), to hide it. Dismissals are
 saved and stay after restarting. Changing the event's start date or time shows the reminder again if the new start is
