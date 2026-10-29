@@ -187,36 +187,57 @@ public class MainWindowTest {
         });
     }
 
-    @Test
-    public void topMenuTutorialItem_opensTutorialOverlay() throws Exception {
-        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
-            Stage stage = new Stage();
-            ModelManager model = new ModelManager();
-            Person contact = new PersonBuilder(TypicalPersons.ALICE).build();
-            model.addPerson(contact);
-            EventTime time = new EventTime("25-10-2026");
-            model.addEvent(new Event("Welcome Fair", time, time, List.of(contact.getName()), Map.of()));
-            LogicManager logic = new LogicManager(model, null);
-            MainWindow window = new MainWindow(stage, logic, Path.of("data", "coordimate.json"));
-            try (AutoCloseable closeStage = JavaFxTestSupport.closing(stage::close);
-                    AutoCloseable stopWindow = JavaFxTestSupport.closing(window::stop)) {
-                window.fillInnerParts();
-                window.show();
-                TabPane views = (TabPane) stage.getScene().lookup("#views");
-                views.getSelectionModel().select(1);
-                window.handleHelp();
-                Stage helpStage = findOwnedStage(stage, "Help");
-                Label tutorialLabel = (Label) stage.getScene().lookup("#tutorialLabel");
-                javafx.event.Event.fireEvent(tutorialLabel, mouseClickEvent());
-                stage.getScene().getRoot().applyCss();
-                stage.getScene().getRoot().layout();
+    /**
+     * Opens the tutorial overlay by clicking the Tutorial label while the Events tab is selected
+     * and the Help window is open, matching the entry point every split-out test below starts from.
+     */
+    private static TutorialFixture openTutorialFromEventsWithHelpOpen() {
+        Stage stage = new Stage();
+        ModelManager model = new ModelManager();
+        Person contact = new PersonBuilder(TypicalPersons.ALICE).build();
+        model.addPerson(contact);
+        EventTime time = new EventTime("25-10-2026");
+        model.addEvent(new Event("Welcome Fair", time, time, List.of(contact.getName()), Map.of()));
+        LogicManager logic = new LogicManager(model, null);
+        MainWindow window = new MainWindow(stage, logic, Path.of("data", "coordimate.json"));
+        window.fillInnerParts();
+        window.show();
+        TabPane views = (TabPane) stage.getScene().lookup("#views");
+        views.getSelectionModel().select(1);
+        window.handleHelp();
+        Stage helpStage = findOwnedStage(stage, "Help");
+        Label tutorialLabel = (Label) stage.getScene().lookup("#tutorialLabel");
+        javafx.event.Event.fireEvent(tutorialLabel, mouseClickEvent());
+        stage.getScene().getRoot().applyCss();
+        stage.getScene().getRoot().layout();
+        StackPane tutorialOverlay = (StackPane) stage.getScene().lookup("#tutorialOverlay");
+        return new TutorialFixture(stage, logic, window, views, helpStage, tutorialLabel, tutorialOverlay);
+    }
 
-                StackPane tutorialOverlay = (StackPane) stage.getScene().lookup("#tutorialOverlay");
-                assertTrue(tutorialOverlay.isVisible());
-                assertFalse(helpStage.isShowing());
-                assertEquals("Step 1 of 16", ((Label) stage.getScene().lookup("#stepCounter")).getText());
-                assertEquals(0, views.getSelectionModel().getSelectedIndex());
-                Button nextButton = (Button) stage.getScene().lookup("#nextButton");
+    private record TutorialFixture(Stage stage, LogicManager logic, MainWindow window, TabPane views,
+            Stage helpStage, Label tutorialLabel, StackPane tutorialOverlay) {}
+
+    @Test
+    public void topMenuTutorialItem_opensOverlayAndHidesHelp() throws Exception {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+            TutorialFixture fixture = openTutorialFromEventsWithHelpOpen();
+            try (AutoCloseable closeStage = JavaFxTestSupport.closing(fixture.stage()::close);
+                    AutoCloseable stopWindow = JavaFxTestSupport.closing(fixture.window()::stop)) {
+                assertTrue(fixture.tutorialOverlay().isVisible());
+                assertFalse(fixture.helpStage().isShowing());
+                assertEquals("Step 1 of 16", ((Label) fixture.stage().getScene().lookup("#stepCounter")).getText());
+                assertEquals(0, fixture.views().getSelectionModel().getSelectedIndex());
+            }
+        });
+    }
+
+    @Test
+    public void tutorialOverlay_blocksCommandInputAndSubmission() throws Exception {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+            TutorialFixture fixture = openTutorialFromEventsWithHelpOpen();
+            try (AutoCloseable closeStage = JavaFxTestSupport.closing(fixture.stage()::close);
+                    AutoCloseable stopWindow = JavaFxTestSupport.closing(fixture.window()::stop)) {
+                Stage stage = fixture.stage();
                 TextField commandInput = (TextField) stage.getScene().lookup("#commandTextField");
                 Button submitButton = (Button) stage.getScene().lookup("#submitButton");
                 assertEquals("", commandInput.getText());
@@ -224,8 +245,21 @@ public class MainWindowTest {
                 assertTrue(submitButton.isDisabled());
                 commandInput.setText("add n/Tom p/9081811 e/tomjohn@email.com r/EXCO");
                 commandInput.fireEvent(new ActionEvent());
-                assertEquals(1, logic.getPersonList().size());
+                assertEquals(1, fixture.logic().getPersonList().size());
                 assertTrue(stage.getScene().lookup("#commandExamples") == null);
+            }
+        });
+    }
+
+    @Test
+    public void tutorialOverlay_highlightsEachStepAcrossContactsEventsAndTags() throws Exception {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+            TutorialFixture fixture = openTutorialFromEventsWithHelpOpen();
+            try (AutoCloseable closeStage = JavaFxTestSupport.closing(fixture.stage()::close);
+                    AutoCloseable stopWindow = JavaFxTestSupport.closing(fixture.window()::stop)) {
+                Stage stage = fixture.stage();
+                TabPane views = fixture.views();
+                Button nextButton = (Button) stage.getScene().lookup("#nextButton");
                 for (int step = 0; step < 4; step++) {
                     nextButton.fire();
                 }
@@ -286,6 +320,25 @@ public class MainWindowTest {
                 assertEquals(2, views.getSelectionModel().getSelectedIndex());
                 assertTutorialHighlights(stage, "#tutorialLabel");
                 assertEquals("Finish →", nextButton.getText());
+            }
+        });
+    }
+
+    @Test
+    public void tutorialOverlay_completingTourRecordsPreferenceAndReopensAtStepOne() throws Exception {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+            TutorialFixture fixture = openTutorialFromEventsWithHelpOpen();
+            try (AutoCloseable closeStage = JavaFxTestSupport.closing(fixture.stage()::close);
+                    AutoCloseable stopWindow = JavaFxTestSupport.closing(fixture.window()::stop)) {
+                Stage stage = fixture.stage();
+                LogicManager logic = fixture.logic();
+                TabPane views = fixture.views();
+                Button nextButton = (Button) stage.getScene().lookup("#nextButton");
+                Button submitButton = (Button) stage.getScene().lookup("#submitButton");
+                for (int step = 0; step < 15; step++) {
+                    nextButton.fire();
+                }
+                assertEquals("Step 16 of 16", ((Label) stage.getScene().lookup("#stepCounter")).getText());
                 assertEquals(1, logic.getEventList().size());
                 Button closeButton = (Button) stage.getScene().lookup("#closeButton");
                 closeButton.fire();
@@ -293,12 +346,12 @@ public class MainWindowTest {
                 assertFalse(submitButton.isDisabled());
                 assertEquals(2, views.getSelectionModel().getSelectedIndex());
 
-                window.handleHelp();
+                fixture.window().handleHelp();
                 KeyEvent enterEvent = keyEvent(KeyCode.ENTER);
-                tutorialLabel.getOnKeyPressed().handle(enterEvent);
+                fixture.tutorialLabel().getOnKeyPressed().handle(enterEvent);
                 assertTrue(enterEvent.isConsumed());
-                assertTrue(tutorialOverlay.isVisible());
-                assertFalse(helpStage.isShowing());
+                assertTrue(fixture.tutorialOverlay().isVisible());
+                assertFalse(fixture.helpStage().isShowing());
                 assertEquals("Step 1 of 16", ((Label) stage.getScene().lookup("#stepCounter")).getText());
             }
         });
