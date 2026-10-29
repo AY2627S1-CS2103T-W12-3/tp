@@ -23,6 +23,11 @@ import javafx.scene.layout.VBox;
 public class ReminderPanel extends UiPart<Region> {
     private static final String FXML = "ReminderPanel.fxml";
 
+    // Caps the viewport height in pixels so longer reminder lists scroll within the workspace.
+    private static final int MAX_VIEWPORT_HEIGHT = 168;
+    // Estimates viewport space in pixels per reminder; wrapped rows may be taller.
+    private static final int VIEWPORT_HEIGHT_PER_REMINDER = 112;
+
     private final ObservableList<Event> reminders;
     private final Consumer<Event> dismissHandler;
     private final ListChangeListener<Event> reminderListener = change -> showReminders();
@@ -57,7 +62,8 @@ public class ReminderPanel extends UiPart<Region> {
         boolean isEmpty = reminders.isEmpty();
         getRoot().setVisible(!isEmpty);
         getRoot().setManaged(!isEmpty);
-        reminderScroll.setPrefViewportHeight(Math.min(168, reminders.size() * 112));
+        reminderScroll.setPrefViewportHeight(
+                Math.min(MAX_VIEWPORT_HEIGHT, reminders.size() * VIEWPORT_HEIGHT_PER_REMINDER));
         reminderRows.getChildren().setAll(IntStream.range(0, reminders.size())
                 .mapToObj(index -> createReminderRow(reminders.get(index), index + 1)).toList());
         if (focusedRow >= 0 && !isEmpty) {

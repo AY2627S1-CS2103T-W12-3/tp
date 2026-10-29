@@ -39,6 +39,9 @@ class JsonSerializableCoordiMate {
     public static final String MESSAGE_DUPLICATE_TAG = "Tags list contains duplicate tag name(s).";
     public static final String MESSAGE_UNKNOWN_MEMBER = "Event members must refer to existing contacts.";
 
+    // The unsuffixed name is the first occurrence, so renamed collisions start at "(2)".
+    private static final int FIRST_COLLISION_SUFFIX = 2;
+
     private static final Pattern LEGACY_WHITESPACE_RUN = Pattern.compile("\\p{javaWhitespace}+");
 
     private final List<JsonAdaptedPerson> persons = new ArrayList<>();
@@ -261,7 +264,7 @@ class JsonSerializableCoordiMate {
      * Reserves an unused numbered name, truncating its stem to fit the event name limit.
      */
     private static String reserveUniqueEventName(String name, Set<String> reservedNames) {
-        for (int number = 2; ; number++) {
+        for (int number = FIRST_COLLISION_SUFFIX; ; number++) {
             String suffix = " (" + number + ")";
             int stemLength = Math.min(name.codePointCount(0, name.length()), Event.MAX_NAME_LENGTH - suffix.length());
             String candidate = name.substring(0, name.offsetByCodePoints(0, stemLength)).stripTrailing() + suffix;
