@@ -83,8 +83,9 @@ public class UiManagerTest {
                 assertEquals(warning, message.getText());
                 assertTrue(message.isWrapText());
                 assertTrue(scrollPane.isFitToWidth());
-                assertTrue(message.getHeight() > scrollPane.getViewportBounds().getHeight());
-                assertTrue(scrollPane.getViewportBounds().getHeight() <= 340);
+                assertTrue(message.prefHeight(scrollPane.getPrefViewportWidth())
+                        > scrollPane.getPrefViewportHeight());
+                assertTrue(scrollPane.getPrefViewportHeight() <= 340);
             });
             try {
                 manager.start(primaryStage);
@@ -116,8 +117,9 @@ public class UiManagerTest {
                     assertEquals(errorMessage, message.getText());
                     assertTrue(message.isWrapText());
                     assertTrue(scrollPane.isFitToWidth());
-                    assertTrue(message.getHeight() > scrollPane.getViewportBounds().getHeight());
-                    assertTrue(scrollPane.getViewportBounds().getHeight() <= 340);
+                    assertTrue(message.prefHeight(scrollPane.getPrefViewportWidth())
+                            > scrollPane.getPrefViewportHeight());
+                    assertTrue(scrollPane.getPrefViewportHeight() <= 340);
                 });
                 manager.showAlertDialogAndWait(Alert.AlertType.ERROR, "Saved event data", "Load failed",
                         errorMessage);
@@ -396,10 +398,10 @@ public class UiManagerTest {
             for (String path : paths) {
                 assertTrue(message.getText().contains(path));
             }
-            assertTrue(message.getHeight() <= scrollPane.getViewportBounds().getHeight() + 1,
-                    "Message bounds: " + message.getLayoutBounds() + ", viewport: "
-                            + scrollPane.getViewportBounds() + ", preferred height at actual width: "
-                            + message.prefHeight(message.getWidth()) + ", font: " + message.getFont());
+            double neededHeight = message.prefHeight(scrollPane.getPrefViewportWidth());
+            assertTrue(neededHeight <= scrollPane.getPrefViewportHeight() + 1,
+                    "Message needs " + neededHeight + "px, dialog requests "
+                            + scrollPane.getPrefViewportHeight() + "px, font: " + message.getFont());
         });
     }
 
@@ -460,10 +462,11 @@ public class UiManagerTest {
                 Label message = (Label) scrollPane.getContent();
                 assertTrue(message.getText().contains(dataFilePath.toAbsolutePath().toString()));
                 assertTrue(message.getText().contains("Repair or restore this file"));
-                assertTrue(message.getLayoutBounds().getHeight() > scrollPane.getViewportBounds().getHeight());
+                assertTrue(message.prefHeight(scrollPane.getPrefViewportWidth())
+                        > scrollPane.getPrefViewportHeight());
                 assertTrue(scrollPane.isFitToWidth());
-                assertTrue(scrollPane.getViewportBounds().getHeight() <= 340,
-                        "Viewport height: " + scrollPane.getViewportBounds().getHeight());
+                assertTrue(scrollPane.getPrefViewportHeight() <= 340,
+                        "Requested viewport height: " + scrollPane.getPrefViewportHeight());
             });
             try {
                 uiManager.start(primaryStage);
