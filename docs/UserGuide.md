@@ -73,9 +73,9 @@
 * **Bottom bar:** shows where your data file is saved.
 
 **Member IDs:** contact cards and details, event rosters, and tag member lists show each contact's permanent
-identifier as `ID: <number>`. Use that ID in `edit`, `delete`, `archive`, `assign`, and `unassign`. It does not
-change when you edit the contact or when a search or filter reorders the list, so `ID: 12` stays `ID: 12` even when
-a search makes that contact the first result.
+identifier as `ID: <number>`. Use that ID in `edit`, `delete`, `archive`, `unarchive`, `assign`, and `unassign`. It
+does not change when you edit the contact or when a search or filter reorders the list, so `ID: 12` stays `ID: 12`
+even when a search makes that contact the first result.
 
 **Which view opens after a command:** contact commands open **Contacts**, event commands open **Events**, and tag
 commands open **Tags**. `assign` and `unassign` keep the current view and refresh its details. A failed command keeps
@@ -85,7 +85,8 @@ contact was last.
 
 **Window size and position:** CoordiMate remembers whether the window was maximized, and its last size and position.
 If those no longer fit your display, for example after disconnecting a second screen, it adjusts the window to stay
-fully visible. The window is at least 1200 × 800 pixels, or the size of your screen if that is smaller.
+fully visible. On displays large enough, the minimum window size is 1200 × 800. On smaller displays, CoordiMate fits
+the available screen.
 
 --------------------------------------------------------------------------------------------------------------------
 
