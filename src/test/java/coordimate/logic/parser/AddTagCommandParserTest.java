@@ -7,18 +7,20 @@ import static coordimate.testutil.Assert.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
-import coordimate.logic.commands.CreateTagCommand;
+import coordimate.logic.commands.AddTagCommand;
 import coordimate.model.tag.Tag;
 
-public class CreateTagCommandParserTest {
+public class AddTagCommandParserTest {
 
-    private final CreateTagCommandParser parser = new CreateTagCommandParser();
-    private final String invalidFormat = String.format(MESSAGE_INVALID_COMMAND_FORMAT, CreateTagCommand.MESSAGE_USAGE);
+    private final AddTagCommandParser parser = new AddTagCommandParser();
+    private final String invalidFormat = String.format(MESSAGE_INVALID_COMMAND_FORMAT, AddTagCommand.MESSAGE_USAGE);
+    private final String repeatedTagMessage =
+            String.format(TagParserUtil.repeatedParameterMessage(AddTagCommand.MESSAGE_USAGE), "t/");
 
     @Test
-    public void parse_validTag_returnsCreateTagCommand() {
-        assertParseSuccess(parser, " t/Publicity", new CreateTagCommand(new Tag("Publicity")));
-        assertParseSuccess(parser, " t/  Welfare  ", new CreateTagCommand(new Tag("Welfare")));
+    public void parse_validTag_returnsAddTagCommand() {
+        assertParseSuccess(parser, " t/Publicity", new AddTagCommand(new Tag("Publicity")));
+        assertParseSuccess(parser, " t/  Welfare  ", new AddTagCommand(new Tag("Welfare")));
     }
 
     @Test
@@ -39,8 +41,7 @@ public class CreateTagCommandParserTest {
 
     @Test
     public void parse_multipleTags_throwsParseException() {
-        assertParseFailure(parser,
-                " t/Publicity t/Welfare", String.format(CreateTagCommandParser.MESSAGE_REPEATED_PARAMETER, "t/"));
+        assertParseFailure(parser, " t/Publicity t/Welfare", repeatedTagMessage);
     }
 
     @Test

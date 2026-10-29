@@ -13,6 +13,8 @@ public class DeleteTagCommandParserTest {
 
     private final DeleteTagCommandParser parser = new DeleteTagCommandParser();
     private final String invalidFormat = String.format(MESSAGE_INVALID_COMMAND_FORMAT, DeleteTagCommand.MESSAGE_USAGE);
+    private final String repeatedTagMessage =
+            String.format(TagParserUtil.repeatedParameterMessage(DeleteTagCommand.MESSAGE_USAGE), "t/");
 
     @Test
     public void parse_validArguments_returnsDeleteTagCommand() {
@@ -35,8 +37,7 @@ public class DeleteTagCommandParserTest {
     @Test
     public void parse_extraParameters_throwsParseException() {
         assertParseFailure(parser, "Publicity t/Media", invalidFormat);
-        assertParseFailure(parser,
-                " t/Publicity t/Media", String.format(DeleteTagCommandParser.MESSAGE_REPEATED_PARAMETER, "t/"));
+        assertParseFailure(parser, " t/Publicity t/Media", repeatedTagMessage);
     }
 
     @Test

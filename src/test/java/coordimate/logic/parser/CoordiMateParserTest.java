@@ -15,9 +15,9 @@ import org.junit.jupiter.api.Test;
 import coordimate.commons.core.index.Index;
 import coordimate.logic.Messages;
 import coordimate.logic.commands.AddCommand;
+import coordimate.logic.commands.AddTagCommand;
 import coordimate.logic.commands.AssignCommand;
 import coordimate.logic.commands.ClearCommand;
-import coordimate.logic.commands.CreateTagCommand;
 import coordimate.logic.commands.DeleteCommand;
 import coordimate.logic.commands.DeleteTagCommand;
 import coordimate.logic.commands.DismissCommand;
@@ -111,9 +111,9 @@ public class CoordiMateParserTest {
     }
 
     @Test
-    public void parseCommand_createTag() throws Exception {
-        assertEquals(new CreateTagCommand(new Tag("Publicity")),
-                parser.parseCommand(CreateTagCommand.COMMAND_WORD + " t/Publicity"));
+    public void parseCommand_addTag() throws Exception {
+        assertEquals(new AddTagCommand(new Tag("Publicity")),
+                parser.parseCommand(AddTagCommand.COMMAND_WORD + " t/Publicity"));
     }
 
     @Test

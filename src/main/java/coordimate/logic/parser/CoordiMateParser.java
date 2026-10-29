@@ -12,12 +12,12 @@ import coordimate.commons.util.StringUtil;
 import coordimate.logic.Messages;
 import coordimate.logic.commands.AddCommand;
 import coordimate.logic.commands.AddEventCommand;
+import coordimate.logic.commands.AddTagCommand;
 import coordimate.logic.commands.ArchiveCommand;
 import coordimate.logic.commands.ArchiveEventCommand;
 import coordimate.logic.commands.AssignCommand;
 import coordimate.logic.commands.ClearCommand;
 import coordimate.logic.commands.Command;
-import coordimate.logic.commands.CreateTagCommand;
 import coordimate.logic.commands.DeleteCommand;
 import coordimate.logic.commands.DeleteEventCommand;
 import coordimate.logic.commands.DeleteTagCommand;
@@ -97,7 +97,7 @@ public class CoordiMateParser {
                 case DismissCommand.COMMAND_WORD -> new DismissCommandParser(reminderService).parse(arguments);
                 case ClearCommand.COMMAND_WORD -> parseCommandWithoutArguments(
                         arguments, ClearCommand.MESSAGE_USAGE, new ClearCommand());
-                case CreateTagCommand.COMMAND_WORD -> new CreateTagCommandParser().parse(arguments);
+                case AddTagCommand.COMMAND_WORD -> new AddTagCommandParser().parse(arguments);
                 case FilterCommand.COMMAND_WORD -> new FilterCommandParser().parse(arguments);
                 case ListCommand.COMMAND_WORD -> new ListCommandParser().parse(arguments);
                 case SearchCommand.COMMAND_WORD -> new SearchCommandParser().parse(arguments);
@@ -148,7 +148,7 @@ public class CoordiMateParser {
             case DeleteTagCommand.COMMAND_WORD -> DeleteTagCommand.MESSAGE_USAGE;
             case DismissCommand.COMMAND_WORD -> DismissCommand.MESSAGE_USAGE;
             case ClearCommand.COMMAND_WORD -> ClearCommand.MESSAGE_USAGE;
-            case CreateTagCommand.COMMAND_WORD -> CreateTagCommand.MESSAGE_USAGE;
+            case AddTagCommand.COMMAND_WORD -> AddTagCommand.MESSAGE_USAGE;
             case FilterCommand.COMMAND_WORD -> FilterCommand.MESSAGE_USAGE;
             case ListCommand.COMMAND_WORD -> ListCommand.MESSAGE_USAGE;
             case SearchCommand.COMMAND_WORD -> SearchCommand.MESSAGE_USAGE;
