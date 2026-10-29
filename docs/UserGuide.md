@@ -23,35 +23,12 @@
 1. Copy the file to the folder you want to use as the _home folder_ for CoordiMate.
 
 1. Open a terminal, `cd` to the folder containing the JAR file, and run `java -jar coordimate.jar`.<br>
-   On the first launch, a maximized GUI similar to the one below should appear in a few seconds. Note how the app contains some sample data.<br>
+   On the first launch, a maximized GUI similar to the one below should appear in a few seconds, together with a
+   short tutorial. Note how the app contains some sample data.<br>
    ![Ui](images/Ui.png)
 
-   On subsequent launches, CoordiMate restores whether the window was maximized, together with its most recent
-   non-maximized size and position. If those saved bounds do not fit the current display, such as after disconnecting
-   a secondary screen or changing the display resolution, CoordiMate adjusts the window to remain fully visible.<br>
-   On displays large enough, the minimum window size is 1200 × 800 pixels. On smaller displays, CoordiMate fits the
-   available screen and stacks narrow list and details panes; scroll within a pane to read content below its viewport.<br>
-
-   The left sidebar switches between Contacts, Events, and Tags and shows commands for the selected view.
-   Click a command name to put only the command word in the input and show its format and an example below the input.
-   Complete the command by typing its arguments after the command word.
-   The main workspace shows a list beside its details, and the command box, feedback, and prefix hints stay at the bottom.
-   Feedback grows up to 220 pixels so the delete confirmation is visible without scrolling. Longer messages scroll;
-   use the scrollbar or mouse wheel to read the full message.
-   The scroll hint appears only when the current message extends beyond the visible feedback area.
-   After a successful command, CoordiMate opens the view for its result: contact commands open Contacts, event
-   commands open Events, and tag commands open Tags. `assign` and `unassign` keep the current view and refresh its
-   related contact or event details. Failed commands keep the current view. A valid `delete` request opens Contacts
-   when its confirmation prompt appears; Contacts remains open whether deletion is confirmed or cancelled. Successful
-   `add` and `edit` commands select and reveal the affected contact. Confirmed deletion selects the contact now at the
-   removed contact's position, or the previous contact if the removed contact was last. If the deleted contact was
-   outside the displayed list, the current selection is retained.
-
-1. Type a command in the command box and press Enter to execute it. For example, type **`help`** and press Enter to open the help window.<br>
-   Press <kbd>Up</kbd> to recall earlier commands and <kbd>Down</kbd> to move toward the command you were typing.<br>
-   To browse cards without reaching for the mouse, press <kbd>Esc</kbd> to enter Navigation mode, use
-   <kbd>J</kbd>/<kbd>K</kbd> to move through the active view, <kbd>S</kbd> to switch views, then press <kbd>I</kbd>
-   to return to Command mode.<br>
+1. Type a command in the command box and press Enter to execute it. For example, type **`help`** and press Enter to
+   open the help window.<br>
    Some example commands you can try:
 
    * `list` : Lists all contacts and events.
@@ -64,15 +41,51 @@
 
    * `exit` : Exits the app.
 
-   In the Contacts view, select a contact from the displayed list to see their phone number, email address,
-   role, birthday, address, organisation, tags, note, and assigned events in the details pane. Contact cards and details,
-   event rosters, and tag member lists show the contact's permanent identifier as `ID: <number>`.
-   For example, `ID: 12` remains `ID: 12` when a search makes that contact the first result.
-   Use that same ID in `edit`, `delete`, `assign`, and `unassign`. Editing or reordering a contact keeps their ID;
-   if a list change hides or removes the selected contact, the details pane clears.
-   Unset optional fields show `— (not specified)`; a contact with no tags shows no tag chips.
+1. Read [The main window](#the-main-window) for a tour of the screen, and [Features](#features) for details of each
+   command.
 
-1. Refer to the [Features](#features) section below for details of each command.
+--------------------------------------------------------------------------------------------------------------------
+
+## The main window
+
+* **Top bar:** **File** > **Exit** closes CoordiMate. **Help** (<kbd>Fn</kbd> + <kbd>F1</kbd>) opens the help window,
+  and **Tutorial** (<kbd>Fn</kbd> + <kbd>F2</kbd>) restarts the tutorial.
+* **Upcoming events panel:** appears below the top bar when an event is about to start. See
+  [Automatic event reminders](#automatic-event-reminders).
+* **Sidebar:** switches between the **Contacts**, **Events**, and **Tags** views, and shows how many items each has.
+  Below the views, it lists the commands for the selected view. Click a command name to put the command word in the
+  command box and show its format and an example below the box, then type its arguments.
+* **List and details:** each view shows a list beside the details of the selected item.
+  * **Contacts:** the details show the contact's phone number, email address, role, birthday, address, organisation,
+    tags, note, leave, and assigned events. Unset optional fields show `— (not specified)`. If a list change hides
+    or removes the selected contact, the details pane clears.
+  * **Events:** each event card shows its member count and attendance summary. The details show the start time, end
+    time, duration, and members. Each member row shows the contact's role, organisation, tags, notes, current leave
+    status, and attendance status.
+  * **Tags:** the details show the contacts that have the selected tag. See [Viewing all tags](#viewing-all-tags).
+
+  At narrower window sizes, the list appears above the details. The divider between them can be dragged, but the
+  details pane keeps a minimum width while the panes are side by side.
+* **Command box and feedback:** type a command and press Enter, or click **Enter**. The result appears in the
+  feedback area above the box; scroll it to read a long message. A rejected command shows a red feedback band and
+  input border, and stays in the box so you can correct it, then press Enter or click **Retry**. Below the box,
+  CoordiMate shows the current [keyboard mode](#navigating-cards-with-the-keyboard) and the prefixes you can use.
+* **Bottom bar:** shows where your data file is saved.
+
+**Member IDs:** contact cards and details, event rosters, and tag member lists show each contact's permanent
+identifier as `ID: <number>`. Use that ID in `edit`, `delete`, `archive`, `assign`, and `unassign`. It does not
+change when you edit the contact or when a search or filter reorders the list, so `ID: 12` stays `ID: 12` even when
+a search makes that contact the first result.
+
+**Which view opens after a command:** contact commands open **Contacts**, event commands open **Events**, and tag
+commands open **Tags**. `assign` and `unassign` keep the current view and refresh its details. A failed command keeps
+the current view. Successful `add` and `edit` commands select and reveal the affected contact. After a confirmed
+deletion, the contact now at the removed contact's position is selected, or the previous contact if the removed
+contact was last.
+
+**Window size and position:** CoordiMate remembers whether the window was maximized, and its last size and position.
+If those no longer fit your display, for example after disconnecting a second screen, it adjusts the window to stay
+fully visible. The window is at least 1200 × 800 pixels, or the size of your screen if that is smaller.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -696,12 +709,8 @@ Examples:
 
 Success: `Created Event Student Life Fair. Start Time: 09-10-2026. End Time: 10-10-2026.`
 
-Use the **Events** tab on the left to browse saved events. Selecting an event shows its
-start time, end time, duration, and members. Each member row shows the contact's role,
-organisation, tags, notes, current leave status, and attendance status. A successful `addevent` opens this tab
-and selects the new event. Each event card shows its member count and attendance summary. At narrower window
-sizes, the list appears above the details. The list and details divider can be dragged, but the
-details pane keeps a minimum width while the panes are side by side.
+A successful `addevent` opens the **Events** tab and selects the new event. See [The main window](#the-main-window)
+for what the event details show.
 
 The duration depends on whether the start and end include a time of day:
 
@@ -720,10 +729,6 @@ The duration depends on whether the start and end include a time of day:
 | `27-10-2026 09:00` | `29-10-2026 09:00` | `2 days` |
 | `27-10-2026` | `29-10-2026 10:30` | `Unknown (start time not specified)` |
 | `27-10-2026 09:00` | `29-10-2026` | `Unknown (end time not specified)` |
-
-Command feedback appears above the input at the bottom of the window. Rejected commands
-show a red feedback band and input border. The command stays in the input so you can
-correct it, then press Enter or click **Retry**.
 
 | Condition | Error message |
 |---|---|
