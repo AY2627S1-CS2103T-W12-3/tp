@@ -183,7 +183,10 @@
       "src": "index.md",
       "title": "",
       "headings": {
-        "coordimate": "CoordiMate"
+        "coordimate": "CoordiMate",
+        "why-coordimate": "Why CoordiMate?",
+        "get-started": "Get started",
+        "for-developers": "For developers"
       },
       "headingKeywords": {}
     },
