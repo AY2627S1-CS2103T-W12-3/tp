@@ -56,13 +56,13 @@ public class JsonAdaptedEventTest {
     }
 
     @Test
-    public void tryRemoveYearZeroReminderStarts_keepsValidHistoryAndEventDetails() throws Exception {
+    public void removeYearZeroReminderStarts_keepsValidHistoryAndEventDetails() throws Exception {
         JsonAdaptedEvent event = new JsonAdaptedEvent("Concert", "08-08-2026", "09-08-2026",
                 List.of("Alex Yeoh"), Map.of("Alex Yeoh", "present"),
                 List.of("08-08-2026", "01-01-0000", " 02-01-0000 12:30 "));
 
-        assertTrue(event.tryRemoveYearZeroReminderStarts());
-        assertFalse(event.tryRemoveYearZeroReminderStarts());
+        assertTrue(event.removeYearZeroReminderStarts());
+        assertFalse(event.removeYearZeroReminderStarts());
         assertEquals(new Event("Concert", new EventTime("08-08-2026"), new EventTime("09-08-2026"),
                 List.of(new Name("Alex Yeoh")), Map.of(new Name("Alex Yeoh"), AttendanceStatus.PRESENT),
                 Set.of(new EventTime("08-08-2026"))), event.toModelType());

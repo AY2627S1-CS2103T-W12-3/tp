@@ -71,10 +71,10 @@ public class JsonSerializableCoordiMateTest {
 
         assertEquals(List.of("Zero Start", "Zero End", "(unnamed event)"),
                 data.removeYearZeroEvents());
-        assertTrue(data.tryRemoveYearZeroReminderStarts());
+        assertTrue(data.removeYearZeroReminderStarts());
         assertEquals(expected, data.toModelType());
         assertEquals(List.of(), data.removeYearZeroEvents());
-        assertFalse(data.tryRemoveYearZeroReminderStarts());
+        assertFalse(data.removeYearZeroReminderStarts());
         assertEquals(expected, data.toModelType());
     }
 

@@ -7,7 +7,6 @@ import static coordimate.testutil.TypicalPersons.DANIEL;
 import static coordimate.testutil.TypicalPersons.getTypicalCoordiMate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
@@ -111,7 +110,7 @@ public class SearchCommandTest {
         List<Person> expectedContacts = List.of(BENSON, DANIEL);
         String expectedMessage = String.format(SearchCommand.MESSAGE_SUCCESS, expectedContacts.size(), keyword);
         assertCommandSuccess(command, model, expectedMessage, expectedModel);
-        assertTrue(model.getFilteredPersonList().equals(expectedContacts),
+        assertEquals(expectedContacts, model.getFilteredPersonList(),
                 "The phone substring should match exactly Benson and Daniel, in saved order.");
     }
 

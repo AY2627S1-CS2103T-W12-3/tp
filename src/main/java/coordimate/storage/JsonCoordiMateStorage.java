@@ -49,7 +49,7 @@ public class JsonCoordiMateStorage {
             savedData.get().validateEventArchiveStatuses();
             List<String> yearZeroDeletedNames = savedData.get().removeYearZeroEvents();
             List<String> deletedNames = savedData.get().removeEventsWithEmbeddedParameters();
-            boolean hasRemovedHistory = savedData.get().tryRemoveYearZeroReminderStarts();
+            boolean hasRemovedHistory = savedData.get().removeYearZeroReminderStarts();
             List<EventNameCleanupResult.Rename> renamedEvents = savedData.get().renameEventsWithCollidingNames();
             EventNameCleanupResult changes = new EventNameCleanupResult(
                     deletedNames, renamedEvents, yearZeroDeletedNames);
@@ -100,7 +100,7 @@ public class JsonCoordiMateStorage {
             throw new DataLoadingException(e);
         }
         List<String> removedNames = savedData.get().removeYearZeroEvents();
-        boolean hasRemovedHistory = savedData.get().tryRemoveYearZeroReminderStarts();
+        boolean hasRemovedHistory = savedData.get().removeYearZeroReminderStarts();
         if (removedNames.isEmpty() && !hasRemovedHistory) {
             return Optional.empty();
         }

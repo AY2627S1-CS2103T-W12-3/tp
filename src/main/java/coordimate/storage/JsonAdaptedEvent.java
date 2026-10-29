@@ -136,7 +136,7 @@ class JsonAdaptedEvent {
     /**
      * Removes year-zero reminder history from an event whose dates are otherwise valid.
      */
-    boolean tryRemoveYearZeroReminderStarts() {
+    boolean removeYearZeroReminderStarts() {
         return dismissedReminderStarts.removeIf(JsonAdaptedEvent::isYearZero);
     }
 

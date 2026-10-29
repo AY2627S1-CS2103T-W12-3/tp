@@ -225,11 +225,16 @@ public class PermanentMemberIdCommandsTest {
 
     @Test
     public void deleteId_acrossSearchesFiltersAndEmptyResults_targetsSameSavedMember() throws Exception {
+        Map<String, OptionalInt> expectedFocusIndexes = Map.of(
+                "list", OptionalInt.of(1),
+                "search Alice", OptionalInt.of(0),
+                "search Benson", OptionalInt.empty(),
+                "filter tag/Sponsor", OptionalInt.empty(),
+                "members evn/Concert", OptionalInt.of(1),
+                "search Nobody", OptionalInt.empty());
         for (String view : VIEWS) {
             startApplication();
             logic.execute(view);
-            int displayedIndex = model.getFilteredPersonList().indexOf(ALICE_12);
-            OptionalInt expectedFocusIndex = displayedIndex < 0 ? OptionalInt.empty() : OptionalInt.of(displayedIndex);
             CommandResult request = logic.execute("delete 12");
             assertEquals(DeleteCommand.confirmationPrompt(ALICE_12), request.getFeedbackToUser());
             assertEquals(Optional.empty(), request.getContactToFocus(), view);
@@ -238,7 +243,7 @@ public class PermanentMemberIdCommandsTest {
 
             CommandResult confirmed = logic.execute("y");
             assertEquals(Optional.empty(), confirmed.getContactToFocus(), view);
-            assertEquals(expectedFocusIndex, confirmed.getContactIndexToFocus(), view);
+            assertEquals(expectedFocusIndexes.get(view), confirmed.getContactIndexToFocus(), view);
             assertFalse(logic.isAwaitingDeleteConfirmation());
             assertEquals(List.of(BENSON_45, CARL_99), model.getCoordiMate().getPersonList(), view);
             assertEquals(List.of(BENSON_45.getName()), model.getCoordiMate().getEventList().getFirst().getMembers());

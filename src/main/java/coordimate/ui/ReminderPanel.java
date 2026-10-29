@@ -106,6 +106,9 @@ public class ReminderPanel extends UiPart<Region> {
         return row;
     }
 
+    /**
+     * Creates a wrapping label styled for a reminder's start or end time.
+     */
     private Label createTimeLabel(String text) {
         Label label = new Label(text);
         label.setWrapText(true);

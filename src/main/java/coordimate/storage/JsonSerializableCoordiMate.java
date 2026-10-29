@@ -128,10 +128,10 @@ class JsonSerializableCoordiMate {
      * Removes year-zero dismissal history from events that remain after cleanup.
      * Returns true if any history was removed.
      */
-    boolean tryRemoveYearZeroReminderStarts() {
+    boolean removeYearZeroReminderStarts() {
         boolean hasRemovedHistory = false;
         for (JsonAdaptedEvent event : events) {
-            if (event != null && event.tryRemoveYearZeroReminderStarts()) {
+            if (event != null && event.removeYearZeroReminderStarts()) {
                 hasRemovedHistory = true;
             }
         }
