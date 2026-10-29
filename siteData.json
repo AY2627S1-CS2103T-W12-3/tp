@@ -68,8 +68,14 @@
         "glossary": "Glossary",
         "appendix-instructions-for-manual-testing": "Appendix: Instructions for manual testing",
         "launch-and-shutdown": "Launch and shutdown",
+        "tutorial-and-help": "Tutorial and Help",
+        "keyboard-navigation": "Keyboard navigation",
+        "command-history": "Command history",
+        "adding-a-contact": "Adding a contact",
+        "editing-a-contact": "Editing a contact",
         "deleting-a-contact": "Deleting a contact",
         "searching-contacts": "Searching contacts",
+        "listing-contacts-and-events": "Listing contacts and events",
         "filtering-contacts-2": "Filtering contacts",
         "adding-an-event": "Adding an event",
         "editing-an-event": "Editing an event",
@@ -82,6 +88,7 @@
         "marking-a-contact-as-on-leave": "Marking a contact as on leave",
         "managing-tags": "Managing tags",
         "archiving-contacts-and-events-2": "Archiving contacts and events",
+        "clearing-all-data": "Clearing all data",
         "saving-data": "Saving data"
       },
       "headingKeywords": {}
