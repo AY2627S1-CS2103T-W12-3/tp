@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.awt.GraphicsEnvironment;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -18,11 +17,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -30,6 +27,7 @@ import coordimate.model.event.AttendanceStatus;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
 import coordimate.model.person.Person;
+import coordimate.testutil.JavaFxTestSupport;
 import coordimate.testutil.PersonBuilder;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -57,15 +55,7 @@ public class PersonListPanelTest {
 
     @BeforeAll
     public static void startJavaFx() throws InterruptedException {
-        Assumptions.assumeFalse(GraphicsEnvironment.isHeadless(), "JavaFX UI tests require a display");
-        CountDownLatch started = new CountDownLatch(1);
-        try {
-            Platform.startup(started::countDown);
-        } catch (IllegalStateException alreadyRunning) {
-            Platform.runLater(started::countDown);
-        }
-        assertTrue(started.await(10, TimeUnit.SECONDS));
-        Platform.setImplicitExit(false);
+        JavaFxTestSupport.startToolkit();
     }
 
     @Test

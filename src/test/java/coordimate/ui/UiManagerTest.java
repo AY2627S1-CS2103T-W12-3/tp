@@ -5,20 +5,18 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.awt.GraphicsEnvironment;
 import java.nio.file.Path;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import coordimate.logic.LogicManager;
 import coordimate.model.ModelManager;
+import coordimate.testutil.JavaFxTestSupport;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
@@ -136,15 +134,7 @@ public class UiManagerTest {
 
     @BeforeAll
     public static void startJavaFx() throws InterruptedException {
-        Assumptions.assumeFalse(GraphicsEnvironment.isHeadless(), "JavaFX UI tests require a display");
-        CountDownLatch started = new CountDownLatch(1);
-        try {
-            Platform.startup(started::countDown);
-        } catch (IllegalStateException alreadyRunning) {
-            Platform.runLater(started::countDown);
-        }
-        assertTrue(started.await(10, TimeUnit.SECONDS));
-        Platform.setImplicitExit(false);
+        JavaFxTestSupport.startToolkit();
     }
 
     @Test
