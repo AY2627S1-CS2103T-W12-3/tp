@@ -3,7 +3,6 @@ package coordimate.ui;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 
 import coordimate.model.event.AttendanceStatus;
@@ -286,7 +285,7 @@ public class PersonListPanel extends UiPart<Region> {
 
         selectedName.setText(person.getName().getFullName());
         selectedMemberId.setText("ID: " + person.getMemberId().orElseThrow());
-        selectedAvatar.setText(initials(person.getName().getFullName()));
+        selectedAvatar.setText(MemberIdentity.initials(person.getName().getFullName()));
         String roleText = person.getRole().getValue();
         selectedSubtitle.setText(person.getOrganisation()
                 .map(organisation -> roleText + " · " + organisation.getValue()).orElse(roleText));
@@ -304,15 +303,6 @@ public class PersonListPanel extends UiPart<Region> {
                 .sorted(Tag.ALPHABETICAL_ORDER)
                 .forEach(tag -> detailTags.getChildren().add(TagStyle.createTagLabel(tag.getTagName())));
         showAssignedEvents(person);
-    }
-
-    private String initials(String fullName) {
-        String[] parts = fullName.strip().split("\\s+");
-        String result = parts[0].substring(0, 1);
-        if (parts.length > 1) {
-            result += parts[parts.length - 1].substring(0, 1);
-        }
-        return result.toUpperCase(Locale.ROOT);
     }
 
     private void showAssignedEvents(Person person) {
