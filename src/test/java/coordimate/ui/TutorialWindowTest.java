@@ -217,13 +217,13 @@ public class TutorialWindowTest {
             Button closeButton = (Button) scene.lookup("#closeButton");
             Button backButton = (Button) scene.lookup("#backButton");
             Button nextButton = (Button) scene.lookup("#nextButton");
-            AtomicBoolean buttonReceivedTab = new AtomicBoolean();
-            nextButton.addEventHandler(KeyEvent.KEY_PRESSED, event -> buttonReceivedTab.set(true));
+            AtomicBoolean hasButtonReceivedTab = new AtomicBoolean();
+            nextButton.addEventHandler(KeyEvent.KEY_PRESSED, event -> hasButtonReceivedTab.set(true));
 
             // Back is disabled on the first step, so Tab cycles between Close and Next only.
             nextButton.requestFocus();
             nextButton.fireEvent(keyEvent(KeyCode.TAB));
-            assertFalse(buttonReceivedTab.get());
+            assertFalse(hasButtonReceivedTab.get());
             assertEquals(closeButton, scene.getFocusOwner());
             closeButton.fireEvent(keyEvent(KeyCode.TAB));
             assertEquals(nextButton, scene.getFocusOwner());

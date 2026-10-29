@@ -15,7 +15,7 @@ import coordimate.model.ModelManager;
 import coordimate.model.UserPrefs;
 import coordimate.model.tag.Tag;
 
-public class CreateTagCommandTest {
+public class AddTagCommandTest {
 
     private static final Tag PUBLICITY = new Tag("Publicity");
 
@@ -26,7 +26,7 @@ public class CreateTagCommandTest {
         expectedModel.addTag(PUBLICITY);
 
         CommandResult expectedResult = new CommandResult("Created tag: Publicity.", CommandResult.View.TAGS);
-        assertCommandSuccess(new CreateTagCommand(PUBLICITY), model, expectedResult, expectedModel);
+        assertCommandSuccess(new AddTagCommand(PUBLICITY), model, expectedResult, expectedModel);
         assertEquals(List.of("EXCO", "Sponsor", "UniversityStaff", "Logistics", "Publicity"),
                 model.getTagList().stream().map(Tag::getTagName).toList());
     }
@@ -34,23 +34,23 @@ public class CreateTagCommandTest {
     @Test
     public void execute_duplicateTag_throwsCommandException() {
         Model model = new ModelManager();
-        assertCommandFailure(new CreateTagCommand(new Tag("exco")), model,
+        assertCommandFailure(new AddTagCommand(new Tag("exco")), model,
                 "A tag with this name already exists. No changes were made.");
     }
 
     @Test
     public void equals() {
-        CreateTagCommand command = new CreateTagCommand(PUBLICITY);
-        assertEquals(command, new CreateTagCommand(new Tag("Publicity")));
-        assertEquals(command.hashCode(), new CreateTagCommand(new Tag("Publicity")).hashCode());
-        assertNotEquals(command, new CreateTagCommand(new Tag("Welfare")));
+        AddTagCommand command = new AddTagCommand(PUBLICITY);
+        assertEquals(command, new AddTagCommand(new Tag("Publicity")));
+        assertEquals(command.hashCode(), new AddTagCommand(new Tag("Publicity")).hashCode());
+        assertNotEquals(command, new AddTagCommand(new Tag("Welfare")));
         assertNotEquals(command, null);
         assertNotEquals(command, new Object());
     }
 
     @Test
     public void nullArguments_throwNullPointerException() {
-        assertThrows(NullPointerException.class, () -> new CreateTagCommand(null));
-        assertThrows(NullPointerException.class, () -> new CreateTagCommand(PUBLICITY).execute(null));
+        assertThrows(NullPointerException.class, () -> new AddTagCommand(null));
+        assertThrows(NullPointerException.class, () -> new AddTagCommand(PUBLICITY).execute(null));
     }
 }

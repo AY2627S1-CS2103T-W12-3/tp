@@ -9,7 +9,7 @@ import coordimate.model.tag.Tag;
 /**
  * Creates a custom tag unless a tag with the same name already exists.
  */
-public class CreateTagCommand extends MutatingTagCommand {
+public class AddTagCommand extends MutatingTagCommand {
 
     public static final String COMMAND_WORD = "addtag";
 
@@ -24,7 +24,7 @@ public class CreateTagCommand extends MutatingTagCommand {
     /**
      * Creates a command that adds {@code tag} to the saved tag list.
      */
-    public CreateTagCommand(Tag tag) {
+    public AddTagCommand(Tag tag) {
         toAdd = requireNonNull(tag);
     }
 
@@ -41,7 +41,7 @@ public class CreateTagCommand extends MutatingTagCommand {
 
     @Override
     public boolean equals(Object other) {
-        return other instanceof CreateTagCommand otherCommand && toAdd.equals(otherCommand.toAdd);
+        return other instanceof AddTagCommand otherCommand && toAdd.equals(otherCommand.toAdd);
     }
 
     @Override

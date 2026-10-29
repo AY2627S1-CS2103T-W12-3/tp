@@ -292,12 +292,12 @@ public class FilterIntegrationTest {
         Path dataPath = temporaryFolder.resolve("data.json");
         String originalFile = Files.readString(dataPath);
         JsonCoordiMateStorage storage = new JsonCoordiMateStorage(dataPath) {
-            private boolean failNextSave = true;
+            private boolean shouldFailNextSave = true;
 
             @Override
             public void saveCoordiMate(ReadOnlyCoordiMate data) throws IOException {
-                if (failNextSave) {
-                    failNextSave = false;
+                if (shouldFailNextSave) {
+                    shouldFailNextSave = false;
                     throw new IOException("Disk full");
                 }
                 super.saveCoordiMate(data);

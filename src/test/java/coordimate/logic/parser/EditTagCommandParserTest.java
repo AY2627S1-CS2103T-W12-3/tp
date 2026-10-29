@@ -14,6 +14,8 @@ public class EditTagCommandParserTest {
 
     private final EditTagCommandParser parser = new EditTagCommandParser();
     private final String invalidFormat = String.format(MESSAGE_INVALID_COMMAND_FORMAT, EditTagCommand.MESSAGE_USAGE);
+    private final String repeatedTagMessage =
+            String.format(TagParserUtil.repeatedParameterMessage(EditTagCommand.MESSAGE_USAGE), "t/");
 
     @Test
     public void parse_validArguments_returnsEditTagCommand() {
@@ -48,7 +50,7 @@ public class EditTagCommandParserTest {
     @Test
     public void parse_multipleNewTags_throwsParseException() {
         assertParseFailure(parser, " Media t/Publicity t/ProductionCrew",
-                String.format(EditTagCommandParser.MESSAGE_REPEATED_PARAMETER, "t/"));
+                repeatedTagMessage);
     }
 
     @Test

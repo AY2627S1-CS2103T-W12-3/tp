@@ -23,7 +23,7 @@ public class JsonCoordiMateStorage {
 
     private static final Logger logger = LogsCenter.getLogger(JsonCoordiMateStorage.class);
 
-    private Path filePath;
+    private final Path filePath;
 
     /**
      * Creates JSON storage for contacts and events at the given file path.

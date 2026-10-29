@@ -4,6 +4,8 @@ import java.awt.Point;
 import java.io.Serializable;
 import java.util.Objects;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import coordimate.commons.util.ToStringBuilder;
 
 /**
@@ -19,7 +21,9 @@ public class GuiSettings implements Serializable {
     private final double windowWidth;
     private final double windowHeight;
     private final Point windowCoordinates;
-    private final boolean windowMaximized;
+    // Keeps the saved JSON key unchanged so existing preference files still load.
+    @JsonProperty("windowMaximized")
+    private final boolean isWindowMaximized;
 
     /**
      * Constructs a {@code GuiSettings} with the default height, width and position.
@@ -28,7 +32,7 @@ public class GuiSettings implements Serializable {
         windowWidth = DEFAULT_WIDTH;
         windowHeight = DEFAULT_HEIGHT;
         windowCoordinates = null; // null represent no coordinates
-        windowMaximized = DEFAULT_MAXIMIZED;
+        isWindowMaximized = DEFAULT_MAXIMIZED;
     }
 
     /**
@@ -42,11 +46,11 @@ public class GuiSettings implements Serializable {
      * Constructs a {@code GuiSettings} with the specified size, position and maximized state.
      */
     public GuiSettings(double windowWidth, double windowHeight, int xPosition, int yPosition,
-                       boolean windowMaximized) {
+                       boolean isWindowMaximized) {
         this.windowWidth = windowWidth;
         this.windowHeight = windowHeight;
         windowCoordinates = new Point(xPosition, yPosition);
-        this.windowMaximized = windowMaximized;
+        this.isWindowMaximized = isWindowMaximized;
     }
 
     public double getWindowWidth() {
@@ -62,7 +66,7 @@ public class GuiSettings implements Serializable {
     }
 
     public boolean isWindowMaximized() {
-        return windowMaximized;
+        return isWindowMaximized;
     }
 
     @Override
@@ -79,12 +83,12 @@ public class GuiSettings implements Serializable {
         return windowWidth == otherGuiSettings.windowWidth
                 && windowHeight == otherGuiSettings.windowHeight
                 && Objects.equals(windowCoordinates, otherGuiSettings.windowCoordinates)
-                && windowMaximized == otherGuiSettings.windowMaximized;
+                && isWindowMaximized == otherGuiSettings.isWindowMaximized;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(windowWidth, windowHeight, windowCoordinates, windowMaximized);
+        return Objects.hash(windowWidth, windowHeight, windowCoordinates, isWindowMaximized);
     }
 
     @Override
@@ -93,7 +97,7 @@ public class GuiSettings implements Serializable {
                 .add("windowWidth", windowWidth)
                 .add("windowHeight", windowHeight)
                 .add("windowCoordinates", windowCoordinates)
-                .add("windowMaximized", windowMaximized)
+                .add("isWindowMaximized", isWindowMaximized)
                 .toString();
     }
 }

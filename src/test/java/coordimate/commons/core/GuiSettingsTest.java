@@ -11,7 +11,7 @@ public class GuiSettingsTest {
         GuiSettings guiSettings = new GuiSettings();
         String expected = GuiSettings.class.getCanonicalName() + "{windowWidth=" + guiSettings.getWindowWidth()
                 + ", windowHeight=" + guiSettings.getWindowHeight() + ", windowCoordinates="
-                + guiSettings.getWindowCoordinates() + ", windowMaximized=" + guiSettings.isWindowMaximized() + "}";
+                + guiSettings.getWindowCoordinates() + ", isWindowMaximized=" + guiSettings.isWindowMaximized() + "}";
         assertEquals(expected, guiSettings.toString());
     }
 
