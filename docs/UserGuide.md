@@ -262,6 +262,9 @@ Format: `exit`
 CoordiMate starts in **Command mode**, with the command box ready for input. The mode indicator below the command box
 shows the current mode and its available shortcuts.
 
+![Navigation mode](images/navigationMode.png)
+*The mode indicator below the command box, showing Navigation mode and its shortcuts.*
+
 Use the following keys to browse Contacts, Events, or Tags without the mouse:
 
 | Key | Result |
@@ -1011,38 +1014,30 @@ CoordiMate data is saved automatically as a JSON file `[JAR file location]/data/
 
 <box type="warning" seamless>
 
-**Caution:**
-If your changes make the data file invalid, CoordiMate shows a warning at the next launch and leaves the original file
-unchanged. Select **OK** to close CoordiMate, repair or restore the file path shown in the warning, then restart the
-app. When a saved value fails validation, the warning also shows the reason and identifies the contact or event when
-possible. CoordiMate does not open its normal interface or accept commands until the file can be loaded.<br>
-Each name in an event's `members` list must exactly match the name of a saved contact, or the data file is invalid.<br>
-Contact and event names are read with several spaces in a row treated as one. If two contacts, or two events, have
-names that differ only in letter case or spacing (e.g. `Alex Yeoh` and `Alex  Yeoh`), they are duplicates and the data
-file is invalid; rename or remove one of them.<br>
-Event names containing Unicode space separators, including em and non-breaking spaces, are normalised to ordinary
-spaces when loaded. At startup, saved events whose names contain whitespace followed by parameter-like text
-(for example, `Planning` followed by an em space and `c/review`) are deleted because those names cannot be used
-in event commands. This also applies to archived events. A warning lists the deleted names, showing non-ordinary
-whitespace as codes such as `\u2003`. If event names were distinct under the older Unicode whitespace rules but
-now normalise to the same name, all events are kept: later collisions receive an available suffix such as ` (2)`.
-Long names are shortened to fit the suffix within the 100-character limit. The warning lists the old and new names;
-members, attendance, reminder dismissal history, and archive status are preserved. These migrations are saved before
-the data is loaded. Other contacts and events are preserved. If the remaining data is invalid or cleanup cannot be
-saved, the file is left unchanged.<br>
-Each contact's `memberId` must be a unique integer from `1` to `2147483647`. Keep existing IDs unchanged.
-Keep the top-level `nextMemberId` field: it must exceed every saved ID, must not be reduced after deleting contacts,
-and cannot exceed `2147483648`.<br>
-Each contact and event has an `archived` value of the JSON boolean `true` or `false`, without quotes. A missing or
-`null` value is read as `false`; quoted strings such as `"false"`, numbers such as `17`, and other values make the
-data file invalid.<br>
-Other saved values must also use the correct JSON type. For example, a phone number must be a quoted string, even
-when it contains only digits; event attendance values must be strings. Numbers or booleans in text fields, and quoted
-booleans in boolean fields, make the file invalid. The warning identifies the affected field when possible.<br>
-If a contact uses a tag that is missing from the top-level `tags` list, CoordiMate adds it to the global tag list when
-the file is loaded. Existing top-level tags, including unused tags, retain their saved order and capitalization.<br>
-A contact saved with more than 15 tags still loads with all of its tags, but commands cannot give it more tags.<br>
-Furthermore, certain edits can cause CoordiMate to behave in unexpected ways (e.g., if a value entered is outside of the acceptable range). Therefore, edit the data file only if you are confident that you can update it correctly.
+**If the file becomes invalid:** CoordiMate shows a warning at the next launch and leaves the original file unchanged. Select **OK** to close CoordiMate, repair or restore the file path shown in the warning, then restart the app. When a saved value fails validation, the warning also shows the reason and identifies the contact or event when possible. CoordiMate does not open its normal interface or accept commands until the file can be loaded.
+
+**Names:**
+* Each name in an event's `members` list must exactly match the name of a saved contact, or the data file is invalid.
+* Contact and event names are read with several spaces in a row treated as one. If two contacts, or two events, have names that differ only in letter case or spacing (e.g. `Alex Yeoh` and `Alex  Yeoh`), they are duplicates and the data file is invalid; rename or remove one of them.
+
+**Event name migration:**
+* Event names containing Unicode space separators, including em and non-breaking spaces, are normalised to ordinary spaces when loaded. At startup, saved events whose names contain whitespace followed by parameter-like text (for example, `Planning` followed by an em space and `c/review`) are deleted because those names cannot be used in event commands. This also applies to archived events. A warning lists the deleted names, showing non-ordinary whitespace as codes such as `\u2003`.
+* If event names were distinct under the older Unicode whitespace rules but now normalise to the same name, all events are kept: later collisions receive an available suffix such as ` (2)`. Long names are shortened to fit the suffix within the 100-character limit. The warning lists the old and new names; members, attendance, reminder dismissal history, and archive status are preserved.
+* These migrations are saved before the data is loaded. Other contacts and events are preserved. If the remaining data is invalid or cleanup cannot be saved, the file is left unchanged.
+
+**Contact IDs:**
+* Each contact's `memberId` must be a unique integer from `1` to `2147483647`. Keep existing IDs unchanged.
+* Keep the top-level `nextMemberId` field: it must exceed every saved ID, must not be reduced after deleting contacts, and cannot exceed `2147483648`.
+
+**Archived status:** Each contact and event has an `archived` value of the JSON boolean `true` or `false`, without quotes. A missing or `null` value is read as `false`; quoted strings such as `"false"`, numbers such as `17`, and other values make the data file invalid.
+
+**Other field types:** Other saved values must also use the correct JSON type. For example, a phone number must be a quoted string, even when it contains only digits; event attendance values must be strings. Numbers or booleans in text fields, and quoted booleans in boolean fields, make the file invalid. The warning identifies the affected field when possible.
+
+**Tags:**
+* If a contact uses a tag that is missing from the top-level `tags` list, CoordiMate adds it to the global tag list when the file is loaded. Existing top-level tags, including unused tags, retain their saved order and capitalization.
+* A contact saved with more than 15 tags still loads with all of its tags, but commands cannot give it more tags.
+
+Certain edits can cause CoordiMate to behave in unexpected ways, for example if a value entered is outside the acceptable range. Edit the data file only if you are confident that you can update it correctly.
 </box>
 
 If `preferences.json` contains invalid JSON or a value of the wrong type, CoordiMate warns you and uses default
