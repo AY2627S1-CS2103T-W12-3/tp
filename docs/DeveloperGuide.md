@@ -1015,13 +1015,13 @@ Removing members from an event is similar, with these differences:
 
     Use case ends.
 
-* 2b. Some of the event's members are archived.
-  * 2b1. CoordiMate shows only the active members, and informs the EXCO member how many members are archived.
+* 2b. Some of the event's members are outside the current archive view (archived members in the normal view, or active members in the archived view).
+  * 2b1. CoordiMate shows only the members in the current archive view, and informs the EXCO member how many members are hidden.
 
     Use case ends.
 
-* 3a. While the members are shown, a member is assigned or removed, or the event is renamed.
-  * 3a1. CoordiMate updates the shown list to the event's current members.
+* 2c. While the members are shown, a member is assigned or removed, or the event is renamed.
+  * 2c1. CoordiMate updates the shown list to the event's current members.
 
     Use case ends.
 
