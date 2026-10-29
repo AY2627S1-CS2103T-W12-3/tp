@@ -1,7 +1,10 @@
 package coordimate.logic;
 
+import static coordimate.testutil.PersistenceTestUtil.captureState;
+import static coordimate.testutil.PersistenceTestUtil.failingStorage;
 import static coordimate.testutil.TypicalPersons.AMY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
@@ -17,13 +20,13 @@ import coordimate.logic.commands.DeleteEventCommand;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.CoordiMate;
 import coordimate.model.ModelManager;
-import coordimate.model.ReadOnlyCoordiMate;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
 import coordimate.model.person.MemberId;
 import coordimate.storage.JsonCoordiMateStorage;
 import coordimate.storage.JsonUserPrefsStorage;
 import coordimate.storage.StorageManager;
+import coordimate.testutil.PersistenceTestUtil.SavedState;
 
 public class DeleteEventIntegrationTest {
     @TempDir
@@ -74,20 +77,17 @@ public class DeleteEventIntegrationTest {
         ModelManager model = newModel();
         Path path = temporaryFolder.resolve("data.json");
         new JsonCoordiMateStorage(path).saveCoordiMate(model.getCoordiMate());
-        CoordiMate before = new CoordiMate(model.getCoordiMate());
-        String beforeFile = Files.readString(path);
-        JsonCoordiMateStorage failingStorage = new JsonCoordiMateStorage(path) {
-            @Override
-            public void saveCoordiMate(ReadOnlyCoordiMate data) throws IOException {
-                throw new IOException("Disk full");
-            }
-        };
-        Logic failingLogic = newLogic(model, failingStorage);
+        SavedState before = captureState(model, path);
+        IOException failure = new IOException("Disk full");
+        JsonCoordiMateStorage storage = failingStorage(path, failure);
+        Logic failingLogic = newLogic(model, storage);
+
+        CommandException error = assertThrows(CommandException.class, () ->
+                failingLogic.execute("deleteevent evn/Final Concert"));
         assertEquals(Messages.withUsage(DeleteEventCommand.MESSAGE_SAVE_ERROR,
-                DeleteEventCommand.MESSAGE_USAGE), assertThrows(
-                CommandException.class, () -> failingLogic.execute("deleteevent evn/Final Concert")).getMessage());
-        assertEquals(before, model.getCoordiMate());
-        assertEquals(beforeFile, Files.readString(path));
+                DeleteEventCommand.MESSAGE_USAGE), error.getMessage());
+        assertSame(failure, error.getCause());
+        before.assertUnchanged(model);
     }
 
     private ModelManager newModel() {

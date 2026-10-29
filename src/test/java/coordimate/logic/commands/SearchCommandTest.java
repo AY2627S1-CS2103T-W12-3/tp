@@ -108,10 +108,11 @@ public class SearchCommandTest {
 
         expectedModel.updateFilteredPersonList(predicate);
 
-        String expectedMessage = String.format(SearchCommand.MESSAGE_SUCCESS,
-                expectedModel.getFilteredPersonList().size(), keyword);
+        List<Person> expectedContacts = List.of(BENSON, DANIEL);
+        String expectedMessage = String.format(SearchCommand.MESSAGE_SUCCESS, expectedContacts.size(), keyword);
         assertCommandSuccess(command, model, expectedMessage, expectedModel);
-        assertTrue(model.getFilteredPersonList().contains(BENSON));
+        assertTrue(model.getFilteredPersonList().equals(expectedContacts),
+                "The phone substring should match exactly Benson and Daniel, in saved order.");
     }
 
     @Test
