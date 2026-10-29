@@ -23,7 +23,7 @@ docs/_site/
 
 # AI Agents
 .agents/skills/coordimate-code-review/SKILL.md
-/AGENTS.md
+/CLAUDE.md
 /.agents/skills/coordimate-code-review/
 /.agents/skills/coordimate-project/
 /docs/source-material/
@@ -36,3 +36,6 @@ CLAUDE.md
 # Temp files
 _temp/
 docs/_markbind/logs/
+
+.agents/
+skills-lock.json

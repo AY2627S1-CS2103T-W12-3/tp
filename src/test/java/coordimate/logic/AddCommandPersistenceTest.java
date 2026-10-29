@@ -3,7 +3,6 @@ package coordimate.logic;
 import static coordimate.testutil.TypicalPersons.ALICE;
 import static coordimate.testutil.TypicalPersons.AMY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -20,12 +19,9 @@ import coordimate.logic.commands.CommandResult;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.model.CoordiMate;
 import coordimate.model.ModelManager;
-import coordimate.model.ReadOnlyCoordiMate;
 import coordimate.model.UserPrefs;
 import coordimate.model.tag.Tag;
 import coordimate.storage.JsonCoordiMateStorage;
-import coordimate.storage.JsonUserPrefsStorage;
-import coordimate.storage.StorageManager;
 
 public class AddCommandPersistenceTest {
     private static final String COMMAND = "add n/New Contact p/82345678 e/new@example.com r/Logistics a/Somewhere";
@@ -41,7 +37,8 @@ public class AddCommandPersistenceTest {
         model.updateFilteredPersonList(person -> false);
         JsonCoordiMateStorage storage = new JsonCoordiMateStorage(temporaryFolder.resolve("data.json"));
 
-        CommandResult result = newLogic(model, storage).execute(COMMAND + " t/Publicity t/EXCO");
+        CommandResult result = PersistenceTestUtil.newLogic(model, storage, temporaryFolder)
+                .execute(COMMAND + " t/Publicity t/EXCO");
 
         assertEquals("Contact saved successfully: New Contact", result.getFeedbackToUser());
         assertEquals(model.getCoordiMate().getPersonList().getLast(), result.getContactToFocus().orElseThrow());
@@ -68,7 +65,7 @@ public class AddCommandPersistenceTest {
         model.updateFilteredPersonList(person -> false);
         CoordiMate beforeModel = new CoordiMate(model.getCoordiMate());
 
-        Logic logic = newLogic(model, storage);
+        Logic logic = PersistenceTestUtil.newLogic(model, storage, temporaryFolder);
         CommandException exception = assertThrows(CommandException.class, () ->
                 logic.execute(COMMAND + " t/Publicity"));
 
@@ -90,7 +87,7 @@ public class AddCommandPersistenceTest {
         String beforeFile = Files.readString(path);
         CoordiMate beforeModel = new CoordiMate(model.getCoordiMate());
 
-        Logic logic = newLogic(model, storage);
+        Logic logic = PersistenceTestUtil.newLogic(model, storage, temporaryFolder);
         CommandException exception = assertThrows(CommandException.class, () ->
                 logic.execute("add n/  aMy bEe  p/82345678 e/new@example.com r/Logistics"));
 
@@ -108,24 +105,15 @@ public class AddCommandPersistenceTest {
             ModelManager model = new ModelManager();
             model.addPerson(AMY);
             model.updateFilteredPersonList(person -> false);
-            new JsonCoordiMateStorage(path).saveCoordiMate(model.getCoordiMate());
-            String beforeFile = Files.readString(path);
-            CoordiMate beforeModel = new CoordiMate(model.getCoordiMate());
-            JsonCoordiMateStorage storage = new JsonCoordiMateStorage(path) {
-                @Override
-                public void saveCoordiMate(ReadOnlyCoordiMate data) throws IOException {
-                    throw failure;
-                }
-            };
+            PersistenceTestUtil.BeforeState before = PersistenceTestUtil.seedThenCapture(model, path);
+            JsonCoordiMateStorage storage = PersistenceTestUtil.failingStorage(path, failure);
 
-            Logic logic = newLogic(model, storage);
+            Logic logic = PersistenceTestUtil.newLogic(model, storage, temporaryFolder);
             CommandException exception = assertThrows(CommandException.class, () -> logic.execute(COMMAND));
             assertEquals(Messages.withUsage(AddCommand.MESSAGE_SAVE_ERROR,
                     AddCommand.MESSAGE_USAGE), exception.getMessage());
-            assertSame(failure, exception.getCause());
-            assertEquals(beforeModel, model.getCoordiMate());
+            PersistenceTestUtil.assertSaveFailurePreservedState(exception, failure, model, before);
             assertTrue(model.getFilteredPersonList().isEmpty());
-            assertEquals(beforeFile, Files.readString(path));
         }
     }
 
@@ -139,17 +127,12 @@ public class AddCommandPersistenceTest {
             model.addPerson(AMY);
             CoordiMate beforeModel = new CoordiMate(model.getCoordiMate());
 
-            Logic logic = newLogic(model, new JsonCoordiMateStorage(path));
+            Logic logic = PersistenceTestUtil.newLogic(model, new JsonCoordiMateStorage(path), temporaryFolder);
             CommandException exception = assertThrows(CommandException.class, () -> logic.execute(COMMAND));
             assertEquals(Messages.withUsage(AddCommand.MESSAGE_LOAD_ERROR,
                     AddCommand.MESSAGE_USAGE), exception.getMessage());
             assertEquals(beforeModel, model.getCoordiMate());
             assertEquals(contents, Files.readString(path));
         }
-    }
-
-    private Logic newLogic(ModelManager model, JsonCoordiMateStorage storage) {
-        return new LogicManager(model, new StorageManager(storage,
-                new JsonUserPrefsStorage(temporaryFolder.resolve("prefs.json"))));
     }
 }

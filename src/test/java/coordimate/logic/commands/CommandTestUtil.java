@@ -75,9 +75,6 @@ public class CommandTestUtil {
      */
     public static void assertCommandSuccess(Command command, Model actualModel, CommandResult expectedCommandResult,
             Model expectedModel) {
-        List<Person> contactsBefore = new ArrayList<>(actualModel.getCoordiMate().getPersonList());
-        List<Person> displayedBefore = new ArrayList<>(actualModel.getFilteredPersonList());
-        int expectedDeleteFocusIndex = getDeletedContactIndex(command, actualModel, displayedBefore);
         try {
             CommandResult result = command.execute(actualModel);
             assertEquals(expectedCommandResult.getFeedbackToUser(), result.getFeedbackToUser());
@@ -86,7 +83,8 @@ public class CommandTestUtil {
             assertEquals(expectedCommandResult.shouldShowTutorial(), result.shouldShowTutorial());
             assertEquals(expectedCommandResult.getViewToShow(), result.getViewToShow());
             assertEquals(expectedCommandResult.isWarning(), result.isWarning());
-            assertCommandFocus(command, result, contactsBefore, expectedModel, expectedDeleteFocusIndex);
+            assertEquals(expectedCommandResult.getContactToFocus(), result.getContactToFocus());
+            assertEquals(expectedCommandResult.getContactIndexToFocus(), result.getContactIndexToFocus());
             assertEquals(expectedModel, actualModel);
         } catch (CommandException ce) {
             throw new AssertionError("Execution of command should not fail.", ce);
@@ -95,46 +93,39 @@ public class CommandTestUtil {
 
     /**
      * Convenience wrapper to {@link #assertCommandSuccess(Command, Model, CommandResult, Model)}
-     * that takes a string {@code expectedMessage}.
+     * that takes a string {@code expectedMessage}. The expected focus target is derived only where it is
+     * deterministic from {@code command}, a pre-execution snapshot of {@code actualModel}, and the
+     * independently constructed {@code expectedModel}; every other command is expected to request no focus.
      */
     public static void assertCommandSuccess(Command command, Model actualModel, String expectedMessage,
             Model expectedModel) {
-        CommandResult expectedCommandResult = new CommandResult(expectedMessage, expectedViewFor(command));
+        CommandResult.View view = expectedViewFor(command);
+        CommandResult expectedCommandResult;
+        if (command instanceof AddCommand) {
+            List<Person> contactsBefore = new ArrayList<>(actualModel.getCoordiMate().getPersonList());
+            Person addedContact = expectedModel.getCoordiMate().getPersonList().stream()
+                    .filter(person -> !contactsBefore.contains(person))
+                    .findFirst()
+                    .orElseThrow(() -> new AssertionError(
+                            "expectedModel must contain exactly one newly saved contact to derive focus."));
+            expectedCommandResult = CommandResult.withContactToFocus(expectedMessage, view, addedContact);
+        } else if (command instanceof DeleteCommand deleteCommand) {
+            List<Person> displayedBefore = new ArrayList<>(actualModel.getFilteredPersonList());
+            int deletedIndex = deletedContactIndex(deleteCommand, actualModel, displayedBefore);
+            expectedCommandResult = deletedIndex < 0
+                    ? new CommandResult(expectedMessage, view)
+                    : CommandResult.withContactIndexToFocus(expectedMessage, view, deletedIndex);
+        } else {
+            expectedCommandResult = new CommandResult(expectedMessage, view);
+        }
         assertCommandSuccess(command, actualModel, expectedCommandResult, expectedModel);
     }
 
-    private static int getDeletedContactIndex(Command command, Model model, List<Person> displayedBefore) {
-        if (!(command instanceof DeleteCommand deleteCommand)) {
-            return -1;
-        }
+    private static int deletedContactIndex(DeleteCommand deleteCommand, Model model, List<Person> displayedBefore) {
         try {
             return displayedBefore.indexOf(deleteCommand.resolvePerson(model));
         } catch (CommandException e) {
             throw new AssertionError("The target of a successful deletion should resolve.", e);
-        }
-    }
-
-    private static void assertCommandFocus(Command command, CommandResult result, List<Person> contactsBefore,
-            Model expectedModel, int expectedDeleteFocusIndex) {
-        if (command instanceof AddCommand) {
-            Person addedContact = expectedModel.getCoordiMate().getPersonList().stream()
-                    .filter(person -> !contactsBefore.contains(person)).findFirst().orElseThrow();
-            assertEquals(java.util.Optional.of(addedContact), result.getContactToFocus());
-            assertTrue(result.getContactIndexToFocus().isEmpty());
-        } else if (command instanceof EditCommand) {
-            Person focusedContact = result.getContactToFocus().orElseThrow();
-            assertTrue(expectedModel.getCoordiMate().getPersonList().contains(focusedContact));
-            assertTrue(result.getContactIndexToFocus().isEmpty());
-        } else if (command instanceof DeleteCommand) {
-            if (expectedDeleteFocusIndex < 0) {
-                assertTrue(result.getContactIndexToFocus().isEmpty());
-            } else {
-                assertEquals(expectedDeleteFocusIndex, result.getContactIndexToFocus().orElseThrow());
-            }
-            assertTrue(result.getContactToFocus().isEmpty());
-        } else {
-            assertTrue(result.getContactToFocus().isEmpty());
-            assertTrue(result.getContactIndexToFocus().isEmpty());
         }
     }
 
