@@ -7,6 +7,8 @@ import static coordimate.testutil.TypicalPersons.ALICE;
 import static coordimate.testutil.TypicalPersons.BENSON;
 import static coordimate.testutil.TypicalPersons.CARL;
 import static coordimate.testutil.TypicalPersons.getTypicalCoordiMate;
+import static coordimate.testutil.TypicalTags.DEFAULT_TAGS;
+import static coordimate.testutil.TypicalTags.defaultTagsWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -40,8 +42,7 @@ public class CoordiMateTest {
     @Test
     public void constructor() {
         assertEquals(List.of(), coordiMate.getPersonList());
-        assertEquals(List.of(new Tag("EXCO"), new Tag("Sponsor"), new Tag("UniversityStaff"),
-                new Tag("Logistics")), coordiMate.getTagList());
+        assertEquals(DEFAULT_TAGS, coordiMate.getTagList());
     }
 
     @Test
@@ -114,8 +115,7 @@ public class CoordiMateTest {
 
         coordiMate.addPerson(taggedAlice);
 
-        assertEquals(List.of(new Tag("EXCO"), new Tag("Sponsor"), new Tag("UniversityStaff"),
-                new Tag("Logistics"), new Tag("Alpha"), new Tag("zeta")), coordiMate.getTagList());
+        assertEquals(defaultTagsWith(new Tag("Alpha"), new Tag("zeta")), coordiMate.getTagList());
     }
 
     @Test
@@ -126,8 +126,7 @@ public class CoordiMateTest {
 
         coordiMate.setPersons(List.of(taggedAlice));
 
-        assertEquals(List.of(new Tag("EXCO"), new Tag("Sponsor"), new Tag("UniversityStaff"),
-                new Tag("Logistics"), unusedTag, new Tag("Publicity")), coordiMate.getTagList());
+        assertEquals(defaultTagsWith(unusedTag, new Tag("Publicity")), coordiMate.getTagList());
     }
 
     @Test

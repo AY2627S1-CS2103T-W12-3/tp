@@ -2,8 +2,8 @@ package coordimate.logic.commands;
 
 import static coordimate.logic.commands.CommandTestUtil.assertCommandFailure;
 import static coordimate.logic.commands.CommandTestUtil.assertCommandSuccess;
+import static coordimate.logic.commands.CommandTestUtil.getCoordiMateWithTaggedAlice;
 import static coordimate.testutil.Assert.assertThrows;
-import static coordimate.testutil.TypicalPersons.ALICE;
 import static coordimate.testutil.TypicalPersons.BENSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -16,9 +16,7 @@ import coordimate.model.CoordiMate;
 import coordimate.model.Model;
 import coordimate.model.ModelManager;
 import coordimate.model.UserPrefs;
-import coordimate.model.person.Person;
 import coordimate.model.tag.Tag;
-import coordimate.testutil.PersonBuilder;
 
 public class DeleteTagCommandTest {
 
@@ -26,11 +24,7 @@ public class DeleteTagCommandTest {
 
     @Test
     public void execute_existingTag_deletesTagAndUpdatesContacts() {
-        CoordiMate data = new CoordiMate();
-        data.addTag(PUBLICITY);
-        Person taggedAlice = new PersonBuilder(ALICE).withTags("Publicity", "EXCO").build();
-        data.addPerson(taggedAlice);
-        data.addPerson(BENSON);
+        CoordiMate data = getCoordiMateWithTaggedAlice(PUBLICITY);
         Model model = new ModelManager(data, new UserPrefs());
         Model expectedModel = new ModelManager(data, new UserPrefs());
         expectedModel.deleteTag(PUBLICITY);

@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.StreamSupport;
 
 import org.junit.jupiter.api.Test;
 
@@ -98,7 +99,7 @@ public class UniqueTagListTest {
         uniqueTagList.setTags(List.of(EXCO, SPONSOR));
 
         assertEquals(List.of(EXCO, SPONSOR),
-                java.util.stream.StreamSupport.stream(uniqueTagList.spliterator(), false).toList());
+                StreamSupport.stream(uniqueTagList.spliterator(), false).toList());
     }
 
     @Test
