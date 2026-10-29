@@ -5,18 +5,14 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.awt.GraphicsEnvironment;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -31,6 +27,7 @@ import coordimate.model.tag.Tag;
 import coordimate.storage.JsonCoordiMateStorage;
 import coordimate.storage.JsonUserPrefsStorage;
 import coordimate.storage.StorageManager;
+import coordimate.testutil.JavaFxTestSupport;
 import coordimate.testutil.PersonBuilder;
 import coordimate.testutil.TypicalPersons;
 import javafx.animation.AnimationTimer;
@@ -71,8 +68,7 @@ import javafx.stage.WindowEvent;
 public class MainWindowTest {
 
     private static final Path DEFAULT_DATA_PATH = Path.of("data", "coordimate.json");
-    private static final int DEFAULT_TIMEOUT_SECONDS = 10;
-    private static final int LAYOUT_TIMEOUT_SECONDS = 20;
+    private static final long LAYOUT_TIMEOUT_SECONDS = 20;
 
     private static final Person FIRST_CONTACT = new PersonBuilder(TypicalPersons.ALICE).withTags("Alpha").build();
     private static final Person SECOND_CONTACT = new PersonBuilder(TypicalPersons.BENSON).withTags("Beta").build();
@@ -130,15 +126,7 @@ public class MainWindowTest {
 
     @BeforeAll
     public static void startJavaFx() throws InterruptedException {
-        Assumptions.assumeFalse(GraphicsEnvironment.isHeadless(), "JavaFX UI tests require a display");
-        CountDownLatch started = new CountDownLatch(1);
-        try {
-            Platform.startup(started::countDown);
-        } catch (IllegalStateException alreadyRunning) {
-            Platform.runLater(started::countDown);
-        }
-        assertTrue(started.await(10, TimeUnit.SECONDS));
-        Platform.setImplicitExit(false);
+        JavaFxTestSupport.startToolkit();
     }
 
     @Test
@@ -235,25 +223,47 @@ public class MainWindowTest {
         });
     }
 
+    /**
+     * Opens the tutorial overlay on an already-created, already-filled {@code window} by clicking
+     * the Tutorial label while the Events tab is selected and the Help window is open, matching
+     * the entry point every split-out test below starts from. Takes the window/stage from the
+     * caller's {@link #runInWindow} invocation so cleanup stays guaranteed by that helper even if
+     * a step here throws, instead of registering cleanup only after this factory returns.
+     */
+    private static TutorialFixture openTutorialFromEventsWithHelpOpen(MainWindow window, Stage stage,
+            LogicManager logic) {
+        window.show();
+        TabPane views = lookupNode(stage, "#views");
+        views.getSelectionModel().select(1);
+        window.handleHelp();
+        Stage helpStage = findOwnedStage(stage, "Help");
+        Label tutorialLabel = lookupNode(stage, "#tutorialLabel");
+        javafx.event.Event.fireEvent(tutorialLabel, createMouseClickEvent());
+        refreshLayout(stage);
+        StackPane tutorialOverlay = lookupNode(stage, "#tutorialOverlay");
+        return new TutorialFixture(stage, logic, window, views, helpStage, tutorialLabel, tutorialOverlay);
+    }
+
+    private record TutorialFixture(Stage stage, LogicManager logic, MainWindow window, TabPane views,
+            Stage helpStage, Label tutorialLabel, StackPane tutorialOverlay) {}
+
     @Test
-    public void topMenuTutorialItem_opensTutorialOverlay() throws Exception {
+    public void topMenuTutorialItem_opensOverlayAndHidesHelp() throws Exception {
         LogicManager logic = new LogicManager(createModelWithAssignedEvent(), null);
         runInWindow(windowFor(logic), (window, stage) -> {
-            window.show();
-            TabPane views = lookupNode(stage, "#views");
-            views.getSelectionModel().select(1);
-            window.handleHelp();
-            Stage helpStage = findOwnedStage(stage, "Help");
-            Label tutorialLabel = lookupNode(stage, "#tutorialLabel");
-            javafx.event.Event.fireEvent(tutorialLabel, createMouseClickEvent());
-            refreshLayout(stage);
+            TutorialFixture fixture = openTutorialFromEventsWithHelpOpen(window, stage, logic);
+            assertTrue(fixture.tutorialOverlay().isVisible());
+            assertFalse(fixture.helpStage().isShowing());
+            assertTutorialStep(fixture.stage(), 1);
+            assertEquals(0, fixture.views().getSelectionModel().getSelectedIndex());
+        });
+    }
 
-            StackPane tutorialOverlay = lookupNode(stage, "#tutorialOverlay");
-            assertTrue(tutorialOverlay.isVisible());
-            assertFalse(helpStage.isShowing());
-            assertTutorialStep(stage, 1);
-            assertEquals(0, views.getSelectionModel().getSelectedIndex());
-            Button nextButton = lookupNode(stage, "#nextButton");
+    @Test
+    public void tutorialOverlay_blocksCommandInputAndSubmission() throws Exception {
+        LogicManager logic = new LogicManager(createModelWithAssignedEvent(), null);
+        runInWindow(windowFor(logic), (window, stage) -> {
+            openTutorialFromEventsWithHelpOpen(window, stage, logic);
             TextField commandInput = lookupNode(stage, "#commandTextField");
             Button submitButton = lookupNode(stage, "#submitButton");
             assertEquals("", commandInput.getText());
@@ -263,6 +273,16 @@ public class MainWindowTest {
             commandInput.fireEvent(new ActionEvent());
             assertEquals(1, logic.getPersonList().size());
             assertTrue(lookupNode(stage, "#commandExamples") == null);
+        });
+    }
+
+    @Test
+    public void tutorialOverlay_highlightsEachStepAcrossContactsEventsAndTags() throws Exception {
+        LogicManager logic = new LogicManager(createModelWithAssignedEvent(), null);
+        runInWindow(windowFor(logic), (window, stage) -> {
+            TutorialFixture fixture = openTutorialFromEventsWithHelpOpen(window, stage, logic);
+            TabPane views = fixture.views();
+            Button nextButton = lookupNode(stage, "#nextButton");
             fireRepeatedly(nextButton, 4);
             assertTutorialStep(stage, 5);
             assertTrue(lookupNode(stage, "#targetHighlight").isVisible());
@@ -320,6 +340,21 @@ public class MainWindowTest {
             assertEquals(2, views.getSelectionModel().getSelectedIndex());
             assertTutorialHighlights(stage, "#tutorialLabel");
             assertEquals("Finish →", nextButton.getText());
+        });
+    }
+
+    @Test
+    public void tutorialOverlay_completingTourRecordsPreferenceAndReopensAtStepOne() throws Exception {
+        LogicManager logic = new LogicManager(createModelWithAssignedEvent(), null);
+        runInWindow(windowFor(logic), (window, stage) -> {
+            TutorialFixture fixture = openTutorialFromEventsWithHelpOpen(window, stage, logic);
+            TabPane views = fixture.views();
+            Button nextButton = lookupNode(stage, "#nextButton");
+            Button submitButton = lookupNode(stage, "#submitButton");
+            fireRepeatedly(nextButton, 6);
+            refreshLayout(stage);
+            fireRepeatedly(nextButton, 9);
+            assertTutorialStep(stage, 16);
             assertEquals(1, logic.getEventList().size());
             Button closeButton = lookupNode(stage, "#closeButton");
             closeButton.fire();
@@ -327,12 +362,12 @@ public class MainWindowTest {
             assertFalse(submitButton.isDisabled());
             assertEquals(2, views.getSelectionModel().getSelectedIndex());
 
-            window.handleHelp();
+            fixture.window().handleHelp();
             KeyEvent enterEvent = createKeyEvent(KeyCode.ENTER);
-            tutorialLabel.getOnKeyPressed().handle(enterEvent);
+            fixture.tutorialLabel().getOnKeyPressed().handle(enterEvent);
             assertTrue(enterEvent.isConsumed());
-            assertTrue(tutorialOverlay.isVisible());
-            assertFalse(helpStage.isShowing());
+            assertTrue(fixture.tutorialOverlay().isVisible());
+            assertFalse(fixture.helpStage().isShowing());
             assertTutorialStep(stage, 1);
         });
     }
@@ -414,7 +449,7 @@ public class MainWindowTest {
     @Test
     public void tutorialCardAndMemberSteps_rehighlightAfterJavaFxLayout() throws Exception {
         ModelManager model = createModelWithAssignedEvent();
-        MainWindow window = runOnJavaFxThread(() -> {
+        MainWindow window = JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Stage stage = new Stage();
             MainWindow mainWindow = new MainWindow(stage, new LogicManager(model, null), DEFAULT_DATA_PATH);
             mainWindow.fillInnerParts();
@@ -428,25 +463,20 @@ public class MainWindowTest {
         Stage stage = window.getPrimaryStage();
 
         try {
-            runOnJavaFxThread(() -> {
+            JavaFxTestSupport.runOnFxThreadAndWait(() -> {
                 ListView<?> contacts = lookupNode(stage, "#personListView");
                 Node highlight = lookupNode(stage, "#targetHighlight");
                 assertEquals(0, contacts.getSelectionModel().getSelectedIndex());
                 assertTrue(highlight.localToScene(highlight.getLayoutBounds()).getHeight() < contacts.getHeight());
                 fireRepeatedly(lookupNode(stage, "#nextButton"), 5);
                 assertTutorialStep(stage, 10);
-                return null;
             });
 
-            runOnJavaFxThread(() -> {
-                assertTutorialHighlights(stage, "#members");
-                return null;
-            });
+            JavaFxTestSupport.runOnFxThreadAndWait(() -> assertTutorialHighlights(stage, "#members"));
         } finally {
-            runOnJavaFxThread(() -> {
+            JavaFxTestSupport.runOnFxThreadAndWait(() -> {
                 window.stop();
                 stage.close();
-                return null;
             });
         }
     }
@@ -931,7 +961,7 @@ public class MainWindowTest {
     @Test
     public void feedbackLayout_longSentenceAndRepeatedMediumMessage_staysConsistent() throws Exception {
         LogicManager logic = createLogicWithStorage(createMinimumSizeModel(), "feedback-layout");
-        MainWindow window = runOnJavaFxThread(() -> {
+        MainWindow window = JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             MainWindow mainWindow = new MainWindow(new Stage(), logic, dataPath("feedback-layout"));
             mainWindow.fillInnerParts();
             mainWindow.show();
@@ -942,33 +972,30 @@ public class MainWindowTest {
         try {
             submitFeedbackCommand(stage, "list");
             submitFeedbackCommand(stage, mediumSearch);
-            double mediumWidth = runOnJavaFxThread(() -> {
+            double mediumWidth = JavaFxTestSupport.runOnFxThreadAndWait(() -> {
                 ScrollPane scroll = lookupNode(stage, "#feedbackMessageScroll");
                 assertFalse(lookupNode(stage, "#feedbackScrollHint").isVisible());
                 return scroll.getWidth();
             });
 
             submitFeedbackCommand(stage, "search " + "a".repeat(3000));
-            runOnJavaFxThread(() -> {
+            JavaFxTestSupport.runOnFxThreadAndWait(() -> {
                 ScrollPane scroll = lookupNode(stage, "#feedbackMessageScroll");
                 assertTrue(scroll.getHeight() >= 60);
                 assertTrue(scroll.getHeight() <= 220);
                 assertTrue(lookupNode(stage, "#feedbackScrollHint").isVisible());
-                return null;
             });
 
             submitFeedbackCommand(stage, mediumSearch);
-            runOnJavaFxThread(() -> {
+            JavaFxTestSupport.runOnFxThreadAndWait(() -> {
                 ScrollPane scroll = lookupNode(stage, "#feedbackMessageScroll");
                 assertFalse(lookupNode(stage, "#feedbackScrollHint").isVisible());
                 assertEquals(mediumWidth, scroll.getWidth(), 1);
-                return null;
             });
         } finally {
-            runOnJavaFxThread(() -> {
+            JavaFxTestSupport.runOnFxThreadAndWait(() -> {
                 window.stop();
                 stage.close();
-                return null;
             });
         }
     }
@@ -981,12 +1008,11 @@ public class MainWindowTest {
     }
 
     private static void submitFeedbackCommand(Stage stage, String command) throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             TextField input = lookupNode(stage, "#commandTextField");
             Button submit = lookupNode(stage, "#submitButton");
             input.setText(command);
             submit.fire();
-            return null;
         });
         waitForJavaFxPulses();
     }
@@ -1009,7 +1035,7 @@ public class MainWindowTest {
 
     @Test
     public void minimumWindowSize_keepsDetailsBesideListsAndEventTimingVisible() throws Exception {
-        boolean isScreenTooSmall = runOnJavaFxThread(() -> {
+        boolean isScreenTooSmall = JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Rectangle2D screenBounds = Screen.getPrimary().getVisualBounds();
             return screenBounds.getWidth() < WindowBounds.PREFERRED_MIN_WIDTH
                     || screenBounds.getHeight() < WindowBounds.PREFERRED_MIN_HEIGHT;
@@ -1159,7 +1185,7 @@ public class MainWindowTest {
 
     @Test
     public void showWindow_startsMaximized() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Stage stage = new Stage();
             MainWindow window = new MainWindow(stage, new LogicManager(new ModelManager(), null),
                     DEFAULT_DATA_PATH);
@@ -1172,14 +1198,12 @@ public class MainWindowTest {
 
             Platform.runLater(stage::close);
             return null;
-        });
-        Platform.runLater(task);
-        task.get(LAYOUT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        }, LAYOUT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
     }
 
     @Test
     public void showWindow_savedAsNotMaximized_startsNotMaximized() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Stage stage = new Stage();
             ModelManager model = new ModelManager();
             model.setGuiSettings(new GuiSettings(900, 700, 0, 0, false));
@@ -1209,15 +1233,12 @@ public class MainWindowTest {
 
             assertEquals(new GuiSettings(expectedWidth, expectedHeight, expectedX, expectedY, false),
                     model.getGuiSettings());
-            return null;
         });
-        Platform.runLater(task);
-        task.get(DEFAULT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
     }
 
     @Test
     public void createWindow_savedPositionOutsideAllScreens_usesPrimaryScreen() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Stage stage = new Stage();
             ModelManager model = new ModelManager();
             model.setGuiSettings(new GuiSettings(900, 700, Integer.MAX_VALUE, Integer.MAX_VALUE, false));
@@ -1227,15 +1248,12 @@ public class MainWindowTest {
             Rectangle2D screenBounds = Screen.getPrimary().getVisualBounds();
             assertTrue(screenBounds.contains(stage.getX(), stage.getY()));
             stage.close();
-            return null;
         });
-        Platform.runLater(task);
-        task.get(DEFAULT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
     }
 
     @Test
     public void closeWindow_whileMaximized_savesNormalBoundsAndMaximizedState() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Stage stage = new Stage();
             ModelManager model = new ModelManager();
             MainWindow window = new MainWindow(stage, new LogicManager(model, null), DEFAULT_DATA_PATH);
@@ -1249,10 +1267,7 @@ public class MainWindowTest {
             stage.fireEvent(new WindowEvent(stage, WindowEvent.WINDOW_CLOSE_REQUEST));
 
             assertEquals(new GuiSettings(normalWidth, normalHeight, normalX, normalY, true), model.getGuiSettings());
-            return null;
         });
-        Platform.runLater(task);
-        task.get(DEFAULT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
     }
 
     @Test
@@ -1532,15 +1547,15 @@ public class MainWindowTest {
     }
 
     private static void runInWindow(WindowFactory factory, WindowTest test) throws Exception {
-        runInWindow(factory, test, DEFAULT_TIMEOUT_SECONDS);
+        runInWindow(factory, test, JavaFxTestSupport.DEFAULT_TIMEOUT_SECONDS);
     }
 
     /**
      * Creates a main window on the JavaFX thread, fills its inner parts and runs {@code test} on it,
      * then stops the window and closes its stage even if the test fails.
      */
-    private static void runInWindow(WindowFactory factory, WindowTest test, int timeoutSeconds) throws Exception {
-        runOnJavaFxThread(() -> {
+    private static void runInWindow(WindowFactory factory, WindowTest test, long timeoutSeconds) throws Exception {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Stage stage = new Stage();
             MainWindow window = null;
             try {
@@ -1554,17 +1569,7 @@ public class MainWindowTest {
                 stage.close();
             }
             return null;
-        }, timeoutSeconds);
-    }
-
-    private static <T> T runOnJavaFxThread(Callable<T> action) throws Exception {
-        return runOnJavaFxThread(action, DEFAULT_TIMEOUT_SECONDS);
-    }
-
-    private static <T> T runOnJavaFxThread(Callable<T> action, int timeoutSeconds) throws Exception {
-        FutureTask<T> task = new FutureTask<>(action);
-        Platform.runLater(task);
-        return task.get(timeoutSeconds, TimeUnit.SECONDS);
+        }, timeoutSeconds, TimeUnit.SECONDS);
     }
 
     /**

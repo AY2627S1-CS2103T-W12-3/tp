@@ -4,19 +4,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.awt.GraphicsEnvironment;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import javafx.application.Platform;
+import coordimate.testutil.JavaFxTestSupport;
 import javafx.geometry.Bounds;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -41,78 +36,69 @@ public class TutorialWindowTest {
 
     @BeforeAll
     public static void startJavaFx() throws InterruptedException {
-        Assumptions.assumeFalse(GraphicsEnvironment.isHeadless(), "JavaFX UI tests require a display");
-        CountDownLatch started = new CountDownLatch(1);
-        try {
-            Platform.startup(started::countDown);
-        } catch (IllegalStateException alreadyRunning) {
-            Platform.runLater(started::countDown);
-        }
-        assertTrue(started.await(10, TimeUnit.SECONDS));
-        Platform.setImplicitExit(false);
+        JavaFxTestSupport.startToolkit();
     }
 
     @Test
     public void navigation_showsSixteenStepsAndCloseOrFinishHidesOverlay() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             TutorialWindow tutorial = new TutorialWindow();
             Stage stage = createStage(tutorial, 1100, 760);
-            tutorial.show();
-            applyLayout(stage);
+            try (AutoCloseable closeStage = JavaFxTestSupport.closing(stage::close)) {
+                tutorial.show();
+                applyLayout(stage);
 
-            Label stepCounter = (Label) stage.getScene().lookup("#stepCounter");
-            Label stepTitle = (Label) stage.getScene().lookup("#stepTitle");
-            Button backButton = (Button) stage.getScene().lookup("#backButton");
-            Button nextButton = (Button) stage.getScene().lookup("#nextButton");
-            List<String> titles = List.of("Welcome to CoordiMate!", "Explore the Contacts tab",
-                    "Explore contact commands", "Use the command box", "Select a contact card",
-                    "View contact details", "Explore the Events tab", "Explore an event card",
-                    "View event details", "View the member list", "Explore the Tags tab",
-                    "Explore the tag list", "View tag details", "Navigate with your keyboard",
-                    "Get help anytime", "Take the tour again");
-            assertTrue(backButton.isDisabled());
-            for (int index = 0; index < titles.size(); index++) {
-                assertEquals("Step " + (index + 1) + " of 16", stepCounter.getText());
-                assertEquals(titles.get(index), stepTitle.getText());
-                if (index == 5) {
-                    assertTrue(tutorial.getCurrentStep().description().contains("assigned events"));
+                Label stepCounter = (Label) stage.getScene().lookup("#stepCounter");
+                Label stepTitle = (Label) stage.getScene().lookup("#stepTitle");
+                Button backButton = (Button) stage.getScene().lookup("#backButton");
+                Button nextButton = (Button) stage.getScene().lookup("#nextButton");
+                List<String> titles = List.of("Welcome to CoordiMate!", "Explore the Contacts tab",
+                        "Explore contact commands", "Use the command box", "Select a contact card",
+                        "View contact details", "Explore the Events tab", "Explore an event card",
+                        "View event details", "View the member list", "Explore the Tags tab",
+                        "Explore the tag list", "View tag details", "Navigate with your keyboard",
+                        "Get help anytime", "Take the tour again");
+                assertTrue(backButton.isDisabled());
+                for (int index = 0; index < titles.size(); index++) {
+                    assertEquals("Step " + (index + 1) + " of 16", stepCounter.getText());
+                    assertEquals(titles.get(index), stepTitle.getText());
+                    if (index == 5) {
+                        assertTrue(tutorial.getCurrentStep().description().contains("assigned events"));
+                    }
+                    if (index == 9) {
+                        assertTrue(tutorial.getCurrentStep().description().contains("mark attendance"));
+                    }
+                    if (index == 14) {
+                        assertTrue(tutorial.getCurrentStep().description()
+                                .contains("type help in the command box"));
+                        assertTrue(tutorial.getCurrentStep().description().contains(HelpWindow.HELP_SHORTCUT));
+                    }
+                    if (index < titles.size() - 1) {
+                        nextButton.fire();
+                    }
                 }
-                if (index == 9) {
-                    assertTrue(tutorial.getCurrentStep().description().contains("mark attendance"));
-                }
-                if (index == 14) {
-                    assertTrue(tutorial.getCurrentStep().description().contains("type help in the command box"));
-                    assertTrue(tutorial.getCurrentStep().description().contains(HelpWindow.HELP_SHORTCUT));
-                }
-                if (index < titles.size() - 1) {
-                    nextButton.fire();
-                }
+                assertTrue(tutorial.getCurrentStep().description().contains("whenever you need a reminder"));
+                assertTrue(tutorial.getCurrentStep().description().contains("type tutorial in the command box"));
+                assertTrue(tutorial.getCurrentStep().description().contains(TutorialWindow.TUTORIAL_SHORTCUT));
+                assertEquals("Finish →", nextButton.getText());
+                backButton.fire();
+                assertEquals("Step 15 of 16", stepCounter.getText());
+                nextButton.fire();
+                nextButton.fire();
+                assertFalse(tutorial.isShowing());
+
+                tutorial.show();
+                assertEquals("Step 1 of 16", stepCounter.getText());
+                Button closeButton = (Button) stage.getScene().lookup("#closeButton");
+                closeButton.fire();
+                assertFalse(tutorial.isShowing());
             }
-            assertTrue(tutorial.getCurrentStep().description().contains("whenever you need a reminder"));
-            assertTrue(tutorial.getCurrentStep().description().contains("type tutorial in the command box"));
-            assertTrue(tutorial.getCurrentStep().description().contains(TutorialWindow.TUTORIAL_SHORTCUT));
-            assertEquals("Finish →", nextButton.getText());
-            backButton.fire();
-            assertEquals("Step 15 of 16", stepCounter.getText());
-            nextButton.fire();
-            nextButton.fire();
-            assertFalse(tutorial.isShowing());
-
-            tutorial.show();
-            assertEquals("Step 1 of 16", stepCounter.getText());
-            Button closeButton = (Button) stage.getScene().lookup("#closeButton");
-            closeButton.fire();
-            assertFalse(tutorial.isShowing());
-            stage.close();
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void keyboardShortcuts_navigateAndDismiss() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             TutorialWindow tutorial = new TutorialWindow();
             Stage stage = createStage(tutorial, 900, 650);
             tutorial.show();
@@ -150,15 +136,12 @@ public class TutorialWindowTest {
             assertFalse(tutorial.isShowing());
             assertFalse(tutorial.handleShortcut(keyEvent(KeyCode.RIGHT)));
             stage.close();
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void mouseFilter_blocksBackdropButAllowsCardControls() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             TutorialWindow tutorial = new TutorialWindow();
             Stage stage = createStage(tutorial, 900, 650);
             tutorial.show();
@@ -177,15 +160,12 @@ public class TutorialWindowTest {
             assertFalse(tutorial.isInteractiveTarget(new Object()));
             tutorial.hide();
             stage.close();
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void stepChangeHandler_setWhileShowingReceivesCurrentStep() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             TutorialWindow tutorial = new TutorialWindow();
             Stage stage = createStage(tutorial, 900, 650);
             tutorial.show();
@@ -196,15 +176,12 @@ public class TutorialWindowTest {
             assertEquals(List.of("Explore the Contacts tab"), titles);
             tutorial.hide();
             stage.close();
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void tabKey_keepsFocusWithinCardButtons() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             TutorialWindow tutorial = new TutorialWindow();
             Stage stage = createStage(tutorial, 900, 650);
             Button outsideButton = new Button("Outside");
@@ -257,15 +234,12 @@ public class TutorialWindowTest {
             tutorial.hide();
             assertFalse(tutorial.handleShortcut(keyEvent(KeyCode.TAB)));
             stage.close();
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void returningToFirstStep_movesFocusFromBackToNext() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             TutorialWindow tutorial = new TutorialWindow();
             Stage stage = createStage(tutorial, 900, 650);
             tutorial.show();
@@ -282,23 +256,17 @@ public class TutorialWindowTest {
 
             tutorial.hide();
             stage.close();
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void tabKey_withoutScene_isStillHandled() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             TutorialWindow tutorial = new TutorialWindow();
             tutorial.show();
             assertTrue(tutorial.handleShortcut(keyEvent(KeyCode.TAB)));
             tutorial.hide();
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     private static KeyEvent keyEvent(KeyCode code) {
@@ -318,7 +286,7 @@ public class TutorialWindowTest {
 
     @Test
     public void overlayCard_staysWithinWindowAfterResize() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             TutorialWindow tutorial = new TutorialWindow();
             Stage stage = createStage(tutorial, 720, 520);
             tutorial.show();
@@ -343,15 +311,12 @@ public class TutorialWindowTest {
             assertTrue(stage.getScene().lookup("#commandExamples") == null);
             tutorial.hide();
             stage.close();
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void highlightedTarget_nearTopOrBottomPlacesCardOnVisibleSide() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             TutorialWindow tutorial = new TutorialWindow();
             Region target = new Region();
             target.setPrefSize(700, 50);
@@ -412,15 +377,12 @@ public class TutorialWindowTest {
             assertFalse(highlight.isVisible());
             tutorial.hide();
             stage.close();
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void cardPlacement_highlightsTargetsWithoutExposingAppControls() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             TutorialWindow tutorial = new TutorialWindow();
             Region sidebarTab = new Region();
             sidebarTab.setPrefSize(150, 40);
@@ -530,15 +492,12 @@ public class TutorialWindowTest {
             assertTrue(tutorial.isInteractiveTarget(nextButton));
             tutorial.hide();
             stage.close();
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void explanationText_usesLightThemeColor() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             TutorialWindow tutorial = new TutorialWindow();
             Stage stage = createStage(tutorial, 900, 650);
             tutorial.show();
@@ -548,15 +507,12 @@ public class TutorialWindowTest {
             assertEquals(Color.web("#f0f6fc"), text.getFill());
             tutorial.hide();
             stage.close();
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void highlightInsideScrollPane_staysWithinVisibleViewport() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             TutorialWindow tutorial = new TutorialWindow();
             Region spacer = new Region();
             spacer.setPrefHeight(250);
@@ -594,10 +550,7 @@ public class TutorialWindowTest {
             assertTrue(stage.getScene().lookup("#backdropFull").isVisible());
             tutorial.hide();
             stage.close();
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     private static Stage createStage(TutorialWindow tutorial, double width, double height) {
