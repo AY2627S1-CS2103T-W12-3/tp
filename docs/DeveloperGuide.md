@@ -1241,6 +1241,12 @@ The app then starts with the six sample contacts (member IDs `1` to `6`), the `F
 event, and no custom tags. Deleting contacts by hand is not enough, because member IDs are never reused.
 </box>
 
+<box type="info" seamless>
+
+**Note:** Date placeholders use the computer's local time zone and `dd-MM-yyyy` format. `TODAY` is today's date,
+`TOMORROW` is tomorrow's date, `FUTURE_DATE` is any date after today, and `PAST_DATE` is any date before today.
+</box>
+
 ### Launch and shutdown
 
 1. Initial launch
@@ -1265,13 +1271,19 @@ event, and no custom tags. Deleting contacts by hand is not enough, because memb
 
 ### Tutorial and Help
 
+Closing the tutorial with Esc or **Close** also marks it as seen. Restoring the sample data does not reset this
+preference, which is stored in `preferences.json` in the folder from which CoordiMate is launched.
+
 1. Test case: `tutorial`, then press Right Arrow, Left Arrow, Tab, and Shift+Tab.<br>
    Expected: The overlay starts at **Step 1 of 16**. Arrow keys change steps and Tab moves focus between the
-   tutorial's enabled buttons. The highlighted area stays bright, and the command box is disabled. Press Esc to close it.
+   tutorial's enabled buttons. The highlighted area stays bright, and the command box is disabled. Press Esc to close it;
+   F2 (Fn+F2 if required) reopens it at step 1. Close it with Esc again.
 
-1. Test case: Press F2 (Fn+F2 if required), advance through the tutorial, and select **Finish**. Close and relaunch the app.<br>
-   Expected: The tutorial reopens at step 1, visits Contacts, Events, Tags, and Help, and closes after Finish.
-   It does not open automatically on relaunch. Contacts, events, and tags are unchanged.
+1. Test case: Close the app. In `preferences.json`, set `hasSeenTutorial` to `false`, leaving the window settings
+   unchanged. Relaunch the app and complete the automatically opened tutorial by advancing to step 16 and selecting
+   **Finish**, without closing it another way. Close and relaunch the app again.<br>
+   Expected: The tutorial opens automatically after resetting the flag, visits Contacts, Events, Tags, and Help,
+   and closes after Finish. On the final relaunch, it does not open automatically. Contacts, events, and tags are unchanged.
 
 1. Test case: `help`, then resize the window and scroll its command table.<br>
    Expected: The Help window shows keyboard navigation, command formats, and the User Guide URL. Press Esc to
@@ -1387,7 +1399,7 @@ event, and no custom tags. Deleting contacts by hand is not enough, because memb
 
 1. Test case: `list archived`, then `list`<br>
    Expected: The archived contact and event lists are empty, since nothing is archived. `list` restores the active
-   lists and the normal sidebar commands. Archiving and restoring entries is tested separately below.
+   lists. Archiving and restoring entries is tested separately below.
 
 1. Test case: `list all`<br>
    Expected: The lists are unchanged. The status message shows
@@ -1478,26 +1490,16 @@ event, and no custom tags. Deleting contacts by hand is not enough, because memb
 1. Other incorrect deleteevent commands to try: `deleteevent`, `deleteevent evn/`<br>
    Expected: No event is deleted. The status message shows error details.
 
-### Automatic event reminders
-
-1. Prerequisites: No reminders are active and no event named `Reminder Check` exists. Replace `TOMORROW` with
-   tomorrow's date in `dd-MM-yyyy` format, using the computer's local time zone.
-
-1. Test case: `addevent evn/Reminder Check st/TOMORROW et/TOMORROW`<br>
-   Expected: The Upcoming events panel appears with `Reminder Check` at index 1 and the saved dates.
-   Switching between Contacts, Events, and Tags keeps the panel visible.
-
-1. Cleanup: Run `deleteevent evn/Reminder Check`.<br>
-   Expected: The event and its reminder disappear.
-
 ### Dismissing a reminder
 
 1. Selecting by reminder order and saving the dismissal
 
-   1. Prerequisites: Use test data with no active reminders. Replace `TOMORROW` below with tomorrow's date in
-      `dd-MM-yyyy` format, using the computer's local time zone. Create `Zulu Reminder` first with
+   1. Prerequisites: Use test data with no active reminders. Create `Zulu Reminder` first with
       `addevent evn/Zulu Reminder st/TOMORROW et/TOMORROW`, then create `alpha Reminder` with the same dates.
-      The panel should show `alpha Reminder` at index 1 and `Zulu Reminder` at index 2.
+
+   1. Test case: Switch between the Contacts, Events, and Tags views.<br>
+      Expected: The Upcoming events panel appears and stays visible, showing `alpha Reminder` at index 1 and
+      `Zulu Reminder` at index 2, with their saved dates.
 
    1. Test case: Select the **Tags** view, then enter `dismiss 1`.<br>
       Expected: `alpha Reminder` disappears, `Zulu Reminder` becomes index 1, and feedback shows
@@ -1630,12 +1632,6 @@ event, and no custom tags. Deleting contacts by hand is not enough, because memb
 
 ### Marking a contact as on leave
 
-<box type="info" seamless>
-
-**Note:** In these tests, `FUTURE_DATE` is any date after today in `dd-MM-yyyy` format, `TODAY` is today's date,
-and `PAST_DATE` is any date before today, such as `01-01-2020`.
-</box>
-
 1. Setting and clearing leave
 
    1. Prerequisites: Restore the sample data and run `list`.
@@ -1718,8 +1714,8 @@ and `PAST_DATE` is any date before today, such as `01-01-2020`.
 
 1. Archiving and restoring an event
 
-   1. Prerequisites: Run `addevent evn/Orientation st/DATE et/DATE`, where `DATE` is tomorrow in `dd-MM-yyyy`
-      format. Assign the 1st contact with `assign evn/Orientation c/ID`, using its member ID. A reminder for
+   1. Prerequisites: Run `addevent evn/Orientation st/TOMORROW et/TOMORROW`.
+      Assign the 1st contact with `assign evn/Orientation c/ID`, using its member ID. A reminder for
       `Orientation` is shown.
 
    1. Test case: `archiveevent evn/orientation`<br>
@@ -1730,7 +1726,7 @@ and `PAST_DATE` is any date before today, such as `01-01-2020`.
    1. Test case: `assign evn/Orientation c/ID` with another contact's ID<br>
       Expected: No change. The status message says the event is archived and suggests `unarchiveevent`.
 
-   1. Test case: `addevent evn/Orientation st/DATE et/DATE`<br>
+   1. Test case: `addevent evn/Orientation st/TOMORROW et/TOMORROW`<br>
       Expected: No event is added. The status message says an archived event with that name already exists.
 
    1. Test case: Close and relaunch the app, run `list archived`, then open the **Events** tab.<br>
@@ -1763,8 +1759,9 @@ and `PAST_DATE` is any date before today, such as `01-01-2020`.
 if it contains data you want to keep.
 </box>
 
-1. Prerequisites: Restore the sample data. Run `archive 2`, `addtag t/ClearTest`, and
-   `addevent evn/ClearTest st/TOMORROW et/TOMORROW`, replacing `TOMORROW` with tomorrow's date in `dd-MM-yyyy` format.
+1. Prerequisites: Restore the sample data. Run `archive 2`, `archiveevent evn/Freshmen Welcome Night`,
+   `addtag t/ClearTest`, and `addevent evn/ClearTest st/TOMORROW et/TOMORROW`.
+   Bernice Yu and `Freshmen Welcome Night` are archived; `ClearTest` stays active and has a reminder.
 
 1. Test case: `clear extra`<br>
    Expected: The status message shows `Invalid command format.` No data changes.
