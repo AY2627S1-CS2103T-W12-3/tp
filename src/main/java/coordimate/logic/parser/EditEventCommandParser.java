@@ -50,6 +50,9 @@ public class EditEventCommandParser implements Parser<EditEventCommand> {
                 parseTime(values.get(PREFIX_END_TIME.toString()), PREFIX_END_TIME));
     }
 
+    /**
+     * Parses a supplied event time, or returns null when the edit omits that parameter.
+     */
     private EventTime parseTime(String value, Prefix prefix) throws ParseException {
         if (value == null) {
             return null;

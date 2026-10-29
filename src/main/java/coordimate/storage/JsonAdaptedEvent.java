@@ -140,6 +140,9 @@ class JsonAdaptedEvent {
         return dismissedReminderStarts.removeIf(JsonAdaptedEvent::isYearZero);
     }
 
+    /**
+     * Returns whether the saved date or date-time text uses the legacy year zero.
+     */
     private static boolean isYearZero(String value) {
         return value != null && value.strip().matches("[0-9]{2}-[0-9]{2}-0000( [0-9]{2}:[0-9]{2})?");
     }

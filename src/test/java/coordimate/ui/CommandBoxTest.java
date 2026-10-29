@@ -4,22 +4,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.awt.GraphicsEnvironment;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import coordimate.logic.commands.CommandResult;
 import coordimate.logic.commands.exceptions.CommandException;
 import coordimate.logic.parser.exceptions.ParseException;
-import javafx.application.Platform;
+import coordimate.testutil.JavaFxTestSupport;
 import javafx.event.ActionEvent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -31,19 +26,12 @@ import javafx.scene.layout.Region;
 public class CommandBoxTest {
     @BeforeAll
     public static void startJavaFx() throws InterruptedException {
-        Assumptions.assumeFalse(GraphicsEnvironment.isHeadless(), "JavaFX UI tests require a display");
-        CountDownLatch started = new CountDownLatch(1);
-        try {
-            Platform.startup(started::countDown);
-        } catch (IllegalStateException alreadyRunning) {
-            Platform.runLater(started::countDown);
-        }
-        assertTrue(started.await(10, TimeUnit.SECONDS));
+        JavaFxTestSupport.startToolkit();
     }
 
     @Test
     public void blankEnter_onlySentWhenDeletionConfirmationIsPending() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             List<String> submitted = new ArrayList<>();
             AtomicBoolean pending = new AtomicBoolean(false);
             Region root = new CommandBox(text -> {
@@ -67,15 +55,12 @@ public class CommandBoxTest {
             button.fire();
             assertEquals(List.of("", "list"), submitted);
             assertEquals("", input.getText());
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void arrowKeys_recallCommandsAndRestoreDraft() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             List<String> submitted = new ArrayList<>();
             Region root = new CommandBox(text -> {
                 submitted.add(text);
@@ -120,15 +105,12 @@ public class CommandBoxTest {
             pressArrow(input, KeyCode.DOWN);
             assertEquals("unfinished draft", input.getText());
             assertEquals(List.of("list", "search Aisha", "list", "  filter tag/EXCO  "), submitted);
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void failedCommand_isRecalledAndCanBeEditedBeforeResubmission() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             List<String> submitted = new ArrayList<>();
             Region root = new CommandBox(text -> {
                 submitted.add(text);
@@ -159,15 +141,12 @@ public class CommandBoxTest {
             pressArrow(input, KeyCode.UP);
             assertEquals("bad", input.getText());
             assertEquals(List.of("bad", "list"), submitted);
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void repeatedCommandFailure_keepsSingleErrorStyleUntilInputChanges() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             List<String> submitted = new ArrayList<>();
             Region root = new CommandBox(text -> {
                 submitted.add(text);
@@ -189,15 +168,12 @@ public class CommandBoxTest {
             input.setText("delete 1");
             assertFalse(input.getStyleClass().contains(CommandBox.ERROR_STYLE_CLASS));
             assertEquals("Enter", button.getText());
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void deleteConfirmation_pausesHistoryAndDoesNotStoreResponses() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             List<String> submitted = new ArrayList<>();
             AtomicBoolean pending = new AtomicBoolean(false);
             Region root = new CommandBox(text -> {
@@ -227,15 +203,12 @@ public class CommandBoxTest {
             pressArrow(input, KeyCode.DOWN);
             assertEquals("   ", input.getText());
             assertEquals(List.of("delete 1", "y", ""), submitted);
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void sidebarCommand_resetsHistoryNavigation() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             CommandBox commandBox = new CommandBox(text -> new CommandResult("Result"), () -> false);
             Region root = commandBox.getRoot();
             new Scene(root);
@@ -254,15 +227,12 @@ public class CommandBoxTest {
             assertEquals("search Aisha", input.getText());
             pressArrow(input, KeyCode.DOWN);
             assertEquals("add", input.getText());
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void disabledInput_blocksEditingHistoryAndSubmission() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             List<String> submitted = new ArrayList<>();
             CommandBox commandBox = new CommandBox(text -> {
                 submitted.add(text);
@@ -291,15 +261,12 @@ public class CommandBoxTest {
             assertTrue(button.isDisabled());
             assertEquals("unfinished draft", input.getText());
             assertEquals(List.of("list"), submitted);
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     @Test
     public void executionDisabled_allowsEditingButBlocksSubmission() throws Exception {
-        FutureTask<Void> task = new FutureTask<>(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             List<String> submitted = new ArrayList<>();
             CommandBox commandBox = new CommandBox(text -> {
                 submitted.add(text);
@@ -322,10 +289,7 @@ public class CommandBoxTest {
             commandBox.setExecutionDisabled(false);
             button.fire();
             assertEquals(List.of("list"), submitted);
-            return null;
         });
-        Platform.runLater(task);
-        task.get(10, TimeUnit.SECONDS);
     }
 
     private static void pressArrow(TextField input, KeyCode keyCode) {

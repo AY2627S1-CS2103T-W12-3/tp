@@ -4,6 +4,7 @@ import static coordimate.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 import static coordimate.testutil.Assert.assertThrows;
 import static coordimate.testutil.TypicalPersons.ALICE;
 import static coordimate.testutil.TypicalPersons.BENSON;
+import static coordimate.testutil.TypicalTags.DEFAULT_TAGS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -88,8 +89,7 @@ public class ModelManagerTest {
 
     @Test
     public void getTagList_returnsDefaultTags() {
-        assertEquals(List.of(new Tag("EXCO"), new Tag("Sponsor"), new Tag("UniversityStaff"),
-                new Tag("Logistics")), modelManager.getTagList());
+        assertEquals(DEFAULT_TAGS, modelManager.getTagList());
     }
 
     @Test

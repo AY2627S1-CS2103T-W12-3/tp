@@ -15,7 +15,9 @@ import coordimate.model.person.MemberId;
 import coordimate.model.person.Person;
 import coordimate.model.person.Phone;
 
-/** Deletes a contact identified by its permanent member ID or an exact saved detail. */
+/**
+ * Deletes a contact identified by its permanent member ID or an exact saved detail.
+ */
 public class DeleteCommand extends Command {
 
     public static final String COMMAND_WORD = "delete";
@@ -42,7 +44,9 @@ public class DeleteCommand extends Command {
     private final String identifier;
     private final Person resolvedTarget;
 
-    /** Creates a deletion request using a permanent member ID. */
+    /**
+     * Creates a deletion request using a permanent member ID.
+     */
     public DeleteCommand(MemberId memberId) {
         this.memberId = requireNonNull(memberId);
         identifierType = null;

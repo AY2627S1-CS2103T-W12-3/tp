@@ -4,7 +4,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.StringJoiner;
 
@@ -13,7 +12,6 @@ import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
 import coordimate.model.person.Name;
 import coordimate.model.person.Person;
-import coordimate.model.tag.Tag;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -23,7 +21,6 @@ import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
 import javafx.geometry.Bounds;
 import javafx.geometry.Orientation;
-import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
@@ -116,7 +113,9 @@ public class EventListPanel extends UiPart<Region> {
         this(events, persons, Clock.systemDefaultZone());
     }
 
-    /** Shows assigned members' leave status as of the date supplied by {@code clock}. */
+    /**
+     * Shows assigned members' leave status as of the date supplied by {@code clock}.
+     */
     EventListPanel(ObservableList<Event> events, ObservableList<Person> persons, Clock clock) {
         super(FXML);
         this.persons = getPersonSource(persons);
@@ -205,7 +204,9 @@ public class EventListPanel extends UiPart<Region> {
         CardNavigation.selectPrevious(eventListView);
     }
 
-    /** Refreshes leave indicators when the calendar date changes. */
+    /**
+     * Refreshes leave indicators when the calendar date changes.
+     */
     void refreshIfDateChanged() {
         LocalDate today = LocalDate.now(clock);
         if (today.equals(shownDate)) {
@@ -361,38 +362,22 @@ public class EventListPanel extends UiPart<Region> {
         return hint;
     }
 
+    /**
+     * Builds a member row with its permanent ID, contact details, and attendance status.
+     */
     private HBox createMemberRow(Name member, AttendanceStatus status, Person person) {
         Label memberId = new Label(person == null ? "ID: unavailable" : "ID: " + person.getMemberId().orElseThrow());
         memberId.setMinWidth(Region.USE_PREF_SIZE);
         memberId.getStyleClass().add("event-member-id");
 
-        Label avatar = new Label(initials(member.getFullName()));
-        avatar.getStyleClass().add("event-member-avatar");
-        avatar.getStyleClass().add(getAvatarColorClass(person));
+        String fullName = member.getFullName();
+        Label avatar = MemberIdentity.createAvatar(fullName, person);
+        Label name = MemberIdentity.createNameLabel(fullName, person != null && person.isArchived());
 
-        Label name = new Label(member.getFullName()
-                + (person != null && person.isArchived() ? " (archived)" : ""));
-        name.setWrapText(true);
-        name.setMinWidth(0);
-        name.getStyleClass().add("event-member-name");
+        FlowPane identityLine = MemberIdentity.createIdentityLine(name);
+        MemberIdentity.appendTagChips(identityLine, person);
 
-        FlowPane identityLine = new FlowPane(8, 4);
-        identityLine.setAlignment(Pos.CENTER_LEFT);
-        identityLine.getStyleClass().add("event-member-identity");
-        identityLine.getChildren().add(name);
-        if (person != null) {
-            person.getTags().stream()
-                    .sorted((left, right) -> String.CASE_INSENSITIVE_ORDER.compare(
-                            left.getTagName(), right.getTagName()))
-                    .map(Tag::getTagName)
-                    .map(TagStyle::createTagLabel)
-                    .forEach(identityLine.getChildren()::add);
-        }
-
-        Label subtitle = new Label(formatMemberDetails(person));
-        subtitle.setWrapText(true);
-        subtitle.setMinWidth(0);
-        subtitle.getStyleClass().add("event-member-metadata");
+        Label subtitle = MemberIdentity.createSubtitleLabel(person);
 
         VBox memberDetails = new VBox(4, identityLine, subtitle);
         if (person != null) {
@@ -418,37 +403,6 @@ public class EventListPanel extends UiPart<Region> {
         HBox row = new HBox(12, memberId, avatar, memberDetails, createStatusBadge(status));
         row.getStyleClass().add("attendance-member-row");
         return row;
-    }
-
-    private String getAvatarColorClass(Person person) {
-        if (person == null) {
-            return "event-member-avatar-purple";
-        }
-        if (person.getTags().stream().anyMatch(tag -> tag.getTagName().equalsIgnoreCase("logistics"))) {
-            return "event-member-avatar-teal";
-        }
-        if (person.getTags().stream().anyMatch(tag -> tag.getTagName().equalsIgnoreCase("sponsor"))) {
-            return "event-member-avatar-amber";
-        }
-        return "event-member-avatar-purple";
-    }
-
-    private String initials(String fullName) {
-        String[] parts = fullName.strip().split("\\s+");
-        String result = parts[0].substring(0, 1);
-        if (parts.length > 1) {
-            result += parts[parts.length - 1].substring(0, 1);
-        }
-        return result.toUpperCase(Locale.ROOT);
-    }
-
-    private String formatMemberDetails(Person person) {
-        if (person == null) {
-            return "Contact details unavailable";
-        }
-        StringBuilder details = new StringBuilder(person.getRole().getValue());
-        person.getOrganisation().ifPresent(organisation -> details.append(" · ").append(organisation.getValue()));
-        return details.toString();
     }
 
     private Label createStatusBadge(AttendanceStatus status) {
@@ -490,6 +444,13 @@ public class EventListPanel extends UiPart<Region> {
             return "Unknown (end time not specified)";
         }
         long minutes = Duration.between(startDateTime.orElseThrow(), endDateTime.orElseThrow()).toMinutes();
+        return formatTimedDuration(minutes);
+    }
+
+    /**
+     * Formats elapsed minutes as nonzero day, hour, and minute units, using 24-hour days.
+     */
+    private String formatTimedDuration(long minutes) {
         if (minutes == 0) {
             return "0 minutes";
         }

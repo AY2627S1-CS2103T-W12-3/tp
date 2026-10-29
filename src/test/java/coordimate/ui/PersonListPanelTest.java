@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.awt.GraphicsEnvironment;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -17,12 +16,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.TimeUnit;
 
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -30,8 +24,8 @@ import coordimate.model.event.AttendanceStatus;
 import coordimate.model.event.Event;
 import coordimate.model.event.EventTime;
 import coordimate.model.person.Person;
+import coordimate.testutil.JavaFxTestSupport;
 import coordimate.testutil.PersonBuilder;
-import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -57,32 +51,24 @@ public class PersonListPanelTest {
 
     @BeforeAll
     public static void startJavaFx() throws InterruptedException {
-        Assumptions.assumeFalse(GraphicsEnvironment.isHeadless(), "JavaFX UI tests require a display");
-        CountDownLatch started = new CountDownLatch(1);
-        try {
-            Platform.startup(started::countDown);
-        } catch (IllegalStateException alreadyRunning) {
-            Platform.runLater(started::countDown);
-        }
-        assertTrue(started.await(10, TimeUnit.SECONDS));
-        Platform.setImplicitExit(false);
+        JavaFxTestSupport.startToolkit();
     }
 
     @Test
     public void memberIds_onCardsAndDetails_remainStableAcrossFiltering() throws Exception {
-        PanelFixture fixture = callOnJavaFxThread(PersonListPanelTest::createIdFixture);
-        runOnJavaFxThread(() -> {
+        PanelFixture fixture = JavaFxTestSupport.runOnFxThreadAndWait(PersonListPanelTest::createIdFixture);
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             assertEquals(List.of("ID: 12", "ID: 45"), cardIds(fixture.root()));
             assertEquals("ID: 45", getLabel(fixture.root(), "selectedMemberId").getText());
             fixture.displayedPersons().setPredicate(person -> person.getMemberId().orElseThrow().getValue() == 45);
         });
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             assertEquals(List.of("ID: 45"), cardIds(fixture.root()));
             assertEquals("ID: 45", getLabel(fixture.root(), "selectedMemberId").getText());
             assertEquals(0, fixture.list().getSelectionModel().getSelectedIndex());
             fixture.displayedPersons().setPredicate(person -> true);
         });
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             assertEquals(List.of("ID: 12", "ID: 45"), cardIds(fixture.root()));
             assertEquals("ID: 45", getLabel(fixture.root(), "selectedMemberId").getText());
             assertEquals(1, fixture.list().getSelectionModel().getSelectedIndex());
@@ -91,12 +77,12 @@ public class PersonListPanelTest {
 
     @Test
     public void bulkEditAndReorder_selectionFollowsIdAndClearsIfIdIsRemoved() throws Exception {
-        PanelFixture fixture = callOnJavaFxThread(PersonListPanelTest::createIdFixture);
+        PanelFixture fixture = JavaFxTestSupport.runOnFxThreadAndWait(PersonListPanelTest::createIdFixture);
         Person alice = fixture.persons().getFirst();
         Person editedBenson = new PersonBuilder(fixture.persons().getLast()).withName("Benson Tan")
                 .withRole("President").build();
-        runOnJavaFxThread(() -> fixture.persons().setAll(editedBenson, alice));
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> fixture.persons().setAll(editedBenson, alice));
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             assertEquals(editedBenson, fixture.list().getSelectionModel().getSelectedItem());
             assertEquals("Benson Tan", getLabel(fixture.root(), "selectedName").getText());
             assertEquals("ID: 45", getLabel(fixture.root(), "selectedMemberId").getText());
@@ -104,8 +90,8 @@ public class PersonListPanelTest {
         });
 
         Person replacement = new PersonBuilder(editedBenson).withMemberId(99).withName("Replacement").build();
-        runOnJavaFxThread(() -> fixture.persons().setAll(replacement, alice));
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> fixture.persons().setAll(replacement, alice));
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             assertNull(fixture.list().getSelectionModel().getSelectedItem());
             assertEquals("", getLabel(fixture.root(), "selectedMemberId").getText());
             assertFalse(getDetails(fixture.root()).isVisible());
@@ -115,7 +101,7 @@ public class PersonListPanelTest {
 
     @Test
     public void maximumId_onCardAndDetails_isFullyVisibleAtNarrowAndWideWidths() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Person member = new PersonBuilder(ALICE).withMemberId(Integer.MAX_VALUE)
                     .withName("Alexandria Catherine Montgomery").withTags("EXCO", "Logistics").build();
             Region card = new PersonCard(member).getRoot();
@@ -148,7 +134,7 @@ public class PersonListPanelTest {
 
     @Test
     public void selectContact_showsItsDetails() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             ObservableList<Person> persons = FXCollections.observableArrayList(ALICE, BENSON);
             Region root = new PersonListPanel(persons).getRoot();
             new Scene(root);
@@ -177,7 +163,7 @@ public class PersonListPanelTest {
     @Test
     public void contactOnLeave_showsLeaveOnCardAndInDetails() throws Exception {
         String future = LocalDate.now().plusDays(30).format(DateTimeFormatter.ofPattern("dd-MM-uuuu"));
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Person contact = new PersonBuilder(ALICE).withLeaveDate(future).build();
             Region root = new PersonListPanel(FXCollections.observableArrayList(contact)).getRoot();
             new Scene(root);
@@ -198,7 +184,7 @@ public class PersonListPanelTest {
 
     @Test
     public void contactWithEndedOrNoLeave_showsNotOnLeave() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             for (Person contact : List.of(new PersonBuilder(ALICE).withLeaveDate("01-01-2020").build(), BENSON)) {
                 Region root = new PersonListPanel(FXCollections.observableArrayList(contact)).getRoot();
                 new Scene(root);
@@ -220,7 +206,7 @@ public class PersonListPanelTest {
     @Test
     public void refreshIfDateChanged_leaveEnded_updatesCardAndDetails() throws Exception {
         MutableClock clock = new MutableClock(LocalDate.of(2026, 11, 30));
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Person contact = new PersonBuilder(ALICE).withLeaveDate("30-11-2026").build();
             PersonListPanel panel = new PersonListPanel(FXCollections.observableArrayList(contact),
                     FXCollections.observableArrayList(), clock);
@@ -246,7 +232,7 @@ public class PersonListPanelTest {
 
     @Test
     public void navigateCards_handlesUnselectedEmptyAndBoundaryStates() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             PersonListPanel panel = new PersonListPanel(FXCollections.observableArrayList(ALICE, BENSON));
             Region root = panel.getRoot();
             new Scene(root);
@@ -281,7 +267,7 @@ public class PersonListPanelTest {
 
     @Test
     public void tutorialContactCardTarget_usesVisibleSelectedCard() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             PersonListPanel panel = new PersonListPanel(FXCollections.observableArrayList(ALICE, BENSON));
             Stage stage = new Stage();
             stage.setScene(new Scene(panel.getRoot(), 1000, 700));
@@ -308,7 +294,7 @@ public class PersonListPanelTest {
 
     @Test
     public void selectContact_revealsContactAndShowsItsDetails() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             PersonListPanel panel = new PersonListPanel(FXCollections.observableArrayList(ALICE, BENSON));
             Region root = panel.getRoot();
             new Scene(root);
@@ -326,7 +312,7 @@ public class PersonListPanelTest {
 
     @Test
     public void selectContact_whenContactIsNotDisplayed_keepsCurrentSelection() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             PersonListPanel panel = new PersonListPanel(FXCollections.observableArrayList(BENSON));
             Region root = panel.getRoot();
             new Scene(root);
@@ -344,7 +330,7 @@ public class PersonListPanelTest {
 
     @Test
     public void selectContactAt_afterDeletionSelectsNearestRemainingContact() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             ObservableList<Person> persons = FXCollections.observableArrayList(ALICE, BENSON);
             PersonListPanel panel = new PersonListPanel(persons);
             Region root = panel.getRoot();
@@ -366,7 +352,7 @@ public class PersonListPanelTest {
 
     @Test
     public void explicitFocusAfterListChange_supersedesDeferredSelectionRestore() throws Exception {
-        FocusFixture fixture = callOnJavaFxThread(() -> {
+        FocusFixture fixture = JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             ObservableList<Person> persons = FXCollections.observableArrayList(ALICE, BENSON);
             PersonListPanel panel = new PersonListPanel(persons);
             Region root = panel.getRoot();
@@ -377,12 +363,12 @@ public class PersonListPanelTest {
             return new FocusFixture(persons, panel, root, list);
         });
 
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             fixture.persons().setAll(ALICE, BENSON);
             assertTrue(fixture.panel().selectContact(BENSON));
         });
 
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             assertEquals(BENSON, fixture.list().getSelectionModel().getSelectedItem());
             assertEquals("Benson Meier", getLabel(fixture.root(), "selectedName").getText());
         });
@@ -390,7 +376,7 @@ public class PersonListPanelTest {
 
     @Test
     public void contactWithAllDetails_showsSavedValues() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Person contact = new PersonBuilder(ALICE).withRole("Logistics Lead")
                     .withBirthday("18-06-2004").withAddress("21 Kent Ridge Road, #03-12")
                     .withOrganisation("NUS Student Affairs").withNote("Handles venue bookings")
@@ -423,7 +409,7 @@ public class PersonListPanelTest {
 
     @Test
     public void tags_onCardAndDetails_sortedIgnoringCase() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Person contact = new PersonBuilder(ALICE).withTags("friends", "EXCO", "Logistics", "budget").build();
             Region root = new PersonListPanel(FXCollections.observableArrayList(contact)).getRoot();
             new Scene(root);
@@ -441,7 +427,7 @@ public class PersonListPanelTest {
 
     @Test
     public void contactWithoutOptionalFields_showsPlaceholdersOnlyInDetails() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             Person contact = new PersonBuilder(ALICE).withoutAddress().withTags().build();
             Region root = new PersonListPanel(FXCollections.observableArrayList(contact)).getRoot();
             new Scene(root);
@@ -466,7 +452,7 @@ public class PersonListPanelTest {
 
     @Test
     public void resize_narrowWindowStacksContactPanes() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             assertContactLayoutAtWidth(900, Orientation.HORIZONTAL);
             assertContactLayoutAtWidth(700, Orientation.VERTICAL);
             assertContactLayoutAtWidth(760, Orientation.VERTICAL);
@@ -476,7 +462,7 @@ public class PersonListPanelTest {
 
     @Test
     public void archivedItems_showBadgeOnCardAndMarkerInEventHistory() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             EventTime date = new EventTime("25-10-2026");
             Event briefing = new Event("Briefing", date, date, List.of(ALICE.getName()));
             Event orientation = new Event("Orientation", date, date, List.of(ALICE.getName())).withArchived(true);
@@ -512,7 +498,7 @@ public class PersonListPanelTest {
 
     @Test
     public void assignedEvents_updateWithAttendanceWithoutChangingSelection() throws Exception {
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             EventTime time = new EventTime("25-10-2026");
             Event event = new Event("Final Concert", time, time, List.of(ALICE.getName()), Map.of());
             ObservableList<Event> events = FXCollections.observableArrayList(event);
@@ -548,7 +534,7 @@ public class PersonListPanelTest {
 
     @Test
     public void filterContacts_keepsVisibleSelectionAndClearsHiddenSelection() throws Exception {
-        PanelFixture fixture = callOnJavaFxThread(() -> {
+        PanelFixture fixture = JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             ObservableList<Person> persons = FXCollections.observableArrayList(ALICE, BENSON);
             FilteredList<Person> displayedPersons = new FilteredList<>(persons);
             Region root = new PersonListPanel(displayedPersons).getRoot();
@@ -559,31 +545,34 @@ public class PersonListPanelTest {
             return new PanelFixture(persons, displayedPersons, root, list);
         });
 
-        runOnJavaFxThread(() -> fixture.displayedPersons().setPredicate(person -> person != ALICE));
+        JavaFxTestSupport.runOnFxThreadAndWait(() ->
+                fixture.displayedPersons().setPredicate(person -> person != ALICE));
 
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             assertEquals(BENSON, fixture.list().getSelectionModel().getSelectedItem());
             assertEquals("Benson Meier", getLabel(fixture.root(), "selectedName").getText());
             assertEquals("ID: 2", getLabel(fixture.root(), "selectedMemberId").getText());
             assertEquals("Records: 1", getLabel(fixture.root(), "contactCount").getText());
         });
 
-        runOnJavaFxThread(() -> fixture.displayedPersons().setPredicate(person -> person == ALICE));
+        JavaFxTestSupport.runOnFxThreadAndWait(() ->
+                fixture.displayedPersons().setPredicate(person -> person == ALICE));
 
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             assertNull(fixture.list().getSelectionModel().getSelectedItem());
             assertTrue(getHint(fixture.root()).isVisible());
             assertFalse(getDetails(fixture.root()).isVisible());
         });
 
-        runOnJavaFxThread(() -> fixture.persons().clear());
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> fixture.persons().clear());
 
-        runOnJavaFxThread(() -> assertEquals("Records: 0", getLabel(fixture.root(), "contactCount").getText()));
+        JavaFxTestSupport.runOnFxThreadAndWait(() ->
+                assertEquals("Records: 0", getLabel(fixture.root(), "contactCount").getText()));
     }
 
     @Test
     public void replaceSelectedContact_showsUpdatedDetails() throws Exception {
-        PanelFixture fixture = callOnJavaFxThread(() -> {
+        PanelFixture fixture = JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             ObservableList<Person> persons = FXCollections.observableArrayList(ALICE, BENSON);
             FilteredList<Person> displayedPersons = new FilteredList<>(persons);
             Region root = new PersonListPanel(displayedPersons).getRoot();
@@ -597,9 +586,9 @@ public class PersonListPanelTest {
                 .withRole("President").withoutAddress().withNote("Updated note")
                 .withTags().build();
 
-        runOnJavaFxThread(() -> fixture.persons().setAll(ALICE, updatedBenson));
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> fixture.persons().setAll(ALICE, updatedBenson));
 
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             assertEquals(updatedBenson, fixture.list().getSelectionModel().getSelectedItem());
             assertEquals("Benson Tan", getLabel(fixture.root(), "selectedName").getText());
             assertEquals("ID: 2", getLabel(fixture.root(), "selectedMemberId").getText());
@@ -612,7 +601,7 @@ public class PersonListPanelTest {
 
     @Test
     public void removeSelectedContact_clearsSelectionInsteadOfSelectingNextContact() throws Exception {
-        PanelFixture fixture = callOnJavaFxThread(() -> {
+        PanelFixture fixture = JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             ObservableList<Person> persons = FXCollections.observableArrayList(ALICE, BENSON);
             FilteredList<Person> displayedPersons = new FilteredList<>(persons);
             Region root = new PersonListPanel(displayedPersons).getRoot();
@@ -623,9 +612,9 @@ public class PersonListPanelTest {
             return new PanelFixture(persons, displayedPersons, root, list);
         });
 
-        runOnJavaFxThread(() -> fixture.persons().setAll(BENSON));
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> fixture.persons().setAll(BENSON));
 
-        runOnJavaFxThread(() -> {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             assertNull(fixture.list().getSelectionModel().getSelectedItem());
             assertTrue(getHint(fixture.root()).isVisible());
         });
@@ -706,19 +695,6 @@ public class PersonListPanelTest {
 
     private static ScrollPane getDetails(Region root) {
         return (ScrollPane) root.lookup("#detailsScroll");
-    }
-
-    private static void runOnJavaFxThread(Runnable assertion) throws Exception {
-        callOnJavaFxThread(() -> {
-            assertion.run();
-            return null;
-        });
-    }
-
-    private static <T> T callOnJavaFxThread(Callable<T> action) throws Exception {
-        FutureTask<T> task = new FutureTask<>(action);
-        Platform.runLater(task);
-        return task.get(10, TimeUnit.SECONDS);
     }
 
     private record PanelFixture(ObservableList<Person> persons, FilteredList<Person> displayedPersons,

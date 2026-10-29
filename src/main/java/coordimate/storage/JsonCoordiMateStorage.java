@@ -49,11 +49,11 @@ public class JsonCoordiMateStorage {
             savedData.get().validateEventArchiveStatuses();
             List<String> yearZeroDeletedNames = savedData.get().removeYearZeroEvents();
             List<String> deletedNames = savedData.get().removeEventsWithEmbeddedParameters();
-            boolean removedHistory = savedData.get().removeYearZeroReminderStarts();
+            boolean hasRemovedHistory = savedData.get().removeYearZeroReminderStarts();
             List<EventNameCleanupResult.Rename> renamedEvents = savedData.get().renameEventsWithCollidingNames();
             EventNameCleanupResult changes = new EventNameCleanupResult(
                     deletedNames, renamedEvents, yearZeroDeletedNames);
-            if (changes.isEmpty() && !removedHistory) {
+            if (changes.isEmpty() && !hasRemovedHistory) {
                 return Optional.empty();
             }
             return Optional.of(new EventNameCleanup(savedData.get().toModelType(), changes));
@@ -62,6 +62,9 @@ public class JsonCoordiMateStorage {
         }
     }
 
+    /**
+     * Holds validated data and the event-name changes ready to be saved.
+     */
     record EventNameCleanup(ReadOnlyCoordiMate data, EventNameCleanupResult changes) {}
 
     /**
@@ -82,7 +85,9 @@ public class JsonCoordiMateStorage {
         }
     }
 
-    /** Prepares legacy date cleanup while the caller holds the shared data-file lock. */
+    /**
+     * Prepares legacy date cleanup while the caller holds the shared data-file lock.
+     */
     Optional<YearZeroCleanup> readYearZeroCleanup() throws DataLoadingException {
         Optional<JsonSerializableCoordiMate> savedData = JsonUtil.readJsonFile(
                 filePath, JsonSerializableCoordiMate.class, SavedJsonTypeValidator::validateCoordiMate);
@@ -95,8 +100,8 @@ public class JsonCoordiMateStorage {
             throw new DataLoadingException(e);
         }
         List<String> removedNames = savedData.get().removeYearZeroEvents();
-        boolean removedHistory = savedData.get().removeYearZeroReminderStarts();
-        if (removedNames.isEmpty() && !removedHistory) {
+        boolean hasRemovedHistory = savedData.get().removeYearZeroReminderStarts();
+        if (removedNames.isEmpty() && !hasRemovedHistory) {
             return Optional.empty();
         }
         ReadOnlyCoordiMate cleanedData;
@@ -108,6 +113,9 @@ public class JsonCoordiMateStorage {
         return Optional.of(new YearZeroCleanup(cleanedData, List.copyOf(removedNames)));
     }
 
+    /**
+     * Holds validated date cleanup and the names to report after saving.
+     */
     record YearZeroCleanup(ReadOnlyCoordiMate data, List<String> deletedNames) {}
 
     /**

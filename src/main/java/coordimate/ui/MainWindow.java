@@ -19,7 +19,6 @@ import coordimate.logic.parser.exceptions.ParseException;
 import coordimate.logic.reminder.ReminderDismissalException;
 import coordimate.model.event.Event;
 import coordimate.model.person.Person;
-import coordimate.model.tag.Tag;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -31,7 +30,6 @@ import javafx.beans.value.ObservableBooleanValue;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.geometry.Orientation;
-import javafx.geometry.Pos;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.AccessibleRole;
 import javafx.scene.Cursor;
@@ -328,6 +326,17 @@ public class MainWindow extends UiPart<Stage> {
      * Fills up all the placeholders of this window.
      */
     void fillInnerParts() {
+        setUpContactsAndEventsPanels();
+        TagListViewModel tagListViewModel = setUpTagsView();
+        setUpCommandVisibilityAndTabBindings(tagListViewModel);
+        setUpResultDisplay();
+        setUpReminderPanel();
+        setUpStatusBar();
+        setUpCommandInput();
+    }
+
+    /** Creates and places the Contacts and Events panels, and keeps their archived-empty messages in sync. */
+    private void setUpContactsAndEventsPanels() {
         personListPanel = new PersonListPanel(logic.getFilteredPersonList(), logic.getEventList(), clock);
         personListPanelPlaceholder.getChildren().add(personListPanel.getRoot());
 
@@ -336,6 +345,13 @@ public class MainWindow extends UiPart<Stage> {
         showArchivedEmptyMessages(logic.showingArchivedProperty().get());
         logic.showingArchivedProperty().addListener((observable, wasArchived, isArchived) ->
                 showArchivedEmptyMessages(isArchived));
+    }
+
+    /**
+     * Creates the Tags view model, binds the tag/member lists and their cell factory and count,
+     * wires tag selection/placeholder updates, and keeps the split-pane orientation responsive.
+     */
+    private TagListViewModel setUpTagsView() {
         TagListViewModel tagListViewModel = new TagListViewModel(logic.getTagList(), logic.getPersonList());
         tagListView.setItems(tagListViewModel.getTagNames());
         tagMemberListView.setItems(tagListViewModel.getMembers());
@@ -351,6 +367,14 @@ public class MainWindow extends UiPart<Stage> {
         tagSplitPane.widthProperty().addListener((observable, oldWidth, width) ->
                 tagSplitPane.setOrientation(width.doubleValue() < 650
                         ? Orientation.VERTICAL : Orientation.HORIZONTAL));
+        return tagListViewModel;
+    }
+
+    /**
+     * Binds command-panel visibility to the active view and archived state, tab/count labels,
+     * view-button labels, and the prefix-help text shown for the selected tab.
+     */
+    private void setUpCommandVisibilityAndTabBindings(TagListViewModel tagListViewModel) {
         // The archived view lists only the commands that restore items or leave the view.
         ReadOnlyBooleanProperty showingArchived = logic.showingArchivedProperty();
         showCommandsWhen(contactsCommands, contactsView.selectedProperty().and(showingArchived.not()));
@@ -371,10 +395,19 @@ public class MainWindow extends UiPart<Stage> {
                     : tab == tagsTab ? "Prefixes: t/Tag"
                     : "Prefixes: n/Name  p/Phone  e/Email  r/Role  t/Tag  m/Note");
         });
+    }
 
+    /** Creates and places the result-feedback display. */
+    private void setUpResultDisplay() {
         resultDisplay = new ResultDisplay();
         resultDisplayPlaceholder.getChildren().add(resultDisplay.getRoot());
+    }
 
+    /**
+     * Creates and places the reminder panel, configures the one-minute reminder timer and its
+     * date-change refresh, and starts the timer only if the stage is already showing.
+     */
+    private void setUpReminderPanel() {
         reminderPanel = new ReminderPanel(logic.getReminders(), this::dismissReminder);
         reminderPanelPlaceholder.visibleProperty().bind(reminderPanel.getRoot().visibleProperty());
         reminderPanelPlaceholder.managedProperty().bind(reminderPanel.getRoot().managedProperty());
@@ -388,10 +421,19 @@ public class MainWindow extends UiPart<Stage> {
         if (primaryStage.isShowing()) {
             reminderTimer.play();
         }
+    }
 
+    /** Creates and places the status-bar footer. */
+    private void setUpStatusBar() {
         StatusBarFooter statusBarFooter = new StatusBarFooter(dataFilePath);
         statusbarPlaceholder.getChildren().add(statusBarFooter.getRoot());
+    }
 
+    /**
+     * Creates the command box, registers keyboard/mouse/card handlers, enters the initial
+     * Command mode, and wires every command-cheat-sheet row to be interactive.
+     */
+    private void setUpCommandInput() {
         commandBox = new CommandBox(this::executeCommand, logic::isAwaitingDeleteConfirmation);
         commandBoxPlaceholder.getChildren().add(commandBox.getRoot());
         getRoot().addEventFilter(KeyEvent.KEY_PRESSED, this::handleKeyboardInput);
@@ -568,31 +610,6 @@ public class MainWindow extends UiPart<Stage> {
         prefixHelp.setAccessibleText(text);
     }
 
-    private String getAvatarColorClass(Person person) {
-        if (person.getTags().stream().anyMatch(tag -> tag.getTagName().equalsIgnoreCase("logistics"))) {
-            return "event-member-avatar-teal";
-        }
-        if (person.getTags().stream().anyMatch(tag -> tag.getTagName().equalsIgnoreCase("sponsor"))) {
-            return "event-member-avatar-amber";
-        }
-        return "event-member-avatar-purple";
-    }
-
-    private String initials(String fullName) {
-        String[] parts = fullName.strip().split("\\s+");
-        String result = parts[0].substring(0, 1);
-        if (parts.length > 1) {
-            result += parts[parts.length - 1].substring(0, 1);
-        }
-        return result.toUpperCase(Locale.ROOT);
-    }
-
-    private String formatMemberDetails(Person person) {
-        StringBuilder details = new StringBuilder(person.getRole().getValue());
-        person.getOrganisation().ifPresent(organisation -> details.append(" · ").append(organisation.getValue()));
-        return details.toString();
-    }
-
     private class TagMemberListCell extends ListCell<Person> {
         @Override
         protected void updateItem(Person person, boolean empty) {
@@ -603,33 +620,18 @@ public class MainWindow extends UiPart<Stage> {
                 return;
             }
 
-            Label avatar = new Label(initials(person.getName().getFullName()));
-            avatar.getStyleClass().addAll("event-member-avatar", getAvatarColorClass(person));
+            String fullName = person.getName().getFullName();
+            Label avatar = MemberIdentity.createAvatar(fullName, person);
+            Label name = MemberIdentity.createNameLabel(fullName, person.isArchived());
 
-            Label name = new Label(person.getName().getFullName() + (person.isArchived() ? " (archived)" : ""));
-            name.setWrapText(true);
-            name.setMinWidth(0);
-            name.getStyleClass().add("event-member-name");
-
-            FlowPane identityLine = new FlowPane(8, 4);
-            identityLine.setAlignment(Pos.CENTER_LEFT);
-            identityLine.getStyleClass().add("event-member-identity");
-            identityLine.getChildren().add(name);
+            FlowPane identityLine = MemberIdentity.createIdentityLine(name);
             Label memberId = new Label("ID: " + person.getMemberId().orElseThrow());
             memberId.setMinWidth(Region.USE_PREF_SIZE);
             memberId.getStyleClass().add("event-member-id");
             identityLine.getChildren().add(memberId);
-            person.getTags().stream()
-                    .sorted((left, right) -> String.CASE_INSENSITIVE_ORDER.compare(
-                            left.getTagName(), right.getTagName()))
-                    .map(Tag::getTagName)
-                    .map(TagStyle::createTagLabel)
-                    .forEach(identityLine.getChildren()::add);
+            MemberIdentity.appendTagChips(identityLine, person);
 
-            Label subtitle = new Label(formatMemberDetails(person));
-            subtitle.setWrapText(true);
-            subtitle.setMinWidth(0);
-            subtitle.getStyleClass().add("event-member-metadata");
+            Label subtitle = MemberIdentity.createSubtitleLabel(person);
 
             VBox details = new VBox(4, identityLine, subtitle);
             details.getStyleClass().add("event-member-details");
@@ -853,6 +855,9 @@ public class MainWindow extends UiPart<Stage> {
                 shown, logic.showingArchivedProperty());
     }
 
+    /**
+     * Dismisses the reminder and displays any save failure before restoring workspace focus.
+     */
     private void dismissReminder(Event reminder) {
         try {
             logic.dismissReminder(reminder);
