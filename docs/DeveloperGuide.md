@@ -9,6 +9,8 @@
 <!-- * Table of Contents -->
 <page-nav-print />
 
+Domain terms used throughout this guide are defined in the [glossary](#glossary).
+
 --------------------------------------------------------------------------------------------------------------------
 
 ## **Acknowledgements**
@@ -88,7 +90,7 @@ The `UI` component uses the JavaFX UI framework. The layouts of these UI parts a
 Besides the main window, the `UI` component provides:
 
 * `HelpWindow`, a command quick reference built from the command words of the command classes.
-* `TutorialWindow`, a guided tour shown as an overlay over the main window. `UiManager` opens it on first launch, and
+* `TutorialWindow`, which renders the [tutorial](#glossary) overlay. `UiManager` opens it on first launch, and
   the `tutorial` command or <kbd>F2</kbd> opens it again.
 * Command history in `CommandBox`, which keeps the commands entered in the current session for recall with the Up
   and Down arrow keys.
@@ -198,9 +200,8 @@ This section describes some noteworthy details on how certain features are imple
 
 ### Permanent member IDs
 
-Each saved contact has a unique, permanent `MemberId`, displayed as `ID: <number>`. Commands such as `edit`,
-`delete`, `assign`, and `unassign` identify contacts by this ID, so search results, filters, and list order never
-change which contact an ID refers to.
+The [member ID](#glossary) implementation uses `MemberId`, `MemberIdResolver`, and the persisted `nextMemberId`
+counter.
 
 #### Allocation and editing
 
@@ -286,7 +287,16 @@ The activity diagram below summarises the possible outcomes.
 **2. The data file is replaced in one step.**
 [`JsonCoordiMateStorage#saveCoordiMate`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/storage/JsonCoordiMateStorage.java)
 writes the new data to a temporary file in the same folder, then moves it over the data file with an atomic move.
-The data file therefore always holds either the complete old data or the complete new data.
+The move requests `ATOMIC_MOVE` and `REPLACE_EXISTING`. Under the
+[Java API contract](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/nio/file/Files.html#move(java.nio.file.Path,java.nio.file.Path,java.nio.file.CopyOption...)),
+replacing an existing target with an atomic move depends on the filesystem provider. An unsupported atomic move
+throws `AtomicMoveNotSupportedException`; this code has no fallback to a non-atomic overwrite.
+
+When atomic replacement is supported, a process-only interruption leaves the existing target at either the old
+or new complete version while the OS remains running. An interruption can leave a temporary file behind.
+The save path does not explicitly force file contents or directory metadata to durable storage, so this mechanism
+does not establish recovery guarantees after an OS crash or power loss. User preferences use a separate, direct
+JSON write through `JsonUserPrefsStorage` and do not have this atomic-replacement protection.
 
 A confirmed `delete` runs through `executeAtomicCommand` like any other command. Commands that do not change data,
 such as `list`, `search`, `filter`, and `members`, run directly on the live model without saving. Reminder
@@ -300,7 +310,7 @@ dismissal uses its own save path, described in [Event reminders](#event-reminder
   live model's data.
   * Pros: Works for every command that changes data without command-specific rollback code. The UI never shows
     an edit that was not saved.
-  * Cons: Copies all data for each command, which is acceptable for the expected 250 contacts.
+  * Cons: Copies all data for each command, which is acceptable for the expected [typical load](#glossary).
 
 * **Alternative 2:** Execute the command on the live model, and restore a snapshot if saving fails.
   * Pros: No copy is needed when saving succeeds.
@@ -308,7 +318,7 @@ dismissal uses its own save path, described in [Event reminders](#event-reminder
 
 ### Event reminders
 
-The **Upcoming events** panel lists reminders for events starting soon, ordered by start time and then by name.
+The **Upcoming events** panel lists [reminders](#glossary) for events starting soon, ordered by start time and then by name.
 
 #### Implementation
 
@@ -387,8 +397,6 @@ restart. Because `ReminderService` handles the save itself, `LogicManager` does 
     silently dismissed.
 
 ### Event attendance
-
-Attendance records whether each member of an event was present or absent.
 
 #### Implementation
 
@@ -566,14 +574,12 @@ events when it is tested again. Reversing this order would leave event member vi
 
 ### Marking contacts as on leave
 
-A contact can be marked as on leave until a given date. The status ends by itself once that date has passed.
-
 #### Implementation
 
 [`LeaveDate`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/person/LeaveDate.java)
-holds the **last day** of a contact's leave. `Person` stores it as an optional field, like birthday and note, which
-is set with `lv/` in `add` and `edit`, and cleared with an empty `lv/`. `Person#isOnLeave(LocalDate today)` returns
-true if a date is saved and `today` is not after it.
+implements the date check for the [on leave](#glossary) status. `Person` stores it as an optional field, like
+birthday and note, which is set with `lv/` in `add` and `edit`, and cleared with an empty `lv/`.
+`Person#isOnLeave(LocalDate today)` delegates the date comparison to `LeaveDate#covers`.
 
 A date entered with `lv/` must not be in the past, but any real date is accepted when loading the data file, so
 that leave which has ended can still be loaded.
@@ -621,8 +627,8 @@ In the data file, the date is stored in a `leaveUntil` field. Contacts without t
 
 ### Archiving contacts and events
 
-`archive`, `unarchive`, `archiveevent`, and `unarchiveevent` hide a contact or an event from the normal lists without
-deleting it. `list archived` shows only archived items, and `list` returns to the active ones.
+`archive`, `unarchive`, `archiveevent`, and `unarchiveevent` implement [archiving](#glossary).
+`list archived` selects the archive view, and `list` returns to the active view.
 
 #### Implementation
 
@@ -631,8 +637,7 @@ and [`Event`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/
 each have a boolean `archived` field. Both are immutable, so archiving returns a copy from `withArchived(boolean)`,
 and every other copy method passes the flag on. `Person` takes `archived` as a parameter of its full constructor,
 which every copy of an existing contact uses, so the compiler makes each copy, such as `EditCommand` and the tag
-updates in `CoordiMate`, pass the flag on. Archiving changes nothing else: an archived contact keeps its name in event
-member lists, and an archived event keeps its members and attendance.
+updates in `CoordiMate`, pass the flag on.
 
 **Hiding archived items.** [`ModelManager`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/ModelManager.java)
 keeps an archive view, which is true while archived items are shown, separately from the contact filter set by
@@ -838,50 +843,67 @@ so that `y` is never recalled as a command. The history is kept only for the cur
 
 Priorities: High (must have) - `* * *`, Medium (nice to have) - `* *`, Low (unlikely to have) - `*`
 
-| Priority | As a … | I want to … | So that I can …                                                                                 |
-|----------|--------|-------------|-------------------------------------------------------------------------------------------------|
-| `* * *` | first-time user | view a tutorial | learn how to navigate CoordiMate                                                                |
-| `* *` | returning user | access the tutorial again | refresh my memory when I forget how to use CoordiMate                                           |
-| `* * *` | Exco member | save a contact's details | keep track of the people I know                                                                 |
-| `* * *` | Exco member | edit a saved contact | correct or update the contact's information                                                     |
-| `* * *` | Exco member | delete a contact | remove an entry that is no longer needed                                                        |
-| `* * *` | Exco member | save a contact's email address | keep a complete record of the contact's information                                             |
-| `* *` | Exco member | record additional details about a contact | keep relevant background information at hand                                                    |
-| `* *` | Exco member | record a contact's birthday | remember to wish the contact well                                                               |
-| `*` | Exco member | attach multiple phone numbers or email addresses to a contact | record the contact's different personal and work details                                        |
-| `*` | Exco member | attach a photo to a contact | associate the contact's face with their name                                                    |
-| `*` | Exco member entering data quickly | enter phone numbers containing extra whitespace or dashes | avoid manually reformatting phone numbers                                                       |
-| `*` | Exco member entering data quickly | enter Telegram handles with or without the `@` symbol | avoid manually reformatting handles                                                             |
-| `* * *` | event lead | search and filter contacts by name, tag, or role | retrieve specific contact information quickly                                                   |
-| `* *` | Exco member | filter contacts by their assigned colour | search contacts in a particular group quickly                                                   |
-| `*` | Exco member | have urgent contacts appear at the top of the contact list | identify them quickly                                                                           |
-| `* *` | experienced user | colour-code contacts by role or group | identify their roles or groups quickly                                                          |
-| `* *` | Exco member | assign a colour to a contact | distinguish that contact visually                                                               |
-| `*` | Exco member | choose from a set of default colours | assign colours without configuring them myself                                                  |
-| `*` | Exco member | change a contact's assigned colour | keep the colour accurate when the contact's role or group changes                               |
-| `* * *` | Exco member | assign tags to contacts | categorize contacts for later retrieval                                                         |
-| `* *` | Exco member | choose from a set of common default tags | categorize contacts quickly                                                                     |
-| `* *` | Exco member | create custom tags | categorize contacts in ways not covered by the default tags                                     |
-| `* * *` | Exco member | create an event with a name and date | keep a record around which I can organize contacts and attendance                               |
-| `* * *` | Exco member | assign a member to an event | track who is involved in that event                                                             |
-| `* * *` | Exco member | remove a member from an event | correct the assignment when someone is no longer involved                                       |
-| `* * *` | Exco member | view the members assigned to an event | see the committee allocation at a glance                                                        |
-| `* *` | Exco member | create future events and assign members to them | plan committee allocation ahead of time                                                         |
-| `*` | user with limited time | have the most frequently used event appear first | access it without extra navigation                                                              |
-| `*` | forgetful Exco member | receive reminders for upcoming events | avoid missing them                                                                              |
-| `*` | forgetful Exco member | see everyone assigned to an event | avoid overlooking a participant                                                                 |
-| `* * *` | Exco member who organizes events | track attendance for an event | monitor participation                                                                           |
-| `* * *` | Exco member | mark a member as present or absent for an event | keep an accurate attendance record                                                              |
-| `* *` | Exco member | view the counts of present and absent members for an event | gauge overall turnout quickly                                                                   |
-| `* *` | Exco member | view the members marked absent for an event | follow up with them individually                                                                |
-| `*` | Exco member | view the edit history of attendance records | see when a member's status was changed and avoid disputes                                       |
-| `*` | Exco member | export attendance records | use them for reporting or record-keeping                                                        |
-| `*` | Exco member | archive contacts | declutter my active contact list without permanently deleting entries                           |
-| `*` | Exco member | archive past events | keep my event list focused on current and upcoming events                                       |
-| `*` | Exco member | access archived contacts and events | retrieve historical information when needed                                                     |
-| `*` | Exco member | mark a contact as on leave until a specified date | remember that the contact is temporarily unavailable without manually clearing the status later |
-| `* *` | Exco member | switch between the Contacts and Events views | navigate between contact and event information easily                                           |
-| `*` | user who values a pleasant interface | switch between light and dark modes | adjust the display to suit my environment                                                       |
+Priority expresses the importance of a story, not its implementation status. The tables below separate current
+features from ideas that are not implemented.
+
+#### Current features
+
+| Priority | As a … | I want to … | So that I can … |
+|----------|--------|-------------|----------------|
+| `* * *` | first-time user | view a tutorial | learn how to navigate CoordiMate |
+| `* *` | returning user | access the tutorial again | refresh my memory when I forget how to use CoordiMate |
+| `* *` | EXCO member | view command formats and examples in Help | check how to enter an unfamiliar command |
+| `* * *` | EXCO member | save a contact's name, phone number, email address, and role | keep track of the people I know |
+| `* * *` | EXCO member | edit a saved contact | correct or update the contact's information |
+| `* * *` | EXCO member | confirm before deleting a contact | remove an unwanted entry after checking that I selected the right person |
+| `* *` | EXCO member | record a contact's address, organisation, and note | keep relevant background information at hand |
+| `* *` | EXCO member | record a contact's birthday | remember to wish the contact well |
+| `* * *` | EXCO member | have data changes saved automatically | retain my work across restarts without a separate save command |
+| `*` | EXCO member entering data quickly | enter phone numbers containing spaces, hyphens, or brackets | avoid manually removing accepted phone formatting |
+| `* * *` | event lead | search contacts by name, phone number, email address, address, or organisation | retrieve specific contact information quickly |
+| `* * *` | event lead | filter contacts by tag, event membership, or organisation, including combined criteria | retrieve contacts in the groups I need |
+| `* *` | experienced user | recognise tags by their text labels and built-in colours | identify contact categories at a glance |
+| `* * *` | EXCO member | assign tags to contacts | categorise contacts for later retrieval |
+| `* *` | EXCO member | choose from a set of common default tags | categorise contacts quickly |
+| `* *` | EXCO member | create custom tags | categorise contacts in ways not covered by the default tags |
+| `* *` | EXCO member | rename or delete a saved tag | keep the tag list and affected contacts up to date |
+| `* *` | EXCO member | select a tag and view its contacts | see who belongs to that category |
+| `* * *` | EXCO member | create an event with a name, start date/time, and end date/time | organise contacts and attendance around a scheduled activity |
+| `* *` | EXCO member | edit an event's name or schedule | keep event details accurate when plans change |
+| `* *` | EXCO member | delete an event | remove an event and its assignments and attendance records when no longer needed |
+| `* * *` | EXCO member | assign one or more contacts to an event using permanent member IDs | track who is involved in that event |
+| `* * *` | EXCO member | remove one or more contacts from an event | correct assignments when someone is no longer involved |
+| `* * *` | EXCO member | view all members assigned to an event | see the committee allocation without overlooking a participant |
+| `* *` | EXCO member | create future events and assign members to them | plan committee allocation ahead of time |
+| `*` | forgetful EXCO member | see upcoming event reminders while CoordiMate is running | avoid missing events |
+| `*` | EXCO member | dismiss an upcoming event reminder | hide a reminder I have already acknowledged |
+| `* * *` | EXCO member | mark an assigned member as present or absent, and correct that status later | keep an accurate attendance record |
+| `* *` | EXCO member | view the counts of present, absent, and unmarked members for an event | gauge turnout and identify incomplete attendance records |
+| `* *` | EXCO member | see each member's attendance status in the event roster | identify absent members to follow up with |
+| `*` | EXCO member | archive contacts | declutter my active contact list without permanently deleting entries |
+| `*` | EXCO member | archive events | keep my event list focused on current work |
+| `*` | EXCO member | view and restore archived contacts and events | retrieve historical information and return items to active use |
+| `*` | EXCO member | mark a contact as on leave through a specified date | see their temporary unavailability until the leave period ends |
+| `* *` | EXCO member | switch between the Contacts, Events, and Tags views | navigate between related information easily |
+| `* *` | user who prefers the keyboard | browse cards and switch views using keyboard shortcuts | inspect saved information without reaching for the mouse |
+| `* *` | returning user | recall earlier commands from the current session | reuse commands without retyping them |
+| `*` | EXCO member | clear all contacts, events, and custom tags | start a new dataset with the default tags |
+
+#### Future ideas (not implemented)
+
+| Priority | As a … | I want to … | So that I can … |
+|----------|--------|-------------|----------------|
+| `*` | EXCO member | attach multiple phone numbers or email addresses to a contact | record the contact's different personal and work details |
+| `*` | EXCO member | attach a photo to a contact | associate the contact's face with their name |
+| `*` | EXCO member entering data quickly | enter Telegram handles with or without the `@` symbol | avoid manually reformatting handles |
+| `* * *` | event lead | filter contacts by role | retrieve contacts with a particular responsibility |
+| `* *` | EXCO member | filter contacts by an assigned colour | find contacts in a particular colour group quickly |
+| `*` | EXCO member | have urgent contacts appear at the top of the contact list | identify them quickly |
+| `* *` | EXCO member | assign and change a contact's colour, including choosing a default colour | keep visual groupings accurate when roles or groups change |
+| `*` | user with limited time | have the most frequently used event appear first | access it without extra navigation |
+| `*` | EXCO member | view the edit history of attendance records | see when a member's status was changed and avoid disputes |
+| `*` | EXCO member | export attendance records | use them for reporting or record-keeping |
+| `*` | user who values a pleasant interface | switch between light and dark modes | adjust the display to suit my environment |
 
 ### Use cases
 
@@ -918,7 +940,7 @@ dismissing a reminder ([UC12](#uc12-dismiss-an-event-reminder)).
 
     Use case resumes from step 1.
 
-* 1c. Another contact already has the same name, phone number, or email address.
+* 1c. The supplied details would create a [duplicate contact](#glossary).
   * 1c1. CoordiMate informs the EXCO member that the contact already exists and makes no changes.
 
     Use case ends.
@@ -955,7 +977,7 @@ dismissing a reminder ([UC12](#uc12-dismiss-an-event-reminder)).
 
     Use case resumes from step 2.
 
-* 1d. The new name, phone number, or email address belongs to another contact.
+* 1d. The proposed changes would create a [duplicate contact](#glossary).
   * 1d1. CoordiMate informs the EXCO member of the conflict and makes no changes.
 
     Use case ends.
@@ -1009,7 +1031,8 @@ dismissing a reminder ([UC12](#uc12-dismiss-an-event-reminder)).
 
 1. EXCO member requests to search contacts using a keyword or phrase.
 2. CoordiMate shows the contacts whose name, phone number, email address, address, or organisation contains the
-   keyword, ignoring case, and the number found.
+   keyword, ignoring case, and the number found. Phone matching uses [normalised phone numbers](#glossary).
+   Extra spaces in the keyword and in addresses are treated as one space.
 
    Use case ends.
 
@@ -1245,11 +1268,11 @@ Removing members from an event is similar, with these differences:
 
 #### UC12: Dismiss an event reminder
 
-**Preconditions:** At least one event starts within the next day.
+**Preconditions:** At least one event has an eligible, undismissed [reminder](#glossary).
 
 **MSS**
 
-1. CoordiMate shows a numbered reminder for each event that starts within the next day, in order of start time.
+1. CoordiMate shows numbered reminders in the **Upcoming events** panel, in order of start time.
 2. EXCO member requests to dismiss a reminder, identifying it by its number.
 3. CoordiMate hides the reminder, saves the dismissal, and renumbers the remaining reminders.
 
@@ -1269,7 +1292,7 @@ Removing members from an event is similar, with these differences:
     Use case ends.
 
 * 3b. The EXCO member later changes the event's start.
-  * 3b1. CoordiMate shows the reminder again if the new start is within the next day.
+  * 3b1. CoordiMate shows the reminder again if the new start qualifies for a [reminder](#glossary).
 
     Use case ends.
 
@@ -1350,49 +1373,80 @@ use its name ([UC07](#uc07-create-an-event)).
 
 ### Non-Functional Requirements
 
-1.  Should work on any _mainstream OS_ (Windows, macOS, Linux) as long as it has Java `25` or above installed.
-2.  Should be able to hold up to 250 contacts and 6 events per semester without a noticeable sluggishness in performance for typical usage.
-3.  A user with above average typing speed for regular English text (i.e. not code, not system admin commands) should be able to accomplish most of the tasks faster using commands than using the mouse.
-4.  Should respond to any user command within 2 seconds under typical load (up to 250 contacts, 6 events).
-5.  Should not require an internet connection to operate, since all contact, event, and attendance data is stored and managed locally.
-6.  Should not lose previously saved data if the application terminates unexpectedly (e.g. crash, power loss) mid-operation.
-7.  Data should be stored in a human-editable, non-proprietary file format (not a DBMS), so users can back up, inspect, or migrate their data manually.
-8.  Should be shipped as a single JAR file that does not require a separate installer.
-9.  A first-time user with no prior experience should be able to complete the in-app tutorial and add their first contact within 10 minutes.
-10. The colour-coding feature should not be the sole means of distinguishing contact categories, so the app remains usable by colour-blind users (e.g. tags are also shown as text).
+These are acceptance targets, not measured results. Performance tests should use one running CoordiMate instance
+and a valid data file on writable local storage. Record the OS, Java version, processor, memory, and dataset with
+the results. Speed and onboarding targets require timed trials with users from the target user profile.
+
+1.  Should run on the [mainstream OS platforms](#glossary) with Java `25`, targeting the OS and Java configurations
+    used by the project's CI workflow. The packaged JAR should also receive a manual launch check on each target
+    platform before release compatibility is claimed.
+2.  Should store and reload a dataset at the maximum [typical load](#glossary). Successfully saved contact details,
+    member IDs, tags, event schedules, assignments, attendance, archive flags, leave dates, and reminder dismissals
+    should survive a normal restart. Performance at this load is assessed using NFR 4.
+    This is a capacity target for the whole local dataset, not an enforced data limit. The app does not partition
+    data by semester.
+3.  For users familiar with CoordiMate's keyboard shortcuts, a short sequence of switching views and selecting
+    adjacent cards should take less time on average using shortcuts than using the mouse. Compare repeated
+    trials by the same user from the same starting view and selection, including keyboard mode changes.
+4.  Under the [typical load](#glossary), common commands such as `add`, `edit`, `search`, `filter`, `list`,
+    `addevent`, `assign`, and `markattendance` should each have a median response time of at most 2 seconds over
+    repeated trials on the recorded test machine. Measure from pressing Enter to visible feedback and completion
+    of the resulting view update, including any save. Exclude application startup and time waiting for user
+    confirmation; measure the prompt and the response after confirmation separately when applicable.
+5.  Contact, tag, event, attendance, archive, and reminder features, including built-in Help and the tutorial,
+    should work without an internet connection. Opening the online User Guide requires internet access.
+6.  If only the application process terminates during a save while the OS remains running, an existing valid
+    local data file should retain either the previous complete dataset or the new complete dataset. This assumes
+    that the filesystem and Java provider support atomic replacement, as described in
+    [Saving data atomically](#saving-data-atomically). It covers application data, excluding user preferences,
+    OS crashes, power loss, storage hardware failure, and external file modification.
+7.  Application data should be stored in human-readable JSON that users can inspect and back up with ordinary
+    file tools. Manual edits should be made with the app closed and must satisfy the saved-data constraints.
+8.  Should be distributed as a single application JAR with no CoordiMate installer, assuming the required Java
+    environment is already installed.
+9.  After completing or closing the tutorial, a first-time user from the target user profile should be able to
+    add one contact within 10 minutes without assistance from another person. Supply valid, unique name, phone,
+    email, and role values as task input. Start timing when the command box is ready for input and stop when
+    the saved contact is visible with those details and a success message. Consulting built-in Help, command
+    hints, or the User Guide and correcting commands count towards the limit; installation, launch, and tutorial
+    reading time do not.
+10. Every [colour-coded tag](#glossary) should display its name as text so that contact categories can be
+    distinguished without relying on colour.
 
 ### Glossary
 
-* **Archive**: To move a contact or event out of the active list without permanently deleting it, so that it can still be retrieved later.
+* **Archive**: To mark a contact or event as archived, hiding it from the active lists while preserving its details, event assignments, and attendance records.
 * **Assigned member**: A contact who has been assigned to a particular event. Also referred to as a *member* of that event.
-* **Attendance status**: Whether an assigned member was `present` or `absent` at an event.
+* **Attendance status**: A recorded value of `present` or `absent` for an assigned member at an event. A member with no attendance record is shown as unmarked, not automatically absent.
 * **CCA (Co-Curricular Activity)**: A student club or society in a university, such as a band, sports team or interest group.
-* **CLI (Command Line Interface)**: A way of using the app by typing text commands, as opposed to clicking buttons in a graphical interface.
-* **Colour-code**: To assign a colour to a contact so that contacts of the same role or group can be recognised visually.
+* **CLI (Command Line Interface)**: An interface operated by typing text commands. CoordiMate accepts these commands in a command box within its graphical window.
+* **Colour-coded tag**: A tag whose display colour is assigned by the app based on its name. `EXCO`, `Logistics`, `Sponsor`, and `UniversityStaff` have distinct built-in colours; other tags share a default colour. Users cannot choose tag or contact colours.
+* **Command mode**: The keyboard mode for entering commands in the command box.
 * **Committee handover**: The transfer of responsibilities and information from an outgoing EXCO to the incoming EXCO.
-* **Contact**: A person saved in CoordiMate, with details such as name, phone number, email address and role.
+* **Contact**: A person whose details are saved in CoordiMate and identified by a member ID.
 * **Custom tag**: A tag created by the user, to categorise contacts in ways not covered by the default tags.
 * **Default tag**: A tag that is available without the user creating it: `EXCO`, `Sponsor`, `UniversityStaff` and `Logistics`.
-* **Member ID**: A unique, permanent positive integer assigned to a contact, displayed as `ID: <number>`, and used to identify them in commands across searches, filters, and restarts.
-* **Duplicate contact**: A contact with the same name (ignoring case and surrounding spaces), normalised phone number, or email address as another saved contact.
-* **Event**: An activity organised by the CCA, such as a concert or fair, with a unique name, a start date/time and an end date/time.
+* **Duplicate contact**: A contact with the same name (ignoring case and normalising spaces), normalised phone number, or email address (ignoring case) as another saved contact, including an archived one.
+* **Event**: A CCA activity recorded in CoordiMate, such as a concert or fair, identified by a name that is unique ignoring case and extra spaces.
 * **Event lead**: An EXCO member who is in charge of organising a particular event.
 * **EXCO (Executive Committee)**: The group of students elected to lead and run a CCA.
 * **External contact**: A contact from outside the CCA, such as a sponsor, university staff member, or EXCO member of a collaborating CCA.
 * **Future event**: An event whose start date/time is later than the current date/time.
 * **Internal contact**: A contact from within the CCA, such as a member, fellow EXCO member or advisor.
 * **JAR file**: A single file that packages a Java application so that it can be run without installation.
-* **Local data file**: The file on the user's computer where CoordiMate automatically saves all contacts, events and attendance records.
-* **Mainstream OS**: Windows, Linux, Unix, or macOS
+* **Local data file**: The JSON file on the user's computer where CoordiMate saves contacts, tags, events, attendance records, and reminder dismissals. Its default path is `data/coordimate.json`, relative to the working directory.
+* **Mainstream OS**: Windows, macOS, or Linux.
+* **Member ID**: A unique, permanent positive integer assigned to a contact, displayed as `ID: <number>`, and used in commands across searches, filters, and restarts.
+* **Navigation mode**: The keyboard mode in which key presses browse cards and switch views.
 * **Normalised phone number**: A phone number with spaces, hyphens and brackets removed, used to detect duplicates. For example, `+65 9123 4567` and `+6591234567` are the same.
-* **On leave**: A temporary status marking a contact as unavailable until a specified date, after which it is cleared automatically.
-* **Organisation**: The external company or body that a contact belongs to, such as a sponsor company or university office.
+* **On leave**: A contact with a saved leave end date is unavailable through that date, inclusive, using the computer's local date.
+* **Organisation**: The company or body that a contact belongs to, such as a CCA, sponsor company, or university office.
 * **Prefix**: The short label before a value in a command that tells CoordiMate which field it belongs to, such as `n/` for name or `t/` for tag.
+* **Reminder**: An in-app notice for an upcoming, non-archived event, shown only while CoordiMate is running. Timed starts qualify from 24 hours before the start through the start time; date-only starts qualify on the preceding day and the start date. Reminders refresh at startup, after commands, and once per minute.
 * **Role**: A contact's responsibility or position in relation to the CCA, such as `Logistics Lead` or `Vice-President`.
 * **Tag**: A short label attached to a contact to categorise it, such as `EXCO` or `Sponsor`. A contact can have multiple tags.
-* **Telegram handle**: A user's username on the Telegram messaging app, such as `@aishatan`.
-* **Tutorial**: An in-app guide that introduces a first-time user to CoordiMate's key features.
-* **Typical usage**: Using CoordiMate with up to 250 contacts and 6 events, as described in the NFRs.
+* **Tutorial**: An in-app introduction to CoordiMate's views, commands, and keyboard navigation.
+* **Typical load**: A local dataset of up to 250 contacts and 6 events in total, including archived items, with up to 250 assigned members and their attendance records per event.
 
 --------------------------------------------------------------------------------------------------------------------
 
