@@ -44,53 +44,55 @@ public class TutorialWindowTest {
         JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             TutorialWindow tutorial = new TutorialWindow();
             Stage stage = createStage(tutorial, 1100, 760);
-            tutorial.show();
-            applyLayout(stage);
+            try (AutoCloseable closeStage = JavaFxTestSupport.closing(stage::close)) {
+                tutorial.show();
+                applyLayout(stage);
 
-            Label stepCounter = (Label) stage.getScene().lookup("#stepCounter");
-            Label stepTitle = (Label) stage.getScene().lookup("#stepTitle");
-            Button backButton = (Button) stage.getScene().lookup("#backButton");
-            Button nextButton = (Button) stage.getScene().lookup("#nextButton");
-            List<String> titles = List.of("Welcome to CoordiMate!", "Explore the Contacts tab",
-                    "Explore contact commands", "Use the command box", "Select a contact card",
-                    "View contact details", "Explore the Events tab", "Explore an event card",
-                    "View event details", "View the member list", "Explore the Tags tab",
-                    "Explore the tag list", "View tag details", "Navigate with your keyboard",
-                    "Get help anytime", "Take the tour again");
-            assertTrue(backButton.isDisabled());
-            for (int index = 0; index < titles.size(); index++) {
-                assertEquals("Step " + (index + 1) + " of 16", stepCounter.getText());
-                assertEquals(titles.get(index), stepTitle.getText());
-                if (index == 5) {
-                    assertTrue(tutorial.getCurrentStep().description().contains("assigned events"));
+                Label stepCounter = (Label) stage.getScene().lookup("#stepCounter");
+                Label stepTitle = (Label) stage.getScene().lookup("#stepTitle");
+                Button backButton = (Button) stage.getScene().lookup("#backButton");
+                Button nextButton = (Button) stage.getScene().lookup("#nextButton");
+                List<String> titles = List.of("Welcome to CoordiMate!", "Explore the Contacts tab",
+                        "Explore contact commands", "Use the command box", "Select a contact card",
+                        "View contact details", "Explore the Events tab", "Explore an event card",
+                        "View event details", "View the member list", "Explore the Tags tab",
+                        "Explore the tag list", "View tag details", "Navigate with your keyboard",
+                        "Get help anytime", "Take the tour again");
+                assertTrue(backButton.isDisabled());
+                for (int index = 0; index < titles.size(); index++) {
+                    assertEquals("Step " + (index + 1) + " of 16", stepCounter.getText());
+                    assertEquals(titles.get(index), stepTitle.getText());
+                    if (index == 5) {
+                        assertTrue(tutorial.getCurrentStep().description().contains("assigned events"));
+                    }
+                    if (index == 9) {
+                        assertTrue(tutorial.getCurrentStep().description().contains("mark attendance"));
+                    }
+                    if (index == 14) {
+                        assertTrue(tutorial.getCurrentStep().description()
+                                .contains("type help in the command box"));
+                        assertTrue(tutorial.getCurrentStep().description().contains(HelpWindow.HELP_SHORTCUT));
+                    }
+                    if (index < titles.size() - 1) {
+                        nextButton.fire();
+                    }
                 }
-                if (index == 9) {
-                    assertTrue(tutorial.getCurrentStep().description().contains("mark attendance"));
-                }
-                if (index == 14) {
-                    assertTrue(tutorial.getCurrentStep().description().contains("type help in the command box"));
-                    assertTrue(tutorial.getCurrentStep().description().contains(HelpWindow.HELP_SHORTCUT));
-                }
-                if (index < titles.size() - 1) {
-                    nextButton.fire();
-                }
+                assertTrue(tutorial.getCurrentStep().description().contains("whenever you need a reminder"));
+                assertTrue(tutorial.getCurrentStep().description().contains("type tutorial in the command box"));
+                assertTrue(tutorial.getCurrentStep().description().contains(TutorialWindow.TUTORIAL_SHORTCUT));
+                assertEquals("Finish →", nextButton.getText());
+                backButton.fire();
+                assertEquals("Step 15 of 16", stepCounter.getText());
+                nextButton.fire();
+                nextButton.fire();
+                assertFalse(tutorial.isShowing());
+
+                tutorial.show();
+                assertEquals("Step 1 of 16", stepCounter.getText());
+                Button closeButton = (Button) stage.getScene().lookup("#closeButton");
+                closeButton.fire();
+                assertFalse(tutorial.isShowing());
             }
-            assertTrue(tutorial.getCurrentStep().description().contains("whenever you need a reminder"));
-            assertTrue(tutorial.getCurrentStep().description().contains("type tutorial in the command box"));
-            assertTrue(tutorial.getCurrentStep().description().contains(TutorialWindow.TUTORIAL_SHORTCUT));
-            assertEquals("Finish →", nextButton.getText());
-            backButton.fire();
-            assertEquals("Step 15 of 16", stepCounter.getText());
-            nextButton.fire();
-            nextButton.fire();
-            assertFalse(tutorial.isShowing());
-
-            tutorial.show();
-            assertEquals("Step 1 of 16", stepCounter.getText());
-            Button closeButton = (Button) stage.getScene().lookup("#closeButton");
-            closeButton.fire();
-            assertFalse(tutorial.isShowing());
-            stage.close();
         });
     }
 

@@ -443,22 +443,23 @@ public class UiManagerTest {
             LogicManager logic = new LogicManager(new ModelManager(), null);
             Stage primaryStage = new Stage();
             UiManager uiManager = new UiManager(logic, Path.of("data", "coordimate.json"));
-            uiManager.start(primaryStage);
+            try (AutoCloseable closeStage = JavaFxTestSupport.closing(primaryStage::close);
+                    AutoCloseable stopManager = JavaFxTestSupport.closing(uiManager::stop)) {
+                uiManager.start(primaryStage);
 
-            Button nextButton = (Button) primaryStage.getScene().lookup("#nextButton");
-            for (int step = 0; step < 15; step++) {
+                Button nextButton = (Button) primaryStage.getScene().lookup("#nextButton");
+                for (int step = 0; step < 15; step++) {
+                    nextButton.fire();
+                }
+                assertEquals("Step 16 of 16", ((Label) primaryStage.getScene().lookup("#stepCounter")).getText());
+                assertEquals("Finish →", nextButton.getText());
+                assertFalse(logic.hasSeenTutorial());
+
                 nextButton.fire();
+                assertTrue(logic.hasSeenTutorial());
+                assertFalse(primaryStage.getScene().lookup("#tutorialOverlay").isVisible());
+                assertTrue(((ToggleButton) primaryStage.getScene().lookup("#tagsView")).isSelected());
             }
-            assertEquals("Step 16 of 16", ((Label) primaryStage.getScene().lookup("#stepCounter")).getText());
-            assertEquals("Finish →", nextButton.getText());
-            assertFalse(logic.hasSeenTutorial());
-
-            nextButton.fire();
-            assertTrue(logic.hasSeenTutorial());
-            assertFalse(primaryStage.getScene().lookup("#tutorialOverlay").isVisible());
-            assertTrue(((ToggleButton) primaryStage.getScene().lookup("#tagsView")).isSelected());
-            uiManager.stop();
-            primaryStage.close();
         });
     }
 

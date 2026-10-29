@@ -81,4 +81,15 @@ public final class JavaFxTestSupport {
     public interface FxAction {
         void run() throws Exception;
     }
+
+    /**
+     * Adapts a cleanup action (e.g. {@code stage::close}) into an {@link AutoCloseable} so a test
+     * can register it in a try-with-resources statement as soon as the owning resource is created.
+     * Resources are closed in reverse declaration order, and try-with-resources guarantees every
+     * one is attempted even if an earlier close or the test body itself fails, attaching any
+     * additional failure as suppressed on the original rather than replacing or swallowing it.
+     */
+    public static AutoCloseable closing(Runnable action) {
+        return action::run;
+    }
 }
