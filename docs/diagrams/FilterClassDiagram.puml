@@ -3,6 +3,10 @@
 skinparam arrowThickness 1.1
 skinparam arrowColor LOGIC_COLOR_T4
 skinparam classBackgroundColor LOGIC_COLOR
+skinparam genericDisplay old
+skinparam nodesep 90
+skinparam ranksep 100
+skinparam minClassWidth 190
 
 package Logic as LogicPackage <<Rectangle>> {
 Class FilterCommandParser
@@ -10,21 +14,30 @@ Class FilterCommand
 }
 
 package Model as ModelPackage <<Rectangle>> {
-Class FilterCriterion MODEL_COLOR
-Class "<<enumeration>>\nFilterField" as FilterField MODEL_COLOR
-Class ContactFilterPredicate MODEL_COLOR
 Class TagFilterPredicate MODEL_COLOR
+Class ContactFilterPredicate MODEL_COLOR
 Class EventMembersPredicate MODEL_COLOR
 Class "<<interface>>\nPredicate<Person>" as Predicate MODEL_COLOR
+Class FilterCriterion MODEL_COLOR
+Class "<<enumeration>>\nFilterField" as FilterField MODEL_COLOR
 }
 
+' Each transparent arrow below only carries a label, so that the label sits clear of the visible
+' arrow beside it. Keep each transparent arrow directly after the arrow it labels.
 FilterCommandParser ..> FilterCommand : creates >
-FilterCommand --> "1..*" FilterCriterion
+FilterCommandParser ..> FilterCriterion : creates >
+FilterCommand --> FilterCriterion
+FilterCommand -[#transparent]-> "1..*" FilterCriterion
 FilterCriterion --> "1" FilterField
+FilterCommand ..> TagFilterPredicate : creates >
 FilterCommand ..> ContactFilterPredicate : creates >
+FilterCommand ..> EventMembersPredicate : creates >
 
-ContactFilterPredicate ..|> Predicate
-ContactFilterPredicate --> "1..* criteria" Predicate
+' ContactFilterPredicate is placed below Predicate, so that its arrows reach Predicate from
+' underneath and their arrowheads do not overlap those of the other two implementations.
 TagFilterPredicate ..|> Predicate
+ContactFilterPredicate -up-> "criteria" Predicate
+ContactFilterPredicate -[#transparent]up-> "1..*" Predicate
+ContactFilterPredicate .up.|> Predicate
 EventMembersPredicate ..|> Predicate
 @enduml

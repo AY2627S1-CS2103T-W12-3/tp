@@ -350,13 +350,15 @@ The history is saved with the event, so a dismissal survives restarting the app.
 
 The sequence diagram below shows `dismiss 1`, both when the dismissal is saved and when saving fails.
 
-<puml src="diagrams/DismissSequenceDiagram.puml" alt="Interactions when a reminder is dismissed" />
+<puml src="diagrams/DismissSequenceDiagram.puml" width="700" alt="Interactions when a reminder is dismissed" />
 
-`DismissCommand` checks the index against the current reminder list, then asks `ReminderService` to dismiss that
-event's reminder. Like other commands that change data, the service saves an updated copy of the event before
-changing the live event, and keeps the event's details, members, and attendance unchanged.
+`DismissCommand` checks the index against the reminder list as last shown, so that the index matches the panel, and
+rejects it if that reminder is no longer upcoming. It then asks `ReminderService` to dismiss that event's reminder.
+Like other commands that change data, the service saves an updated copy of the event before changing the live event,
+and keeps the event's details, members, and attendance unchanged. It saves with
+`Storage#saveCoordiMateIfUnchanged`, which refuses to overwrite a data file that another window has changed.
 
-If the data file cannot be read or saved, the dismissal is still kept for the current session, so the reminder
+If the data file cannot be read or saved, or another window has changed it, the dismissal is still kept for the current session, so the reminder
 disappears, and the command shows a **Not saved** warning instead of an error. The reminder may then return after a
 restart. Because `ReminderService` handles the save itself, `LogicManager` does not run `dismiss` through
 `executeAtomicCommand`.
@@ -378,13 +380,15 @@ restart. Because `ReminderService` handles the save itself, `LogicManager` does 
 **Aspect: How a dismissal is remembered**
 
 * **Alternative 1 (current choice):** Store the dismissed start values in the event.
-  * Pros: The dismissal is saved with the event, and naturally stops applying when the start changes.
+  * Pros: The dismissal is saved with the event, and stops applying as soon as the start changes, because
+    `Event#isReminderDismissed()` compares against the current start. Code that changes the start without going
+    through `Event#withDetails` therefore cannot leave the moved event dismissed by mistake.
   * Cons: Adds a field to every event in the data file.
 
 * **Alternative 2:** Store a single "dismissed" flag in the event.
   * Pros: Simpler data.
-  * Cons: The flag would have to be cleared on every change to the start, and a moved event could otherwise stay
-    silently dismissed.
+  * Cons: Every code path that changes the start must remember to clear the flag. One that forgets would leave the
+    moved event silently dismissed.
 
 ### Event attendance
 
@@ -475,7 +479,7 @@ which a contact matches only if it matches every predicate, and passed to `Model
 The class diagram below shows how these classes relate. The `organisation` criterion is a plain lambda, so it is not
 shown.
 
-<puml src="diagrams/FilterClassDiagram.puml" width="550" />
+<puml src="diagrams/FilterClassDiagram.puml" width="700" />
 
 The `event` and `tag` predicates identify their event or tag by name. How a filtered list follows later changes to
 that event or tag is described in [Keeping events in sync with contacts](#keeping-events-in-sync-with-contacts).
@@ -522,8 +526,8 @@ updates events whenever a contact changes:
 * When a contact is deleted, every event that lists the contact is replaced with a copy without the name or its
   attendance.
 
-All the updated events are built before anything is changed. If an event already has a member with the new name,
-the rename is rejected and no data is changed. When loading, a data file in which an event lists a member who is not
+All the updated events are built before anything is changed. If an event that lists the contact already has a
+member with the new name, the rename is rejected and no data is changed. When loading, a data file in which an event lists a member who is not
 a saved contact is rejected.
 
 The activity diagram below summarises how `CoordiMate` handles a renamed or deleted contact.
@@ -728,6 +732,8 @@ to highlight.
 **Showing it once.** `UserPrefs` stores whether the tutorial has been seen. On launch,
 `MainWindow#showTutorialOnFirstLaunch()` opens the tutorial only if it has not. Finishing or closing the tour calls
 `Logic#setHasSeenTutorial(true)`, and the preference is saved with the other user preferences when the app exits.
+If the preferences file could not be read at launch, `MainApp` does not overwrite it, so the tutorial is shown again
+on the next launch.
 The tutorial can be opened again at any time with the `tutorial` command, the **Tutorial** item in the top bar, or
 F2. `TutorialCommand` returns a `CommandResult` that asks `MainWindow` to show the tutorial.
 
