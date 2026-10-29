@@ -91,13 +91,19 @@ public class EditCommandTest {
         Model expectedModel = new ModelManager(new CoordiMate(model.getCoordiMate()), new UserPrefs());
         expectedModel.setPerson(firstPerson, onLeave);
 
-        assertCommandSuccess(setLeave, model, EditCommand.successMessage(onLeave), expectedModel);
+        assertCommandSuccess(setLeave, model,
+                CommandResult.withContactToFocus(EditCommand.successMessage(onLeave), CommandResult.View.CONTACTS,
+                        onLeave),
+                expectedModel);
 
         EditCommand clearLeave = new EditCommand(firstPerson.getMemberId().orElseThrow(),
                 new EditPersonDescriptorBuilder().withoutLeaveDate().build());
         expectedModel.setPerson(onLeave, firstPerson);
 
-        assertCommandSuccess(clearLeave, model, EditCommand.successMessage(firstPerson), expectedModel);
+        assertCommandSuccess(clearLeave, model,
+                CommandResult.withContactToFocus(EditCommand.successMessage(firstPerson), CommandResult.View.CONTACTS,
+                        firstPerson),
+                expectedModel);
     }
 
     @Test
@@ -111,7 +117,10 @@ public class EditCommandTest {
         Model expectedModel = new ModelManager(new CoordiMate(model.getCoordiMate()), new UserPrefs());
         expectedModel.setPerson(endedLeave, edited);
 
-        assertCommandSuccess(editRole, model, EditCommand.successMessage(edited), expectedModel);
+        assertCommandSuccess(editRole, model,
+                CommandResult.withContactToFocus(EditCommand.successMessage(edited), CommandResult.View.CONTACTS,
+                        edited),
+                expectedModel);
     }
 
     @Test
@@ -124,8 +133,11 @@ public class EditCommandTest {
 
         Model expectedModel = new ModelManager(new CoordiMate(model.getCoordiMate()), new UserPrefs());
         expectedModel.setPerson(model.getFilteredPersonList().get(0), editedPerson);
+        Person savedEditedPerson = expectedModel.getFilteredPersonList().get(0);
 
-        assertCommandSuccess(editCommand, model, expectedMessage, expectedModel);
+        assertCommandSuccess(editCommand, model,
+                CommandResult.withContactToFocus(expectedMessage, CommandResult.View.CONTACTS, savedEditedPerson),
+                expectedModel);
     }
 
     @Test
@@ -146,7 +158,9 @@ public class EditCommandTest {
         Model expectedModel = new ModelManager(new CoordiMate(model.getCoordiMate()), new UserPrefs());
         expectedModel.setPerson(lastPerson, editedPerson);
 
-        assertCommandSuccess(editCommand, model, expectedMessage, expectedModel);
+        assertCommandSuccess(editCommand, model,
+                CommandResult.withContactToFocus(expectedMessage, CommandResult.View.CONTACTS, editedPerson),
+                expectedModel);
     }
 
     @Test
@@ -163,7 +177,9 @@ public class EditCommandTest {
         expectedModel.setPerson(contactWithDetails, editedPerson);
 
         assertCommandSuccess(editCommand, model,
-                EditCommand.successMessage(editedPerson), expectedModel);
+                CommandResult.withContactToFocus(EditCommand.successMessage(editedPerson),
+                        CommandResult.View.CONTACTS, editedPerson),
+                expectedModel);
     }
 
     @Test
@@ -181,7 +197,9 @@ public class EditCommandTest {
         expectedModel.setPerson(contactWithDetails, editedPerson);
 
         assertCommandSuccess(editCommand, model,
-                EditCommand.successMessage(editedPerson), expectedModel);
+                CommandResult.withContactToFocus(EditCommand.successMessage(editedPerson),
+                        CommandResult.View.CONTACTS, editedPerson),
+                expectedModel);
     }
 
     @Test
@@ -199,7 +217,9 @@ public class EditCommandTest {
         expectedModel.setPerson(contactWithDetails, editedPerson);
 
         assertCommandSuccess(editCommand, model,
-                EditCommand.successMessage(editedPerson), expectedModel);
+                CommandResult.withContactToFocus(EditCommand.successMessage(editedPerson),
+                        CommandResult.View.CONTACTS, editedPerson),
+                expectedModel);
     }
 
     @Test
@@ -224,7 +244,9 @@ public class EditCommandTest {
         String expectedMessage = EditCommand.successMessage(editedPerson);
 
         assertTrue(editedPerson.getAddress().isEmpty());
-        assertCommandSuccess(editCommand, model, expectedMessage, expectedModel);
+        assertCommandSuccess(editCommand, model,
+                CommandResult.withContactToFocus(expectedMessage, CommandResult.View.CONTACTS, editedPerson),
+                expectedModel);
     }
 
     @Test
@@ -237,7 +259,9 @@ public class EditCommandTest {
         Model expectedModel = new ModelManager(new CoordiMate(model.getCoordiMate()), new UserPrefs());
         expectedModel.setPerson(editedPerson, editedPerson);
 
-        assertCommandSuccess(editCommand, model, expectedMessage, expectedModel);
+        assertCommandSuccess(editCommand, model,
+                CommandResult.withContactToFocus(expectedMessage, CommandResult.View.CONTACTS, editedPerson),
+                expectedModel);
     }
 
     @Test
@@ -250,7 +274,9 @@ public class EditCommandTest {
         expectedModel.setPerson(original, edited);
 
         assertCommandSuccess(new EditCommand(new MemberId(1), descriptor), model,
-                EditCommand.successMessage(edited), expectedModel);
+                CommandResult.withContactToFocus(EditCommand.successMessage(edited), CommandResult.View.CONTACTS,
+                        edited),
+                expectedModel);
         assertTrue(model.getTagList().stream().anyMatch(tag -> tag.isSameTag(new Tag("Alumni2026"))));
     }
 
@@ -266,7 +292,9 @@ public class EditCommandTest {
         expectedModel.setPerson(original, edited);
 
         assertCommandSuccess(new EditCommand(new MemberId(1), descriptor), model,
-                EditCommand.successMessage(edited), expectedModel);
+                CommandResult.withContactToFocus(EditCommand.successMessage(edited), CommandResult.View.CONTACTS,
+                        edited),
+                expectedModel);
         assertTrue(model.getTagList().stream().anyMatch(tag -> tag.isSameTag(new Tag("friends"))));
     }
 
@@ -281,7 +309,9 @@ public class EditCommandTest {
         expectedModel.setPerson(original, edited);
 
         assertCommandSuccess(new EditCommand(new MemberId(1), descriptor), model,
-                EditCommand.successMessage(edited), expectedModel);
+                CommandResult.withContactToFocus(EditCommand.successMessage(edited), CommandResult.View.CONTACTS,
+                        edited),
+                expectedModel);
     }
 
     @Test
@@ -295,7 +325,9 @@ public class EditCommandTest {
         expectedModel.registerTag(new Tag("Alumni2026"));
 
         assertCommandSuccess(new EditCommand(new MemberId(1), descriptor), model,
-                EditCommand.successMessage(original), expectedModel);
+                CommandResult.withContactToFocus(EditCommand.successMessage(original), CommandResult.View.CONTACTS,
+                        original),
+                expectedModel);
         assertTrue(model.getTagList().stream().anyMatch(tag -> tag.isSameTag(new Tag("Alumni2026"))));
     }
 
@@ -308,7 +340,9 @@ public class EditCommandTest {
         expectedModel.setPerson(original, edited);
 
         assertCommandSuccess(new EditCommand(new MemberId(1), descriptor), model,
-                EditCommand.successMessage(edited), expectedModel);
+                CommandResult.withContactToFocus(EditCommand.successMessage(edited), CommandResult.View.CONTACTS,
+                        edited),
+                expectedModel);
         assertTrue(model.getTagList().stream().anyMatch(tag -> tag.isSameTag(new Tag("Alumni2026"))));
     }
 
@@ -322,7 +356,9 @@ public class EditCommandTest {
         expectedModel.setPerson(original, original);
 
         assertCommandSuccess(new EditCommand(new MemberId(1), descriptor), model,
-                EditCommand.successMessage(original), expectedModel);
+                CommandResult.withContactToFocus(EditCommand.successMessage(original), CommandResult.View.CONTACTS,
+                        original),
+                expectedModel);
     }
 
     @Test
@@ -344,7 +380,9 @@ public class EditCommandTest {
         Model expectedModel = new ModelManager(new CoordiMate(model.getCoordiMate()), new UserPrefs());
 
         assertCommandSuccess(new EditCommand(new MemberId(1), descriptor), model,
-                EditCommand.successMessage(atLimit), expectedModel);
+                CommandResult.withContactToFocus(EditCommand.successMessage(atLimit), CommandResult.View.CONTACTS,
+                        atLimit),
+                expectedModel);
     }
 
     @Test
@@ -360,7 +398,9 @@ public class EditCommandTest {
         expectedModel.setPerson(overLimit, edited);
 
         assertCommandSuccess(new EditCommand(new MemberId(1), descriptor), model,
-                EditCommand.successMessage(edited), expectedModel);
+                CommandResult.withContactToFocus(EditCommand.successMessage(edited), CommandResult.View.CONTACTS,
+                        edited),
+                expectedModel);
     }
 
     @Test
@@ -394,7 +434,9 @@ public class EditCommandTest {
         Model expectedModel = new ModelManager(new CoordiMate(model.getCoordiMate()), new UserPrefs());
         expectedModel.setPerson(model.getFilteredPersonList().get(0), editedPerson);
 
-        assertCommandSuccess(editCommand, model, expectedMessage, expectedModel);
+        assertCommandSuccess(editCommand, model,
+                CommandResult.withContactToFocus(expectedMessage, CommandResult.View.CONTACTS, editedPerson),
+                expectedModel);
     }
 
     @Test
@@ -421,7 +463,9 @@ public class EditCommandTest {
         expectedModel.setPerson(ALICE, editedPerson);
 
         assertCommandSuccess(editCommand, model,
-                EditCommand.successMessage(editedPerson), expectedModel);
+                CommandResult.withContactToFocus(EditCommand.successMessage(editedPerson),
+                        CommandResult.View.CONTACTS, editedPerson),
+                expectedModel);
     }
 
     @Test
@@ -510,7 +554,9 @@ public class EditCommandTest {
         expectedModel.setPerson(ALICE, renamedAlice);
 
         assertCommandSuccess(editCommand, model,
-                EditCommand.successMessage(renamedAlice), expectedModel);
+                CommandResult.withContactToFocus(EditCommand.successMessage(renamedAlice),
+                        CommandResult.View.CONTACTS, renamedAlice),
+                expectedModel);
         assertEquals(List.of(new Event("Concert", eventTime, eventTime,
                 List.of(BENSON.getName(), renamedAlice.getName())),
                 new Event("Fair", eventTime, eventTime, List.of(renamedAlice.getName(), BENSON.getName())),
@@ -560,7 +606,9 @@ public class EditCommandTest {
         expectedModel.setPerson(BENSON, edited);
         assertCommandSuccess(new EditCommand(new MemberId(2),
                 new EditPersonDescriptorBuilder().withRole("President").build()), model,
-                EditCommand.successMessage(edited), expectedModel);
+                CommandResult.withContactToFocus(EditCommand.successMessage(edited), CommandResult.View.CONTACTS,
+                        edited),
+                expectedModel);
     }
 
     @Test
