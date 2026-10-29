@@ -96,7 +96,6 @@ public class EventListPanel extends UiPart<Region> {
     private Event chosenEvent;
     /** True while the event list is changing, when the list view may move the selection by itself. */
     private boolean isListChanging;
-    private int shownEventCount;
     private final ObservableList<Person> persons;
     private final Clock clock;
     private LocalDate shownDate;
@@ -127,7 +126,6 @@ public class EventListPanel extends UiPart<Region> {
         // are not taken as the user's choice.
         events.addListener((ListChangeListener<Event>) change -> isListChanging = true);
         eventListView.setItems(events);
-        shownEventCount = events.size();
         eventListView.setCellFactory(list -> new EventListCell());
         eventListView.setPlaceholder(emptyListMessage);
         eventCount.textProperty().bind(Bindings.createStringBinding(() -> countText(events.size()),
@@ -156,9 +154,9 @@ public class EventListPanel extends UiPart<Region> {
      * Keeps the chosen event selected after the list changes, since the list view keeps only the selected
      * position when events are replaced, and refreshes the details so they show the updated event.
      * The chosen event is reselected by name, wherever it now is. If it is no longer listed, the event at its
-     * previous position is selected. When the list has the same length, that event took the chosen event's place,
-     * as after a rename, so it becomes the chosen event. Otherwise the chosen event is remembered for when it is
-     * listed again, such as after leaving the archived view.
+     * previous position is selected. If that event is archived or active like the chosen one, the chosen event was
+     * renamed, deleted or archived in the same view, so the selected event becomes the chosen one. Otherwise the
+     * archive view was switched, so the chosen event is remembered and reselected when its view is shown again.
      */
     private void keepSelectionAfterChange() {
         MultipleSelectionModel<Event> selection = eventListView.getSelectionModel();
@@ -173,11 +171,11 @@ public class EventListPanel extends UiPart<Region> {
             if (selection.getSelectedIndex() != previousPosition) {
                 selection.select(previousPosition);
             }
-            if (items.size() == shownEventCount) {
-                chosenEvent = items.get(previousPosition);
+            Event selected = items.get(previousPosition);
+            if (chosenEvent == null || selected.isArchived() == chosenEvent.isArchived()) {
+                chosenEvent = selected;
             }
         }
-        shownEventCount = items.size();
         isListChanging = false;
         showDetails(selection.getSelectedItem());
     }
