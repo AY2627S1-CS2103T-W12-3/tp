@@ -174,6 +174,15 @@ Commands parse their arguments differently. For example, `search` treats the ent
 while tag commands tokenize only their recognised `t/` prefix.
 </box>
 
+### When a command fails
+
+A command that fails makes no changes. Failures take two shapes:
+
+* **An invalid field value:** the error message names the field, restates its rule, and gives an example — see [Parameter constraints](#parameter-constraints) for the full rules.
+* **A command-format error**, such as a missing, unknown, or duplicated parameter: run `help` or check the command's `Format:` line.
+
+Each command section below lists only the errors you couldn't work out from these two rules or from Parameter constraints — for example, a saved value that conflicts with another contact, or an identifier that matches more than one saved contact.
+
 --------------------------------------------------------------------------------------------------------------------
 
 ## General commands
@@ -344,25 +353,6 @@ Examples:
 
 | Condition | Error message |
 |---|---|
-| Any required prefix (`n/`, `p/`, `e/`, or `r/`) is missing, or there is text before the first parameter. | `Invalid command format.` |
-| A non-tag parameter is repeated. | `Parameter {PREFIX} may only be specified once.` |
-| An unknown parameter is used. | `Unknown parameter: {PREFIX}.` |
-| The name is empty or contains only whitespace. | `Name must not be empty. Example: n/Aisha Tan` |
-| The phone number is empty or contains only whitespace. | `Phone number must not be empty. Example: p/+6591234567` |
-| The email is empty or contains only whitespace. | `Email must not be empty. Example: e/aish@example.com` |
-| The role is empty or contains only whitespace. | `Role must not be empty. Example: r/Logistics Lead` |
-| The name violates its constraints. | `Invalid name. Use 1 to 80 characters: letters, spaces, hyphens, apostrophes, periods, and s/o or d/o, with at least one letter. Example: n/Aisha Tan` |
-| The phone number violates its constraints. | `Invalid phone number. Use 7 to 15 digits, optionally starting with + or (+country code), with optional spaces, hyphens, and matching brackets around digits. Example: p/+6591234567` |
-| The email violates its constraints. | `Invalid email. Use local-part@domain, at most 254 characters, with a local part of at most 64 characters. Example: e/aish@example.com` |
-| The role violates its constraints. | `Invalid role. Use 1 to 50 characters: letters, digits, spaces, hyphens, and slashes, with at least one letter or digit. Example: r/Logistics Lead` |
-| A non-empty birthday is invalid, incorrectly formatted, or in the future. | `Invalid birthday. Use a real date in dd-MM-yyyy format that is not in the future. Example: b/18-06-2004` |
-| A non-empty leave end date is invalid, incorrectly formatted, or in the past. | `Invalid leave end date. Use a real date in dd-MM-yyyy format that is not in the past. Example: lv/30-11-2026` |
-| A non-empty address exceeds 200 characters, has no visible characters, or contains a control character. | `Invalid address. Use 1 to 200 printable characters. Example: a/21 Kent Ridge Road, #03-12` |
-| A non-empty organisation violates its constraints. | `Invalid organisation. Use 1 to 80 characters: letters, digits, spaces, and - & . , ' ( ) /, with at least one letter or digit. Example: o/NUS Student Affairs` |
-| A non-empty note exceeds 500 characters, has no visible characters, or contains a control character. | `Invalid note. Use 1 to 500 printable characters. Example: m/Handles venue bookings` |
-| A non-empty tag contains spaces, symbols, or punctuation. | `Invalid tag name. Use letters and numbers without spaces. Example: t/Publicity` |
-| A tag exceeds 30 characters. | `Tag name must not exceed 30 characters. Example: t/Publicity` |
-| More than 15 different tags are supplied, ignoring case. | `A contact can have at most 15 tags.` |
 | Another contact has the same name, phone number, or email. | `A contact with this name, phone number, or email already exists.` |
 
 If saving fails, the command reports `Contact could not be saved. No changes were made.`
@@ -426,24 +416,13 @@ Additional errors are listed below.
 
 | Condition | Error message |
 |---|---|
-| No arguments are supplied. | `Invalid command format.` |
-| `target/` is omitted and the member ID is missing, is not a positive integer, or exceeds the supported integer range. | `Invalid member ID. Example: edit 12 r/President` |
 | The member ID does not exist. | `No contact exists with member ID: {MEMBER_ID}. Use an existing member ID.` |
 | Text or a member ID appears before `target/`. | `Specify exactly one contact identifier.` |
 | `target/` is empty or contains only whitespace. | `Contact identifier must not be empty. Example: target/aisha@example.com` |
 | No saved contact matches `target/`. | `No contact matches that identifier. Use an exact saved name, phone number, or email address.` |
 | Several contacts match `target/`. | `Multiple contacts match that identifier:`<br>matching contact details with `ID: <number>`<br>`Use a member ID, phone number, or email address to identify the contact.` |
 | A valid identifier is supplied without any fields or tag operations to edit. | `Provide at least one field or tag operation to edit.` |
-| A parameter other than `t/`, `at/`, or `rt/` is repeated. | `Parameter {PREFIX} may only be specified once.` |
-| An unknown parameter is used. | `Unknown parameter: {PREFIX}.` |
 | `t/` is combined with `at/` or `rt/`. | `Use either t/ to replace tags, or at/ and rt/ to add or remove them.` |
-| `at/` is empty or contains only whitespace. | `Tag name must not be empty. Example: at/Publicity` |
-| `rt/` is empty or contains only whitespace. | `Tag name must not be empty. Example: rt/Publicity` |
-| An `at/` tag contains spaces, symbols, or punctuation. | `Invalid tag name. Use letters and numbers without spaces. Example: at/Publicity` |
-| An `rt/` tag contains spaces, symbols, or punctuation. | `Invalid tag name. Use letters and numbers without spaces. Example: rt/Publicity` |
-| An `at/` tag exceeds 30 characters. | `Tag name must not exceed 30 characters. Example: at/Publicity` |
-| An `rt/` tag exceeds 30 characters. | `Tag name must not exceed 30 characters. Example: rt/Publicity` |
-| `t/` supplies more than 15 different tags, or `at/` would give the contact more than 15 tags. | `A contact can have at most 15 tags.` |
 | The updated name, phone number, or email conflicts with another saved contact. | `This update conflicts with another saved contact. No changes were made.` |
 | Renaming the contact would duplicate a member name in an event. | `Cannot rename this contact because an event already has a member with that name. No changes were made.` |
 
@@ -505,15 +484,9 @@ non-matching identifiers are rejected without opening a confirmation prompt.
 
 | Condition | Error message |
 |---|---|
-| No identifier is supplied. | `Invalid command format.` |
-| An unprefixed identifier is not a positive integer or exceeds the supported integer range. | `Invalid member ID. Example: delete 12` |
 | The member ID does not exist. | `No contact exists with member ID: {MEMBER_ID}. Use an existing member ID.` |
 | Different prefixed identifiers are combined, or text or a member ID appears before a prefixed identifier. | `Specify exactly one contact identifier. Example: delete n/Aisha Tan` |
-| `n/` is empty or contains only whitespace. | `Contact identifier must not be empty. Example: n/Aisha Tan` |
-| `p/` is empty or contains only whitespace. | `Contact identifier must not be empty. Example: p/+6591234567` |
-| `e/` is empty or contains only whitespace. | `Contact identifier must not be empty. Example: e/aish@example.com` |
-| A parameter is repeated. | `Parameter {PREFIX} may only be specified once.` |
-| An unknown parameter is used. | `Unknown parameter: {PREFIX}.` |
+| `n/`, `p/`, or `e/` is empty or contains only whitespace. | `Contact identifier must not be empty.` with an example matching the prefix used, e.g. `Example: n/Aisha Tan` |
 | No saved contact matches the identifier. | `No contact matches that identifier. Use an exact saved name, phone number, or email address.` |
 | Several contacts match the identifier. | `Multiple contacts match that identifier:`<br>matching contact details with `ID: <number>`<br>`Use a member ID, phone number, or email address to identify the contact.` |
 | The contact changes after the confirmation prompt. | `Contact ID: {MEMBER_ID} has changed since deletion was requested. Run delete again.` |
@@ -555,10 +528,6 @@ Examples:
 Success: `1 contact(s) found matching "John".`
 
 If nothing matches: `No contacts found matching "John".`
-
-| Condition | Error message |
-|---|---|
-| The keyword is missing, contains only whitespace, or is empty after surrounding quotation marks are removed. | `Invalid command format.` |
 
 To narrow contacts by an exact tag, event, or organisation instead, use [`filter`](#filtering-contacts-filter).
 
@@ -616,12 +585,7 @@ If every value exists but no contact matches all the filters, the displayed list
 | Condition | Error message |
 |---|---|
 | No saved tag, event, or organisation has the supplied value. | `No saved tag, event, or organisation matches that value. Use a value from the saved data.` |
-| An alphabetic `FIELD/` prefix is not `tag/`, `event/`, or `organisation/`, ignoring case. | `Unknown parameter: {PREFIX}.` |
-| No filter is given, the input does not start with a `FIELD/` prefix, or there is text before the first field. | `Invalid command format.` |
-| `tag/` has no value, contains only whitespace, or has an empty quoted value. | `Filter value must not be empty. Example: tag/Publicity` |
-| `event/` has no value, contains only whitespace, or has an empty quoted value. | `Filter value must not be empty. Example: event/Final Concert` |
-| `organisation/` has no value, contains only whitespace, or has an empty quoted value. | `Filter value must not be empty. Example: organisation/NUS Student Affairs` |
-| A quotation mark is not closed and another field follows it. | `Invalid command format.` |
+| `tag/`, `event/`, or `organisation/` has no value, contains only whitespace, or has an empty quoted value. | `Filter value must not be empty.` with an example matching the field used, e.g. `Example: tag/Publicity` |
 
 ### Archiving contacts: `archive`, `unarchive`
 
@@ -665,8 +629,6 @@ restarting.
 
 | Condition | Error message |
 |---|---|
-| The member ID is missing. | `Invalid command format.` |
-| The member ID is zero, negative, non-integer, greater than 2147483647, or followed by extra arguments. | `Invalid member ID. Example: archive 2` or `Invalid member ID. Example: unarchive 2` |
 | No contact has that member ID. | `No contact exists with member ID: {MEMBER_ID}. Use an existing member ID.` |
 | `archive` is used on a contact that is already archived. | `{NAME} is already archived. No changes were made.` |
 | `unarchive` is used on a contact that is not archived. | `{NAME} is not archived. No changes were made.` |
@@ -928,9 +890,9 @@ If the dismissal cannot be saved, the reminder is hidden until CoordiMate closes
 
 ### Managing tags: `addtag`, `edittag`, `deletetag`
 
-`addtag` creates a custom tag. `edittag` renames an existing tag, including a default tag, and updates it wherever
-it is applied across contacts. `deletetag` deletes an existing tag, including a default tag, and removes it from
-every contact to which it is assigned. All three open the Tags view.
+| Condition | Error message |
+|---|---|
+| The tag name already exists, ignoring capitalization. | `A tag with this name already exists. No changes were made.` |
 
 Formats:
 
@@ -952,6 +914,28 @@ Examples:
 * `addtag t/Publicity`
 * `edittag Production t/ProductionCrew`
 * `edittag Media t/Publicity`
+
+`OLD_TAG` must match an existing tag, ignoring capitalization. `NEW_TAG` must contain 1 to 30
+alphanumeric characters without spaces. Leading and trailing whitespace is trimmed before validation.
+
+Success for `edittag Media t/Publicity`: `Media successfully renamed to Publicity.`
+
+| Condition | Error message |
+|---|---|
+| The current tag does not exist. | `Tag {OLD_TAG} does not exist. Use a saved tag name.` |
+| The new tag matches the current tag, ignoring capitalization. | `Tag {OLD_TAG} already has that name. No changes were made.` |
+| The new tag already exists. | `A tag with this name already exists. No changes were made.` |
+
+If saving fails, the command reports `Tag could not be saved. No changes were made.`
+
+### Deleting a tag: `deletetag`
+
+Deletes an existing tag, including a default tag, and removes it from every contact to which it is assigned.
+
+Format: `deletetag t/TAG`
+
+Examples:
+
 * `deletetag t/ProductionCrew`
 * `deletetag t/Publicity`
 
@@ -960,16 +944,7 @@ Success: `Created tag: Publicity.` (`addtag`) · `Media successfully renamed to 
 
 | Condition | Error message |
 |---|---|
-| No parameters are supplied (`addtag`), the `t/` prefix is missing, `edittag`'s current tag name is missing, or text appears before the first parameter. | `Invalid command format.` |
-| More than one `t/` prefix is supplied. | `Parameter t/ may only be specified once.` |
-| An unknown parameter is used. | `Unknown parameter: {PREFIX}.` |
-| The tag name (`addtag`), new tag name (`edittag`), or tag name (`deletetag`) is empty. | `Tag name must not be empty. Example: t/Publicity` |
-| `addtag`'s tag name, or `edittag`'s new tag name, contains spaces, symbols, or punctuation. | `Invalid tag name. Use letters and numbers without spaces. Example: t/Publicity` |
-| `addtag`'s tag name, or `edittag`'s new tag name, exceeds 30 characters. | `Tag name must not exceed 30 characters. Example: t/Publicity` |
-| `addtag`'s tag, or `edittag`'s new tag, already exists, ignoring capitalization. | `A tag with this name already exists. No changes were made.` |
-| `edittag`'s current tag does not exist. | `Tag {OLD_TAG} does not exist. Use a saved tag name.` |
-| `edittag`'s new tag matches the current tag, ignoring capitalization. | `Tag {OLD_TAG} already has that name. No changes were made.` |
-| `deletetag`'s tag does not exist. | `Tag {TAG_NAME} does not exist. Use a saved tag name.` |
+| The specified tag does not exist. | `Tag {TAG_NAME} does not exist. Use a saved tag name.` |
 
 If saving fails, the command reports `Tag could not be saved. No changes were made.`
 
