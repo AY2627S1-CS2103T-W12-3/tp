@@ -1354,10 +1354,10 @@ testers are expected to do more *exploratory* testing.
       Expected: Alex Yeoh (member ID `1`) is deleted. Other contacts keep their IDs. The status message shows `Contact deleted successfully: ` followed by the contact's name.
 
    1. Test case: `delete 0`<br>
-      Expected: An error is shown. No confirmation is requested and no contact is deleted.
+      Expected: No confirmation is requested and no contact is deleted. The status message shows `Invalid member ID. Example: delete 12` followed by the usage.
 
    1. Other incorrect delete commands to try: `delete`, `delete x`, `delete 99` (where member ID `99` does not exist)<br>
-      Expected: An error is shown. No confirmation is requested and no contact is deleted.
+      Expected: No confirmation is requested and no contact is deleted. The status message shows error details.
 
 ### Searching contacts
 
@@ -1384,7 +1384,7 @@ testers are expected to do more *exploratory* testing.
       Expected: The list is empty. The status message shows `No contacts found matching "zzz".`
 
    1. Test case: `search`<br>
-      Expected: An error is shown and the list is unchanged.
+      Expected: The list is unchanged. The status message shows `Invalid command format.` followed by the usage.
 
 1. Searching by organisation
 
@@ -1419,16 +1419,17 @@ testers are expected to do more *exploratory* testing.
       Expected: Only `Mr Lim` is listed.
 
    1. Test case: `filter organisation/NUS`<br>
-      Expected: An error is shown because no saved organisation matches. Only `Mr Lim` remains listed.
+      Expected: Only `Mr Lim` remains listed. The status message shows
+      `No saved tag, event, or organisation matches that value. Use a value from the saved data.` followed by the usage.
 
    1. Test case: `filter tag/Publicity`<br>
       Expected: The list is empty, as the tag exists but no contact has it. The status message shows `No contacts match the specified filters.`
 
    1. Test case: `filter role/Logistics`<br>
-      Expected: An error is shown for the unsupported field. The list stays empty.
+      Expected: The list stays empty. The status message shows `Unknown parameter: role/.` followed by the usage.
 
    1. Other incorrect filter commands to try: `filter`, `filter tag/`, `filter event/"Final Concert tag/EXCO`<br>
-      Expected: An error is shown and the list is unchanged.
+      Expected: The list is unchanged. The status message shows error details.
 
 ### Adding an event
 
@@ -1440,16 +1441,16 @@ testers are expected to do more *exploratory* testing.
       Expected: The **Events** tab opens with the new event selected. The status message shows `Created Event Final Concert. Start Time: 08-08-2026 15:00. End Time: 08-08-2026 18:00.`
 
    1. Test case: `addevent evn/final concert st/09-10-2026 et/10-10-2026`<br>
-      Expected: An error is shown for the duplicate name. No event is added.
+      Expected: No event is added. The status message shows `An event with this name already exists.`
 
    1. Test case: `addevent evn/Fair st/10-10-2026 et/09-10-2026`<br>
-      Expected: An error is shown because the start is after the end. No event is added.
+      Expected: No event is added. The status message shows `Start time must not be after end time.`
 
    1. Test case: `addevent evn/Fair st/10/10/2026 et/11-10-2026`<br>
-      Expected: An error shows the required date and time format. No event is added.
+      Expected: No event is added. The status message shows the required date and time format.
 
    1. Other incorrect addevent commands to try: `addevent`, `addevent evn/Fair st/10-10-2026`, `addevent evn/Fair st/10-10-2026 st/10-10-2026 et/11-10-2026`<br>
-      Expected: An error is shown and no event is added.
+      Expected: No event is added. The status message shows error details.
 
 ### Editing an event
 
@@ -1464,13 +1465,13 @@ testers are expected to do more *exploratory* testing.
       Expected: The event is renamed to `Grand Concert` and keeps its times.
 
    1. Test case: `editevent evn/Grand Concert st/09-08-2026`<br>
-      Expected: An error is shown because the start is after the end. The event is unchanged.
+      Expected: No change. The status message shows `Start time must not be after end time.`
 
    1. Test case: `editevent evn/Gala nevn/Ball`<br>
-      Expected: An error is shown for the unknown event. No data changes.
+      Expected: No change. The status message shows `Event Gala does not exist.`
 
    1. Other incorrect editevent commands to try: `editevent evn/Grand Concert`, `editevent evn/Grand Concert nevn/`<br>
-      Expected: An error is shown and no data changes.
+      Expected: No change. The status message shows error details.
 
 ### Deleting an event
 
@@ -1479,13 +1480,13 @@ testers are expected to do more *exploratory* testing.
    1. Prerequisites: An event named `Grand Concert` exists, as created in the previous section.
 
    1. Test case: `deleteevent evn/Gala`<br>
-      Expected: An error is shown for the unknown event. No event is deleted.
+      Expected: No event is deleted. The status message shows `Event Gala does not exist.`
 
    1. Test case: `deleteevent evn/grand concert`<br>
       Expected: The event is removed from the **Events** tab. The status message shows `Deleted Event Grand Concert.`
 
    1. Other incorrect deleteevent commands to try: `deleteevent`, `deleteevent evn/`<br>
-      Expected: An error is shown and no event is deleted.
+      Expected: No event is deleted. The status message shows error details.
 
 ### Dismissing a reminder
 
@@ -1505,7 +1506,8 @@ testers are expected to do more *exploratory* testing.
       Expected: Only `Zulu Reminder` appears in the panel, at index 1. `alpha Reminder` remains saved.
 
    1. Test case: `dismiss 2`<br>
-      Expected: An error is shown and no reminder is dismissed.
+      Expected: No reminder is dismissed. Feedback shows
+      `No reminder exists at index 2. Use an index from the Upcoming events panel.` followed by usage.
 
    1. Test case: `dismiss 1`, then `dismiss 1` again.<br>
       Expected: The first command dismisses `Zulu Reminder` and hides the empty panel. The second command
@@ -1517,7 +1519,9 @@ testers are expected to do more *exploratory* testing.
 
    1. Test cases: `dismiss`, `dismiss 0`, `dismiss -1`, `dismiss abc`, `dismiss 1.5`, `dismiss 1 2`,
       `dismiss 2147483648`<br>
-      Expected: Feedback shows **Rejected** with an error and `dismiss` usage. No reminders or saved events change.
+      Expected: No reminders or saved events change. Feedback shows **Rejected** and an explanation with
+      `dismiss` usage. A missing index gives `Invalid command format.`; the other inputs give
+      `Index must be a positive integer. Example: 1`.
 
 ### Assigning members to an event
 
@@ -1535,10 +1539,10 @@ testers are expected to do more *exploratory* testing.
       Expected: No change. The status message shows that all specified contacts are already assigned.
 
    1. Test case: `assign evn/Gala c/1`<br>
-      Expected: An error is shown for the unknown event. No data changes.
+      Expected: No change. The status message shows `Event Gala does not exist.`
 
    1. Other incorrect assign commands to try: `assign evn/Final Concert c/0`, `assign evn/Final Concert c/99` (where member ID `99` does not exist), `assign evn/Final Concert c/1 c/2`, `assign evn/Final Concert`<br>
-      Expected: An error is shown and no data changes.
+      Expected: No change. The status message shows error details.
 
 1. Assigning contacts from a filtered list
 
@@ -1563,10 +1567,10 @@ testers are expected to do more *exploratory* testing.
       Expected: No change. The status message shows that none of the specified contacts are assigned.
 
    1. Test case: `unassign evn/Gala c/1`<br>
-      Expected: An error is shown for the unknown event. No data changes.
+      Expected: No change. The status message shows `Event Gala does not exist.`
 
    1. Other incorrect unassign commands to try: `unassign evn/Final Concert c/0`, `unassign evn/Final Concert c/1 99` (where member ID `99` does not exist), `unassign evn/Final Concert c/1 c/3`, `unassign evn/Final Concert`<br>
-      Expected: An error is shown and no data changes.
+      Expected: No change. The status message shows error details.
 
 1. Removing members from a filtered list
 
@@ -1585,10 +1589,10 @@ testers are expected to do more *exploratory* testing.
       Expected: CoordiMate switches to the **Contacts** view and shows Alex Yeoh (`ID: 1`) and Charlotte Oliveiro (`ID: 3`), in contact list order. The status message shows `Listed 2 member(s) of Final Concert. Use list to show all contacts.`
 
    1. Test case: `members evn/Gala`<br>
-      Expected: An error is shown for the unknown event. The contact list is unchanged.
+      Expected: The contact list is unchanged. The status message shows `Event Gala does not exist.`
 
    1. Other incorrect members commands to try: `members`, `members evn/`, `members evn/Final Concert c/1`, `members evn/Final Concert evn/Fair`<br>
-      Expected: An error is shown and the contact list is unchanged.
+      Expected: The contact list is unchanged. The status message shows error details.
 
 1. Keeping the shown members up to date
 
@@ -1616,16 +1620,16 @@ testers are expected to do more *exploratory* testing.
       Expected: `Alex Yeoh` shows **Absent**. The counts show 0 present, 1 absent, and 1 not marked.
 
    1. Test case: Repeat the previous command.<br>
-      Expected: No change. Feedback reports that `Alex Yeoh` is already marked absent.
+      Expected: No change. The status message shows `Alex Yeoh is already marked as absent for event Final Concert. No changes were made.`
 
    1. Test case: `markattendance evn/Final Concert mem/David Li att/present`<br>
-      Expected: An error is shown because David is not assigned. Attendance is unchanged.
+      Expected: No change. The status message shows `David Li is not assigned to event Final Concert. Assign the contact to the event before marking attendance.` followed by the usage.
 
    1. Test case: `markattendance evn/Gala mem/Alex Yeoh att/present`<br>
-      Expected: An error is shown for the unknown event. Attendance is unchanged.
+      Expected: No change. The status message shows `Event Gala does not exist. Use a saved event name.` followed by the usage.
 
    1. Other incorrect markattendance commands to try: `markattendance evn/Final Concert mem/Alex Yeoh att/late`, `markattendance evn/Final Concert mem/Alex Yeoh`, `markattendance evn/Final Concert mem/Alex Yeoh att/present att/absent`<br>
-      Expected: An error is shown and attendance is unchanged.
+      Expected: No change. The status message shows error details.
 
 1. Keeping members and attendance in sync with contacts
 
@@ -1674,10 +1678,10 @@ and `PAST_DATE` is any date before today, such as `01-01-2020`.
       Expected: The new contact is added and shown as on leave.
 
    1. Test case: `edit 1 lv/PAST_DATE`<br>
-      Expected: An error is shown for the past date. The contact is unchanged.
+      Expected: No change. The status message shows `Invalid leave end date. Use a real date in dd-MM-yyyy format that is not in the past. Example: lv/30-11-2026`
 
    1. Other incorrect commands to try: `edit 1 lv/31-11-2030`, `edit 1 lv/next week`, `edit 1 lv/FUTURE_DATE lv/FUTURE_DATE`<br>
-      Expected: An error is shown and the contact is unchanged.
+      Expected: No change. The status message shows error details.
 
 1. Leave ending by itself
 
@@ -1709,10 +1713,10 @@ and `PAST_DATE` is any date before today, such as `01-01-2020`.
       Expected: `Publicity` appears in the Tags view. The status message shows `Created tag: Publicity.`
 
    1. Test case: `addtag t/publicity`<br>
-      Expected: An error is shown for the duplicate name. No tag is added.
+      Expected: No tag is added. The status message shows `A tag with this name already exists. No changes were made.` followed by the usage.
 
    1. Test case: `addtag t/Event Crew`<br>
-      Expected: An error is shown for the invalid name. No tag is added.
+      Expected: No tag is added. The status message shows `Invalid tag name. Use letters and numbers without spaces. Example: t/Publicity` followed by the usage.
 
    1. Test case: `edittag Publicity t/Media`<br>
       Expected: The tag is renamed. The status message shows `Publicity successfully renamed to Media.`
@@ -1724,10 +1728,10 @@ and `PAST_DATE` is any date before today, such as `01-01-2020`.
       Expected: The tag is removed from the Tags view and from member ID `1`. The status message shows `Press successfully deleted.`
 
    1. Test case: `deletetag t/Nope`<br>
-      Expected: An error is shown for the unknown tag. No tag is deleted.
+      Expected: No tag is deleted. The status message shows `Tag Nope does not exist. Use a saved tag name.` followed by the usage.
 
    1. Other incorrect tag commands to try: `addtag`, `addtag Publicity`, `edittag EXCO`, `deletetag EXCO`<br>
-      Expected: An error is shown and no data changes.
+      Expected: No change. The status message shows error details.
 
 ### Archiving contacts and events
 
@@ -1753,7 +1757,7 @@ and `PAST_DATE` is any date before today, such as `01-01-2020`.
 
    1. Other incorrect commands to try: `archive`, `archive 0`, `archive x`, `archive 999`, `unarchive 2` on an active
       contact, `list archive`<br>
-      Expected: An error is shown and no data changes.
+      Expected: No change. The status message shows error details.
 
 1. Archiving and restoring an event
 
@@ -1837,7 +1841,8 @@ want to keep.
       `ID: 7`, so deleted IDs are not reused. Saved contacts include their IDs.
 
    1. Test case: `edit 2 r/President`, then `delete 2`.<br>
-      Expected: Both show an error, request no confirmation, and leave contacts and the file unchanged.
+      Expected: Both report `No contact exists with member ID: 2. Use an existing member ID.` followed by
+      usage. No confirmation is requested, and contacts and the file remain unchanged.
 
 1. Dealing with a corrupted data file
 
@@ -1867,10 +1872,10 @@ want to keep.
    1. Prerequisites: The app is running and `data/coordimate.json` exists. Make the data impossible to save: on Windows, open the properties of `data/coordimate.json` and tick **Read-only**; on macOS or Linux, run `chmod a-w data` in the folder containing the JAR file.
 
    1. Test case: `addevent evn/Test st/01-01-2027 et/01-01-2027`<br>
-      Expected: An error is shown. No event is added and the **Events** tab is unchanged.
+      Expected: No event is added and the **Events** tab is unchanged. The status message shows `Event could not be saved. No changes were made.`
 
    1. Test case: `add n/Test Person p/91234567 e/testperson@example.com r/Member`<br>
-      Expected: An error is shown and no contact is added.
+      Expected: No contact is added. The status message shows `Contact could not be saved. No changes were made.`
 
    1. Test case: Undo the change made in the prerequisites (untick **Read-only**, or run `chmod u+w data`), then repeat the `addevent` command.<br>
       Expected: The event is added.
