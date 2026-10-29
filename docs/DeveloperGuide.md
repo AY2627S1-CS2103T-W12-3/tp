@@ -399,7 +399,8 @@ which a contact matches only if it matches every predicate, and passed to `Model
 The `event` and `tag` predicates identify their event or tag by name. How a filtered list follows later changes to
 that event or tag is described in [Keeping events in sync with contacts](#keeping-events-in-sync-with-contacts).
 
-To add a filter field, add a constant to `FilterField` and a case to `FilterCommand#resolvePredicate`.
+To add a filter field, add a constant to `FilterField`, a case to `FilterCommand#resolvePredicate`, and a case to the
+example-selection switch in `FilterCommandParser#parse`.
 
 #### Design considerations
 
