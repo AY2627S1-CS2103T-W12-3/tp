@@ -1227,6 +1227,20 @@ For every command error below, check that the feedback also includes the command
 and an example.
 </box>
 
+<box type="info" seamless>
+
+**Note:** Many tests below start from the sample data and expect specific member IDs. Data created in earlier
+sections is not always cleaned up, so when a section's prerequisites say **Restore the sample data**, do so before
+continuing:
+
+1. Close the app.
+1. Delete `data/coordimate.json` from the folder containing the JAR file.
+1. Relaunch the app.
+
+The app then starts with the six sample contacts (member IDs `1` to `6`), the `Freshmen Welcome Night` sample
+event, and no custom tags. Deleting contacts by hand is not enough, because member IDs are never reused.
+</box>
+
 ### Launch and shutdown
 
 1. Initial launch
@@ -1249,15 +1263,9 @@ and an example.
    1. Test case: `exit`<br>
       Expected: The app closes. Relaunching it shows the same data as before.
 
-<box type="info" seamless>
-
-**Note:** Several tests below start from the sample contacts. To restore them, close the app, delete
-`data/coordimate.json` from the folder containing the JAR file, and relaunch the app.
-</box>
-
 ### Deleting a contact
 
-1. Prerequisites: Restore the sample contacts and run `list`. Alex Yeoh has member ID `1`.
+1. Prerequisites: Restore the sample data and run `list`. Alex Yeoh has member ID `1`.
 
 1. Test case: `delete 1`, then `n`<br>
    Expected: `ID: 1` and Alex Yeoh's name, phone, email, and role are shown, followed by `Confirm deletion? [y/N]`. After `n`, the status message shows `Deletion cancelled. No changes were made.` and no contact is deleted.
@@ -1273,7 +1281,7 @@ and an example.
 
 ### Searching contacts
 
-1. Prerequisites: The sample contacts are loaded.
+1. Prerequisites: Restore the sample data.
 
 1. Test case: `search alex`<br>
    Expected: Only `Alex Yeoh` is listed. The status message shows `1 contact(s) found matching "alex".`
@@ -1316,6 +1324,9 @@ and an example.
 1. Other incorrect filter commands to try: `filter`, `filter tag/`<br>
    Expected: The list is unchanged. The status message shows error details.
 
+1. Cleanup: Run `deletetag t/Publicity`, then `deleteevent evn/Final Concert`.<br>
+   Expected: The `Publicity` tag and the `Final Concert` event are removed, as later sections create them again.
+
 ### Adding an event
 
 1. Prerequisites: No event named `Final Concert` or `Fair` exists.
@@ -1337,7 +1348,9 @@ and an example.
 
 ### Editing an event
 
-1. Prerequisites: Create an event using `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`. Select it in the **Events** tab.
+1. Prerequisites: An event named `Final Concert` exists from 08-08-2026 15:00 to 08-08-2026 18:00, as created in
+   the previous section. If it does not, create it using `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`.
+   Select it in the **Events** tab.
 
 1. Test case: `editevent evn/final concert st/08-08-2026 16:00 et/08-08-2026 19:00`<br>
    Expected: The event's details show the new times. The status message shows `Edited Event Final Concert. Start Time: 08-08-2026 16:00. End Time: 08-08-2026 19:00.`
@@ -1398,11 +1411,16 @@ and an example.
       A missing index gives `Invalid command format.`; the other inputs give
       `Index must be a positive integer. Example: 1`.
 
+1. Cleaning up
+
+   1. Test case: `deleteevent evn/Zulu Reminder`, then `deleteevent evn/alpha Reminder`<br>
+      Expected: Both events are removed from the **Events** tab, along with any reminders for them.
+
 ### Assigning members to an event
 
 1. Assigning contacts while all persons are being shown
 
-   1. Prerequisites: Restore the sample contacts and run `list`; Alex Yeoh, Bernice Yu, and Charlotte Oliveiro have IDs `1`, `2`, and `3`. Create an event using `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`. Select it in the **Events** tab.
+   1. Prerequisites: Restore the sample data and run `list`; Alex Yeoh, Bernice Yu, and Charlotte Oliveiro have IDs `1`, `2`, and `3`. Create an event using `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`. Select it in the **Events** tab.
 
    1. Test case: `assign evn/Final Concert c/1 2`<br>
       Expected: The status message shows `Assigned 2 member(s) to Final Concert.` The event's details list Alex Yeoh (`ID: 1`) and Bernice Yu (`ID: 2`) under **Members (2)**.
@@ -1425,7 +1443,7 @@ and an example.
 
 1. Removing members while all persons are being shown
 
-   1. Prerequisites: Restore the sample contacts (IDs `1` to `6`) and run `list`. Create an event using `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`, then run `assign evn/Final Concert c/1 2 3`. Select the event in the **Events** tab.
+   1. Prerequisites: Restore the sample data and run `list`. Create an event using `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`, then run `assign evn/Final Concert c/1 2 3`. Select the event in the **Events** tab.
 
    1. Test case: `unassign evn/final concert c/2 4`<br>
       Expected: The status message shows `Removed 1 member(s) from Final Concert. 1 contact(s) were not assigned.` The event's details list member IDs `1` and `3` under **Members (2)**, in that order.
@@ -1444,7 +1462,7 @@ and an example.
 
 1. Viewing the members of an event
 
-   1. Prerequisites: Restore the sample contacts (IDs `1` to `6`) and run `list`. Create an event using `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`, then run `assign evn/Final Concert c/3 1`. Switch to the **Events** view.
+   1. Prerequisites: Restore the sample data and run `list`. Create an event using `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`, then run `assign evn/Final Concert c/3 1`. Switch to the **Events** view.
 
    1. Test case: `members evn/final concert`<br>
       Expected: CoordiMate switches to the **Contacts** view and shows Alex Yeoh (`ID: 1`) and Charlotte Oliveiro (`ID: 3`), in contact list order. The status message shows `Listed 2 member(s) of Final Concert. Use list to show all contacts.`
@@ -1467,7 +1485,7 @@ and an example.
 
 1. Marking and changing attendance
 
-   1. Prerequisites: The sample contacts are loaded and listed using `list`. Create an event using `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`, then run `assign evn/Final Concert c/1 2`. Select the event in the **Events** tab.
+   1. Prerequisites: Restore the sample data and run `list`. Create an event using `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`, then run `assign evn/Final Concert c/1 2`. Select the event in the **Events** tab.
 
    1. Test case: `markattendance evn/Final Concert mem/Alex Yeoh att/present`<br>
       Expected: `Alex Yeoh` shows **Present**. The counts show 1 present, 0 absent, and 1 not marked. The status message shows `Marked Alex Yeoh as present for Event Final Concert.`
@@ -1507,7 +1525,7 @@ and `PAST_DATE` is any date before today, such as `01-01-2020`.
 
 1. Setting and clearing leave
 
-   1. Prerequisites: The sample contacts are loaded and listed using `list`.
+   1. Prerequisites: Restore the sample data and run `list`.
 
    1. Test case: `edit 1 lv/FUTURE_DATE`<br>
       Expected: The card of the contact with member ID `1` shows **On leave until FUTURE_DATE**. Selecting the contact shows `FUTURE_DATE` under **On leave until**.
@@ -1535,7 +1553,7 @@ and `PAST_DATE` is any date before today, such as `01-01-2020`.
 
 ### Managing tags
 
-1. Prerequisites: The sample contacts are loaded and no additional custom tags have been created.
+1. Prerequisites: Restore the sample data.
 
 1. Test case: Press <kbd>Esc</kbd>, then <kbd>S</kbd> until the Tags view is active.<br>
    Expected: The Tags view lists `EXCO, Sponsor, UniversityStaff, Logistics, friends, neighbours`. Selecting
@@ -1645,8 +1663,10 @@ want to keep.
 
 1. Migrating legacy member IDs
 
-   1. Prerequisites: With the app closed, use a saved copy of the sample data in `data/coordimate.json`. Remove
-      every contact's `memberId` and the top-level `nextMemberId`, keeping valid JSON.
+   1. Prerequisites: Restore the sample data, then run `edit 1 r/President` so that
+      `data/coordimate.json` is created (Alex Yeoh is already President, so the data is unchanged). Close the app.
+      In `data/coordimate.json`,
+      remove every contact's `memberId` property and the top-level `nextMemberId` property, keeping valid JSON.
 
    1. Test case: Relaunch the app.<br>
       Expected: Contacts receive IDs `1` to `6` in file order. Cards and details show the same IDs. The file is unchanged.
