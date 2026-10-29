@@ -143,7 +143,7 @@ A command that breaks a constraint is rejected and makes no changes.
 |---|---|---|
 | `NAME`, `MEMBER_NAME` | `n/`, `mem/` | 1 to 80 characters. Letters, spaces, hyphens (`-`), apostrophes (`'`), and periods (`.`) only, with at least one letter. The words `s/o` and `d/o` (any capitalization) are also allowed, e.g. `Rajesh s/o Kumar`. Digits are not allowed. Several spaces in a row count as one. Contact names are unique, ignoring case and extra spaces. |
 | `PHONE` | `p/` | 7 to 15 digits. May start with `+` or a bracketed country code such as `(+65)`, and may contain spaces, hyphens, and brackets. Brackets must come in pairs that each enclose at least one digit, and cannot be nested. Unique among contacts once spaces, hyphens, and brackets are removed. |
-| `EMAIL` | `e/` | `local-part@domain`. The local part uses letters, digits, and `_`, `%`, `+`, `-`, `.`; it cannot start or end with a period or contain two periods in a row. The domain is made of labels separated by periods; each label uses letters, digits, and hyphens and cannot start or end with a hyphen. The last label has at least 2 letters. Unique among contacts, ignoring case. |
+| `EMAIL` | `e/` | `local-part@domain`, at most 254 characters, with a local part of at most 64 characters. The local part uses letters, digits, and `_`, `%`, `+`, `-`, `.`; it cannot start or end with a period or contain two periods in a row. The domain is made of labels separated by periods; each label uses letters, digits, and hyphens and cannot start or end with a hyphen. The last label has at least 2 letters. Unique among contacts, ignoring case. |
 | `ROLE` | `r/` | 1 to 50 characters. Letters, digits, spaces, hyphens, and `/` only, with at least one letter or digit. |
 | `BIRTHDAY` | `b/` | A real date in `dd-MM-yyyy` format that is not in the future, e.g. `18-06-2004`. |
 | `LEAVE_END_DATE` | `lv/` | A real date in `dd-MM-yyyy` format that is not in the past, e.g. `30-11-2026`. Today's date is allowed. |
@@ -156,6 +156,8 @@ A command that breaks a constraint is rejected and makes no changes.
 | `STATUS` | `att/` | `present` or `absent`, ignoring case. |
 | `MEMBER_ID` | `c/` for `assign` and `unassign`; none for `edit`, `delete`, `archive`, and `unarchive` | A permanent positive integer from 1 to 2147483647 identifying a saved contact, independent of the displayed list. |
 | `KEYWORD` | none | At least one non-space character. |
+
+"Printable" excludes line breaks and other control characters. "Visible" excludes spaces, zero-width and formatting characters, accent marks on their own, and blank filler characters such as `U+3164` Hangul Filler.
 
 <box type="info" seamless>
 
@@ -315,40 +317,20 @@ If the local contact data cannot be loaded or saved, CoordiMate reports an error
 
 Format: `add n/NAME p/PHONE e/EMAIL r/ROLE [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [lv/LEAVE_END_DATE] [t/TAG]... [m/NOTE]`
 
-Name, phone, email, and role are required. Each field accepts the following values; surrounding spaces are ignored:
-
-| Field | Constraints |
-|---|---|
-| `NAME` | 1 to 80 characters: letters, spaces, hyphens (`-`), apostrophes (`'`), and periods (`.`), with at least one letter. The words `s/o` and `d/o` are also allowed. |
-| `PHONE` | 7 to 15 digits, optionally starting with `+` or `(+country code)`, with optional spaces, hyphens, and matching brackets around digits, e.g. `(+65) 9123 4567`. |
-| `EMAIL` | `local-part@domain`, at most 254 characters, with a local part of at most 64 characters. |
-| `ROLE` | 1 to 50 characters: letters, digits, spaces, hyphens, and slashes (`/`), with at least one letter or digit. |
-| `BIRTHDAY` | A real date in `dd-MM-yyyy` format that is not in the future. |
-| `LEAVE_END_DATE` | A real date in `dd-MM-yyyy` format that is not in the past. |
-| `ADDRESS` | 1 to 200 printable characters, including at least one visible character. |
-| `ORGANISATION` | 1 to 80 characters: letters, digits, spaces, and `-` `&` `.` `,` `'` `(` `)` `/`, with at least one letter or digit, e.g. `St. John's Ambulance`. Several spaces in a row are saved as one, so `o/NUS  Student Affairs` is saved as `NUS Student Affairs`. |
-| `NOTE` | 1 to 500 printable characters, including at least one visible character. |
-| `TAG` | 1 to 30 letters or digits with no spaces. At most 15 tags per contact. |
-
-"Printable" excludes line breaks and other control characters. "Visible" excludes spaces, zero-width and formatting
-characters, accent marks on their own, and blank filler characters such as `U+3164` Hangul Filler.
-A value that breaks these rules is rejected with a
-message stating the field's constraints, such as
-`Invalid organisation. Use 1 to 80 characters: letters, digits, spaces, and - & . , ' ( ) /, with at least one letter or digit. Example: o/NUS Student Affairs`.
-Birthday, address, organisation, leave end date, and note are optional. An empty `b/`, `a/`, `o/`, `lv/`, or
-`m/` leaves that field unset,
-as does omitting it. Non-tag fields may appear only once; `t/TAG` may repeat. An empty `t/` clears the
-tags collected so far. A tag that matches a saved tag, ignoring capitalization, uses the saved tag's
-capitalization; for example, `t/exco` gives the contact the default `EXCO` tag. A valid new tag keeps its typed
-capitalization and is saved as a custom tag. Successful feedback is
-`Contact saved successfully: NAME`.
-After a successful `add`, CoordiMate selects and reveals the new contact so its details are shown. Unset optional
-values are shown as `— (not specified)` in the details pane, but remain unset in storage.
+* Name, phone, email, and role are required; birthday, address, organisation, leave end date, and note are optional. Surrounding spaces are ignored. Each field follows the constraints in [Parameter constraints](#parameter-constraints).
+* A value that breaks a constraint is rejected with a message stating that field's constraint, such as `Invalid organisation. Use 1 to 80 characters: letters, digits, spaces, and - & . , ' ( ) /, with at least one letter or digit. Example: o/NUS Student Affairs`.
+* An empty `b/`, `a/`, `o/`, `lv/`, or `m/` leaves that field unset, as does omitting it.
+* Non-tag fields may appear only once; `t/TAG` may repeat. An empty `t/` clears the tags collected so far.
+* A tag that matches a saved tag, ignoring capitalization, uses the saved tag's capitalization; for example, `t/exco` gives the contact the default `EXCO` tag. A valid new tag keeps its typed capitalization and is saved as a custom tag.
+* Successful feedback is `Contact saved successfully: NAME`. After a successful `add`, CoordiMate selects and reveals the new contact so its details are shown. Unset optional values are shown as `— (not specified)` in the details pane, but remain unset in storage.
 
 <box type="tip" seamless>
 
 **Tip:** A contact can have up to 15 tags, including zero. Tags that differ only in capitalization count as one. Parameters can be supplied in any order.
 </box>
+
+![Add contact](images/addContact.png)
+*Aisha Tan's contact card and details pane, shown automatically after `add` saves her.*
 
 Examples:
 * `add n/Aisha Tan p/+6591234567 e/aisha@example.com r/Logistics t/EXCO m/Handles venue bookings`
@@ -423,6 +405,9 @@ Email: aisha@example.com
 Role: President
 ```
 
+![Edit contact](images/editContact.png)
+*The same contact's details pane after `edit` updates their phone number and email address.*
+
 Examples:
 *  `edit 1 p/91234567 e/johndoe@example.com` Edits the phone number and email address of member ID `1` to be `91234567` and `johndoe@example.com` respectively.
 *  `edit 2 n/Betsy Crower t/` Edits the name of member ID `2` to be `Betsy Crower` and clears all existing tags.
@@ -483,10 +468,7 @@ Examples:
 * `edit target/aisha@example.com lv/15-12-2026` changes Aisha's leave to end on 15 December 2026.
 * `edit 2 lv/` ends the leave of the contact with member ID `2`.
 
-| Condition | Error message |
-|---|---|
-| The date is invalid, incorrectly formatted, or in the past. | `Invalid leave end date. Use a real date in dd-MM-yyyy format that is not in the past. Example: lv/30-11-2026` |
-| `lv/` is repeated. | `Parameter lv/ may only be specified once.` |
+An invalid or repeated `lv/` is rejected with the same error messages as [`edit`](#editing-a-contact-edit).
 
 ### Deleting a contact: `delete`
 
@@ -506,6 +488,9 @@ Formats: `delete MEMBER_ID` · `delete n/NAME` · `delete p/PHONE` · `delete e/
   contacts remain saved. A cancelled deletion makes no changes.
 * A confirmed deletion is saved before it appears in the contact list. A corrupt data file or failed write leaves the
   contact and events unchanged and reports a contact load or save error.
+
+![Delete contact confirmation](images/deleteContactConfirm.png)
+*The `Confirm deletion? [y/N]` prompt shown after `delete`, before the user responds.*
 
 Examples:
 * `list` followed by `delete 2`, then `y`, deletes the contact with member ID `2`.
@@ -553,6 +538,9 @@ Format: `search KEYWORD`
 * Search checks all saved contacts, including those hidden by the current search or filter.
 * Results replace the displayed contact list. Permanent member IDs remain unchanged; `edit`, `delete`, `assign`, and `unassign` accept those IDs even for hidden contacts. Use `list` to show everyone.
 * If nothing matches, the displayed list is empty and a no-matches message is shown.
+
+![Search contacts](images/searchContact.png)
+*The contact list narrowed down to the one match for `search John`.*
 
 Examples:
 * `search John` matches `John Doe` by name and `john@example.com` by email.
@@ -608,6 +596,9 @@ Format: `filter FIELD/VALUE [FIELD/VALUE]...`
 * A quotation mark with no closing quotation mark, followed by another field, is rejected because it is unclear
   where the value ends: `filter event/"Cali tag/EXCO`.
 
+![Filter contacts](images/filterContact.png)
+*The contact list narrowed down to members matching `filter tag/EXCO`.*
+
 Examples:
 * `filter tag/EXCO` lists contacts tagged `EXCO`.
 * `filter event/Final Concert` lists the members of `Final Concert`.
@@ -657,6 +648,9 @@ While a contact or event is archived:
   lists in the **Tags** tab, and an archived event in the event list of each of its members' details.
 * An archived contact cannot be assigned to an event, but can still be removed from one with `unassign`.
 * Its name stays taken: `add` or `addevent` with the same name is rejected as a duplicate.
+
+![Archived contact](images/archiveContact.png)
+*A contact's card marked with the **Archived** badge, shown in the `list archived` view.*
 
 Examples:
 
@@ -1140,90 +1134,50 @@ restarting. This is the same behavior as the **Dismiss** button.
 
 ## Managing tags
 
-### Adding a tag: `addtag`
+### Managing tags: `addtag`, `edittag`, `deletetag`
 
-Creates a custom tag and opens the Tags view. Tag names must contain 1 to 30 alphanumeric characters without spaces.
-Leading and trailing whitespace is trimmed. Tag names preserve their capitalization, but are unique regardless of
-capitalization.
+`addtag` creates a custom tag. `edittag` renames an existing tag, including a default tag, and updates it wherever
+it is applied across contacts. `deletetag` deletes an existing tag, including a default tag, and removes it from
+every contact to which it is assigned. All three open the Tags view.
 
-Format: `addtag t/TAG`
+Formats:
+
+* `addtag t/TAG` creates `TAG`.
+* `edittag OLD_TAG t/NEW_TAG` renames `OLD_TAG` to `NEW_TAG`.
+* `deletetag t/TAG` deletes `TAG`.
+
+* `TAG` and `NEW_TAG` must contain 1 to 30 alphanumeric characters without spaces. Leading and trailing whitespace
+  is trimmed. Tag names preserve their capitalization, but are unique regardless of capitalization, so `addtag
+  t/publicity` is rejected as a duplicate if `Publicity` already exists.
+* `OLD_TAG`, and the `TAG` given to `deletetag`, must match an existing tag, ignoring capitalization.
+
+![Add tag](images/addTag.png)
+*The Tags tab showing the new `ProductionCrew` tag after `addtag`.*
 
 Examples:
 
 * `addtag t/ProductionCrew`
 * `addtag t/Publicity`
-
-If a tag named `Publicity` already exists, commands such as `addtag t/publicity` are rejected as duplicates.
-
-Success: `Created tag: Publicity.`
-
-| Condition | Error message |
-|---|---|
-| No parameters are supplied. | `Invalid command format.` |
-| The `t/` prefix is missing. | `Invalid command format.` |
-| More than one `t/` prefix is supplied. | `Parameter t/ may only be specified once.` |
-| Text appears before `t/`. | `Invalid command format.` |
-| An unknown parameter is used. | `Unknown parameter: {PREFIX}.` |
-| The tag name is empty. | `Tag name must not be empty. Example: t/Publicity` |
-| The tag name contains spaces, symbols, or punctuation. | `Invalid tag name. Use letters and numbers without spaces. Example: t/Publicity` |
-| The tag name exceeds 30 characters. | `Tag name must not exceed 30 characters. Example: t/Publicity` |
-| The tag name already exists, ignoring capitalization. | `A tag with this name already exists. No changes were made.` |
-
-If saving fails, the command reports `Tag could not be saved. No changes were made.`
-
-### Editing a tag: `edittag`
-
-Renames an existing tag, including a default tag, and updates it wherever it is applied across contacts.
-
-Format: `edittag OLD_TAG t/NEW_TAG`
-
-Examples:
-
 * `edittag Production t/ProductionCrew`
 * `edittag Media t/Publicity`
-
-`OLD_TAG` must match an existing tag, ignoring capitalization. `NEW_TAG` must contain 1 to 30
-alphanumeric characters without spaces. Leading and trailing whitespace is trimmed before validation.
-
-Success for `edittag Media t/Publicity`: `Media successfully renamed to Publicity.`
-
-| Condition | Error message |
-|---|---|
-| The current tag does not exist. | `Tag {OLD_TAG} does not exist. Use a saved tag name.` |
-| The `t/` prefix is missing. | `Invalid command format.` |
-| The current tag name is missing. | `Invalid command format.` |
-| The new tag name is blank. | `Tag name must not be empty. Example: t/Publicity` |
-| More than one `t/` prefix is supplied. | `Parameter t/ may only be specified once.` |
-| An unknown parameter is used. | `Unknown parameter: {PREFIX}.` |
-| The new tag contains spaces, symbols, or punctuation. | `Invalid tag name. Use letters and numbers without spaces. Example: t/Publicity` |
-| The new tag exceeds 30 characters. | `Tag name must not exceed 30 characters. Example: t/Publicity` |
-| The new tag matches the current tag, ignoring capitalization. | `Tag {OLD_TAG} already has that name. No changes were made.` |
-| The new tag already exists. | `A tag with this name already exists. No changes were made.` |
-
-If saving fails, the command reports `Tag could not be saved. No changes were made.`
-
-### Deleting a tag: `deletetag`
-
-Deletes an existing tag, including a default tag, and removes it from every contact to which it is assigned.
-
-Format: `deletetag t/TAG`
-
-Examples:
-
 * `deletetag t/ProductionCrew`
 * `deletetag t/Publicity`
 
-The tag name is matched case-insensitively.
-
-Success: `{TAG_NAME} successfully deleted.`
+Success: `Created tag: Publicity.` (`addtag`) · `Media successfully renamed to Publicity.` (`edittag`) ·
+`Publicity successfully deleted.` (`deletetag`)
 
 | Condition | Error message |
 |---|---|
-| The `t/` prefix is missing, or there is text before it. | `Invalid command format.` |
-| The tag name is empty. | `Tag name must not be empty. Example: t/Publicity` |
+| No parameters are supplied (`addtag`), the `t/` prefix is missing, `edittag`'s current tag name is missing, or text appears before the first parameter. | `Invalid command format.` |
 | More than one `t/` prefix is supplied. | `Parameter t/ may only be specified once.` |
 | An unknown parameter is used. | `Unknown parameter: {PREFIX}.` |
-| The specified tag does not exist. | `Tag {TAG_NAME} does not exist. Use a saved tag name.` |
+| The tag name (`addtag`), new tag name (`edittag`), or tag name (`deletetag`) is empty. | `Tag name must not be empty. Example: t/Publicity` |
+| `addtag`'s tag name, or `edittag`'s new tag name, contains spaces, symbols, or punctuation. | `Invalid tag name. Use letters and numbers without spaces. Example: t/Publicity` |
+| `addtag`'s tag name, or `edittag`'s new tag name, exceeds 30 characters. | `Tag name must not exceed 30 characters. Example: t/Publicity` |
+| `addtag`'s tag, or `edittag`'s new tag, already exists, ignoring capitalization. | `A tag with this name already exists. No changes were made.` |
+| `edittag`'s current tag does not exist. | `Tag {OLD_TAG} does not exist. Use a saved tag name.` |
+| `edittag`'s new tag matches the current tag, ignoring capitalization. | `Tag {OLD_TAG} already has that name. No changes were made.` |
+| `deletetag`'s tag does not exist. | `Tag {TAG_NAME} does not exist. Use a saved tag name.` |
 
 If saving fails, the command reports `Tag could not be saved. No changes were made.`
 
@@ -1235,8 +1189,7 @@ the Tags view.
 
 Select a tag in the **Tags** tab to see the contacts assigned to it and the member count. The member list includes
 all saved contacts, regardless of the current contact search or filter, and is ordered by name. Each member shows
-their tags, role, and organisation. Archived contacts are included and marked `(archived)`. Every tag assigned to a
-contact is included in this global tag list, including tags recovered from older saved data.
+their tags, role, and organisation. Archived contacts are included and marked `(archived)`. Every tag assigned to a contact is included in this global tag list.
 
 --------------------------------------------------------------------------------------------------------------------
 
