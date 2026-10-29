@@ -59,6 +59,20 @@ public class EditTagCommand extends MutatingTagCommand {
                 tagToEdit.getTagName(), editedTag.getTagName()), CommandResult.View.TAGS);
     }
 
+    /**
+     * Returns true if this command renames the tag named {@code name}, ignoring case.
+     */
+    public boolean renamesTag(String name) {
+        return currentTagName.equalsIgnoreCase(name);
+    }
+
+    /**
+     * Returns the tag's new name.
+     */
+    public String getNewTagName() {
+        return editedTag.getTagName();
+    }
+
     @Override
     public boolean equals(Object other) {
         return other instanceof EditTagCommand otherCommand

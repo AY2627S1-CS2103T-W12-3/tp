@@ -25,6 +25,7 @@ import coordimate.logic.commands.DeleteEventCommand;
 import coordimate.logic.commands.DismissCommand;
 import coordimate.logic.commands.EditCommand;
 import coordimate.logic.commands.EditEventCommand;
+import coordimate.logic.commands.EditTagCommand;
 import coordimate.logic.commands.MarkAttendanceCommand;
 import coordimate.logic.commands.MutatingTagCommand;
 import coordimate.logic.commands.UnassignCommand;
@@ -40,6 +41,7 @@ import coordimate.model.event.EventMembersPredicate;
 import coordimate.model.person.ContactFilterPredicate;
 import coordimate.model.person.Person;
 import coordimate.model.tag.Tag;
+import coordimate.model.tag.TagFilterPredicate;
 import coordimate.storage.DataConflictException;
 import coordimate.storage.Storage;
 import javafx.beans.property.ReadOnlyBooleanProperty;
@@ -186,6 +188,7 @@ public class LogicManager implements Logic {
             model.updateFilteredPersonList(PREDICATE_SHOW_ALL_PERSONS);
         }
         keepEventViewsAfterRename(command);
+        keepTagFiltersAfterRename(command);
         logContactOperationSuccess(command);
         return result;
     }
@@ -233,6 +236,25 @@ public class LogicManager implements Logic {
         };
         if (updated != null && !updated.equals(current)) {
             logger.fine("Displayed contact list now follows renamed event " + editEvent.getNewName() + ".");
+            model.updateFilteredPersonList(updated);
+        }
+    }
+
+    /**
+     * Keeps showing the same contacts when {@code command} renames a tag that the displayed filter follows,
+     * since a tag criterion identifies the tag by its name.
+     */
+    private void keepTagFiltersAfterRename(Command command) {
+        if (!(command instanceof EditTagCommand editTag)
+                || !(model.getFilteredPersonPredicate() instanceof ContactFilterPredicate filter)) {
+            return;
+        }
+        ContactFilterPredicate updated = filter.withCriteriaReplaced(criterion ->
+                criterion instanceof TagFilterPredicate shown && editTag.renamesTag(shown.getTagName())
+                        ? shown.withTagName(editTag.getNewTagName())
+                        : criterion);
+        if (!updated.equals(filter)) {
+            logger.fine("Displayed contact list now follows renamed tag " + editTag.getNewTagName() + ".");
             model.updateFilteredPersonList(updated);
         }
     }

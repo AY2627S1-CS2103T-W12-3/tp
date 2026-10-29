@@ -1020,6 +1020,8 @@ Format: `filter FIELD/VALUE [FIELD/VALUE]...`
 * An `event` filter stays up to date while it is shown, like [`members`](#viewing-members-of-an-event-members):
   contacts assigned with `assign` appear, contacts removed with `unassign` disappear, and renaming the event with
   `editevent` keeps the filter working. If the event is deleted, the list becomes empty.
+* A `tag` filter also follows its tag: renaming the tag with `edittag` keeps showing the same contacts. If the tag is
+  deleted, the list becomes empty.
 
 **Quotation marks**
 

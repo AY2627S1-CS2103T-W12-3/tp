@@ -14,6 +14,7 @@ import coordimate.model.event.EventMembersPredicate;
 import coordimate.model.person.ContactFilterPredicate;
 import coordimate.model.person.FilterCriterion;
 import coordimate.model.person.Person;
+import coordimate.model.tag.TagFilterPredicate;
 
 /**
  * Filters the displayed contact list to contacts matching every given criterion.
@@ -63,7 +64,8 @@ public class FilterCommand extends Command {
                 if (!tagExists) {
                     throw new CommandException(MESSAGE_NO_MATCHING_VALUE);
                 }
-                return person -> person.getTags().stream().anyMatch(tag -> tag.getTagName().equalsIgnoreCase(value));
+                // A named predicate, so that the filter can follow the tag when it is renamed.
+                return new TagFilterPredicate(value);
             }
             case EVENT -> {
                 String eventName = StringUtil.normalizeWhitespace(value);
