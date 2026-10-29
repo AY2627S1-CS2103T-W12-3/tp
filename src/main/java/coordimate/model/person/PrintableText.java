@@ -37,10 +37,12 @@ public final class PrintableText {
 
     private static boolean isVisible(int codePoint) {
         int type = Character.getType(codePoint);
-        return !Character.isWhitespace(codePoint) && type != Character.SPACE_SEPARATOR
-                && type != Character.FORMAT && type != Character.NON_SPACING_MARK
-                && type != Character.COMBINING_SPACING_MARK && type != Character.ENCLOSING_MARK
-                && type != Character.UNASSIGNED && type != Character.PRIVATE_USE
-                && !BLANK_CODE_POINTS.contains(codePoint);
+        boolean isSpace = Character.isWhitespace(codePoint) || type == Character.SPACE_SEPARATOR;
+        boolean isInvisibleFormat = type == Character.FORMAT;
+        boolean isMark = type == Character.NON_SPACING_MARK || type == Character.COMBINING_SPACING_MARK
+                || type == Character.ENCLOSING_MARK;
+        boolean hasNoStandardGlyph = type == Character.UNASSIGNED || type == Character.PRIVATE_USE;
+        boolean isBlankByDesign = BLANK_CODE_POINTS.contains(codePoint);
+        return !isSpace && !isInvisibleFormat && !isMark && !hasNoStandardGlyph && !isBlankByDesign;
     }
 }
