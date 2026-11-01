@@ -89,8 +89,10 @@ public class PhoneTest {
 
     @Test
     public void getNormalizedValue_bracketedCountryCode_matchesPlainNumber() {
-        assertEquals(new Phone("+6591234567").getNormalizedValue(),
-                new Phone("(+65) 9123 4567").getNormalizedValue());
+        assertEquals("6591234567", new Phone("6591234567").getNormalizedValue());
+        assertEquals("6591234567", new Phone("+6591234567").getNormalizedValue());
+        assertEquals("6591234567", new Phone("(+65) 9123-4567").getNormalizedValue());
+        assertEquals("+6591234567", new Phone("+6591234567").getValue());
     }
 
     @Test

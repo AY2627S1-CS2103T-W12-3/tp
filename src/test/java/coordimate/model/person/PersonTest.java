@@ -118,6 +118,16 @@ public class PersonTest {
     }
 
     @Test
+    public void isSamePerson_optionalPhonePlusSign_matchesOnlySameDigits() {
+        Person alice = new PersonBuilder(ALICE).withPhone("+6591234567").build();
+        Person bob = new PersonBuilder(BOB).withPhone("6591234567").build();
+        assertTrue(alice.isSamePerson(bob));
+        assertTrue(bob.isSamePerson(alice));
+        assertFalse(alice.isSamePerson(new PersonBuilder(bob).withPhone("6591234568").build()));
+        assertFalse(alice.isSamePerson(new PersonBuilder(bob).withPhone("91234567").build()));
+    }
+
+    @Test
     public void equals() {
         // same values -> returns true
         Person aliceCopy = new PersonBuilder(ALICE).build();

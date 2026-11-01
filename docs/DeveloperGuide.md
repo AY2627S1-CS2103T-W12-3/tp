@@ -1445,7 +1445,7 @@ the results. Speed and onboarding targets require timed trials with users from t
 * **Mainstream OS**: Windows, macOS, or Linux.
 * **Member ID**: A unique, permanent positive integer assigned to a contact, displayed as `ID: <number>`, and used in commands across searches, filters, and restarts.
 * **Navigation mode**: The keyboard mode in which key presses browse cards and switch views.
-* **Normalised phone number**: A phone number with spaces, hyphens and brackets removed, used to detect duplicates. For example, `+65 9123 4567` and `+6591234567` are the same.
+* **Normalised phone number**: A phone number with the optional `+`, spaces, hyphens and brackets removed, used to detect duplicates. For example, `+65 9123 4567` and `6591234567` are the same.
 * **On leave**: A contact with a saved leave end date is unavailable through that date, inclusive, using the computer's local date.
 * **Organisation**: The company or body that a contact belongs to, such as a CCA, sponsor company, or university office.
 * **Prefix**: The short label before a value in a command that tells CoordiMate which field it belongs to, such as `n/` for name or `t/` for tag.

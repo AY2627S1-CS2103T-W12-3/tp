@@ -59,9 +59,12 @@ public class ContactMatchesKeywordPredicateTest {
         assertTrue(new ContactMatchesKeywordPredicate("8743 8807").test(plain));
         assertTrue(new ContactMatchesKeywordPredicate("8743-8807").test(plain));
         assertTrue(new ContactMatchesKeywordPredicate("+6594351253").test(bracketed));
+        assertTrue(new ContactMatchesKeywordPredicate("6594351253").test(bracketed));
+        assertTrue(new ContactMatchesKeywordPredicate("+87438807").test(plain));
 
         assertFalse(new ContactMatchesKeywordPredicate("91234568").test(spaced));
         assertFalse(new ContactMatchesKeywordPredicate("( )").test(plain)); // formatting only
+        assertFalse(new ContactMatchesKeywordPredicate("+").test(plain)); // formatting only
         assertFalse(new ContactMatchesKeywordPredicate("-").test(hyphenated)); // formatting only
     }
 
