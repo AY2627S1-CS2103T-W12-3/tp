@@ -6,15 +6,21 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import coordimate.testutil.JavaFxTestSupport;
+import javafx.animation.AnimationTimer;
+import javafx.application.Platform;
 import javafx.geometry.Bounds;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -340,6 +346,86 @@ public class TutorialWindowTest {
             tutorial.hide();
             stage.close();
         });
+    }
+
+    @Test
+    public void resizing_keepsHighlightAlignedWithoutChangingStep() throws Exception {
+        record Fixture(TutorialWindow tutorial, Stage stage, Region target) { }
+        Fixture fixture = JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+            TutorialWindow tutorial = new TutorialWindow();
+            Region target = new Region();
+            target.setPrefSize(120, 60);
+            target.setMaxSize(120, 60);
+            StackPane content = new StackPane(target);
+            content.setAlignment(Pos.BOTTOM_RIGHT);
+            content.setPadding(new Insets(40));
+            Stage stage = new Stage();
+            stage.setScene(new Scene(new StackPane(content, tutorial.getRoot()), 1000, 700));
+            addTutorialStyles(stage);
+            stage.show();
+            tutorial.show();
+            for (int step = 0; step < 4; step++) {
+                tutorial.handleShortcut(keyEvent(KeyCode.RIGHT));
+            }
+            applyLayout(stage);
+            tutorial.highlight(target);
+            return new Fixture(tutorial, stage, target);
+        });
+        try {
+            waitForLayoutPulses();
+            for (int width : List.of(800, 1100, 720)) {
+                JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+                    if (width == 1100) {
+                        // The visible tutorial must keep tracking layout when its scene changes.
+                        Scene previousScene = fixture.stage().getScene();
+                        Parent sceneRoot = previousScene.getRoot();
+                        previousScene.setRoot(new StackPane());
+                        fixture.stage().setScene(new Scene(sceneRoot));
+                        addTutorialStyles(fixture.stage());
+                    }
+                    fixture.stage().setWidth(width);
+                    fixture.stage().setHeight(width * 0.7);
+                });
+                waitForLayoutPulses();
+                JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+                    Stage stage = fixture.stage();
+                    Bounds target = fixture.target().localToScene(fixture.target().getLayoutBounds());
+                    Node highlight = stage.getScene().lookup("#targetHighlight");
+                    Bounds actual = highlight.localToScene(highlight.getLayoutBounds());
+                    assertEquals(target.getMinX() - 6, actual.getMinX(), 1);
+                    assertEquals(target.getMinY() - 6, actual.getMinY(), 1);
+                    assertEquals(target.getMaxX() + 6, actual.getMaxX(), 1);
+                    assertEquals(target.getMaxY() + 6, actual.getMaxY(), 1);
+                    assertEquals("Select a contact card", fixture.tutorial().getCurrentStep().title());
+                    Node card = stage.getScene().lookup("#tutorialCard");
+                    Bounds cardBounds = card.localToScene(card.getLayoutBounds());
+                    assertTrue(cardBounds.getMinX() >= 0 && cardBounds.getMinY() >= 0);
+                    assertTrue(cardBounds.getMaxX() <= stage.getScene().getWidth());
+                    assertTrue(cardBounds.getMaxY() <= stage.getScene().getHeight());
+                });
+            }
+        } finally {
+            JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+                fixture.tutorial().hide();
+                fixture.stage().close();
+            });
+        }
+    }
+
+    private static void waitForLayoutPulses() throws InterruptedException {
+        CountDownLatch completed = new CountDownLatch(1);
+        Platform.runLater(() -> new AnimationTimer() {
+            private int pulseCount;
+
+            @Override
+            public void handle(long now) {
+                if (++pulseCount == 3) {
+                    stop();
+                    completed.countDown();
+                }
+            }
+        }.start());
+        assertTrue(completed.await(10, TimeUnit.SECONDS));
     }
 
     @Test

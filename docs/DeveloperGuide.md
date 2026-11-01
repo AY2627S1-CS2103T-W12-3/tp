@@ -725,6 +725,9 @@ to highlight.
   `MainWindow#showTutorialStep` switches to the tab that the step needs, finds the node for its `TutorialTarget`, and
   passes it to `TutorialWindow#highlight`. The overlay then shades everything except that node and places the step's
   card beside it.
+  While the tutorial is visible, a scene post-layout listener refreshes the highlight and card position using the
+  target's final bounds. This keeps them aligned after resizing without changing steps. The listener is removed
+  when the tutorial is hidden and transferred if its scene changes.
 * **Blocking the app.** While the tutorial is showing, event filters on the overlay and on the main window consume
   every mouse and key event that is not aimed at the tutorial card. `MainWindow#showTutorial` also disables the command
   box. This prevents commands from changing the lists that the tour points at.

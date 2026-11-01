@@ -150,6 +150,7 @@ public class TutorialWindow extends UiPart<StackPane> {
     private Runnable dismissHandler = () -> { };
     private Node target;
     private int stepIndex;
+    private final Runnable layoutListener = this::layoutOverlay;
 
     /** Creates a tutorial overlay that is initially hidden. */
     public TutorialWindow() {
@@ -171,6 +172,7 @@ public class TutorialWindow extends UiPart<StackPane> {
         });
         root.widthProperty().addListener((observable, oldWidth, newWidth) -> layoutOverlay());
         root.heightProperty().addListener((observable, oldHeight, newHeight) -> layoutOverlay());
+        root.sceneProperty().addListener((observable, oldScene, newScene) -> updateLayoutListener(oldScene, newScene));
         updateStep();
     }
 
@@ -180,6 +182,7 @@ public class TutorialWindow extends UiPart<StackPane> {
         StackPane root = getRoot();
         root.setManaged(true);
         root.setVisible(true);
+        updateLayoutListener(root.getScene(), root.getScene());
         updateStep();
         root.applyCss();
         root.requestLayout();
@@ -196,11 +199,22 @@ public class TutorialWindow extends UiPart<StackPane> {
 
     /** Hides the tutorial without changing its completion preference. */
     public void hide() {
+        updateLayoutListener(getRoot().getScene(), null);
         getRoot().setVisible(false);
         getRoot().setManaged(false);
         targetHighlight.setVisible(false);
         targetBlocker.setVisible(false);
         target = null;
+    }
+
+    /** Tracks the final target bounds after scene layout, only while the tutorial is showing. */
+    private void updateLayoutListener(Scene oldScene, Scene newScene) {
+        if (oldScene != null) {
+            oldScene.removePostLayoutPulseListener(layoutListener);
+        }
+        if (newScene != null && isShowing()) {
+            newScene.addPostLayoutPulseListener(layoutListener);
+        }
     }
 
     /** Sets the action to run when the tutorial is finished or explicitly closed. */
