@@ -140,6 +140,34 @@ public class TutorialWindowTest {
     }
 
     @Test
+    public void verticalArrowKeys_doNotMoveFocusOrChangeStep() throws Exception {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+            TutorialWindow tutorial = new TutorialWindow();
+            Stage stage = createStage(tutorial, 900, 650);
+            try (AutoCloseable closeStage = JavaFxTestSupport.closing(stage::close)) {
+                tutorial.show();
+                applyLayout(stage);
+                Scene scene = stage.getScene();
+                Button nextButton = (Button) scene.lookup("#nextButton");
+                nextButton.requestFocus();
+                TutorialWindow.TutorialStep step = tutorial.getCurrentStep();
+                AtomicBoolean hasButtonReceivedKey = new AtomicBoolean();
+                nextButton.addEventHandler(KeyEvent.KEY_PRESSED, event -> hasButtonReceivedKey.set(true));
+
+                for (KeyCode code : List.of(KeyCode.UP, KeyCode.DOWN)) {
+                    nextButton.fireEvent(keyEvent(code));
+                    assertFalse(hasButtonReceivedKey.get());
+                    assertEquals(nextButton, scene.getFocusOwner());
+                    assertEquals(step, tutorial.getCurrentStep());
+                }
+                tutorial.hide();
+                assertFalse(tutorial.handleShortcut(keyEvent(KeyCode.UP)));
+                assertFalse(tutorial.handleShortcut(keyEvent(KeyCode.DOWN)));
+            }
+        });
+    }
+
+    @Test
     public void mouseFilter_blocksBackdropButAllowsCardControls() throws Exception {
         JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             TutorialWindow tutorial = new TutorialWindow();

@@ -265,6 +265,9 @@ public class TutorialWindow extends UiPart<StackPane> {
             return false;
         }
         KeyCode code = event.getCode();
+        if (code == KeyCode.UP || code == KeyCode.DOWN) {
+            return true;
+        }
         if (code == KeyCode.LEFT) {
             showPreviousStep();
         } else if (code == KeyCode.RIGHT) {
