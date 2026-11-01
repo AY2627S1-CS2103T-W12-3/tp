@@ -60,8 +60,7 @@
 }
 
 .tutorial-card .button:focused {
-    -fx-background-color: #1f2633;
-    -fx-border-color: #f0f6fc;
+    -fx-border-color: #fbbf24;
     -fx-border-width: 2;
     -fx-padding: 7 13;
 }
