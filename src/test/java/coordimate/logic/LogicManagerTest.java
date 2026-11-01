@@ -80,6 +80,15 @@ public class LogicManagerTest {
     }
 
     @Test
+    public void execute_commandWordIgnoresCase_errorShowsCommandUsage() {
+        String expectedMessage = Messages.withUsage(String.format(DeleteCommand.MESSAGE_UNKNOWN_MEMBER_ID, 9),
+                DeleteCommand.MESSAGE_USAGE);
+        for (String commandWord : List.of("DELETE", "Delete", "dElEtE")) {
+            assertThrows(CommandException.class, expectedMessage, () -> logic.execute(commandWord + " 9"));
+        }
+    }
+
+    @Test
     public void execute_validCommand_success() throws Exception {
         String listCommand = ListCommand.COMMAND_WORD;
         assertCommandSuccess(listCommand, ListCommand.MESSAGE_SUCCESS, model);

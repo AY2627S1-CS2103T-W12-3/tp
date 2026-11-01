@@ -101,7 +101,7 @@ are replaced with the actual parameter prefix, name, member ID, or other details
 | Condition | Error message |
 |---|---|
 | The input is empty or contains only whitespace. | `Invalid command format.` |
-| The command word is unknown or uses the wrong capitalization. | `Unknown command. Use help to see the available commands. Example: help` |
+| The command word is unknown. | `Unknown command. Use help to see the available commands. Example: help` |
 | Existing data cannot be loaded before a command changes saved data. | `Saved data could not be loaded. Check the local data file.` |
 
 For `dismiss`, data-loading and saving failures instead produce the session-only warning described in
@@ -110,6 +110,9 @@ For `dismiss`, data-loading and saving failures instead produce the session-only
 <box type="info" seamless>
 
 **Notes about the command format:**<br>
+
+* Command words are case-insensitive. For example, `add`, `ADD`, and `Add` run the same command.
+  Parameter prefixes such as `n/` remain case-sensitive.<br>
 
 * Words in `UPPER_CASE` are the parameters to be supplied by the user.<br>
   For example, in `add n/NAME`, replace `NAME` with a value such as `John Doe`.

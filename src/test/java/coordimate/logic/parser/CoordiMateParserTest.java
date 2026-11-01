@@ -83,6 +83,25 @@ public class CoordiMateParserTest {
     }
 
     @Test
+    public void parseCommand_commandWordIgnoresCase_preservesArguments() throws Exception {
+        Person person = new PersonBuilder().build();
+        for (String commandWord : List.of("ADD", "Add", "aDd")) {
+            assertEquals(new AddCommand(person),
+                    parser.parseCommand(commandWord + " " + PersonUtil.getPersonDetails(person)));
+        }
+        for (String commandWord : List.of("HELP", "Help", "hElP")) {
+            assertTrue(parser.parseCommand(commandWord) instanceof HelpCommand);
+        }
+        assertEquals(new ListCommand(true), parser.parseCommand("LiSt ARCHIVED"));
+    }
+
+    @Test
+    public void parseCommand_uppercaseCommandWithInvalidArguments_showsCommandUsage() {
+        String expectedMessage = String.format(MESSAGE_INVALID_COMMAND_FORMAT, AddCommand.MESSAGE_USAGE);
+        assertThrows(ParseException.class, expectedMessage, () -> parser.parseCommand("ADD"));
+    }
+
+    @Test
     public void parseCommand_assign() throws Exception {
         AssignCommand command = (AssignCommand) parser.parseCommand(
                 AssignCommand.COMMAND_WORD + " evn/Final Concert c/1 3");

@@ -3,6 +3,7 @@ package coordimate.logic.parser;
 import static coordimate.logic.Messages.MESSAGE_UNKNOWN_COMMAND;
 import static java.util.Objects.requireNonNull;
 
+import java.util.Locale;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -70,7 +71,7 @@ public class CoordiMateParser {
             throw ParserUtil.createInvalidFormatException(HelpCommand.MESSAGE_USAGE);
         }
 
-        final String commandWord = matcher.group("commandWord");
+        final String commandWord = matcher.group("commandWord").toLowerCase(Locale.ROOT);
         final String arguments = matcher.group("arguments");
 
         // Note to developers: Change LOG_LEVEL in LogsCenter to enable lower level (i.e., FINE, FINER and lower)
