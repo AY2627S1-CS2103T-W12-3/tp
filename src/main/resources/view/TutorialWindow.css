@@ -59,6 +59,13 @@
     -fx-background-color: #1f2633;
 }
 
+.tutorial-card .button:focused {
+    -fx-background-color: #1f2633;
+    -fx-border-color: #f0f6fc;
+    -fx-border-width: 2;
+    -fx-padding: 7 13;
+}
+
 .tutorial-card .button:disabled {
     -fx-opacity: 0.55;
 }
