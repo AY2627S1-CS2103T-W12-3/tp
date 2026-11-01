@@ -142,7 +142,7 @@ A command that breaks a constraint is rejected and makes no changes.
 | Parameter | Prefix | Constraints |
 |---|---|---|
 | `NAME`, `MEMBER_NAME` | `n/`, `mem/` | 1 to 80 characters. Letters, spaces, hyphens (`-`), apostrophes (`'`), and periods (`.`) only, with at least one letter. The words `s/o` and `d/o` (any capitalization) are also allowed, e.g. `Rajesh s/o Kumar`. Digits are not allowed. Several spaces in a row count as one. Contact names are unique, ignoring case and extra spaces. |
-| `PHONE` | `p/` | 7 to 15 digits. May start with `+` or a bracketed country code such as `(+65)`, and may contain spaces, hyphens, and brackets. Brackets must come in pairs that each enclose at least one digit, and cannot be nested. Unique among contacts once spaces, hyphens, and brackets are removed. |
+| `PHONE` | `p/` | 7 to 15 digits. May start with `+` or a bracketed country code such as `(+65)`, and may contain spaces, hyphens, and brackets. Brackets must come in pairs that each enclose at least one digit, and cannot be nested. Unique among contacts once the optional `+`, spaces, hyphens, and brackets are removed. |
 | `EMAIL` | `e/` | `local-part@domain`, at most 254 characters, with a local part of at most 64 characters. The local part uses letters, digits, and `_`, `%`, `+`, `-`, `.`; it cannot start or end with a period or contain two periods in a row. The domain is made of labels separated by periods; each label uses letters, digits, and hyphens and cannot start or end with a hyphen. The last label has at least 2 letters. Unique among contacts, ignoring case. |
 | `ROLE` | `r/` | 1 to 50 characters. Letters, digits, spaces, hyphens, and `/` only, with at least one letter or digit. |
 | `BIRTHDAY` | `b/` | A real date in `dd-MM-yyyy` format that is not in the future, e.g. `18-06-2004`. |
@@ -322,7 +322,8 @@ Adds a contact to CoordiMate.
 Contact names must be unique, ignoring case and extra spaces. Surrounding spaces are removed and several spaces in a
 row are saved as one, so `n/Alex  Yeoh` is saved as `Alex Yeoh` and is a duplicate of an existing `Alex Yeoh`.
 An add is also rejected if its phone number or email address is already used by another contact.
-Phone numbers are compared without spaces, hyphens, or brackets; email addresses are compared without regard to case.
+Phone numbers are compared without the optional `+`, spaces, hyphens, or brackets; email addresses are compared without regard to case.
+For example, `+6591234567` and `6591234567` match, but `91234567` and `6591234567` remain distinct.
 For any duplicate, CoordiMate reports `A contact with this name, phone number, or email already exists.`
 and makes no changes.
 If the local contact data cannot be loaded or saved, CoordiMate reports an error and leaves the contact list unchanged.
@@ -367,7 +368,7 @@ Or: `edit target/IDENTIFIER [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [
 
 * Edits the contact with the specified permanent `MEMBER_ID`, including contacts hidden by a search or filter.
   For example, `edit 12 r/President` always targets member ID `12`, even when that contact is the first search result.
-* Alternatively, `target/IDENTIFIER` finds an exact saved name, phone number, or email address across all contacts, including those hidden by the current search or filter. Names ignore letter case and extra spaces, emails ignore letter case; phone numbers ignore spaces, hyphens, and brackets. Supply either a member ID or `target/`, not both.
+* Alternatively, `target/IDENTIFIER` finds an exact saved name, phone number, or email address across all contacts, including those hidden by the current search or filter. Names ignore letter case and extra spaces, emails ignore letter case; phone numbers ignore the optional `+`, spaces, hyphens, and brackets. Supply either a member ID or `target/`, not both.
 * If several contacts match an identifier, the command lists each match's member ID, name, phone, and email, including hidden matches. Retry with a member ID, unique phone number, or email address.
 * If no contact matches `target/`, or the member ID does not exist, the command reports an error without changing any contact.
 * Provide at least one field or tag operation. Omitted fields retain their existing values.
@@ -460,7 +461,7 @@ Formats: `delete MEMBER_ID` · `delete n/NAME` · `delete p/PHONE` · `delete e/
 
 * Supply exactly one identifier. `MEMBER_ID` is the contact's permanent numeric ID and searches all saved contacts,
   independently of the currently displayed list, including empty search or filter results.
-* Name matching is exact apart from letter case and extra spaces. Phone matching ignores spaces, hyphens, and
+* Name matching is exact apart from letter case and extra spaces. Phone matching ignores the optional `+`, spaces, hyphens, and
   brackets. Email matching ignores letter case and surrounding spaces. These identifiers search all saved contacts,
   including those hidden by a search or filter.
 * CoordiMate shows the contact's `ID: <number>`, name, phone, email, and role, followed by `Confirm deletion? [y/N]`.
@@ -507,7 +508,7 @@ Format: `search KEYWORD`
   `search Hans Bo` matches `Hans Bo Yang`, but does not match `Bo Hans` or separate contacts named `Hans` and `Bo`.
 * Several spaces in a row count as one, in both the keyword and the saved values. For example, `search Kent  Ridge`
   matches an address containing `Kent Ridge`. Addresses are still saved and displayed as entered.
-* Phone numbers are also matched ignoring spaces, hyphens, and brackets, so `search 91234567` finds `9123 4567`,
+* Phone numbers are also matched ignoring `+`, spaces, hyphens, and brackets, so `search 91234567` finds `9123 4567`,
   and `search 9123 4567` finds `91234567`.
 * Surrounding quotation marks are optional: `search "Jurong West"` and `search Jurong West` give the same results.
 * Leading and trailing spaces are ignored. An empty keyword is rejected.

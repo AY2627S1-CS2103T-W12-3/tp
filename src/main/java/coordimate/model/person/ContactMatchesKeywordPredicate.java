@@ -26,8 +26,8 @@ public class ContactMatchesKeywordPredicate implements Predicate<Person> {
     /**
      * Returns true if {@code person}'s name, phone, email, address, or organisation
      * contains the keyword as a case-insensitive substring.
-     * A phone number also matches when it contains the keyword after spaces, hyphens, and brackets are removed
-     * from both, so {@code 91234567} finds {@code 9123 4567} and the reverse.
+     * A phone number also matches when it contains the keyword after plus signs, spaces, hyphens, and brackets
+     * are removed from both, so {@code 91234567} finds {@code 9123 4567} and the reverse.
      */
     @Override
     public boolean test(Person person) {
