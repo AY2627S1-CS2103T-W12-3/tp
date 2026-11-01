@@ -23,12 +23,11 @@ docs/_site/
 
 # AI Agents
 .agents/skills/coordimate-code-review/SKILL.md
-/CLAUDE.md
 /.agents/skills/coordimate-code-review/
 /.agents/skills/coordimate-project/
 /docs/source-material/
 /docs/ui-mockups/
-CLAUDE.md
+AGENTS.md
 /.claude/
 /.codex/
 /anti-slop/

@@ -53,11 +53,11 @@ public class Phone {
     }
 
     /**
-     * Returns {@code text} without the spaces, hyphens, and brackets used to format phone numbers.
+     * Returns {@code text} without the plus sign, spaces, hyphens, and brackets used to format phone numbers.
      */
     public static String normalize(String text) {
         requireNonNull(text);
-        return text.replace(" ", "").replace("-", "").replace("(", "").replace(")", "");
+        return text.replace(" ", "").replace("-", "").replace("(", "").replace(")", "").replace("+", "");
     }
 
     /**
