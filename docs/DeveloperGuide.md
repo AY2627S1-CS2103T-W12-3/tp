@@ -730,6 +730,7 @@ to highlight.
   box. This prevents commands from changing the lists that the tour points at.
 * **Keyboard control.** `TutorialWindow#handleShortcut` moves between steps with the Left and Right arrow keys and
   closes the tour with Esc. Tab cycles focus through the card's buttons without leaving the card.
+  Up and Down arrow key presses are consumed to prevent default focus traversal.
 * **Normal view.** `MainWindow#showTutorial` calls `Logic#showActiveItems()` first, because the archived view hides
   the lists and commands that the tour describes.
 
