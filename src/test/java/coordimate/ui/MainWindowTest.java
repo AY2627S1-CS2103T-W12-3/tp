@@ -40,6 +40,7 @@ import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.ScrollPane;
@@ -1180,7 +1181,82 @@ public class MainWindowTest {
             assertFalse(logic.isAwaitingDeleteConfirmation());
             assertEquals("Benson Meier", selectedName.getText());
             assertEquals(TypicalPersons.BENSON, contacts.getSelectionModel().getSelectedItem());
+            for (String command : List.of("delete 1", "y", "delete 2", "y")) {
+                input.setText(command);
+                submit.fire();
+            }
+            assertTrue(contacts.getItems().isEmpty());
+            assertEquals(-1, contacts.getSelectionModel().getSelectedIndex());
         });
+    }
+
+    @Test
+    public void contactCommands_revealSelectedCardAfterFeedbackResizesList() throws Exception {
+        ModelManager model = new ModelManager();
+        for (int index = 0; index < 11; index++) {
+            model.addPerson(new PersonBuilder().withName("Person " + (char) ('A' + index))
+                    .withPhone("900000" + String.format("%02d", index))
+                    .withEmail("person" + index + "@example.com").build());
+        }
+        LogicManager logic = createLogicWithStorage(model, "contact-scroll");
+        MainWindow window = JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+            MainWindow mainWindow = new MainWindow(new Stage(), logic, dataPath("contact-scroll"));
+            mainWindow.fillInnerParts();
+            return mainWindow;
+        });
+        Stage stage = window.getPrimaryStage();
+        try {
+            JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+                window.show();
+                stage.setMaximized(false);
+                stage.setWidth(1200);
+                stage.setHeight(800);
+                refreshLayout(stage);
+                TextField input = lookupNode(stage, "#commandTextField");
+                input.requestFocus();
+            });
+            waitForJavaFxPulses();
+
+            for (int cycle = 0; cycle < 3; cycle++) {
+                JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+                    ToggleButton eventsView = lookupNode(stage, "#eventsView");
+                    eventsView.fire();
+                });
+                for (String command : List.of(
+                        "add n/Probe Person p/90000301 e/probe@example.com r/Member",
+                        "edit target/probe@example.com r/EXCO",
+                        "delete e/probe@example.com", "y")) {
+                    submitFeedbackCommand(stage, command);
+                    if (!command.startsWith("delete")) {
+                        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+                            TextField input = lookupNode(stage, "#commandTextField");
+                            ListView<Person> contacts = lookupNode(stage, "#personListView");
+                            int expectedIndex = command.equals("y") ? 10 : 11;
+                            assertEquals(expectedIndex, contacts.getSelectionModel().getSelectedIndex());
+                            assertSelectedContactIsVisible(contacts);
+                            assertSame(input, stage.getScene().getFocusOwner());
+                        });
+                    }
+                }
+            }
+        } finally {
+            JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+                window.stop();
+                stage.close();
+            });
+        }
+    }
+
+    private static void assertSelectedContactIsVisible(ListView<Person> contacts) {
+        int selectedIndex = contacts.getSelectionModel().getSelectedIndex();
+        ListCell<?> selectedCell = contacts.lookupAll(".list-cell").stream()
+                .filter(node -> node instanceof ListCell<?> cell
+                        && !cell.isEmpty() && cell.getIndex() == selectedIndex)
+                .map(node -> (ListCell<?>) node).findFirst().orElseThrow();
+        Bounds cardBounds = selectedCell.localToScene(selectedCell.getBoundsInLocal());
+        Bounds listBounds = contacts.localToScene(contacts.getBoundsInLocal());
+        assertTrue(cardBounds.getMinY() >= listBounds.getMinY() - 2, "Selected card is clipped at the top");
+        assertTrue(cardBounds.getMaxY() <= listBounds.getMaxY() + 2, "Selected card is clipped at the bottom");
     }
 
     @Test

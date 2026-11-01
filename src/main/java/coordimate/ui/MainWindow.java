@@ -957,6 +957,13 @@ public class MainWindow extends UiPart<Stage> {
                 default -> { } // NONE keeps the selected view.
             }
 
+            if (commandResult.getContactToFocus().isPresent() || commandResult.getContactIndexToFocus().isPresent()) {
+                // Feedback and view changes can resize the list after its initial scroll request.
+                appRoot.applyCss();
+                appRoot.layout();
+                personListPanel.revealSelectedContact();
+            }
+
             if (commandResult.shouldExit()) {
                 handleExit();
             }
