@@ -751,6 +751,24 @@ to highlight.
   `MainWindow#showTutorialStep` switches to the tab that the step needs, finds the node for its `TutorialTarget`, and
   passes it to `TutorialWindow#highlight`. The overlay then shades everything except that node and places the step's
   card beside it.
+  While the tutorial is visible, a scene post-layout listener refreshes the highlight and card position using the
+  target's final bounds. This keeps them aligned after resizing without changing steps. The listener is removed
+  when the tutorial is hidden and transferred if its scene changes. `TutorialWindow#highlight` takes a
+  `Supplier<Node>` that is re-invoked on every refresh rather than a `Node` cached once, so a target backed by a
+  virtualized list cell (the contact and event card steps) is re-resolved instead of pointing at a reused or
+  hidden cell after the list relayouts. Because the listener fires on every rendered frame while the tutorial is
+  open, it skips the overlay's card and backdrop layout unless the resolved target's bounds or the window size
+  actually changed since the last layout, and it forces a synchronous layout of the card after resizing it so its
+  text re-wraps immediately instead of on the next frame.
+  Resolving a target is kept safe to call every refresh. The event targets select the first event when no event is
+  selected (`EventListPanel#selectTutorialEventIfNeeded`). This does nothing once an event is selected, so repeated
+  refreshes do not keep changing the selection. Other targets are resolved without changing the selection or scroll
+  position. Selecting the first contact and scrolling it into view (`PersonListPanel#revealTutorialContactCard`) and scrolling the member list into view
+  (`EventListPanel#revealTutorialMemberList`) are one-time actions `MainWindow` runs only when a step opens or,
+  via `TutorialWindow#setResizeHandler`, when the overlay's size actually changes — not on every refresh, which
+  would otherwise re-trigger a layout pass indefinitely (`ListView#scrollTo` and `ScrollPane#setVvalue` both
+  request layout even when nothing moves). Re-running the reveal action on resize keeps a scrolled-into-view
+  target (e.g. the member list) correctly positioned after the window changes size, not just after a step change.
 * **Blocking the app.** While the tutorial is showing, event filters on the overlay and on the main window consume
   every mouse and key event that is not aimed at the tutorial card. `MainWindow#showTutorial` also disables the command
   box. This prevents commands from changing the lists that the tour points at.

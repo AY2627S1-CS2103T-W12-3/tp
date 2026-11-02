@@ -278,6 +278,7 @@ public class PersonListPanelTest {
                 root.layout();
                 ListView<Person> list = getList(root);
 
+                panel.revealTutorialContactCard();
                 ListCell<?> firstCard = assertInstanceOf(ListCell.class, panel.getTutorialContactCardTarget());
                 assertEquals(0, firstCard.getIndex());
                 assertEquals(ALICE, list.getSelectionModel().getSelectedItem());

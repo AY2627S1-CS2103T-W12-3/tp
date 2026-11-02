@@ -255,6 +255,7 @@ public class MainWindow extends UiPart<Stage> {
         appRoot.getChildren().add(tutorialWindow.getRoot());
         tutorialWindow.setDismissHandler(this::handleTutorialDismissed);
         tutorialWindow.setStepChangeHandler(this::showTutorialStep);
+        tutorialWindow.setResizeHandler(this::revealTutorialStepContentOnResize);
         helpWindow = new HelpWindow(new Stage());
         helpWindow.getRoot().initOwner(primaryStage);
         helpWindow.setTutorialShortcutHandler(() -> {
@@ -729,27 +730,44 @@ public class MainWindow extends UiPart<Stage> {
             case NONE, HELP, TUTORIAL -> { }
             default -> showContacts();
         }
-        if (step.target() == TutorialWindow.TutorialTarget.EVENT_MEMBERS) {
-            eventListPanel.revealTutorialMemberList();
-        }
+        revealTutorialStepContent(step.target());
         if (step.target() == TutorialWindow.TutorialTarget.TAG_DETAILS
                 && tagListView.getSelectionModel().isEmpty()) {
             tagListView.getSelectionModel().selectFirst();
         }
-        tutorialWindow.highlight(getTutorialTarget(step.target()));
+        tutorialWindow.highlight(() -> getTutorialTarget(step.target()));
         if (step.target() == TutorialWindow.TutorialTarget.CONTACT_CARD
                 || step.target() == TutorialWindow.TutorialTarget.EVENT_CARD
                 || step.target() == TutorialWindow.TutorialTarget.EVENT_DETAILS
                 || step.target() == TutorialWindow.TutorialTarget.EVENT_MEMBERS) {
             Platform.runLater(() -> {
                 if (tutorialWindow.isShowing() && tutorialWindow.getCurrentStep() == step) {
-                    if (step.target() == TutorialWindow.TutorialTarget.EVENT_MEMBERS) {
-                        eventListPanel.revealTutorialMemberList();
-                    }
-                    tutorialWindow.highlight(getTutorialTarget(step.target()));
+                    revealTutorialStepContent(step.target());
+                    tutorialWindow.highlight(() -> getTutorialTarget(step.target()));
                 }
             });
         }
+    }
+
+    /**
+     * Runs the one-time selection/scroll needed to reveal the given step's target, for targets
+     * backed by content that does not already scroll itself into view on selection.
+     */
+    private void revealTutorialStepContent(TutorialWindow.TutorialTarget target) {
+        if (target == TutorialWindow.TutorialTarget.CONTACT_CARD) {
+            personListPanel.revealTutorialContactCard();
+        } else if (target == TutorialWindow.TutorialTarget.EVENT_MEMBERS) {
+            eventListPanel.revealTutorialMemberList();
+        }
+    }
+
+    /**
+     * Re-runs the current step's reveal action when the tutorial overlay is resized, so a target
+     * scrolled into view (e.g. the member list) stays correctly positioned after the window changes
+     * size instead of only being re-scrolled on the next step change.
+     */
+    private void revealTutorialStepContentOnResize() {
+        revealTutorialStepContent(tutorialWindow.getCurrentStep().target());
     }
 
     private Node getTutorialTarget(TutorialWindow.TutorialTarget target) {
