@@ -727,7 +727,13 @@ to highlight.
   card beside it.
   While the tutorial is visible, a scene post-layout listener refreshes the highlight and card position using the
   target's final bounds. This keeps them aligned after resizing without changing steps. The listener is removed
-  when the tutorial is hidden and transferred if its scene changes.
+  when the tutorial is hidden and transferred if its scene changes. `TutorialWindow#highlight` takes a
+  `Supplier<Node>` that is re-invoked on every refresh rather than a `Node` cached once, so a target backed by a
+  virtualized list cell (the contact and event card steps) is re-resolved instead of pointing at a reused or
+  hidden cell after the list relayouts. Because the listener fires on every rendered frame while the tutorial is
+  open, it skips the overlay's card and backdrop layout unless the resolved target's bounds or the window size
+  actually changed since the last layout, and it forces a synchronous layout of the card after resizing it so its
+  text re-wraps immediately instead of on the next frame.
 * **Blocking the app.** While the tutorial is showing, event filters on the overlay and on the main window consume
   every mouse and key event that is not aimed at the tutorial card. `MainWindow#showTutorial` also disables the command
   box. This prevents commands from changing the lists that the tour points at.

@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -429,6 +431,84 @@ public class TutorialWindowTest {
     }
 
     @Test
+    public void highlight_withSupplier_tracksLaterResolvedNodeAcrossPulses() throws Exception {
+        record Fixture(TutorialWindow tutorial, Stage stage, Region firstTarget, Region secondTarget,
+                AtomicReference<Node> resolvedTarget) { }
+        Fixture fixture = JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+            TutorialWindow tutorial = new TutorialWindow();
+            Region firstTarget = new Region();
+            firstTarget.setPrefSize(100, 50);
+            firstTarget.setMaxSize(100, 50);
+            firstTarget.relocate(50, 50);
+            Region secondTarget = new Region();
+            secondTarget.setPrefSize(100, 50);
+            secondTarget.setMaxSize(100, 50);
+            secondTarget.relocate(400, 300);
+            Pane appContent = new Pane(firstTarget, secondTarget);
+            Stage stage = new Stage();
+            stage.setScene(new Scene(new StackPane(appContent, tutorial.getRoot()), 1000, 700));
+            addTutorialStyles(stage);
+            stage.show();
+            tutorial.show();
+            applyLayout(stage);
+
+            // Simulates a virtualized list cell: the supplier is re-invoked on every refresh
+            // instead of TutorialWindow caching a single resolved Node, so a later cell swap
+            // (e.g. after a resize reuses the cell for a different row) is picked up.
+            AtomicReference<Node> resolvedTarget = new AtomicReference<>(firstTarget);
+            tutorial.highlight(resolvedTarget::get);
+            applyLayout(stage);
+            return new Fixture(tutorial, stage, firstTarget, secondTarget, resolvedTarget);
+        });
+        try {
+            waitForLayoutPulses();
+            JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+                Node highlight = fixture.stage().getScene().lookup("#targetHighlight");
+                Bounds firstBounds = fixture.firstTarget().localToScene(fixture.firstTarget().getLayoutBounds());
+                Bounds actual = highlight.localToScene(highlight.getLayoutBounds());
+                assertEquals(firstBounds.getMinX() - 6, actual.getMinX(), 1);
+                assertEquals(firstBounds.getMinY() - 6, actual.getMinY(), 1);
+
+                // Swap the resolved node without calling highlight() again, then force a real
+                // layout pulse (a window resize) to exercise the post-layout pulse listener.
+                fixture.resolvedTarget().set(fixture.secondTarget());
+                fixture.stage().setWidth(fixture.stage().getWidth() + 1);
+            });
+            waitForLayoutPulses();
+            JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+                Node highlight = fixture.stage().getScene().lookup("#targetHighlight");
+                Bounds secondBounds = fixture.secondTarget().localToScene(fixture.secondTarget().getLayoutBounds());
+                Bounds actual = highlight.localToScene(highlight.getLayoutBounds());
+                assertEquals(secondBounds.getMinX() - 6, actual.getMinX(), 1);
+                assertEquals(secondBounds.getMinY() - 6, actual.getMinY(), 1);
+            });
+        } finally {
+            JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+                fixture.tutorial().hide();
+                fixture.stage().close();
+            });
+        }
+    }
+
+    @Test
+    public void highlight_withNullSupplier_clearsHighlight() throws Exception {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+            TutorialWindow tutorial = new TutorialWindow();
+            Stage stage = createStage(tutorial, 900, 650);
+            tutorial.show();
+            applyLayout(stage);
+            Node highlight = stage.getScene().lookup("#targetHighlight");
+
+            tutorial.highlight((Supplier<Node>) null);
+            applyLayout(stage);
+            assertFalse(highlight.isVisible());
+
+            tutorial.hide();
+            stage.close();
+        });
+    }
+
+    @Test
     public void highlightedTarget_nearTopOrBottomPlacesCardOnVisibleSide() throws Exception {
         JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             TutorialWindow tutorial = new TutorialWindow();
@@ -586,7 +666,7 @@ public class TutorialWindowTest {
                 assertFalse(tutorial.isInteractiveTarget(target));
             }
             nextButton.fire();
-            tutorial.highlight(null);
+            tutorial.highlight((Node) null);
             applyLayout(stage);
             assertFalse(highlight.isVisible());
             assertCardCentered(stage, card);

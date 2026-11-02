@@ -736,7 +736,7 @@ public class MainWindow extends UiPart<Stage> {
                 && tagListView.getSelectionModel().isEmpty()) {
             tagListView.getSelectionModel().selectFirst();
         }
-        tutorialWindow.highlight(getTutorialTarget(step.target()));
+        tutorialWindow.highlight(() -> getTutorialTarget(step.target()));
         if (step.target() == TutorialWindow.TutorialTarget.CONTACT_CARD
                 || step.target() == TutorialWindow.TutorialTarget.EVENT_CARD
                 || step.target() == TutorialWindow.TutorialTarget.EVENT_DETAILS
@@ -746,7 +746,7 @@ public class MainWindow extends UiPart<Stage> {
                     if (step.target() == TutorialWindow.TutorialTarget.EVENT_MEMBERS) {
                         eventListPanel.revealTutorialMemberList();
                     }
-                    tutorialWindow.highlight(getTutorialTarget(step.target()));
+                    tutorialWindow.highlight(() -> getTutorialTarget(step.target()));
                 }
             });
         }

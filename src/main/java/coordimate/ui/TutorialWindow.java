@@ -1,7 +1,9 @@
 package coordimate.ui;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import javafx.application.Platform;
@@ -148,9 +150,12 @@ public class TutorialWindow extends UiPart<StackPane> {
 
     private Consumer<TutorialStep> stepChangeHandler = step -> { };
     private Runnable dismissHandler = () -> { };
-    private Node target;
+    private Supplier<Node> targetSupplier = () -> null;
     private int stepIndex;
-    private final Runnable layoutListener = this::layoutOverlay;
+    private final Runnable layoutListener = () -> layoutOverlay(true);
+    private double lastLayoutWidth = Double.NaN;
+    private double lastLayoutHeight = Double.NaN;
+    private Bounds lastLayoutTargetBounds;
 
     /** Creates a tutorial overlay that is initially hidden. */
     public TutorialWindow() {
@@ -204,7 +209,10 @@ public class TutorialWindow extends UiPart<StackPane> {
         getRoot().setManaged(false);
         targetHighlight.setVisible(false);
         targetBlocker.setVisible(false);
-        target = null;
+        targetSupplier = () -> null;
+        lastLayoutWidth = Double.NaN;
+        lastLayoutHeight = Double.NaN;
+        lastLayoutTargetBounds = null;
     }
 
     /** Tracks the final target bounds after scene layout, only while the tutorial is showing. */
@@ -237,8 +245,17 @@ public class TutorialWindow extends UiPart<StackPane> {
 
     /** Highlights the supplied main-window node and positions the card away from it. */
     void highlight(Node node) {
-        target = node;
-        layoutOverlay();
+        highlight(() -> node);
+    }
+
+    /**
+     * Highlights whatever node the supplier currently returns and positions the card away from it.
+     * The supplier is re-invoked on every later refresh instead of caching its result, so a target
+     * backed by a virtualized list cell is never highlighted after its cell has been reused.
+     */
+    void highlight(Supplier<Node> supplier) {
+        targetSupplier = supplier != null ? supplier : () -> null;
+        layoutOverlay(false);
     }
 
     @FXML
@@ -346,6 +363,17 @@ public class TutorialWindow extends UiPart<StackPane> {
     }
 
     private void layoutOverlay() {
+        layoutOverlay(false);
+    }
+
+    /**
+     * Re-applies the overlay layout. The target is re-resolved from {@link #targetSupplier} every
+     * time so a virtualized target (e.g. a list cell) is never stale. When {@code skipIfUnchanged}
+     * is true (the post-layout pulse listener, which fires on every rendered frame while the
+     * tutorial is open), the card and backdrop are left untouched unless the target's resolved
+     * bounds or the window size actually changed since the last layout.
+     */
+    private void layoutOverlay(boolean skipIfUnchanged) {
         if (!isShowing()) {
             return;
         }
@@ -356,8 +384,16 @@ public class TutorialWindow extends UiPart<StackPane> {
             return;
         }
 
+        Bounds targetBounds = getNodeBounds(targetSupplier.get());
+        if (skipIfUnchanged && width == lastLayoutWidth && height == lastLayoutHeight
+                && Objects.equals(targetBounds, lastLayoutTargetBounds)) {
+            return;
+        }
+        lastLayoutWidth = width;
+        lastLayoutHeight = height;
+        lastLayoutTargetBounds = targetBounds;
+
         overlayPane.resize(width, height);
-        Bounds targetBounds = getNodeBounds(target);
         Bounds highlightBounds = getHighlightBounds(targetBounds, width, height);
         layoutBackdrop(width, height, highlightBounds);
         TutorialPlacement placement = getCurrentStep().placement();
@@ -381,6 +417,9 @@ public class TutorialWindow extends UiPart<StackPane> {
         double cardWidth = Math.min(tutorialCard.prefWidth(-1), tutorialCard.getMaxWidth());
         double cardHeight = Math.min(tutorialCard.prefHeight(cardWidth), height - 2 * WINDOW_MARGIN);
         tutorialCard.resize(cardWidth, cardHeight);
+        // Force the card's text to re-wrap now; this layout runs after the scene's own layout pass,
+        // so without this the new size would not be reflected until the next pulse.
+        tutorialCard.layout();
 
         Position position = getCardPosition(width, height, cardWidth, cardHeight, placement, targetBounds);
         tutorialCard.relocate(position.x(), position.y());
