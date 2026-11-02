@@ -260,6 +260,7 @@ public class MainWindow extends UiPart<Stage> {
         helpWindow.getRoot().initOwner(primaryStage);
         helpWindow.setTutorialShortcutHandler(() -> {
             showTutorial();
+            primaryStage.setIconified(false);
             primaryStage.requestFocus();
         });
         Tooltip helpTooltip = new Tooltip("Open Help (" + HelpWindow.HELP_SHORTCUT + ")");
