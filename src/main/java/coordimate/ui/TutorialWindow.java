@@ -240,7 +240,7 @@ public class TutorialWindow extends UiPart<StackPane> {
      * scrolling into view (e.g. a long member list) can be re-revealed for the new size.
      */
     public void setResizeHandler(Runnable handler) {
-        resizeHandler = handler != null ? handler : () -> { };
+        resizeHandler = handler;
     }
 
     /** Sets the action that updates the main window for the current step. */

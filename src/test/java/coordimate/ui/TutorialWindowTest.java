@@ -469,10 +469,9 @@ public class TutorialWindowTest {
                 assertEquals(firstBounds.getMinX() - 6, actual.getMinX(), 1);
                 assertEquals(firstBounds.getMinY() - 6, actual.getMinY(), 1);
 
-                // Swap the resolved node without calling highlight() again, then force a real
-                // layout pulse (a window resize) to exercise the post-layout pulse listener.
+                // Swap the resolved node without calling highlight() again or resizing the window,
+                // so only the post-layout pulse listener (which keeps firing regardless) can pick it up.
                 fixture.resolvedTarget().set(fixture.secondTarget());
-                fixture.stage().setWidth(fixture.stage().getWidth() + 1);
             });
             waitForLayoutPulses();
             JavaFxTestSupport.runOnFxThreadAndWait(() -> {

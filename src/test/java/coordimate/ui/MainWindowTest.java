@@ -509,6 +509,17 @@ public class MainWindowTest {
                 Bounds viewportBounds = viewport.localToScene(viewport.getLayoutBounds());
                 assertTrue(memberBounds.getMinY() >= viewportBounds.getMinY() - 2);
             });
+
+            // A width-only resize (height unchanged) must also re-trigger the reveal.
+            JavaFxTestSupport.runOnFxThreadAndWait(() -> stage.setWidth(760));
+            waitForJavaFxPulses();
+            JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+                VBox members = lookupNode(stage, "#members");
+                Node viewport = ((ScrollPane) lookupNode(stage, "#detailsScroll")).lookup(".viewport");
+                Bounds memberBounds = members.localToScene(members.getLayoutBounds());
+                Bounds viewportBounds = viewport.localToScene(viewport.getLayoutBounds());
+                assertTrue(memberBounds.getMinY() >= viewportBounds.getMinY() - 2);
+            });
         } finally {
             JavaFxTestSupport.runOnFxThreadAndWait(() -> {
                 window.stop();

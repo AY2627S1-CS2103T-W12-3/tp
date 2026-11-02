@@ -767,9 +767,7 @@ public class MainWindow extends UiPart<Stage> {
      * size instead of only being re-scrolled on the next step change.
      */
     private void revealTutorialStepContentOnResize() {
-        if (tutorialWindow.isShowing()) {
-            revealTutorialStepContent(tutorialWindow.getCurrentStep().target());
-        }
+        revealTutorialStepContent(tutorialWindow.getCurrentStep().target());
     }
 
     private Node getTutorialTarget(TutorialWindow.TutorialTarget target) {
