@@ -618,10 +618,10 @@ leave on the current date, and shows the **On leave until** badge only if it is.
 file until the user replaces or clears it. Code that copies a contact, such as `CoordiMate#setTag` and
 `CoordiMate#removeTag`, must pass the leave date on so that it is not dropped.
 
-The state diagram below shows how a contact's leave changes. **Leave ended** looks the same as **Not on leave** in the
-app; the difference is only that the old date is still saved.
+The activity diagram below shows how the UI determines whether a contact is on leave. An expired leave date is
+still saved, but the contact is shown as not on leave.
 
-<puml src="diagrams/LeaveStateDiagram.puml" width="560" />
+<puml src="diagrams/LeaveActivityDiagram.puml" width="560" alt="Activity for determining a contact's displayed leave status" />
 
 `PersonListPanel` reads the current date from a `Clock`, which tests replace to control the date. A window left open
 past midnight still needs redrawing, so `MainWindow`'s existing one-minute reminder timer also calls
