@@ -155,7 +155,7 @@ A command that breaks a constraint is rejected and makes no changes.
 | `ADDRESS` | `a/` | 1 to 200 printable characters, including at least one visible character. |
 | `ORGANISATION` | `o/` | 1 to 80 characters. Letters, digits, spaces, and `-` `&` `.` `,` `'` `(` `)` `/` only, with at least one letter or digit. Several spaces in a row count as one. |
 | `NOTE` | `m/` | 1 to 500 printable characters, including at least one visible character. |
-| `TAG`, `NEW_TAG` | `t/`, `at/`, `rt/` | 1 to 30 characters. English letters and digits only, with no spaces. Tags are unique, ignoring case. A contact can have at most 15 tags. |
+| `TAG`, `NEW_TAG` | `t/`, `at/`, `rt/` | 1 to 30 characters. English letters and digits only, with no spaces. Tags are unique, ignoring case. A contact can have at most 15 tags. `deletetag` only requires its `TAG` to match a saved tag. |
 | `EVENT_NAME`, `NEW_EVENT_NAME` | `evn/`, `nevn/` | 1 to 100 printable Unicode characters, including at least one visible character. Internal tabs, line breaks, and control characters are rejected. Several spaces in a row count as one. Event names are unique, ignoring case and extra spaces. See the parameter syntax note below. |
 | `START_TIME`, `END_TIME` | `st/`, `et/` | A real date in `dd-MM-yyyy` format, optionally followed by a 24-hour time in `HH:mm` format, e.g. `17-09-2026` or `17-09-2026 16:30`. The start must not be after the end. |
 | `STATUS` | `att/` | `present` or `absent`, ignoring case. |
@@ -896,10 +896,10 @@ If the dismissal cannot be saved, the reminder is hidden until CoordiMate closes
 ## Managing tags
 
 A new tag name, the `TAG` given to `addtag` or the `NEW_TAG` given to `edittag`, must follow the `TAG` rule in
-[Parameter constraints](#parameter-constraints). Leading and trailing whitespace is trimmed, and the tag keeps the
-capitalization you type. Commands that name an existing tag, `OLD_TAG` in `edittag` and `TAG` in `deletetag`, find it
-ignoring capitalization, so `deletetag t/publicity` deletes `Publicity`. See [The main window](#the-main-window) for
-what the **Tags** view shows and which view opens after each command.
+[Parameter constraints](#parameter-constraints), and keeps the capitalization you type. Commands that name an existing
+tag, `OLD_TAG` in `edittag` and `TAG` in `deletetag`, find it ignoring capitalization, so `deletetag t/publicity`
+deletes `Publicity`. See [The main window](#the-main-window) for what the **Tags** view shows and which view opens
+after each command.
 
 If saving fails, each tag command reports `Tag could not be saved. No changes were made.`
 
@@ -928,12 +928,14 @@ Success: `Created tag: Publicity.`
 
 ### Renaming a tag: `edittag`
 
-Renames an existing tag.
+Renames an existing tag, including a default tag, and updates every contact to which it is assigned.
 
 Format: `edittag OLD_TAG t/NEW_TAG`
 
 * `OLD_TAG` must match an existing tag, ignoring capitalization.
-* `NEW_TAG` follows the same rules as a new tag in `addtag`.
+* `NEW_TAG` follows the same rules as a new tag in `addtag`, and must differ from `OLD_TAG` by more than
+  capitalization. To change only a tag's capitalization, rename it twice, e.g. `edittag Media t/MediaTemp` then
+  `edittag MediaTemp t/MEDIA`.
 
 Examples:
 
@@ -945,8 +947,10 @@ Success: `Media successfully renamed to Publicity.`
 | Condition | Error message |
 |---|---|
 | The current tag does not exist. | `Tag {OLD_TAG} does not exist. Use a saved tag name.` |
-| The new tag matches the current tag, ignoring capitalization. The message shows the tag as saved, e.g. `Media` for `edittag media t/MEDIA`. | `Tag {OLD_TAG} already has that name. No changes were made.` |
+| The new tag matches the current tag, ignoring capitalization. | `Tag {SAVED_TAG} already has that name. No changes were made.` |
 | The new tag already exists. | `A tag with this name already exists. No changes were made.` |
+
+`{SAVED_TAG}` is the tag as saved, e.g. `Media` for `edittag media t/MEDIA`.
 
 ### Deleting a tag: `deletetag`
 
