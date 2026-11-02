@@ -57,7 +57,7 @@ activate Candidate
 Candidate --> LogicManager : newData
 deactivate Candidate
 
-LogicManager -> Storage : saveCoordiMate(newData)
+LogicManager -> Storage : saveCoordiMateIfUnchanged(newData)
 activate Storage
 
 Storage --> LogicManager
