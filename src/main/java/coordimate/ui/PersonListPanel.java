@@ -217,6 +217,14 @@ public class PersonListPanel extends UiPart<Region> {
         return true;
     }
 
+    /** Scrolls the selected contact into view without changing selection or keyboard focus. */
+    void revealSelectedContact() {
+        int selectedIndex = personListView.getSelectionModel().getSelectedIndex();
+        if (selectedIndex >= 0) {
+            personListView.scrollTo(selectedIndex);
+        }
+    }
+
     /**
      * Redraws the contact cards and selected contact's details if the date has changed since they were last
      * shown, so that leave which has just ended is no longer displayed.

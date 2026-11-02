@@ -106,6 +106,8 @@ The `UI` component,
 * keeps a reference to the `Logic` component, because the `UI` relies on the `Logic` to execute commands.
   A command can ask `MainWindow` to show the Help window, the tutorial, or a particular view through its
   `CommandResult`.
+  When a result requests contact selection, `MainWindow` completes CSS and layout after switching views, then
+  reveals the selected contact again. This accounts for the list resizing when command feedback changes height.
 * depends on some classes in the `Model` component because it displays `Person` and `Event` objects from the model.
 
 ### Logic component
@@ -143,6 +145,7 @@ and `LogicManager` adds it to execution errors, using `Messages.withUsage`.
 
 Command parsers detect [parameter-like text](#glossary) before validating field values. Consequently, a field's
 allowed characters alone do not determine which values can be entered through the CLI.
+Prefix matching is case-insensitive.
 
 [`PrefixParser`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/logic/parser/PrefixParser.java)
 applies these command-specific rules, using `StringUtil.WHITESPACE_CHARACTERS` for Java whitespace and Unicode

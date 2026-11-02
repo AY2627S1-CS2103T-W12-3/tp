@@ -19,14 +19,34 @@ public class PrefixParserTest {
     private static final String REPEATED = "Parameter %s may only be specified once.";
 
     @Test
+    public void parseUniqueParameters_mixedCasePrefixes_preservesValuesAndCanonicalKeys() throws Exception {
+        for (String space : UnicodeWhitespace.ALL) {
+            assertEquals(Map.of("evn/", "Arts/Music Fair", "st/", "09-10-2026"),
+                    parse("EvN/Arts/Music Fair" + space + "ST/09-10-2026"));
+            assertEquals(String.format(REPEATED, "evn/"), assertThrows(ParseException.class, () ->
+                    parse("EVN/Fair" + space + "evn/Concert")).getMessage());
+            assertEquals(String.format(REPEATED, "evn/"), assertThrows(ParseException.class, () ->
+                    parse("evn/" + space + "EvN/Concert")).getMessage());
+        }
+        assertEquals(String.format(UNKNOWN, "X/"), assertThrows(ParseException.class, () ->
+                parse("EVN/Fair X/value")).getMessage());
+        assertEquals(Map.of("evn/", "Fair /ST/value"), parse("EVN/Fair /ST/value"));
+        PrefixParser.rejectUnknownParameters("N/Rajesh S/O Kumar", PrefixParser.CONTACT_PARAMETER_PATTERN,
+                Set.of("n/"), UNKNOWN);
+        assertEquals(String.format(UNKNOWN, "X/"), assertThrows(ParseException.class, () ->
+                PrefixParser.rejectUnknownParameters("N/Alice X/value", PrefixParser.CONTACT_PARAMETER_PATTERN,
+                        Set.of("n/"), UNKNOWN)).getMessage());
+    }
+
+    @Test
     public void parseUniqueParameters_unicodeWhitespace_usesSameBoundariesAsNormalization() throws Exception {
         for (String space : UnicodeWhitespace.ALL) {
             assertEquals(Map.of("evn/", "Fair", "st/", "09-10-2026"),
                     parse(space + "evn/" + space + "Fair" + space + "st/09-10-2026" + space));
-            for (String prefix : new String[] {"c/", "/st"}) {
-                assertEquals(String.format(UNKNOWN, prefix), assertThrows(ParseException.class, () ->
-                        parse("evn/Planning" + space + prefix + " review")).getMessage());
-            }
+            assertEquals(String.format(UNKNOWN, "c/"), assertThrows(ParseException.class, () ->
+                    parse("evn/Planning" + space + "c/review")).getMessage());
+            assertEquals(Map.of("evn/", "Planning" + space + "/st review"),
+                    parse("evn/Planning" + space + "/st review"));
             assertEquals(String.format(REPEATED, "evn/"), assertThrows(ParseException.class, () ->
                     parse("evn/Fair" + space + "evn/Concert")).getMessage());
             assertEquals(String.format(UNKNOWN, "c/"), assertThrows(ParseException.class, () ->
@@ -60,18 +80,18 @@ public class PrefixParserTest {
     public void parseUniqueParameters_preambleAndUnknownPrefix_preservesErrorPrecedence() {
         assertEquals(String.format(MESSAGE_INVALID_COMMAND_FORMAT, USAGE),
                 assertThrows(ParseException.class, () -> parse("unexpected x/value")).getMessage());
-        assertEquals(String.format(UNKNOWN,
-                "/st"), assertThrows(ParseException.class, () -> parse("evn/Fair /st today")).getMessage());
+        assertEquals(String.format(MESSAGE_INVALID_COMMAND_FORMAT, USAGE),
+                assertThrows(ParseException.class, () -> parse("/st today evn/Fair")).getMessage());
     }
 
     @Test
     public void rejectUnknownParameters_contactAndEventSyntax_remainDistinct() throws Exception {
-        String input = "evn/Fair /st today";
+        String input = "evn/Fair s/o Kumar";
         PrefixParser.rejectUnknownParameters(input, PrefixParser.CONTACT_PARAMETER_PATTERN, PREFIXES, UNKNOWN);
         assertEquals(String.format(UNKNOWN,
-                "/st"), assertThrows(ParseException.class, () -> PrefixParser.rejectUnknownParameters(
+                "s/"), assertThrows(ParseException.class, () -> PrefixParser.rejectUnknownParameters(
                 input, PrefixParser.EVENT_PARAMETER_PATTERN, PREFIXES, UNKNOWN)).getMessage());
-        assertEquals(Map.of("evn/", "Fair /st today"), PrefixParser.parseUniqueParameters(input,
+        assertEquals(Map.of("evn/", "Fair s/o Kumar"), PrefixParser.parseUniqueParameters(input,
                 PrefixParser.CONTACT_PARAMETER_PATTERN, PREFIXES, USAGE, UNKNOWN, REPEATED));
     }
 

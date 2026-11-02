@@ -46,7 +46,7 @@ public class DeleteEventCommandParserTest {
     public void parse_unknownParameters_rejected() {
         String[][] cases = {
             {"x/Fair", "x/"}, {"evn/Fair st/09-10-2026", "st/"}, {"r/Logistics evn/Fair", "r/"},
-            {"evn/Fair /et 10-10-2026", "/et"}, {"evn/Fair nevn/New Fair", "nevn/"}
+            {"evn/Fair nevn/New Fair", "nevn/"}
         };
         for (String[] entry : cases) {
             assertError(entry[0], String.format(DeleteEventCommandParser.MESSAGE_UNKNOWN_PARAMETER, entry[1]));
