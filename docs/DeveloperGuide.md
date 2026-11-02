@@ -21,7 +21,13 @@ Domain terms used throughout this guide are defined in the [glossary](#glossary)
 * [JUnit 5](https://github.com/junit-team/junit5) supports automated testing.
 * [MarkBind](https://markbind.org/) generates the documentation website.
 * [PlantUML](https://plantuml.com/) generates the UML diagrams in this guide.
-* AI Coding Agents are used throughout the development of this project. 
+
+**Notable uses of AI:**
+
+* Codex and Claude Code were used for preliminary pull request reviews.
+* Codex and Claude Code helped refine issue and pull request descriptions.
+* Codex and Claude Code assisted with feature implementation and testing.
+* Codex and Claude Code provided feedback on documentation and helped refine it.
 
 --------------------------------------------------------------------------------------------------------------------
 
