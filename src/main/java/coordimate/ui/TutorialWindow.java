@@ -150,12 +150,15 @@ public class TutorialWindow extends UiPart<StackPane> {
 
     private Consumer<TutorialStep> stepChangeHandler = step -> { };
     private Runnable dismissHandler = () -> { };
+    private Runnable resizeHandler = () -> { };
     private Supplier<Node> targetSupplier = () -> null;
     private int stepIndex;
     private final Runnable layoutListener = () -> layoutOverlay(true);
     private double lastLayoutWidth = Double.NaN;
     private double lastLayoutHeight = Double.NaN;
     private Bounds lastLayoutTargetBounds;
+    private double lastRevealedWidth = Double.NaN;
+    private double lastRevealedHeight = Double.NaN;
 
     /** Creates a tutorial overlay that is initially hidden. */
     public TutorialWindow() {
@@ -213,6 +216,8 @@ public class TutorialWindow extends UiPart<StackPane> {
         lastLayoutWidth = Double.NaN;
         lastLayoutHeight = Double.NaN;
         lastLayoutTargetBounds = null;
+        lastRevealedWidth = Double.NaN;
+        lastRevealedHeight = Double.NaN;
     }
 
     /** Tracks the final target bounds after scene layout, only while the tutorial is showing. */
@@ -228,6 +233,14 @@ public class TutorialWindow extends UiPart<StackPane> {
     /** Sets the action to run when the tutorial is finished or explicitly closed. */
     public void setDismissHandler(Runnable handler) {
         dismissHandler = handler;
+    }
+
+    /**
+     * Sets the action to run when the overlay's size actually changes, so a target that needed
+     * scrolling into view (e.g. a long member list) can be re-revealed for the new size.
+     */
+    public void setResizeHandler(Runnable handler) {
+        resizeHandler = handler != null ? handler : () -> { };
     }
 
     /** Sets the action that updates the main window for the current step. */
@@ -382,10 +395,17 @@ public class TutorialWindow extends UiPart<StackPane> {
             return;
         }
 
-        Bounds targetBounds = getNodeBounds(targetSupplier.get());
-
         double width = getRoot().getWidth();
         double height = getRoot().getHeight();
+        if (skipIfUnchanged && width > 0 && height > 0
+                && (width != lastRevealedWidth || height != lastRevealedHeight)) {
+            resizeHandler.run();
+            lastRevealedWidth = width;
+            lastRevealedHeight = height;
+        }
+
+        Bounds targetBounds = getNodeBounds(targetSupplier.get());
+
         if (width <= 0 || height <= 0) {
             return;
         }

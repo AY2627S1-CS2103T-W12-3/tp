@@ -734,6 +734,13 @@ to highlight.
   open, it skips the overlay's card and backdrop layout unless the resolved target's bounds or the window size
   actually changed since the last layout, and it forces a synchronous layout of the card after resizing it so its
   text re-wraps immediately instead of on the next frame.
+  Resolving a target is kept side-effect free so it is safe to call every refresh: selecting the first contact and
+  scrolling it into view (`PersonListPanel#revealTutorialContactCard`) and scrolling the member list into view
+  (`EventListPanel#revealTutorialMemberList`) are one-time actions `MainWindow` runs only when a step opens or,
+  via `TutorialWindow#setResizeHandler`, when the overlay's size actually changes — not on every refresh, which
+  would otherwise re-trigger a layout pass indefinitely (`ListView#scrollTo` and `ScrollPane#setVvalue` both
+  request layout even when nothing moves). Re-running the reveal action on resize keeps a scrolled-into-view
+  target (e.g. the member list) correctly positioned after the window changes size, not just after a step change.
 * **Blocking the app.** While the tutorial is showing, event filters on the overlay and on the main window consume
   every mouse and key event that is not aimed at the tutorial card. `MainWindow#showTutorial` also disables the command
   box. This prevents commands from changing the lists that the tour points at.
