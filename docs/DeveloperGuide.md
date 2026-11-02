@@ -154,7 +154,7 @@ applies these command-specific rules, using `StringUtil.WHITESPACE_CHARACTERS` f
 | Detection rule | Parameter-like text at a boundary | Used by |
 |---|---|---|
 | Contact-style | `letters/`, except standalone `s/o` and `d/o`, ignoring case | Contact add/edit/delete, tag commands, and `markattendance` |
-| Event-style | `letters/` or `/letters`, without the relationship-word exception | Event add/edit/delete/archive and the shared `EventContactsParser` used by `assign`, `unassign`, and `members` |
+| Event-style | `letters/`, without the relationship-word exception | Event add/edit/delete/archive and the shared `EventContactsParser` used by `assign`, `unassign`, and `members` |
 
 A supported prefix starts a parameter; an unsupported token is rejected as an unknown parameter. Repeated and
 empty parameters are then handled according to the command. Contact and tag parsers use `ArgumentTokenizer` to
@@ -170,7 +170,7 @@ The examples below are argument fragments; other required arguments must still b
 | `m/Discuss r/Lead` | `r/` starts a role parameter rather than remaining in the note. |
 | `n/Ravi s/o Kumar` | The standalone relationship word is exempt from contact-style detection and is allowed by name validation. |
 | `evn/Concert/Workshop` | The internal slash stays in the event name. |
-| `evn/Concert /Workshop` | Event-style detection rejects `/Workshop` as an unknown parameter. |
+| `evn/Concert Workshop/Music` | `Workshop/` follows whitespace and is rejected as an unknown parameter. |
 
 The `s/o` and `d/o` exemption applies throughout contact-style argument scanning, not only inside name fields.
 It does not change field validation: names allow slashes only in these standalone relationship words and need
@@ -178,7 +178,7 @@ at least one letter outside them, whereas roles and organisations allow other sl
 and date fields reject slashes even when parameter detection leaves them in the value.
 
 `markattendance` currently uses contact-style detection for both its event and member names. Its event-name
-parsing therefore accepts `evn/Concert /Workshop` and `evn/Concert s/o Kumar`, which event-style commands reject.
+parsing therefore accepts `evn/Concert s/o Kumar`, which event-style commands reject.
 Passing parsing does not guarantee execution: the event and member must still exist. This describes the current
 parser difference rather than a design requirement for event names.
 
@@ -1515,12 +1515,12 @@ the results. Speed and onboarding targets require timed trials with users from t
 * **Normalised phone number**: A phone number with the optional `+`, spaces, hyphens and brackets removed, used to detect duplicates. For example, `+65 9123 4567` and `6591234567` are the same.
 * **On leave**: A contact with a saved leave end date is unavailable through that date, inclusive, using the computer's local date.
 * **Organisation**: The company or body that a contact belongs to, such as a CCA, sponsor company, or university office.
-* **Parameter-like text**: Text shaped like `[whitespace][letters]/` (e.g. ` r/`) or `[whitespace]/[letters]` (e.g.
-  ` /st`) that a command parser may treat as a parameter rather than part of a value. The brackets are descriptive:
+* **Parameter-like text**: Text shaped like `[whitespace][letters]/` (e.g. ` r/`) that a command parser may treat
+  as a parameter rather than part of a value. The brackets are descriptive:
   `[whitespace]` means a space, tab, or other recognised whitespace, and `[letters]` means one or more consecutive
-  ASCII letters (`A-Z` or `a-z`), adjacent to the slash. Thus ` /Workshop` has the second shape, but ` / Workshop`
-  does not. At the start of the arguments, preceding whitespace is not required; no whitespace is required after
-  either shape. See [Parameter detection](#parameter-detection) for command-specific rules and exceptions.
+  ASCII letters (`A-Z` or `a-z`), adjacent to the slash. At the start of the arguments, preceding whitespace is not
+  required; no whitespace is required after the slash. See [Parameter detection](#parameter-detection)
+  for command-specific rules and exceptions.
 * **Prefix**: The short label before a value in a command that tells CoordiMate which field it belongs to, such as `n/` for name or `t/` for tag.
 * **Reminder**: An in-app notice for an upcoming, non-archived event, shown only while CoordiMate is running. Timed starts qualify from 24 hours before the start through the start time; date-only starts qualify on the preceding day and the start date. Reminders refresh at startup, after commands, and once per minute.
 * **Role**: A contact's responsibility or position in relation to the CCA, such as `Logistics Lead` or `Vice-President`.
