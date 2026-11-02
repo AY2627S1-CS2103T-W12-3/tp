@@ -895,9 +895,11 @@ If the dismissal cannot be saved, the reminder is hidden until CoordiMate closes
 
 ## Managing tags
 
-Tag names must contain 1 to 30 alphanumeric characters without spaces. Leading and trailing whitespace is trimmed.
-Tag names keep their capitalization, but are unique regardless of capitalization. Commands that name an existing tag
-find it ignoring capitalization. `addtag`, `edittag`, and `deletetag` open the **Tags** view.
+A new tag name, the `TAG` given to `addtag` or the `NEW_TAG` given to `edittag`, must follow the `TAG` rule in
+[Parameter constraints](#parameter-constraints). Leading and trailing whitespace is trimmed, and the tag keeps the
+capitalization you type. Commands that name an existing tag, `OLD_TAG` in `edittag` and `TAG` in `deletetag`, find it
+ignoring capitalization, so `deletetag t/publicity` deletes `Publicity`. See [The main window](#the-main-window) for
+what the **Tags** view shows and which view opens after each command.
 
 If saving fails, each tag command reports `Tag could not be saved. No changes were made.`
 
@@ -943,7 +945,7 @@ Success: `Media successfully renamed to Publicity.`
 | Condition | Error message |
 |---|---|
 | The current tag does not exist. | `Tag {OLD_TAG} does not exist. Use a saved tag name.` |
-| The new tag matches the current tag, ignoring capitalization. | `Tag {OLD_TAG} already has that name. No changes were made.` |
+| The new tag matches the current tag, ignoring capitalization. The message shows the tag as saved, e.g. `Media` for `edittag media t/MEDIA`. | `Tag {OLD_TAG} already has that name. No changes were made.` |
 | The new tag already exists. | `A tag with this name already exists. No changes were made.` |
 
 ### Deleting a tag: `deletetag`
@@ -963,7 +965,7 @@ Success: `Publicity successfully deleted.`
 
 | Condition | Error message |
 |---|---|
-| The specified tag does not exist. | `Tag {TAG_NAME} does not exist. Use a saved tag name.` |
+| The specified tag does not exist. | `Tag {TAG} does not exist. Use a saved tag name.` |
 
 ### Viewing all tags
 
