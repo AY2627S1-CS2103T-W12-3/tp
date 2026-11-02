@@ -33,7 +33,7 @@ tags, find them with `search` and `filter`, and see at a glance who is [on leave
 
 **Events, members, and attendance**<br>
 Create events, assign members, and mark each member present or absent. The **Events** tab shows who has and hasn't
-been marked, and [reminders](UserGuide.html#automatic-event-reminders) appear the day before an event starts.
+been marked, and [reminders](UserGuide.html#automatic-event-reminders) appear up to a day before an event starts.
 
 **Built for handovers**<br>
 Archive past events and former contacts instead of deleting them, so the next committee keeps the history. Data is

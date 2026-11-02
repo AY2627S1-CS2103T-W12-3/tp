@@ -50,8 +50,9 @@
 
 ## The main window
 
-* **Top bar:** **File** > **Exit** closes CoordiMate. **Help** (<kbd>Fn</kbd> + <kbd>F1</kbd>) opens the help window,
-  and **Tutorial** (<kbd>Fn</kbd> + <kbd>F2</kbd>) restarts the tutorial.
+* **Top bar:** **File** > **Exit** closes CoordiMate. **Help** (<kbd>F1</kbd>, or <kbd>Fn</kbd> + <kbd>F1</kbd> on some
+  keyboards) opens the help window, and **Tutorial** (<kbd>F2</kbd>, or <kbd>Fn</kbd> + <kbd>F2</kbd> on some keyboards)
+  restarts the tutorial.
 * **Upcoming events panel:** appears below the top bar when an event is about to start. See
   [Automatic event reminders](#automatic-event-reminders).
 * **Sidebar:** switches between the **Contacts**, **Events**, and **Tags** views, and shows how many items each has.
@@ -102,7 +103,6 @@ are replaced with the actual parameter prefix, name, member ID, or other details
 
 | Condition | Error message |
 |---|---|
-| The input is empty or contains only whitespace. | `Invalid command format.` |
 | The command word is unknown. | `Unknown command. Use help to see the available commands. Example: help` |
 | Existing data cannot be loaded before a command changes saved data. | `Saved data could not be loaded. Check the local data file.` |
 
@@ -162,7 +162,7 @@ A command that breaks a constraint is rejected and makes no changes.
 | `NOTE` | `m/` | 1 to 500 printable characters, including at least one visible character. |
 | `TAG`, `NEW_TAG` | `t/`, `at/`, `rt/` | 1 to 30 characters. English letters and digits only, with no spaces. Tags are unique, ignoring case. A contact can have at most 15 tags. `deletetag` only requires its `TAG` to match a saved tag. |
 | `EVENT_NAME`, `NEW_EVENT_NAME` | `evn/`, `nevn/` | 1 to 100 printable Unicode characters, including at least one visible character. Internal tabs, line breaks, and control characters are rejected. Several spaces in a row count as one. Event names are unique, ignoring case and extra spaces. See the parameter syntax note below. |
-| `START_TIME`, `END_TIME` | `st/`, `et/` | A real date in `dd-MM-yyyy` format, optionally followed by a 24-hour time in `HH:mm` format, e.g. `17-09-2026` or `17-09-2026 16:30`. The start must not be after the end. |
+| `START_TIME`, `END_TIME` | `st/`, `et/` | A real date in `dd-MM-yyyy` format, optionally followed by a 24-hour time in `HH:mm` format, e.g. `17-09-2026` or `17-09-2026 16:30`. The year must be from `0001` to `9999`. The start must not be after the end. |
 | `STATUS` | `att/` | `present` or `absent`, ignoring case. |
 | `MEMBER_ID` | `c/` for `assign` and `unassign`; none for `edit`, `delete`, `archive`, and `unarchive` | A permanent positive integer from 1 to 2147483647 identifying a saved contact, independent of the displayed list. |
 | `KEYWORD` | none | At least one non-space character. |
@@ -204,8 +204,8 @@ available command and its usage format.
 The [User Guide website](https://ay2627s1-cs2103t-w12-3.github.io/tp/) and **Copy URL** button remain at the bottom of
 the window for access to detailed instructions.
 Select **Close** or press <kbd>Esc</kbd> to dismiss the Help window without exiting CoordiMate.
-Selecting **Help** in the top bar opens this window directly. Press <kbd>Fn</kbd> + <kbd>F1</kbd> to open it with the
-keyboard. In the command formats, parameters enclosed in square brackets `[ ]` are optional.
+Selecting **Help** in the top bar opens this window directly. Press <kbd>F1</kbd> (<kbd>Fn</kbd> + <kbd>F1</kbd> on some
+keyboards) to open it with the keyboard. In the command formats, parameters enclosed in square brackets `[ ]` are optional.
 
 Format: `help`
 
@@ -220,7 +220,7 @@ selects each view as it is introduced and leaves the current view selected when 
 stays bright while the rest of the app is dimmed. The app cannot be used to enter commands during the tour.
 
 To take the tutorial again, enter `tutorial`, select **Tutorial** beside **Help** in the top bar, or press
-<kbd>Fn</kbd> + <kbd>F2</kbd>. The tutorial always starts again from its first step.
+<kbd>F2</kbd> (<kbd>Fn</kbd> + <kbd>F2</kbd> on some keyboards). The tutorial always starts again from its first step.
 
 Format: `tutorial`
 
@@ -335,8 +335,8 @@ row are saved as one, so `n/Alex  Yeoh` is saved as `Alex Yeoh` and is a duplica
 An add is also rejected if its phone number or email address is already used by another contact.
 Phone numbers are compared without the optional `+`, spaces, hyphens, or brackets; email addresses are compared without regard to case.
 For example, `+6591234567` and `6591234567` match, but `91234567` and `6591234567` remain distinct.
-For any duplicate, CoordiMate reports `A contact with this name, phone number, or email already exists.`
-and makes no changes.
+For any duplicate, CoordiMate reports
+`A contact with this name, phone number, or email already exists. No changes were made.`
 If the local contact data cannot be loaded or saved, CoordiMate reports an error and leaves the contact list unchanged.
 
 Format: `add n/NAME p/PHONE e/EMAIL r/ROLE [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [lv/LEAVE_END_DATE] [t/TAG]... [m/NOTE]`
@@ -365,7 +365,7 @@ Examples:
 
 | Condition | Error message |
 |---|---|
-| Another contact has the same name, phone number, or email. | `A contact with this name, phone number, or email already exists.` |
+| Another contact has the same name, phone number, or email. | `A contact with this name, phone number, or email already exists. No changes were made.` |
 
 If saving fails, the command reports `Contact could not be saved. No changes were made.`
 
@@ -1030,6 +1030,7 @@ CoordiMate data is saved automatically as a JSON file `[JAR file location]/data/
 **Event name migration:**
 * Event names containing Unicode space separators, including em and non-breaking spaces, are normalised to ordinary spaces when loaded. At startup, saved events whose names contain whitespace followed by parameter-like text (for example, `Planning` followed by an em space and `c/review`) are deleted because those names cannot be used in event commands. This also applies to archived events. A warning lists the deleted names, showing non-ordinary whitespace as codes such as `\u2003`.
 * If event names were distinct under the older Unicode whitespace rules but now normalise to the same name, all events are kept: later collisions receive an available suffix such as ` (2)`. Long names are shortened to fit the suffix within the 100-character limit. The warning lists the old and new names; members, attendance, reminder dismissal history, and archive status are preserved.
+* At startup, saved events whose start or end date uses year `0000` are deleted, because that year does not exist in the calendar. This also applies to archived events. A warning lists the deleted names. Reminder dismissal history that uses year `0000` is also removed from the remaining events.
 * These migrations are saved before the data is loaded. Other contacts and events are preserved. If the remaining data is invalid or cleanup cannot be saved, the file is left unchanged.
 
 **Contact IDs:**
@@ -1067,7 +1068,7 @@ CoordiMate closes after **OK**.
 
 ## Known issues
 
-1. **If you minimize the Help Window** and then run the `help` command (or use the `Help` menu, or press `Fn` + `F1`) again, the original Help Window will remain minimized, and no new Help Window will appear. The remedy is to manually restore the minimized Help Window.
+1. **If you minimize the Help Window** and then run the `help` command (or use the `Help` menu, or press `F1`, or `Fn` + `F1` on some keyboards) again, the original Help Window will remain minimized, and no new Help Window will appear. The remedy is to manually restore the minimized Help Window.
 
 --------------------------------------------------------------------------------------------------------------------
 
