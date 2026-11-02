@@ -106,6 +106,8 @@ The `UI` component,
 * keeps a reference to the `Logic` component, because the `UI` relies on the `Logic` to execute commands.
   A command can ask `MainWindow` to show the Help window, the tutorial, or a particular view through its
   `CommandResult`.
+  When a result requests contact selection, `MainWindow` completes CSS and layout after switching views, then
+  reveals the selected contact again. This accounts for the list resizing when command feedback changes height.
 * depends on some classes in the `Model` component because it displays `Person` and `Event` objects from the model.
 
 ### Logic component
