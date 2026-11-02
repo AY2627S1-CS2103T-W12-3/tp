@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -33,7 +34,7 @@ final class PrefixParser {
         requireNonNull(args);
         Matcher matcher = pattern.matcher(args);
         while (matcher.find()) {
-            if (!allowedPrefixes.contains(matcher.group())) {
+            if (!allowedPrefixes.contains(matcher.group().toLowerCase(Locale.ROOT))) {
                 throw new ParseException(String.format(unknownParameterMessage, matcher.group()));
             }
         }
@@ -58,9 +59,9 @@ final class PrefixParser {
             if (previousPrefix != null) {
                 values.put(previousPrefix, StringUtil.stripWhitespace(args.substring(valueStart, matcher.start())));
             }
-            String prefix = matcher.group();
+            String prefix = matcher.group().toLowerCase(Locale.ROOT);
             if (!allowedPrefixes.contains(prefix)) {
-                throw new ParseException(String.format(unknownParameterMessage, prefix));
+                throw new ParseException(String.format(unknownParameterMessage, matcher.group()));
             }
             if (values.containsKey(prefix)) {
                 throw new ParseException(String.format(repeatedParameterMessage, prefix));

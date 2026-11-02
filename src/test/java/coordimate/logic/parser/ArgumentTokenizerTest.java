@@ -20,6 +20,22 @@ public class ArgumentTokenizerTest {
     private final Prefix hatQ = new Prefix("^Q");
 
     @Test
+    public void tokenize_mixedCasePrefixes_preservesValuesAndArgumentOrder() {
+        Prefix addTag = new Prefix("at/");
+        Prefix removeTag = new Prefix("rt/");
+        for (String space : UnicodeWhitespace.ALL) {
+            ArgumentMultimap arguments = ArgumentTokenizer.tokenize(
+                    "1" + space + "AT/EXCO" + space + "rT/Logistics" + space + "At/Sponsor", addTag, removeTag);
+            assertEquals(List.of(new PrefixedValue(new Prefix(""), "1"), new PrefixedValue(addTag, "EXCO"),
+                    new PrefixedValue(removeTag, "Logistics"), new PrefixedValue(addTag, "Sponsor")),
+                    arguments.getArgumentsInOrder());
+        }
+        ArgumentMultimap arguments = ArgumentTokenizer.tokenize("P/Arts/Paper ^qMiXeD", pSlash, hatQ);
+        assertArgumentPresent(arguments, pSlash, "Arts/Paper");
+        assertArgumentPresent(arguments, hatQ, "MiXeD");
+    }
+
+    @Test
     public void tokenize_unicodeWhitespace_recognizesPrefixesAndTrimsValues() {
         for (String space : UnicodeWhitespace.ALL) {
             ArgumentMultimap arguments = ArgumentTokenizer.tokenize(
