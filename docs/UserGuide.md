@@ -579,6 +579,8 @@ Format: `filter FIELD/VALUE [FIELD/VALUE]...`
   e.g. `filter tag/EXCO event/"Cali`.
 * A quotation mark with no closing quotation mark, followed by another field, is rejected because it is unclear
   where the value ends: `filter event/"Cali tag/EXCO`.
+* Only one pair of quotation marks around the whole value is removed. To filter for an event whose name itself
+  begins and ends with quotation marks, such as `"Gala"`, add another pair: `filter event/""Gala""`.
 
 ![Filter contacts](images/filterContact.png)
 *The contact list narrowed down to members matching `filter tag/EXCO`.*
@@ -677,6 +679,8 @@ Creates an event.
 Format: `addevent evn/EVENT_NAME st/START_TIME et/END_TIME`
 
 * Event names must be unique, ignoring case and extra spaces. Several spaces in a row are saved as one.
+* Quotation marks are saved as part of the name: `addevent evn/"Gala" ...` creates an event named `"Gala"`, not
+  `Gala`. To filter for such an event, see [Quotation marks](#filtering-contacts-filter) under `filter`.
 * Times use `dd-MM-yyyy`, optionally followed by a 24-hour time in `HH:mm` format, e.g. `17-09-2026` or
   `17-09-2026 16:30`.
 * The start must not be after the end. Equal values are allowed. On the same date, times are compared only when both
@@ -716,6 +720,7 @@ Format: `editevent evn/EVENT_NAME [nevn/NEW_EVENT_NAME] [st/NEW_START_TIME] [et/
 * Supply at least one of `nevn/`, `st/`, and `et/`. Omitted fields keep their values.
 * The new name and times follow the same rules as in `addevent`.
 * `nevn/` keeps the capitalization you type, so it can also change only the capitalization of a name.
+* `nevn/` also keeps quotation marks as part of the name: `editevent evn/Gala nevn/"Gala"` renames `Gala` to `"Gala"`.
 
 Examples:
 
