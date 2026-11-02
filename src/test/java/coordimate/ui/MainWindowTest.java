@@ -1083,6 +1083,41 @@ public class MainWindowTest {
     }
 
     @Test
+    public void addEventCommand_caseInsensitiveSwitchesToEventsAndFocusesNewEvent() throws Exception {
+        ModelManager model = new ModelManager();
+        model.addEvent(FIRST_EVENT);
+        LogicManager logic = createLogicWithStorage(model, "event-focus");
+        runInWindow(windowFor(logic, dataPath("event-focus")), (window, stage) -> {
+            stage.getScene().getRoot().applyCss();
+
+            ToggleButton contactsView = lookupNode(stage, "#contactsView");
+            ToggleButton eventsView = lookupNode(stage, "#eventsView");
+            TabPane views = lookupNode(stage, "#views");
+            TextField input = lookupNode(stage, "#commandTextField");
+            Button submit = lookupNode(stage, "#submitButton");
+            ListView<Event> events = lookupNode(stage, "#eventListView");
+            Label selectedName = (Label) lookupNode(stage, "#eventListPanelPlaceholder").lookup("#selectedName");
+
+            for (String commandWord : List.of("addevent", "ADDEVENT", "AddEvent")) {
+                eventsView.fire();
+                events.getSelectionModel().select(FIRST_EVENT);
+                assertEquals(FIRST_EVENT.getName(), selectedName.getText());
+                contactsView.fire();
+
+                Event newEvent = new Event("New Event " + logic.getEventList().size(), EVENT_TIME, EVENT_TIME);
+                input.setText(commandWord + " evn/" + newEvent.getName() + " st/25-10-2026 et/25-10-2026");
+                submit.fire();
+
+                assertTrue(logic.getEventList().contains(newEvent), commandWord);
+                assertTrue(eventsView.isSelected(), commandWord);
+                assertEquals(views.getTabs().get(1), views.getSelectionModel().getSelectedItem(), commandWord);
+                assertEquals(newEvent, events.getSelectionModel().getSelectedItem(), commandWord);
+                assertEquals(newEvent.getName(), selectedName.getText(), commandWord);
+            }
+        });
+    }
+
+    @Test
     public void assignmentCommands_keepCurrentView() throws Exception {
         ModelManager model = new ModelManager();
         model.addPerson(TypicalPersons.ALICE);
