@@ -175,7 +175,9 @@ Startup cleanup shares `ParameterSyntax`'s pattern and preserves these names.
   [Filtering contacts](#filtering-contacts).
 * `SearchCommandParser` treats the remaining arguments as a keyword, optionally removes surrounding double
   quotes, and normalises whitespace. It does not detect parameters, so slash-containing text remains keyword text.
+
 ### Model component
+
 **API** : [`Model.java`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/Model.java)
 
 <puml src="diagrams/ModelClassDiagram.puml" width="575" />
@@ -283,7 +285,7 @@ The data file stores `memberId` and `nextMemberId`. Legacy contacts without IDs 
 after existing IDs. Allocation alone does not rewrite the file; the next successful save, possibly
 [startup cleanup](#startup-event-cleanup), records the IDs. Duplicate or invalid IDs make the file invalid.
 
-#### Design considerations
+#### Member ID design considerations
 
 | ID allocation | Benefit | Cost |
 |---|---|---|
@@ -295,7 +297,7 @@ after existing IDs. Allocation alone does not rewrite the file; the next success
 Contact, event-detail, tag, and attendance changes take effect in both the app and data file, or neither.
 Read or write failures leave both unchanged.
 
-#### Implementation
+#### Atomic save flow
 
 **1. Execute on a model copy.** [`LogicManager#execute`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/logic/LogicManager.java)
 routes data changes such as `AddCommand`, `EditCommand`, and `AssignCommand` through `LogicManager#executeAtomicCommand`:
@@ -336,7 +338,7 @@ crashes and power loss have no recovery guarantee. `JsonUserPrefsStorage` writes
 Confirmed `delete` uses this path. Read-only commands (`list`, `search`, `filter`, `members`) run on the live model
 without saving. [Reminder dismissal](#event-reminders) has its own save path.
 
-#### Design considerations
+#### Atomic save design considerations
 
 | Commit strategy | Benefit | Cost |
 |---|---|---|
@@ -347,7 +349,7 @@ without saving. [Reminder dismissal](#event-reminders) has its own save path.
 
 The **Upcoming events** panel lists [reminders](#glossary) for events starting soon, ordered by start time and then by name.
 
-#### Implementation
+#### Reminder calculation and dismissal
 
 Reminders are derived from saved events, not stored separately.
 
@@ -382,7 +384,7 @@ and attendance. `Storage#saveCoordiMateIfUnchanged` rejects files changed by ano
 On read or save failure, including conflicts, dismissal still hides the reminder for this session and returns a
 **Not saved** warning; it may reappear after restart. Since the service saves directly, `dismiss` bypasses `executeAtomicCommand`.
 
-#### Design considerations
+#### Reminder design considerations
 
 | Decision | Benefit | Cost |
 |---|---|---|
@@ -393,7 +395,7 @@ On read or save failure, including conflicts, dismissal still hides the reminder
 
 ### Event attendance
 
-#### Implementation
+#### Attendance data and updates
 
 <puml src="diagrams/EventClassDiagram.puml" width="450" />
 
@@ -418,7 +420,7 @@ section for the difference from other event commands.
 
 JSON `attendance` maps member names to `"present"` or `"absent"`. A missing field loads as no recorded attendance.
 
-#### Design considerations
+#### Attendance design considerations
 
 | Decision | Benefit | Cost |
 |---|---|---|
@@ -432,7 +434,7 @@ JSON `attendance` maps member names to `"present"` or `"absent"`. A missing fiel
 The `filter` command lists the contacts that match every given `FIELD/VALUE` pair, where the field is `tag`,
 `event`, or `organisation`.
 
-#### Implementation
+#### Filter parsing and resolution
 
 Parsing needs no saved data; resolving does.
 
@@ -467,7 +469,7 @@ The `event` and `tag` predicates follow names, including [later renames](#keepin
 To add a filter field, add a constant to `FilterField`, a case to `FilterCommand#resolvePredicate`, and a case to the
 example-selection switch in `FilterCommandParser#parse`.
 
-#### Design considerations
+#### Filter design considerations
 
 | Decision | Benefit | Cost |
 |---|---|---|
@@ -481,7 +483,7 @@ example-selection switch in `FilterCommandParser#parse`.
 Events refer to contact `Name`s because editing replaces `Person` objects. These references must stay synchronized
 with saved contacts.
 
-#### Implementation
+#### Synchronizing contacts and event views
 
 **Renaming and deleting contacts.** [`CoordiMate`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/CoordiMate.java)
 updates events whenever a contact changes:
@@ -508,7 +510,7 @@ Similarly, `LogicManager#keepTagFiltersAfterRename` updates `filter tag/...` cri
 before contacts, or event-member views would use stale events.
 </box>
 
-#### Design considerations
+#### Event synchronization design considerations
 
 | Member reference | Benefit | Cost |
 |---|---|---|
@@ -517,7 +519,7 @@ before contacts, or event-member views would use stale events.
 
 ### Marking contacts as on leave
 
-#### Implementation
+#### Leave status and date refresh
 
 [`LeaveDate`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/person/LeaveDate.java)
 checks [leave](#glossary) dates through `Person#isOnLeave(LocalDate today)` and `LeaveDate#covers`.
@@ -534,7 +536,7 @@ The activity diagram shows how the UI determines leave status; expired dates rem
 `PersonListPanel#refreshIfDateChanged()` and `EventListPanel#refreshIfDateChanged()` to redraw Contacts and Events
 only after a date change. JSON stores `leaveUntil`; missing fields mean no leave.
 
-#### Design considerations
+#### Leave design considerations
 
 | Decision | Benefit | Cost |
 |---|---|---|
@@ -548,7 +550,7 @@ only after a date change. JSON stores `leaveUntil`; missing fields mean no leave
 `archive`, `unarchive`, `archiveevent`, and `unarchiveevent` implement [archiving](#glossary).
 `list archived` selects the archive view, and `list` returns to the active view.
 
-#### Implementation
+#### Archive flags and view filtering
 
 **The archive flag.** [`Person`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/person/Person.java)
 and [`Event`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/event/Event.java)
@@ -579,7 +581,7 @@ Below, `ArchiveCommand` resolves permanent ID `12` regardless of the display and
 
 JSON contacts and events store `archived`; missing fields default to false.
 
-#### Design considerations
+#### Archive design considerations
 
 | Decision | Benefit | Cost |
 |---|---|---|
@@ -594,7 +596,7 @@ JSON contacts and events store `archived`; missing fields default to false.
 
 The tutorial is a step-by-step tour of the main window, shown automatically on the first launch.
 
-#### Implementation
+#### Tutorial overlay and lifecycle
 
 [`TutorialWindow`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/ui/TutorialWindow.java)
 overlays the main window. Its fixed `TutorialStep` records specify a title, description, card placement, and
@@ -627,7 +629,7 @@ the file, so the tour appears again next launch.
 
 `tutorial`, the top-bar **Tutorial** item, or F2 reopens it. `TutorialCommand` requests this through `CommandResult`.
 
-#### Design considerations
+#### Tutorial design considerations
 
 | Tutorial display | Benefit | Cost |
 |---|---|---|
@@ -638,14 +640,14 @@ the file, so the tour appears again next launch.
 
 Single-key navigation and command recall allow mouse-free use.
 
-#### Implementation
+#### Navigation modes and history
 
 `MainWindow` displays its `InteractionMode` beside the command box:
 
 | Mode | Keys |
 |---|---|
 | Command (default) | Type in the command box; Esc enters Navigation mode |
-| Navigation | Command box disabled; J/K select next/previous card; S selects the next view; releasing I returns to Command mode |
+| Navigation | Command box disabled; Esc refocuses the Navigation indicator; J/K select next/previous card; S selects the next view; releasing I returns to Command mode |
 
 The activity diagram shows how inputs select the mode during normal use. The app starts in Command mode;
 browsing command history or navigating cards and views does not change the mode.
@@ -665,7 +667,7 @@ keeps submitted commands, including failures, for the current session. Up/Down b
 entry restores the draft typed before browsing. Submitting or inserting a sidebar command resets browsing to the end.
 Delete-confirmation responses are excluded, and Up/Down do nothing while confirmation is pending.
 
-#### Design considerations
+#### Navigation and history design considerations
 
 | Decision | Benefit | Cost |
 |---|---|---|
@@ -1224,12 +1226,9 @@ users for speed and onboarding targets.
 2. Store and reload the maximum [typical load](#glossary). Saved contact details, IDs, tags, schedules, assignments,
    attendance, archive flags, leave dates, and reminder dismissals should survive normal restarts. Assess performance
    under NFR 4. This is a whole-dataset capacity target, not an enforced limit; data is not partitioned by semester.
-3. For users familiar with shortcuts, keyboard navigation should be faster on average than mouse navigation in
-   this benchmark. Use sample data, starting in Contacts with Alex Yeoh selected and the command box focused in
-   Command mode. Select Bernice, select Alex again, switch to Events, Tags, then Contacts, and return command-box
-   focus. After two practice trials per method, alternate methods for 10 timed trials each, resetting the starting
-   state before every trial. Time from a start signal until command-box focus returns, including mode changes.
-   Compare arithmetic means for the same user and machine; the keyboard mean should be lower.
+3. For users familiar with CoordiMate's keyboard shortcuts, a short sequence of switching views and selecting
+   adjacent cards should take less time on average using shortcuts than using the mouse. Compare repeated
+   trials by the same user from the same starting view and selection, including keyboard mode changes.
 4. At [typical load](#glossary), every contact, tag, event, attendance, or reminder command should have a median
    response time of at most 2 seconds over repeated trials on the recorded machine, including `delete`, `unassign`,
    `archiveevent`, `unarchiveevent`, `dismiss`, and `clear`. Measure Enter to feedback and completed view update,
@@ -1413,7 +1412,7 @@ without submitting.
 | `list archived`, then `list` | Archived lists are empty; `list` restores active lists. Archive changes are tested below. |
 | `list all` | Lists unchanged. `Unknown list option: all. Use list, or list archived to show archived contacts and events.` |
 
-### Filtering contacts
+### Testing contact filters
 
 **Setup:** Restore only sample data (IDs `1` to `6`), then run in order:
 
@@ -1493,7 +1492,7 @@ with `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`.
 
 ### Assigning members to an event
 
-#### All contacts shown
+#### Assigning with all contacts shown
 
 **Setup:** Restore sample data; run `list`. Alex, Bernice, and Charlotte have IDs `1`, `2`, `3`. Create
 `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00` and select it in Events.
@@ -1504,7 +1503,7 @@ with `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`.
 | `assign evn/final concert c/2 3` | Adds only Charlotte Oliveiro (`ID: 3`). Feedback includes `1 contact(s) were already assigned.` |
 | `assign evn/Final Concert c/0`, `assign evn/Final Concert c/99` (ID `99` absent) | No changes; error details shown. |
 
-#### Filtered contacts
+#### Assigning from filtered contacts
 
 **Setup:** Keep sample contacts. Create `addevent evn/Filtered Fair st/08-08-2026 et/08-08-2026`;
 `search Charlotte` shows only `ID: 3`.
@@ -1515,7 +1514,7 @@ with `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`.
 
 ### Removing members from an event
 
-#### All contacts shown
+#### Removing with all contacts shown
 
 **Setup:** Restore sample data; run `list`. Create
 `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`, run `assign evn/Final Concert c/1 2 3`, and select it in Events.
@@ -1525,7 +1524,7 @@ with `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`.
 | `unassign evn/final concert c/2 4` | **Members (2)** lists IDs `1`, `3` in order. `Removed 1 member(s) from Final Concert. 1 contact(s) were not assigned.` |
 | `unassign evn/Final Concert c/0`, `unassign evn/Final Concert c/1 99` (ID `99` absent) | No changes; error details shown. |
 
-#### Filtered contacts
+#### Removing from filtered contacts
 
 **Setup:** Keep IDs `1` and `3` assigned to `Final Concert`; run `search Charlotte` to show only `ID: 3`.
 
@@ -1607,7 +1606,7 @@ with `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`.
 | `deletetag t/Nope` | No deletion. `Tag Nope does not exist. Use a saved tag name.` |
 | `addtag`, `edittag EXCO`, `deletetag EXCO` | No changes; error details shown. |
 
-### Archiving contacts and events
+### Testing contact and event archiving
 
 #### Contacts
 
@@ -1615,7 +1614,7 @@ with `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`.
 
 | Test case | Expected |
 |---|---|
-| `archive 2` | Contact disappears; Contacts count drops by 1. `Archived contact: {NAME}.` |
+| `archive 2` | Contact disappears; Contacts count drops by 1. `Archived contact: Bernice Yu.` |
 | Close/relaunch; `list archived` | **Archived contacts (1)** and **Archived events (0)**. Only Bernice appears, with an **Archived** badge; sidebar contains only `unarchive` and `list`. |
 | `unarchive 2`, then `list` | Contact leaves the archived list, which shows `No archived contacts.`; `list` restores her to Contacts and restores all contact sidebar commands. |
 | `archive`, `archive 0`, `unarchive 2` on an active contact, `list archive` | No change; error details shown. |
@@ -1713,7 +1712,7 @@ run `chmod a-w data` in the home folder.
 | `add n/Test Person p/91234567 e/testperson@example.com r/Member` | No addition. `Contact could not be saved. No changes were made.` |
 | Untick **Read-only** or run `chmod u+w data`; repeat `addevent` | Event is added. |
 
-#### Startup event cleanup
+#### Testing startup event cleanup
 
 **Setup:** Restore sample data and run:
 
