@@ -147,9 +147,11 @@ Command parsers detect [parameter-like text](#glossary) before validating field 
 allowed characters alone do not determine which values can be entered through the CLI.
 Prefix matching is case-insensitive.
 
-[`PrefixParser`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/logic/parser/PrefixParser.java)
-applies these command-specific rules, using `StringUtil.WHITESPACE_CHARACTERS` for Java whitespace and Unicode
-`White_Space`:
+[`ParameterSyntax`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/commons/util/ParameterSyntax.java)
+defines the shared parameter boundary: the start of the input or a position immediately after whitespace, using
+`StringUtil.WHITESPACE_CHARACTERS` for Java whitespace and Unicode `White_Space`. It also defines the event-style
+pattern. [`PrefixParser`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/logic/parser/PrefixParser.java)
+reuses that boundary and pattern, and defines the contact-style pattern with the relationship-word exception:
 
 | Detection rule | Parameter-like text at a boundary | Used by |
 |---|---|---|
@@ -157,9 +159,10 @@ applies these command-specific rules, using `StringUtil.WHITESPACE_CHARACTERS` f
 | Event-style | `letters/`, without the relationship-word exception | Event add/edit/delete/archive and the shared `EventContactsParser` used by `assign`, `unassign`, and `members` |
 
 A supported prefix starts a parameter; an unsupported token is rejected as an unknown parameter. Repeated and
-empty parameters are then handled according to the command. Contact and tag parsers use `ArgumentTokenizer` to
-extract values after rejecting unknown parameters, while `PrefixParser#parseUniqueParameters` also splits values
-and rejects repeated parameters for its callers.
+empty parameters are then handled according to the command. Contact and tag parsers, along with the shared
+`EventContactsParser` used by `assign`, `unassign`, and `members`, use `ArgumentTokenizer` to extract values after
+rejecting unknown parameters. `PrefixParser#parseUniqueParameters` also splits values and rejects repeated
+parameters for its callers.
 
 The examples below are argument fragments; other required arguments must still be supplied:
 
