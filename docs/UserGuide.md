@@ -715,6 +715,7 @@ Format: `editevent evn/EVENT_NAME [nevn/NEW_EVENT_NAME] [st/NEW_START_TIME] [et/
 * Supply at least one of `nevn/`, `st/`, and `et/`. Omitted fields keep their values.
 * The new name and times follow the same rules as in `addevent`.
 * `nevn/` keeps the capitalization you type, so it can also change only the capitalization of a name.
+* `nevn/` also keeps quotation marks as part of the name: `editevent evn/Gala nevn/"Gala"` renames `Gala` to `"Gala"`.
 
 Examples:
 
