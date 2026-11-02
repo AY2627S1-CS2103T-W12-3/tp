@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
  */
 public final class ParameterSyntax {
     public static final String BOUNDARY = "(?<![^" + StringUtil.WHITESPACE_CHARACTERS + "])";
-    public static final Pattern EVENT_PARAMETER_PATTERN = Pattern.compile(BOUNDARY + "([A-Za-z]+/|/[A-Za-z]+)");
+    public static final Pattern EVENT_PARAMETER_PATTERN = Pattern.compile(BOUNDARY + "([A-Za-z]+/)");
 
     private ParameterSyntax() {}
 

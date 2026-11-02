@@ -40,8 +40,8 @@ public class ArchiveEventCommandParserTest {
     public void parse_unknownOrRepeatedParameters_rejected() {
         assertError(archiveParser, "evn/Fair st/09-10-2026",
                 String.format(MESSAGE_UNKNOWN_PARAMETER + "\n" + ArchiveEventCommand.MESSAGE_USAGE, "st/"));
-        assertError(unarchiveParser, "evn/Fair /et 10-10-2026",
-                String.format(MESSAGE_UNKNOWN_PARAMETER + "\n" + ArchiveEventCommand.MESSAGE_UNARCHIVE_USAGE, "/et"));
+        assertError(unarchiveParser, "evn/Fair x/value",
+                String.format(MESSAGE_UNKNOWN_PARAMETER + "\n" + ArchiveEventCommand.MESSAGE_UNARCHIVE_USAGE, "x/"));
         assertError(archiveParser, "evn/Fair evn/Concert",
                 String.format(MESSAGE_REPEATED_PARAMETER + "\n" + ArchiveEventCommand.MESSAGE_USAGE, "evn/"));
     }

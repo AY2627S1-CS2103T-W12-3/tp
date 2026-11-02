@@ -139,6 +139,25 @@ How the parsing works:
 Every error message is followed by the usage of the command that failed. `CoordiMateParser` adds it to parse errors
 and `LogicManager` adds it to execution errors, using `Messages.withUsage`.
 
+#### Parameter detection
+
+`PrefixParser` detects [parameter-like text](#glossary) before field validation. Supported prefixes start parameters;
+unknown prefixes cause an unknown-parameter error. Prefix matching is case-insensitive.
+
+Contact-style detection, used by contact and tag commands and `markattendance`, exempts standalone `s/o` and `d/o`
+words, ignoring case. Event-style detection, used by the other event commands, has no such exemption.
+
+Both styles leave slash-leading words such as `/st` and `/Workshop` in the value. For example,
+`evn/Concert /Workshop` names an event `Concert /Workshop`; `/st` and `/et` are not aliases for `st/` and `et/`.
+A reversed prefix in a date field fails date validation, while one in a name can remain literal text. If it
+replaces a required prefix, the command can instead fail for a missing parameter. Startup event-name cleanup
+uses the same shared pattern in `ParameterSyntax`, so it preserves names containing slash-leading words.
+
+Whitespace still matters for letters followed by a slash: `evn/Concert/Workshop` retains its internal slash,
+whereas `evn/Concert Workshop/Music` rejects `Workshop/` as an unknown parameter. Contact and event commands
+provide no general quoting or escaping mechanism for these tokens. `filter` handles quoted values separately,
+as described in [Filtering contacts](#filtering-contacts); `search` does not detect parameters in its keyword.
+
 ### Model component
 **API** : [`Model.java`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/Model.java)
 
@@ -1454,6 +1473,11 @@ the results. Speed and onboarding targets require timed trials with users from t
 * **Normalised phone number**: A phone number with the optional `+`, spaces, hyphens and brackets removed, used to detect duplicates. For example, `+65 9123 4567` and `6591234567` are the same.
 * **On leave**: A contact with a saved leave end date is unavailable through that date, inclusive, using the computer's local date.
 * **Organisation**: The company or body that a contact belongs to, such as a CCA, sponsor company, or university office.
+* **Parameter-like text**: Text shaped like `[whitespace][letters]/`, such as the ` r/` in `Discuss r/Lead`.
+  The brackets describe parts of the input: whitespace includes spaces, tabs, Java whitespace and Unicode
+  `White_Space`; letters are one or more consecutive ASCII letters (`A-Z` or `a-z`) adjacent to the slash.
+  At the start of the arguments, preceding whitespace is not required. See [Parameter detection](#parameter-detection)
+  for command-specific rules and exceptions.
 * **Prefix**: The short label before a value in a command that tells CoordiMate which field it belongs to, such as `n/` for name or `t/` for tag.
 * **Reminder**: An in-app notice for an upcoming, non-archived event, shown only while CoordiMate is running. Timed starts qualify from 24 hours before the start through the start time; date-only starts qualify on the preceding day and the start date. Reminders refresh at startup, after commands, and once per minute.
 * **Role**: A contact's responsibility or position in relation to the CCA, such as `Logistics Lead` or `Vice-President`.

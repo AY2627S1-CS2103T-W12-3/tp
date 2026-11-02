@@ -34,6 +34,38 @@ public class AddEventIntegrationTest {
     public Path temporaryFolder;
 
     @Test
+    public void execute_slashLeadingWordsInNames_surviveEditingAndStartupCleanup() throws Exception {
+        ModelManager model = new ModelManager();
+        model.addPerson(AMY);
+        JsonCoordiMateStorage data = new JsonCoordiMateStorage(temporaryFolder.resolve("slashes.json"));
+        StorageManager storage = new StorageManager(data,
+                new JsonUserPrefsStorage(temporaryFolder.resolve("prefs.json")));
+        Logic logic = new LogicManager(model, storage);
+
+        logic.execute("addevent evn/Concert /Workshop st/09-10-2026 et/10-10-2026");
+        String memberId = model.getCoordiMate().getPersonList().getFirst().getMemberId().orElseThrow().toString();
+        logic.execute("assign evn/Concert /Workshop c/" + memberId);
+        logic.execute("members evn/Concert /Workshop");
+        logic.execute("editevent evn/Concert /Workshop nevn/Concert /Music");
+        logic.execute("archiveevent evn/Concert /Music");
+        assertEquals(model.getCoordiMate(), storage.readCoordiMate().orElseThrow());
+        assertTrue(storage.cleanUpEventNames().isEmpty());
+
+        StorageManager reopened = new StorageManager(new JsonCoordiMateStorage(data.getCoordiMateFilePath()),
+                new JsonUserPrefsStorage(temporaryFolder.resolve("prefs.json")));
+        assertTrue(reopened.cleanUpEventNames().isEmpty());
+        ModelManager reloaded = new ModelManager(reopened.readCoordiMate().orElseThrow(), model.getUserPrefs());
+        assertEquals("Concert /Music", reloaded.getCoordiMate().getEventList().getFirst().getName());
+        Logic restarted = new LogicManager(reloaded, reopened);
+        restarted.execute("unarchiveevent evn/Concert /Music");
+        restarted.execute("members evn/Concert /Music");
+        restarted.execute("unassign evn/Concert /Music c/" + memberId);
+        restarted.execute("deleteevent evn/Concert /Music");
+        assertTrue(reloaded.getCoordiMate().getEventList().isEmpty());
+        assertEquals(reloaded.getCoordiMate(), reopened.readCoordiMate().orElseThrow());
+    }
+
+    @Test
     public void execute_validEvent_savedAndReloaded() throws Exception {
         ModelManager model = new ModelManager();
         model.addPerson(AMY);

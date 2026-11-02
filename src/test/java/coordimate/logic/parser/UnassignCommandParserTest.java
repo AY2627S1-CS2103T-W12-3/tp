@@ -48,7 +48,7 @@ public class UnassignCommandParserTest {
 
     @Test
     public void parse_invalidMemberIds_rejected() {
-        for (String ids : new String[] {"0", "-1", "+1", "a", "1 x", "1,2", "1.5", "1.0", "1e0",
+        for (String ids : new String[] {"1 /et 1", "1 /st", "0", "-1", "+1", "a", "1 x", "1,2", "1.5", "1.0", "1e0",
             "2147483648", "99999999999"}) {
             assertError(" evn/Final Concert c/" + ids, UnassignCommandParser.MESSAGE_INVALID_MEMBER_IDS);
         }
@@ -64,7 +64,7 @@ public class UnassignCommandParserTest {
 
     @Test
     public void parse_unknownParameters_rejected() {
-        for (String unknown : new String[] {" x/1", " r/Logistics", " mem/Alex Yeoh", " /et 1"}) {
+        for (String unknown : new String[] {" x/1", " r/Logistics", " mem/Alex Yeoh"}) {
             String prefix = unknown.strip().replaceFirst("^(\\w+/).*", "$1").split(" ", 2)[0];
             assertError(" evn/Final Concert c/1" + unknown,
                     String.format(UnassignCommandParser.MESSAGE_UNKNOWN_PARAMETER, prefix));
