@@ -128,6 +128,11 @@ For `dismiss`, data-loading and saving failures instead produce the session-only
 * Parameters can be in any order.<br>
   For example, if the command specifies `n/NAME p/PHONE_NUMBER`, `p/PHONE_NUMBER n/NAME` is also acceptable.
 
+* Parameter prefixes are case-insensitive.<br>
+  For example, `evn/`, `EVN/`, and `EvN/` identify the same parameter. Parameter values keep their typed
+  capitalization, subject to each field's rules. Different capitalizations of a prefix count as repeats
+  wherever that parameter may only be supplied once.
+
 * Commands that take no parameters, such as `help`, `tutorial`, `exit`, and `clear`, reject extraneous
   parameters.<br>
   For example, `help 123` is invalid; use `help` instead.

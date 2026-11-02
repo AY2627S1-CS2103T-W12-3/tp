@@ -21,7 +21,7 @@ public class ArgumentTokenizer {
 
     /**
      * Tokenizes an arguments string and returns an {@code ArgumentMultimap} object that maps prefixes to their
-     * respective argument values. Only the given prefixes will be recognized in the arguments string.
+     * respective argument values. Only the given prefixes will be recognized, ignoring ASCII letter case.
      *
      * @param argsString Arguments string of the form: {@code preamble <prefix>value <prefix>value ...}.
      * @param prefixes   Prefixes to tokenize the arguments string with.
@@ -53,7 +53,8 @@ public class ArgumentTokenizer {
     private static List<PrefixPosition> findPrefixPositions(String argsString, Prefix prefix) {
         List<PrefixPosition> positions = new ArrayList<>();
 
-        Matcher matcher = Pattern.compile(PrefixParser.PARAMETER_BOUNDARY + Pattern.quote(prefix.getPrefix()))
+        Matcher matcher = Pattern.compile(PrefixParser.PARAMETER_BOUNDARY + Pattern.quote(prefix.getPrefix()),
+                Pattern.CASE_INSENSITIVE)
                 .matcher(argsString);
         while (matcher.find()) {
             positions.add(new PrefixPosition(prefix, matcher.start()));

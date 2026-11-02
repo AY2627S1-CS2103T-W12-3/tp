@@ -19,6 +19,27 @@ public class PrefixParserTest {
     private static final String REPEATED = "Parameter %s may only be specified once.";
 
     @Test
+    public void parseUniqueParameters_mixedCasePrefixes_preservesValuesAndCanonicalKeys() throws Exception {
+        for (String space : UnicodeWhitespace.ALL) {
+            assertEquals(Map.of("evn/", "Arts/Music Fair", "st/", "09-10-2026"),
+                    parse("EvN/Arts/Music Fair" + space + "ST/09-10-2026"));
+            assertEquals(String.format(REPEATED, "evn/"), assertThrows(ParseException.class, () ->
+                    parse("EVN/Fair" + space + "evn/Concert")).getMessage());
+            assertEquals(String.format(REPEATED, "evn/"), assertThrows(ParseException.class, () ->
+                    parse("evn/" + space + "EvN/Concert")).getMessage());
+        }
+        assertEquals(String.format(UNKNOWN, "X/"), assertThrows(ParseException.class, () ->
+                parse("EVN/Fair X/value")).getMessage());
+        assertEquals(String.format(UNKNOWN, "/ST"), assertThrows(ParseException.class, () ->
+                parse("EVN/Fair /ST/value")).getMessage());
+        PrefixParser.rejectUnknownParameters("N/Rajesh S/O Kumar", PrefixParser.CONTACT_PARAMETER_PATTERN,
+                Set.of("n/"), UNKNOWN);
+        assertEquals(String.format(UNKNOWN, "X/"), assertThrows(ParseException.class, () ->
+                PrefixParser.rejectUnknownParameters("N/Alice X/value", PrefixParser.CONTACT_PARAMETER_PATTERN,
+                        Set.of("n/"), UNKNOWN)).getMessage());
+    }
+
+    @Test
     public void parseUniqueParameters_unicodeWhitespace_usesSameBoundariesAsNormalization() throws Exception {
         for (String space : UnicodeWhitespace.ALL) {
             assertEquals(Map.of("evn/", "Fair", "st/", "09-10-2026"),
