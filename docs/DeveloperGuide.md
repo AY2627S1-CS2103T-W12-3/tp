@@ -734,8 +734,10 @@ to highlight.
   open, it skips the overlay's card and backdrop layout unless the resolved target's bounds or the window size
   actually changed since the last layout, and it forces a synchronous layout of the card after resizing it so its
   text re-wraps immediately instead of on the next frame.
-  Resolving a target is kept side-effect free so it is safe to call every refresh: selecting the first contact and
-  scrolling it into view (`PersonListPanel#revealTutorialContactCard`) and scrolling the member list into view
+  Resolving a target is kept safe to call every refresh. The event targets select the first event when no event is
+  selected (`EventListPanel#selectTutorialEventIfNeeded`). This does nothing once an event is selected, so repeated
+  refreshes do not keep changing the selection. Other targets are resolved without changing the selection or scroll
+  position. Selecting the first contact and scrolling it into view (`PersonListPanel#revealTutorialContactCard`) and scrolling the member list into view
   (`EventListPanel#revealTutorialMemberList`) are one-time actions `MainWindow` runs only when a step opens or,
   via `TutorialWindow#setResizeHandler`, when the overlay's size actually changes — not on every refresh, which
   would otherwise re-trigger a layout pass indefinitely (`ListView#scrollTo` and `ScrollPane#setVvalue` both
