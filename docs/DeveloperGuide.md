@@ -396,6 +396,9 @@ and value. Quoted values can contain literal `FIELD/` text.
 **Resolving.** [`FilterCommand#execute`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/logic/commands/FilterCommand.java)
 turns each criterion into a `Predicate<Person>` using the model:
 
+`TagFilterPredicate` handles tag criteria; `EventMembersPredicate` handles event criteria. Both implement
+`Predicate<Person>`; organisation criteria use a plain lambda.
+
 | Field | The value must match, ignoring case | A contact matches if |
 |---|---|---|
 | `tag` | a tag in `Model#getTagList()` | it has that tag |
@@ -404,8 +407,9 @@ turns each criterion into a `Predicate<Person>` using the model:
 
 Unknown values are rejected before changing the display. Otherwise,
 [`ContactFilterPredicate`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/person/ContactFilterPredicate.java)
-combines all predicates with AND and is passed to `Model#updateFilteredPersonList`. `filter` runs directly on the
-live model without saving. The diagram omits the plain lambda used for `organisation`.
+implements `Predicate<Person>` and holds other predicates, combining them with AND (the composite pattern).
+`Model#updateFilteredPersonList` receives this composite. `filter` runs on the live model without saving.
+The diagram omits the organisation lambda.
 
 <puml src="diagrams/FilterClassDiagram.puml" width="700" />
 
@@ -623,7 +627,7 @@ Delete-confirmation responses are excluded, and Up/Down do nothing while confirm
 current work and future committees. They prefer desktop apps and typing over mouse interaction, type quickly,
 and are comfortable with CLI apps.
 
-**Value proposition:** Manage CCA contacts, events, and attendance while preserving information for committee handovers.
+**Value proposition:** Manage CCA contacts, events, and attendance while preserving information for [committee handovers](#glossary).
 
 
 ### User stories
@@ -1193,10 +1197,8 @@ users for speed and onboarding targets.
 * **Event**: A saved CCA activity, such as a concert or fair, with a unique name ignoring case and extra spaces.
 * **Event lead**: An EXCO member organising an event.
 * **EXCO (Executive Committee)**: Students elected to lead and run a CCA.
-* **External contact**: Someone outside the CCA, such as a sponsor, university staff member, or collaborating CCA's EXCO member.
 * **Future event**: An event starting after the current date/time.
 * **Home folder**: The JAR's folder, containing data, `preferences.json`, and logs regardless of launch directory. IDE or Gradle runs use the working directory.
-* **Internal contact**: Someone within the CCA, such as a member, EXCO member, or advisor.
 * **JAR file**: A Java application packaged to run without installation.
 * **Local data file**: JSON storing the application data in [NFR 2](#non-functional-requirements), at `data/coordimate.json` by default, relative to the [home folder](#glossary).
 * **Mainstream OS**: Windows, macOS, or Linux.
@@ -1253,8 +1255,8 @@ Date placeholders use the local time zone and `dd-MM-yyyy`: `TODAY`, `TOMORROW`,
 
 | Test case | Expected |
 |---|---|
-| Download the JAR into an empty folder; double-click it | Maximized GUI with sample contacts and event. The tutorial opens and can show assigned members and attendance. Close it before continuing. |
-| Unmaximize, resize distinctively, move, close, and double-click the JAR again | Restores the unmaximized size and position. |
+| Download the JAR into an empty folder; open a terminal there and run `java -jar coordimate.jar` | Maximized GUI with sample contacts and event. The tutorial opens and can show assigned members and attendance. Close it before continuing. |
+| Unmaximize, resize distinctively, move, close, and run `java -jar coordimate.jar` again | Restores the unmaximized size and position. |
 | `exit`, then relaunch | App closes; data survives relaunch. |
 
 ### Tutorial and Help
