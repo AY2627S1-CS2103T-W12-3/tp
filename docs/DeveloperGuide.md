@@ -661,10 +661,10 @@ leave on the current date, and shows the **On leave until** badge only if it is.
 file until the user replaces or clears it. Code that copies a contact, such as `CoordiMate#setTag` and
 `CoordiMate#removeTag`, must pass the leave date on so that it is not dropped.
 
-The state diagram below shows how a contact's leave changes. **Leave ended** looks the same as **Not on leave** in the
-app; the difference is only that the old date is still saved.
+The activity diagram below shows how the UI determines whether a contact is on leave. An expired leave date is
+still saved, but the contact is shown as not on leave.
 
-<puml src="diagrams/LeaveStateDiagram.puml" width="560" />
+<puml src="diagrams/LeaveActivityDiagram.puml" width="560" alt="Activity for determining a contact's displayed leave status" />
 
 `PersonListPanel` reads the current date from a `Clock`, which tests replace to control the date. A window left open
 past midnight still needs redrawing, so `MainWindow`'s existing one-minute reminder timer also calls
@@ -856,9 +856,10 @@ box:
 * **Navigation mode**, in which the command box is disabled and single keys act on the selected tab: J and K select the
   next and previous card, and S switches to the next view.
 
-The state diagram below shows how the user moves between the two modes.
+The activity diagram below shows how mode-switching inputs select the interaction mode during normal use.
+The app starts in Command mode. Browsing command history or navigating cards and views does not change the mode.
 
-<puml src="diagrams/InteractionModeStateDiagram.puml" width="520" />
+<puml src="diagrams/InteractionModeActivityDiagram.puml" width="520" alt="Activity for selecting the interaction mode from a keyboard or mouse input" />
 
 `MainWindow#handleKeyboardInput` is a key filter on the whole window. In Command mode it only reacts to Esc, which
 enters Navigation mode. In Navigation mode it handles J, K, and S, and consumes every other unmodified key so that it
