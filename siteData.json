@@ -70,7 +70,7 @@
         "deleting-a-contact": "Deleting a contact",
         "searching-contacts": "Searching contacts",
         "listing-contacts-and-events": "Listing contacts and events",
-        "filtering-contacts-2": "Filtering contacts",
+        "testing-contact-filters": "Testing contact filters",
         "adding-an-event": "Adding an event",
         "editing-an-event": "Editing an event",
         "deleting-an-event": "Deleting an event",
@@ -81,7 +81,7 @@
         "marking-attendance": "Marking attendance",
         "marking-a-contact-as-on-leave": "Marking a contact as on leave",
         "managing-tags": "Managing tags",
-        "archiving-contacts-and-events-2": "Archiving contacts and events",
+        "testing-contact-and-event-archiving": "Testing contact and event archiving",
         "clearing-all-data": "Clearing all data",
         "saving-data": "Saving data"
       },

@@ -69,7 +69,7 @@ deactivate Candidate
 Command --> LogicManager : result
 deactivate Command
 
-LogicManager -> Storage : saveCoordiMate(newData)
+LogicManager -> Storage : saveCoordiMateIfUnchanged(newData)
 activate Storage
 
 Storage --> LogicManager
