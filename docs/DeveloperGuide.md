@@ -213,6 +213,24 @@ it. If only the preferences file cannot be loaded, CoordiMate starts with defaul
 for that session. Data files saved by earlier versions, such as those without member IDs or a saved tag list, are
 still accepted and are updated the next time the data is saved.
 
+#### Startup event cleanup
+
+Before loading the model, `MainApp` calls `StorageManager#cleanUpEventNames()` to migrate saved events,
+including archived events. The cleanup:
+
+* deletes events whose names contain whitespace followed by parameter-like text, such as `c/review`, because
+  those names cannot be used in event commands;
+* renames later events whose names were distinct under legacy whitespace rules but now match, ignoring case, with
+  an available suffix such as ` (2)`. Long names are shortened to fit the 100-character limit. Duplicates under
+  the legacy rules remain invalid;
+* deletes events with a start or end date in year `0000`, and removes year-`0000` reminder dismissal history from
+  events that remain.
+
+Renamed events keep their members, attendance, reminder dismissal history (except year-`0000` entries), and archive
+status. The remaining data is validated before the cleanup is saved using `saveCoordiMateIfUnchanged`, under a
+`DataFileGuard` lock. If validation or saving fails, the original file is left unchanged. If no cleanup is needed,
+the file is not rewritten. A startup warning reports deleted and renamed events after a successful save.
+
 ### Common classes
 
 Classes used by multiple components are in the `coordimate.commons` package. These include `GuiSettings`,
@@ -253,7 +271,8 @@ rejects the deletion if that contact has since been removed or edited.
 
 The data file stores each contact's `memberId` and the `nextMemberId` counter. When a file saved before member IDs
 existed is loaded, contacts without an ID receive consecutive IDs in file order, after any IDs already in the file.
-Loading does not rewrite the file; the IDs are recorded on the next successful save. A file with duplicate or
+Assigning member IDs during loading does not itself rewrite the file; the IDs are recorded on the next successful
+save, which may be the [startup event cleanup](#startup-event-cleanup). A file with duplicate or
 invalid IDs is rejected like any other invalid data file.
 
 #### Design considerations
@@ -285,8 +304,9 @@ passes commands that change data, such as `AddCommand`, `EditCommand`, and `Assi
 1. It checks that the existing data file can still be loaded. If it cannot, the command is rejected and the file
    is left untouched, so that the user can repair it. A missing data file is not an error.
 1. It creates a second `ModelManager`, the _candidate_, from a copy of the live model's data. It also copies the
-   current [archive view](#archiving-contacts-and-events) onto the candidate, so that commands which read the
-   displayed list see the same contacts on the candidate as on the screen.
+   current [archive view](#archiving-contacts-and-events) and contact filter onto the candidate, using
+   `candidate.updateFilteredPersonList(model.getFilteredPersonList()::contains)` for the filter. Commands which
+   read the displayed list therefore see the same contacts on the candidate as on the screen.
 1. It executes the command on the candidate. If the command fails, the candidate is discarded.
 1. It saves the candidate's data. If the file was changed by another CoordiMate window since it was loaded, or the
    save fails, the command is rejected and the candidate is discarded.
@@ -623,9 +643,10 @@ app; the difference is only that the old date is still saved.
 
 <puml src="diagrams/LeaveStateDiagram.puml" width="560" />
 
-`PersonListPanel` reads the current date from a `Clock`, which tests replace to control the date. A window left open
-past midnight still needs redrawing, so `MainWindow`'s existing one-minute reminder timer also calls
-`PersonListPanel#refreshIfDateChanged()`, which redraws the contacts only when the date has changed.
+`PersonListPanel` and `EventListPanel` read the current date from a `Clock`, which tests replace to control the date.
+A window left open past midnight still needs redrawing, so `MainWindow`'s existing one-minute reminder timer also
+calls `PersonListPanel#refreshIfDateChanged()` and `EventListPanel#refreshIfDateChanged()`. These redraw the contacts
+in the Contacts and Events views only when the date has changed.
 
 In the data file, the date is stored in a `leaveUntil` field. Contacts without this field load as not on leave.
 
@@ -641,7 +662,7 @@ In the data file, the date is stored in a `leaveUntil` field. Contacts without t
 
 * **Alternative 2:** Remove ended leave dates from the data, for example at launch.
   * Pros: The data file only contains leave that is still active.
-  * Cons: Requires saving at launch, which no other feature does, and still needs a check for leave that ends while
+  * Cons: Requires saving at launch to remove ended leave dates, and still needs a check for leave that ends while
     the app is open.
 
 **Aspect: How an open window notices that the date has changed**
@@ -836,7 +857,7 @@ so that `y` is never recalled as a command. The history is kept only for the cur
 **Aspect: Whether command history is saved**
 
 * **Alternative 1 (current choice):** Keep the history only for the current session.
-  * Pros: Nothing extra is written to disk, and the history cannot be corrupted or grow without limit.
+  * Pros: Nothing extra is written to disk, and history does not accumulate across sessions.
   * Cons: The history is lost when the app closes.
 
 * **Alternative 2:** Save the history with the user preferences.
@@ -967,7 +988,8 @@ dismissing a reminder ([UC12](#uc12-dismiss-an-event-reminder)).
     Steps 1a1-1a2 are repeated until the details are valid.<br>
     Use case resumes from step 2.
 
-* 1b. More than 15 tags are given.
+* 1b. More than 15 distinct tags remain after processing `t/` parameters. Case variants count once; an empty `t/`
+  clears earlier tags.
   * 1b1. CoordiMate informs the EXCO member of the tag limit.
 
     Use case resumes from step 1.
@@ -987,6 +1009,9 @@ dismissing a reminder ([UC12](#uc12-dismiss-an-event-reminder)).
    details.
 
    Use case ends.
+
+A saved contact already above the 15-tag limit can keep or reduce its tag count using `at/` and `rt/`, or be edited
+without changing its tags. A `t/` replacement must still contain at most 15 tags.
 
 **Extensions**
 
@@ -1014,7 +1039,8 @@ dismissing a reminder ([UC12](#uc12-dismiss-an-event-reminder)).
 
     Use case ends.
 
-* 1e. The tag changes would give the contact more than 15 tags.
+* 1e. A replacement tag set contains more than 15 tags, or tag operations increase the contact's tag count to more
+  than 15 tags.
   * 1e1. CoordiMate informs the EXCO member of the tag limit and makes no changes.
 
     Use case resumes from step 1.
@@ -1154,7 +1180,7 @@ dismissing a reminder ([UC12](#uc12-dismiss-an-event-reminder)).
 
     Use case resumes from step 1.
 
-* 1c. An event with the same name already exists, ignoring case.
+* 1c. An event with the same name already exists, ignoring case and extra spaces.
   * 1c1. CoordiMate informs the EXCO member that the event already exists, and how to restore it if it is
     [archived](#uc13-archive-and-restore-a-contact).
 
@@ -1181,7 +1207,7 @@ dismissing a reminder ([UC12](#uc12-dismiss-an-event-reminder)).
 
     Use case ends.
 
-* 1c. Another event already has the new name, ignoring case.
+* 1c. Another event already has the new name, ignoring case and extra spaces.
   * 1c1. CoordiMate informs the EXCO member of the conflict and makes no changes.
 
     Use case ends.
@@ -1279,7 +1305,7 @@ Removing members from an event is similar, with these differences:
 
 **MSS**
 
-1. EXCO member views the members of an event (UC10).
+1. EXCO member selects an event in the Events view to see its members and attendance.
 2. EXCO member marks a member of the event as present or absent.
 3. CoordiMate records the attendance status and confirms the update.
 4. Steps 2-3 are repeated for each member whose attendance is to be recorded.
@@ -1343,7 +1369,8 @@ Removing members from an event is similar, with these differences:
 3. EXCO member requests to view archived contacts and events.
 4. CoordiMate shows only the archived contacts and events.
 5. EXCO member requests to restore the contact, identifying it by its member ID.
-6. CoordiMate returns the contact to the contact list and confirms the restoration.
+6. CoordiMate restores the contact to the active list, removes it from the displayed archived list, and confirms
+   the restoration. The archived view stays open; the EXCO member can use `list` to see the active contacts.
 
    Use case ends.
 
@@ -1493,6 +1520,9 @@ the results. Speed and onboarding targets require timed trials with users from t
 
 Given below are instructions to test the app manually.
 
+Enter commands in Command mode. If browsing cards leaves the app in Navigation mode, press <kbd>I</kbd> or click
+the command box before typing the next command.
+
 All relative file paths below are relative to the [home folder](#glossary), the folder containing the JAR file. CoordiMate uses this folder however it is launched, even when `java -jar` is run from another directory.
 
 <box type="info" seamless>
@@ -1514,7 +1544,8 @@ continuing:
 1. Relaunch the app.
 
 The app then starts with the six sample contacts (member IDs `1` to `6`), the `Freshmen Welcome Night` sample
-event, and no custom tags. Deleting contacts by hand is not enough, because member IDs are never reused.
+event, and the default tags plus the custom tags `friends` and `neighbours`. Deleting contacts by hand is not
+enough, because member IDs are never reused.
 </box>
 
 <box type="info" seamless>
@@ -1682,8 +1713,8 @@ Closing the tutorial with Esc or **Close** also marks it as seen. Restoring the 
 
 ### Filtering contacts
 
-1. Prerequisites: Restore the sample data (contact IDs `1` to `6`), with no additional contacts, events, or custom
-   tags. Run these commands in order:<br>
+1. Prerequisites: Restore the sample data (contact IDs `1` to `6`), with no contacts, events, or tags added beyond
+   the sample data. Run these commands in order:<br>
    `edit 3 o/NUS Student Affairs`<br>
    `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`<br>
    `assign evn/Final Concert c/1 2`<br>
@@ -1723,10 +1754,10 @@ Closing the tutorial with Esc or **Close** also marks it as seen. Restoring the 
    Expected: The **Events** tab opens with the new event selected. The status message shows `Created Event Final Concert. Start Time: 08-08-2026 15:00. End Time: 08-08-2026 18:00.`
 
 1. Test case: `addevent evn/final concert st/09-10-2026 et/10-10-2026`<br>
-   Expected: No event is added. The status message shows `An event with this name already exists.`
+   Expected: No event is added. The status message shows `An event with this name already exists. No changes were made.`
 
 1. Test case: `addevent evn/Fair st/10-10-2026 et/09-10-2026`<br>
-   Expected: No event is added. The status message shows `Start time must not be after end time.`
+   Expected: No event is added. The status message shows `Start time must not be after end time. Example: st/17-09-2026 16:30 et/17-09-2026 18:30`
 
 1. Test case: `addevent evn/Fair st/10/10/2026 et/11-10-2026`<br>
    Expected: No event is added. The status message shows the required date and time format.
@@ -1747,7 +1778,7 @@ Closing the tutorial with Esc or **Close** also marks it as seen. Restoring the 
    Expected: The event is renamed to `Grand Concert` and keeps its times.
 
 1. Test case: `editevent evn/Grand Concert st/09-08-2026`<br>
-   Expected: No change. The status message shows `Start time must not be after end time.`
+   Expected: No change. The status message shows `Start time must not be after end time. Example: st/17-09-2026 16:30 et/17-09-2026 18:30`
 
 1. Other incorrect editevent commands to try: `editevent evn/Grand Concert`, `editevent evn/Grand Concert nevn/`<br>
    Expected: No change. The status message shows error details.
@@ -1757,7 +1788,7 @@ Closing the tutorial with Esc or **Close** also marks it as seen. Restoring the 
 1. Prerequisites: An event named `Grand Concert` exists, as created in the previous section.
 
 1. Test case: `deleteevent evn/Gala`<br>
-   Expected: No event is deleted. The status message shows `Event Gala does not exist.`
+   Expected: No event is deleted. The status message shows `Event Gala does not exist. Use a saved event name.`
 
 1. Test case: `deleteevent evn/grand concert`<br>
    Expected: The event is removed from the **Events** tab. The status message shows `Deleted Event Grand Concert.`
@@ -1878,10 +1909,10 @@ Closing the tutorial with Esc or **Close** also marks it as seen. Restoring the 
    1. Prerequisites: Restore the sample data and run `list`. Create an event using `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`, then run `assign evn/Final Concert c/1 2`. Select the event in the **Events** tab.
 
    1. Test case: `markattendance evn/Final Concert mem/Alex Yeoh att/present`<br>
-      Expected: `Alex Yeoh` shows **Present**. The counts show 1 present, 0 absent, and 1 not marked. The status message shows `Marked Alex Yeoh as present for Event Final Concert.`
+      Expected: `Alex Yeoh` shows `● present`. The counts show 1 present, 0 absent, and 1 not marked. The status message shows `Marked Alex Yeoh as present for Event Final Concert.`
 
    1. Test case: `markattendance evn/final concert mem/alex yeoh att/ABSENT`<br>
-      Expected: `Alex Yeoh` shows **Absent**. The counts show 0 present, 1 absent, and 1 not marked.
+      Expected: `Alex Yeoh` shows `● absent`. The counts show 0 present, 1 absent, and 1 not marked.
 
    1. Test case: `markattendance evn/Final Concert mem/David Li att/present`<br>
       Expected: No change. The status message shows `David Li is not assigned to event Final Concert. Assign the contact to the event before marking attendance.`
@@ -1893,16 +1924,17 @@ Closing the tutorial with Esc or **Close** also marks it as seen. Restoring the 
 
    1. Prerequisites: Continue from the previous test, with `Alex Yeoh` marked absent. List all contacts using `list`.
 
-   1. Test case: `edit 1 n/Alex Tan`<br>
-      Expected: The event's members show `Alex Tan` in the same position, still **Absent**.
+   1. Test case: `edit 1 n/Alex Tan`, then select `Final Concert` in the **Events** tab.<br>
+      Expected: The event's members show `Alex Tan` in the same position, still `● absent`.
 
    1. Test case: `unassign evn/Final Concert c/1`, then `assign evn/Final Concert c/1`<br>
-      Expected: `Alex Tan` is removed, then added again at the end of the members as **Not marked**.
+      Expected: `Alex Tan` is removed, then added again at the end of the members as `● unmarked`.
 
-   1. Test case: `markattendance evn/Final Concert mem/Alex Tan att/present`, then close and relaunch the app.<br>
-      Expected: `Alex Tan` is still **Present**.
+   1. Test case: `markattendance evn/Final Concert mem/Alex Tan att/present`, then close and relaunch the app.
+      Select `Final Concert` in the **Events** tab.<br>
+      Expected: `Alex Tan` is still `● present`.
 
-   1. Test case: `delete 1`, then `y`.<br>
+   1. Test case: `delete 1`, then `y`. Select `Final Concert` in the **Events** tab.<br>
       Expected: `Alex Tan` and his attendance are removed from the event. Other members are unchanged.
 
 ### Marking a contact as on leave
@@ -1943,7 +1975,7 @@ Closing the tutorial with Esc or **Close** also marks it as seen. Restoring the 
    Expected: The Tags view lists `EXCO, Sponsor, UniversityStaff, Logistics, friends, neighbours`. Selecting
    `EXCO` shows Alex Yeoh, Bernice Yu, and Irfan Ibrahim.
 
-1. Test case: `addtag t/Publicity`<br>
+1. Test case: Press <kbd>I</kbd> to return to Command mode, then run `addtag t/Publicity`.<br>
    Expected: `Publicity` appears in the Tags view. The status message shows `Created tag: Publicity.`
 
 1. Test case: `addtag t/publicity`<br>
