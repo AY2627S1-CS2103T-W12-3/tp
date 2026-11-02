@@ -351,6 +351,37 @@ public class PersonListPanelTest {
     }
 
     @Test
+    public void revealSelectedContact_withSelection_keepsSelectedContact() throws Exception {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+            PersonListPanel panel = new PersonListPanel(FXCollections.observableArrayList(ALICE, BENSON));
+            Region root = panel.getRoot();
+            new Scene(root);
+            root.applyCss();
+            ListView<Person> list = getList(root);
+            list.getSelectionModel().select(BENSON);
+
+            panel.revealSelectedContact();
+
+            assertEquals(BENSON, list.getSelectionModel().getSelectedItem());
+        });
+    }
+
+    @Test
+    public void revealSelectedContact_withNoSelection_doesNothing() throws Exception {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+            PersonListPanel panel = new PersonListPanel(FXCollections.observableArrayList(ALICE, BENSON));
+            Region root = panel.getRoot();
+            new Scene(root);
+            root.applyCss();
+            ListView<Person> list = getList(root);
+
+            panel.revealSelectedContact();
+
+            assertNull(list.getSelectionModel().getSelectedItem());
+        });
+    }
+
+    @Test
     public void explicitFocusAfterListChange_supersedesDeferredSelectionRestore() throws Exception {
         FocusFixture fixture = JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             ObservableList<Person> persons = FXCollections.observableArrayList(ALICE, BENSON);
