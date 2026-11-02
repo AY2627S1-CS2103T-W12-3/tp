@@ -96,11 +96,13 @@ public class TutorialWindow extends UiPart<StackPane> {
                     TutorialPlacement.CENTER, TutorialTarget.NONE),
             new TutorialStep("Get help anytime",
                     "Select Help in the top bar, type help in the command box, or press "
-                            + HelpWindow.HELP_SHORTCUT + " to see command formats and keyboard shortcuts.",
+                            + HelpWindow.HELP_SHORTCUT + " (Fn + " + HelpWindow.HELP_SHORTCUT + " on some keyboards) "
+                            + "to see command formats and keyboard shortcuts.",
                     TutorialPlacement.BESIDE_TARGET, TutorialTarget.HELP),
             new TutorialStep("Take the tour again",
                     "Select Tutorial in the top bar, type tutorial in the command box, or press "
-                            + TUTORIAL_SHORTCUT + " whenever you need a reminder.",
+                            + TUTORIAL_SHORTCUT + " (Fn + " + TUTORIAL_SHORTCUT + " on some keyboards) "
+                            + "whenever you need a reminder.",
                     TutorialPlacement.CENTER, TutorialTarget.TUTORIAL));
 
     @FXML

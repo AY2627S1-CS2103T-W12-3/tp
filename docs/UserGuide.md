@@ -164,7 +164,7 @@ A command that breaks a constraint is rejected and makes no changes.
 | `EVENT_NAME`, `NEW_EVENT_NAME` | `evn/`, `nevn/` | 1 to 100 printable Unicode characters, including at least one visible character. Internal tabs, line breaks, and control characters are rejected. Several spaces in a row count as one. Event names are unique, ignoring case and extra spaces. See the parameter syntax note below. |
 | `START_TIME`, `END_TIME` | `st/`, `et/` | A real date in `dd-MM-yyyy` format, optionally followed by a 24-hour time in `HH:mm` format, e.g. `17-09-2026` or `17-09-2026 16:30`. The year must be from `0001` to `9999`. The start must not be after the end. |
 | `STATUS` | `att/` | `present` or `absent`, ignoring case. |
-| `MEMBER_ID` | `c/` for `assign` and `unassign`; none for `edit`, `delete`, `archive`, and `unarchive` | A permanent positive integer from 1 to 2147483647 identifying a saved contact, independent of the displayed list. |
+| `MEMBER_ID` | `c/` for `assign` and `unassign`; none for `edit`, `delete`, `archive`, and `unarchive` | A positive integer from 1 to 2147483647 identifying a saved contact. It never changes and does not depend on the displayed list. |
 | `KEYWORD` | none | At least one non-space character. |
 
 "Printable" excludes line breaks and other control characters. "Visible" excludes spaces, zero-width and formatting characters, accent marks on their own, and blank filler characters such as `U+3164` Hangul Filler.
