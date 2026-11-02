@@ -55,9 +55,10 @@ public class HelpWindow extends UiPart<Stage> {
     public static final String USERGUIDE_URL = "https://ay2627s1-cs2103t-w12-3.github.io/tp/";
     /** The key that opens the Help window from the main window. */
     public static final KeyCombination HELP_KEY = new KeyCodeCombination(KeyCode.F1);
-    public static final String HELP_SHORTCUT = "Fn + " + HELP_KEY.getName();
+    public static final String HELP_SHORTCUT = HELP_KEY.getName();
     public static final String HELP_MESSAGE = "Keyboard shortcuts: " + HELP_SHORTCUT + " for Help, "
-            + TutorialWindow.TUTORIAL_SHORTCUT + " for the tutorial. Refer to the user guide: " + USERGUIDE_URL;
+            + TutorialWindow.TUTORIAL_SHORTCUT + " for the tutorial (hold Fn as well on some keyboards). "
+            + "Refer to the user guide: " + USERGUIDE_URL;
 
     static final List<CommandUsage> COMMAND_USAGES = List.of(
             createCommandUsage(AddCommand.COMMAND_WORD,

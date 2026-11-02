@@ -32,7 +32,7 @@ public class TutorialWindow extends UiPart<StackPane> {
 
     /** The key that opens the tutorial from the main and Help windows. */
     public static final KeyCombination TUTORIAL_KEY = new KeyCodeCombination(KeyCode.F2);
-    public static final String TUTORIAL_SHORTCUT = "Fn + " + TUTORIAL_KEY.getName();
+    public static final String TUTORIAL_SHORTCUT = TUTORIAL_KEY.getName();
 
     private static final String FXML = "TutorialWindow.fxml";
     private static final double CARD_MAX_WIDTH = 620;

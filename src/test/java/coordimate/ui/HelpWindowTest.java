@@ -115,8 +115,8 @@ public class HelpWindowTest {
             assertEquals(450.0, root.getMinHeight());
             assertEquals(HelpWindow.COMMAND_USAGES, commandTable.getItems());
             assertEquals(TableView.CONSTRAINED_RESIZE_POLICY, commandTable.getColumnResizePolicy());
-            assertTrue(helpMessage.getText().contains("Fn + F1"));
-            assertTrue(helpMessage.getText().contains("Fn + F2"));
+            assertTrue(helpMessage.getText().contains("F1 for Help, F2 for the tutorial"));
+            assertTrue(helpMessage.getText().contains("hold Fn as well on some keyboards"));
             assertNull(root.getScene().lookup("#tutorialButton"));
             assertFalse(commandTable.isEditable());
             assertEquals("Command mode (default): type commands; press Esc to navigate cards.",
