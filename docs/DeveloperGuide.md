@@ -143,22 +143,61 @@ and `LogicManager` adds it to execution errors, using `Messages.withUsage`.
 
 #### Parameter detection
 
-`PrefixParser` detects [parameter-like text](#glossary) before field validation. Supported prefixes start parameters;
-unknown prefixes cause an unknown-parameter error. Prefix matching is case-insensitive.
+Command parsers detect [parameter-like text](#glossary) before validating field values. Consequently, a field's
+allowed characters alone do not determine which values can be entered through the CLI.
+Prefix matching is case-insensitive.
 
-Contact-style detection, used by contact and tag commands and `markattendance`, exempts standalone `s/o` and `d/o`
-words, ignoring case. Event-style detection, used by the other event commands, has no such exemption.
+[`ParameterSyntax`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/commons/util/ParameterSyntax.java)
+defines the shared parameter boundary: the start of the input or a position immediately after whitespace, using
+`StringUtil.WHITESPACE_CHARACTERS` for Java whitespace and Unicode `White_Space`. It also defines the event-style
+pattern. [`PrefixParser`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/logic/parser/PrefixParser.java)
+reuses that boundary and pattern, and defines the contact-style pattern with the relationship-word exception:
 
-Both styles leave slash-leading words such as `/st` and `/Workshop` in the value. For example,
-`evn/Concert /Workshop` names an event `Concert /Workshop`; `/st` and `/et` are not aliases for `st/` and `et/`.
-A reversed prefix in a date field fails date validation, while one in a name can remain literal text. If it
-replaces a required prefix, the command can instead fail for a missing parameter. Startup event-name cleanup
-uses the same shared pattern in `ParameterSyntax`, so it preserves names containing slash-leading words.
+| Detection rule | Parameter-like text at a boundary | Used by |
+|---|---|---|
+| Contact-style | `letters/`, except standalone `s/o` and `d/o`, ignoring case | Contact add/edit/delete, tag commands, and `markattendance` |
+| Event-style | `letters/`, without the relationship-word exception | Event add/edit/delete/archive and the shared `EventContactsParser` used by `assign`, `unassign`, and `members` |
 
-Whitespace still matters for letters followed by a slash: `evn/Concert/Workshop` retains its internal slash,
-whereas `evn/Concert Workshop/Music` rejects `Workshop/` as an unknown parameter. Contact and event commands
-provide no general quoting or escaping mechanism for these tokens. `filter` handles quoted values separately,
-as described in [Filtering contacts](#filtering-contacts); `search` does not detect parameters in its keyword.
+A supported prefix starts a parameter; an unsupported token is rejected as an unknown parameter. Repeated and
+empty parameters are then handled according to the command. Contact and tag parsers, along with the shared
+`EventContactsParser` used by `assign`, `unassign`, and `members`, use `ArgumentTokenizer` to extract values after
+rejecting unknown parameters. `PrefixParser#parseUniqueParameters` also splits values and rejects repeated
+parameters for its callers.
+
+The examples below are argument fragments; other required arguments must still be supplied:
+
+| Fragment | Result |
+|---|---|
+| `r/Lead/Deputy` | The internal slash stays in the role value, which passes role validation. |
+| `r/Lead Deputy/Assistant` | `Deputy/` follows whitespace and is rejected as an unknown parameter. |
+| `m/Discuss r/Lead` | `r/` starts a role parameter rather than remaining in the note. |
+| `n/Ravi s/o Kumar` | The standalone relationship word is exempt from contact-style detection and is allowed by name validation. |
+| `evn/Concert/Workshop` | The internal slash stays in the event name. |
+| `evn/Concert Workshop/Music` | `Workshop/` follows whitespace and is rejected as an unknown parameter. |
+
+The `s/o` and `d/o` exemption applies throughout contact-style argument scanning, not only inside name fields.
+It does not change field validation: names allow slashes only in these standalone relationship words and need
+at least one letter outside them, whereas roles and organisations allow other slashes. Phones, emails, tags,
+and date fields reject slashes even when parameter detection leaves them in the value.
+
+`markattendance` currently uses contact-style detection for both its event and member names. Its event-name
+parsing therefore accepts `evn/Concert s/o Kumar`, which event-style commands reject.
+Passing parsing does not guarantee execution: the event and member must still exist. This describes the current
+parser difference rather than a design requirement for event names.
+
+Quotation marks do not disable parameter detection in contact, tag, or event commands. For example,
+`r/"Lead Deputy/Assistant"` still detects `Deputy/`; these commands provide no general quoting or escaping mechanism
+for parameter-like text inside values.
+
+`filter` and `search` use separate parsers:
+
+* `FilterCommandParser` detects `letters/` at the same boundaries, with no `s/o` or `d/o` exemption. Tokens inside
+  double quotes are ignored during detection, so `filter organisation/"NUS docs/team"` keeps `docs/team` in the
+  value, while the unquoted form rejects `docs/`. Filter values are checked for non-emptiness and later resolved
+  against saved data, rather than passed through the corresponding model field validators. See
+  [Filtering contacts](#filtering-contacts).
+* `SearchCommandParser` treats the remaining arguments as a keyword, optionally removes surrounding double
+  quotes, and normalises whitespace. It does not detect parameters, so slash-containing text remains keyword text.
 
 ### Model component
 **API** : [`Model.java`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/Model.java)
@@ -444,6 +483,9 @@ never exist for someone who is not assigned to the event.
 member already has the requested status. Otherwise it replaces the event with a copy from `Event#withAttendance`.
 The command changes data, so it runs through `executeAtomicCommand` as described above.
 
+Its parser uses contact-style [parameter detection](#parameter-detection), including for the event name; see that
+section for the difference from other event commands.
+
 Other commands keep the attendance record consistent with the members:
 
 | Change | Effect on attendance |
@@ -493,7 +535,8 @@ Filtering is split into parsing, which does not need saved data, and resolving, 
 splits the arguments at each `FIELD/` token into a list of [`FilterCriterion`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/person/FilterCriterion.java)
 records, each holding a [`FilterField`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/person/FilterField.java)
 and its value. A value may be wrapped in quotation marks, so that it can contain text that looks like a `FIELD/`
-token.
+token. This quoting support differs from contact and event commands; see [Parameter detection](#parameter-detection)
+for the shared terminology and parser-specific rules.
 
 **Resolving.** [`FilterCommand#execute`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/logic/commands/FilterCommand.java)
 turns each criterion into a `Predicate<Person>` using the model:
@@ -1493,10 +1536,11 @@ the results. Speed and onboarding targets require timed trials with users from t
 * **Normalised phone number**: A phone number with the optional `+`, spaces, hyphens and brackets removed, used to detect duplicates. For example, `+65 9123 4567` and `6591234567` are the same.
 * **On leave**: A contact with a saved leave end date is unavailable through that date, inclusive, using the computer's local date.
 * **Organisation**: The company or body that a contact belongs to, such as a CCA, sponsor company, or university office.
-* **Parameter-like text**: Text shaped like `[whitespace][letters]/`, such as the ` r/` in `Discuss r/Lead`.
-  The brackets describe parts of the input: whitespace includes spaces, tabs, Java whitespace and Unicode
-  `White_Space`; letters are one or more consecutive ASCII letters (`A-Z` or `a-z`) adjacent to the slash.
-  At the start of the arguments, preceding whitespace is not required. See [Parameter detection](#parameter-detection)
+* **Parameter-like text**: Text shaped like `[whitespace][letters]/` (e.g. ` r/`) that a command parser may treat
+  as a parameter rather than part of a value. The brackets are descriptive:
+  `[whitespace]` means a space, tab, or other recognised whitespace, and `[letters]` means one or more consecutive
+  ASCII letters (`A-Z` or `a-z`), adjacent to the slash. At the start of the arguments, preceding whitespace is not
+  required; no whitespace is required after the slash. See [Parameter detection](#parameter-detection)
   for command-specific rules and exceptions.
 * **Prefix**: The short label before a value in a command that tells CoordiMate which field it belongs to, such as `n/` for name or `t/` for tag.
 * **Reminder**: An in-app notice for an upcoming, non-archived event, shown only while CoordiMate is running. Timed starts qualify from 24 hours before the start through the start time; date-only starts qualify on the preceding day and the start date. Reminders refresh at startup, after commands, and once per minute.
