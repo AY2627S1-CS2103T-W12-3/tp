@@ -382,13 +382,14 @@ public class TutorialWindow extends UiPart<StackPane> {
             return;
         }
 
+        Bounds targetBounds = getNodeBounds(targetSupplier.get());
+
         double width = getRoot().getWidth();
         double height = getRoot().getHeight();
         if (width <= 0 || height <= 0) {
             return;
         }
 
-        Bounds targetBounds = getNodeBounds(targetSupplier.get());
         if (skipIfUnchanged && width == lastLayoutWidth && height == lastLayoutHeight
                 && Objects.equals(targetBounds, lastLayoutTargetBounds)) {
             return;
