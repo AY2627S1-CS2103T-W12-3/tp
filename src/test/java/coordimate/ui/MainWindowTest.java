@@ -184,7 +184,7 @@ public class MainWindowTest {
             assertEquals(helpLabel.getStyleClass(), tutorialLabel.getStyleClass());
             assertEquals(helpLabel.getAccessibleRole(), tutorialLabel.getAccessibleRole());
             assertEquals("Open the CoordiMate tutorial", tutorialLabel.getAccessibleText());
-            assertEquals("Open Help (Fn + F1)", helpLabel.getTooltip().getText());
+            assertEquals("Open Help (F1)", helpLabel.getTooltip().getText());
             assertEquals(200, helpLabel.getTooltip().getShowDelay().toMillis());
             assertEquals(List.of("File"), menuBar.getMenus().stream().map(menu -> menu.getText()).toList());
             assertSame(topMenuRow, menuBar.getParent());

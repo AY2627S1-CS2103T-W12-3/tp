@@ -92,6 +92,20 @@ public class HelpWindowTest {
     }
 
     @Test
+    public void focus_minimizedWindow_restoresWindow() throws Exception {
+        FutureTask<Void> task = new FutureTask<>(() -> {
+            HelpWindow helpWindow = new HelpWindow(new Stage());
+            Stage root = helpWindow.getRoot();
+            root.setIconified(true);
+            helpWindow.focus();
+            assertFalse(root.isIconified());
+            return null;
+        });
+        Platform.runLater(task);
+        task.get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
     public void constructor_configuresResizableCommandReference() throws Exception {
         FutureTask<Void> task = new FutureTask<>(() -> {
             HelpWindow helpWindow = new HelpWindow(new Stage());
@@ -115,8 +129,8 @@ public class HelpWindowTest {
             assertEquals(450.0, root.getMinHeight());
             assertEquals(HelpWindow.COMMAND_USAGES, commandTable.getItems());
             assertEquals(TableView.CONSTRAINED_RESIZE_POLICY, commandTable.getColumnResizePolicy());
-            assertTrue(helpMessage.getText().contains("Fn + F1"));
-            assertTrue(helpMessage.getText().contains("Fn + F2"));
+            assertTrue(helpMessage.getText().contains("F1 for Help, F2 for the tutorial"));
+            assertTrue(helpMessage.getText().contains("hold Fn as well on some keyboards"));
             assertNull(root.getScene().lookup("#tutorialButton"));
             assertFalse(commandTable.isEditable());
             assertEquals("Command mode (default): type commands; press Esc to navigate cards.",

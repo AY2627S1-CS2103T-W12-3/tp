@@ -75,8 +75,8 @@
   CoordiMate shows the current [keyboard mode](#navigating-cards-with-the-keyboard) and the prefixes you can use.
 * **Bottom bar:** shows where your data file is saved.
 
-**Member IDs:** contact cards and details, event rosters, and tag member lists show each contact's permanent
-identifier as `ID: <number>`. Use that ID in `edit`, `delete`, `archive`, `unarchive`, `assign`, and `unassign`. It
+**Member IDs:** contact cards and details, event rosters, and tag member lists show each contact's member ID
+as `ID: <number>`. Use that ID in `edit`, `delete`, `archive`, `unarchive`, `assign`, and `unassign`. It
 does not change when you edit the contact or when a search or filter reorders the list, so `ID: 12` stays `ID: 12`
 even when a search makes that contact the first result.
 
@@ -164,7 +164,7 @@ A command that breaks a constraint is rejected and makes no changes.
 | `EVENT_NAME`, `NEW_EVENT_NAME` | `evn/`, `nevn/` | 1 to 100 printable Unicode characters, including at least one visible character. Internal tabs, line breaks, and control characters are rejected. Several spaces in a row count as one. Event names are unique, ignoring case and extra spaces. See the parameter syntax note below. |
 | `START_TIME`, `END_TIME` | `st/`, `et/` | A real date in `dd-MM-yyyy` format, optionally followed by a 24-hour time in `HH:mm` format, e.g. `17-09-2026` or `17-09-2026 16:30`. The year must be from `0001` to `9999`. The start must not be after the end. |
 | `STATUS` | `att/` | `present` or `absent`, ignoring case. |
-| `MEMBER_ID` | `c/` for `assign` and `unassign`; none for `edit`, `delete`, `archive`, and `unarchive` | A permanent positive integer from 1 to 2147483647 identifying a saved contact, independent of the displayed list. |
+| `MEMBER_ID` | `c/` for `assign` and `unassign`; none for `edit`, `delete`, `archive`, and `unarchive` | A positive integer from 1 to 2147483647 identifying a saved contact. It never changes and does not depend on the displayed list. |
 | `KEYWORD` | none | At least one non-space character. |
 
 "Printable" excludes line breaks and other control characters. "Visible" excludes spaces, zero-width and formatting characters, accent marks on their own, and blank filler characters such as `U+3164` Hangul Filler.
@@ -207,6 +207,9 @@ Select **Close** or press <kbd>Esc</kbd> to dismiss the Help window without exit
 Selecting **Help** in the top bar opens this window directly. Press <kbd>F1</kbd> (<kbd>Fn</kbd> + <kbd>F1</kbd> on some
 keyboards) to open it with the keyboard. In the command formats, parameters enclosed in square brackets `[ ]` are optional.
 
+![Help window](images/helpWindow.png)
+*The Help window, with the keyboard-navigation summary above the command table.*
+
 Format: `help`
 
 ### Taking the tutorial: `tutorial`
@@ -221,6 +224,9 @@ stays bright while the rest of the app is dimmed. The app cannot be used to ente
 
 To take the tutorial again, enter `tutorial`, select **Tutorial** beside **Help** in the top bar, or press
 <kbd>F2</kbd> (<kbd>Fn</kbd> + <kbd>F2</kbd> on some keyboards). The tutorial always starts again from its first step.
+
+![Tutorial](images/tutorial.png)
+*The first step of the tutorial, with the rest of the app dimmed.*
 
 Format: `tutorial`
 
@@ -377,7 +383,7 @@ Format: `edit MEMBER_ID [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [a/AD
 
 Or: `edit target/IDENTIFIER [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [lv/LEAVE_END_DATE] [t/TAG]... [at/TAG]... [rt/TAG]...`
 
-* Edits the contact with the specified permanent `MEMBER_ID`, including contacts hidden by a search or filter.
+* Edits the contact with the specified `MEMBER_ID`, including contacts hidden by a search or filter.
   For example, `edit 12 r/President` always targets member ID `12`, even when that contact is the first search result.
 * Alternatively, `target/IDENTIFIER` finds an exact saved name, phone number, or email address across all contacts, including those hidden by the current search or filter. Names ignore letter case and extra spaces, emails ignore letter case; phone numbers ignore the optional `+`, spaces, hyphens, and brackets. Supply either a member ID or `target/`, not both.
 * If several contacts match an identifier, the command lists each match's member ID, name, phone, and email, including hidden matches. Retry with a member ID, unique phone number, or email address.
@@ -470,7 +476,7 @@ Finds a saved contact and asks for confirmation before deleting it.
 
 Formats: `delete MEMBER_ID` · `delete n/NAME` · `delete p/PHONE` · `delete e/EMAIL`
 
-* Supply exactly one identifier. `MEMBER_ID` is the contact's permanent numeric ID and searches all saved contacts,
+* Supply exactly one identifier. `MEMBER_ID` is the contact's member ID and searches all saved contacts,
   independently of the currently displayed list, including empty search or filter results.
 * Name matching is exact apart from letter case and extra spaces. Phone matching ignores the optional `+`, spaces, hyphens, and
   brackets. Email matching ignores letter case and surrounding spaces. These identifiers search all saved contacts,
@@ -524,7 +530,7 @@ Format: `search KEYWORD`
 * Surrounding quotation marks are optional: `search "Jurong West"` and `search Jurong West` give the same results.
 * Leading and trailing spaces are ignored. An empty keyword is rejected.
 * Search checks all saved contacts, including those hidden by the current search or filter.
-* Results replace the displayed contact list. Permanent member IDs remain unchanged; `edit`, `delete`, `assign`, and `unassign` accept those IDs even for hidden contacts. Use `list` to show everyone.
+* Results replace the displayed contact list. Member IDs remain unchanged; `edit`, `delete`, `assign`, and `unassign` accept those IDs even for hidden contacts. Use `list` to show everyone.
 * If nothing matches, the displayed list is empty and a no-matches message is shown.
 
 ![Search contacts](images/searchContact.png)
@@ -559,7 +565,7 @@ Format: `filter FIELD/VALUE [FIELD/VALUE]...`
     Several spaces in a row count as one, so `organisation/NUS  Student Affairs` matches `NUS Student Affairs`.
 * When several filters are given, a contact must match **all** of them.
 * Filter checks all saved contacts, including those hidden by the current search or filter.
-* Results replace the displayed contact list. Permanent member IDs remain unchanged; `edit`, `delete`, `assign`, and `unassign` accept those IDs even for hidden contacts. Use `list` to show everyone.
+* Results replace the displayed contact list. Member IDs remain unchanged; `edit`, `delete`, `assign`, and `unassign` accept those IDs even for hidden contacts. Use `list` to show everyone.
 * If a value does not exist, the command is rejected and the displayed list stays as it was.
 * An `event` filter stays up to date while it is shown, like [`members`](#viewing-members-of-an-event-members):
   contacts assigned with `assign` appear, contacts removed with `unassign` disappear, and renaming the event with
@@ -567,7 +573,7 @@ Format: `filter FIELD/VALUE [FIELD/VALUE]...`
 * A `tag` filter also follows its tag: renaming the tag with `edittag` keeps showing the same contacts. If the tag is
   deleted, the list becomes empty.
 
-**Quotation marks**
+<span id="filter-quotation-marks">**Quotation marks**</span>
 
 * A value may be wrapped in quotation marks, which are removed: `filter event/"Final Concert"` and
   `filter event/Final Concert` give the same results.
@@ -616,7 +622,7 @@ Formats:
 * `unarchive MEMBER_ID` restores the contact with that member ID.
 
 Both commands work from any view and then open the **Contacts** tab, so you can see the change. `unarchive` also
-selects and reveals the restored contact when it is in the displayed list. `MEMBER_ID` is the permanent ID shown on
+selects and reveals the restored contact when it is in the displayed list. `MEMBER_ID` is the member ID shown on
 each contact, as in `edit` and `delete`, so it does not depend on the displayed list. A contact hidden by a search, a
 filter, or the archived view can still be archived or restored.
 
@@ -680,7 +686,7 @@ Format: `addevent evn/EVENT_NAME st/START_TIME et/END_TIME`
 
 * Event names must be unique, ignoring case and extra spaces. Several spaces in a row are saved as one.
 * Quotation marks are saved as part of the name: `addevent evn/"Gala" ...` creates an event named `"Gala"`, not
-  `Gala`. To filter for such an event, see [Quotation marks](#filtering-contacts-filter) under `filter`.
+  `Gala`. To filter for such an event, see [Quotation marks](#filter-quotation-marks) under `filter`.
 * Times use `dd-MM-yyyy`, optionally followed by a 24-hour time in `HH:mm` format, e.g. `17-09-2026` or
   `17-09-2026 16:30`.
 * The start must not be after the end. Equal values are allowed. On the same date, times are compared only when both
@@ -759,7 +765,7 @@ Formats:
 
 Notes:
 
-* `MEMBER_ID` is the contact's permanent ID, shown as `ID: <number>`. Separate several IDs with spaces. An ID works
+* `MEMBER_ID` is the contact's member ID, shown as `ID: <number>`. Separate several IDs with spaces. An ID works
   even when a search or filter hides the contact.
 * All IDs are checked first. If any of them is invalid, nothing changes.
 * Contacts that are already assigned (for `assign`) or not assigned (for `unassign`) are skipped. An ID repeated in
@@ -1068,7 +1074,11 @@ CoordiMate closes after **OK**.
 
 ## Known issues
 
-1. **If you minimize the Help Window** and then run the `help` command (or use the `Help` menu, or press `F1`, or `Fn` + `F1` on some keyboards) again, the original Help Window will remain minimized, and no new Help Window will appear. The remedy is to manually restore the minimized Help Window.
+1. **If you open CoordiMate twice with the same data file**, changes saved in one window are not shown in the other.
+   The other window's next command that saves data is rejected with
+   `The data file changed in another window. Reopen this window before saving. No changes were made.`, and the newer
+   data file is kept. The remedy is to close the extra window and reopen CoordiMate. See
+   [Saving the data](#saving-the-data).
 
 --------------------------------------------------------------------------------------------------------------------
 
