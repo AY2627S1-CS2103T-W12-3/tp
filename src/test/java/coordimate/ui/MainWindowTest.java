@@ -483,6 +483,53 @@ public class MainWindowTest {
     }
 
     @Test
+    public void resizingOnMemberListStep_rescrollsMemberListIntoView() throws Exception {
+        ModelManager model = createModelWithManyAssignedMembers();
+        MainWindow window = JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+            Stage stage = new Stage();
+            MainWindow mainWindow = new MainWindow(stage, new LogicManager(model, null), DEFAULT_DATA_PATH);
+            mainWindow.fillInnerParts();
+            stage.setWidth(900);
+            stage.setHeight(700);
+            mainWindow.show();
+            Label tutorialLabel = lookupNode(stage, "#tutorialLabel");
+            tutorialLabel.fireEvent(createMouseClickEvent());
+            fireRepeatedly(lookupNode(stage, "#nextButton"), 9);
+            assertTutorialStep(stage, 10);
+            return mainWindow;
+        });
+        Stage stage = window.getPrimaryStage();
+        try {
+            waitForJavaFxPulses();
+            JavaFxTestSupport.runOnFxThreadAndWait(() -> stage.setHeight(420));
+            waitForJavaFxPulses();
+            JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+                VBox members = lookupNode(stage, "#members");
+                Node viewport = ((ScrollPane) lookupNode(stage, "#detailsScroll")).lookup(".viewport");
+                Bounds memberBounds = members.localToScene(members.getLayoutBounds());
+                Bounds viewportBounds = viewport.localToScene(viewport.getLayoutBounds());
+                assertTrue(memberBounds.getMinY() >= viewportBounds.getMinY() - 2);
+            });
+
+            // A width-only resize (height unchanged) must also re-trigger the reveal.
+            JavaFxTestSupport.runOnFxThreadAndWait(() -> stage.setWidth(760));
+            waitForJavaFxPulses();
+            JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+                VBox members = lookupNode(stage, "#members");
+                Node viewport = ((ScrollPane) lookupNode(stage, "#detailsScroll")).lookup(".viewport");
+                Bounds memberBounds = members.localToScene(members.getLayoutBounds());
+                Bounds viewportBounds = viewport.localToScene(viewport.getLayoutBounds());
+                assertTrue(memberBounds.getMinY() >= viewportBounds.getMinY() - 2);
+            });
+        } finally {
+            JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+                window.stop();
+                stage.close();
+            });
+        }
+    }
+
+    @Test
     public void tutorialWithoutContacts_highlightsEmptyListAndKeepsDetailsHint() throws Exception {
         runInWindow(windowFor(new ModelManager()), (window, stage) -> {
             window.show();
@@ -521,6 +568,16 @@ public class MainWindowTest {
         Person contact = new PersonBuilder(TypicalPersons.ALICE).build();
         model.addPerson(contact);
         model.addEvent(new Event("Welcome Fair", EVENT_TIME, EVENT_TIME, List.of(contact.getName()), Map.of()));
+        return model;
+    }
+
+    private static ModelManager createModelWithManyAssignedMembers() {
+        ModelManager model = new ModelManager();
+        List<Person> contacts = List.of(TypicalPersons.ALICE, TypicalPersons.BENSON, TypicalPersons.CARL,
+                TypicalPersons.DANIEL, TypicalPersons.ELLE, TypicalPersons.FIONA, TypicalPersons.GEORGE);
+        contacts.forEach(model::addPerson);
+        model.addEvent(new Event("Welcome Fair", EVENT_TIME, EVENT_TIME,
+                contacts.stream().map(Person::getName).toList()));
         return model;
     }
 

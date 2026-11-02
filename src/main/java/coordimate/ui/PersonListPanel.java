@@ -252,15 +252,22 @@ public class PersonListPanel extends UiPart<Region> {
         personListView.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> handler.run());
     }
 
-    /** Returns the first displayed contact card, or the list area when there are no contacts. */
-    Node getTutorialContactCardTarget() {
+    /** Selects the first contact if needed and scrolls it into view; call once when the step opens. */
+    void revealTutorialContactCard() {
         if (personListView.getItems().isEmpty()) {
-            return contactListSection;
+            return;
         }
         if (personListView.getSelectionModel().isEmpty()) {
             personListView.getSelectionModel().selectFirst();
         }
         personListView.scrollTo(personListView.getSelectionModel().getSelectedIndex());
+    }
+
+    /** Returns the selected contact's card, or the list area when there are no contacts or selection. */
+    Node getTutorialContactCardTarget() {
+        if (personListView.getItems().isEmpty()) {
+            return contactListSection;
+        }
         personListView.applyCss();
         personListView.layout();
         int selectedIndex = personListView.getSelectionModel().getSelectedIndex();

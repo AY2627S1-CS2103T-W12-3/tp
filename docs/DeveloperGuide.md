@@ -115,21 +115,66 @@ and `LogicManager` adds it to execution errors, using `Messages.withUsage`.
 
 #### Parameter detection
 
-`PrefixParser` detects [parameter-like text](#glossary) before field validation, ignoring prefix case. Supported
-prefixes start parameters; unknown prefixes cause an unknown-parameter error.
+Command parsers detect [parameter-like text](#glossary) before validating field values. Consequently, a field's
+allowed characters alone do not determine which values can be entered through the CLI.
+Prefix matching is case-insensitive.
 
-Contact/tag commands and `markattendance` exempt standalone `s/o` and `d/o`, ignoring case. Other event commands
-use event-style detection without this exemption.
+[`ParameterSyntax`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/commons/util/ParameterSyntax.java)
+defines the shared parameter boundary: the start of the input or a position immediately after whitespace, using
+`StringUtil.WHITESPACE_CHARACTERS` for Java whitespace and Unicode `White_Space`. It also defines the event-style
+pattern. [`PrefixParser`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/logic/parser/PrefixParser.java)
+reuses that boundary and pattern, and defines the contact-style pattern with the relationship-word exception:
 
-Both styles retain slash-leading words such as `/st` and `/Workshop`: `evn/Concert /Workshop` names an event
+| Detection rule | Parameter-like text at a boundary | Used by |
+|---|---|---|
+| Contact-style | `letters/`, except standalone `s/o` and `d/o`, ignoring case | Contact add/edit/delete, tag commands, and `markattendance` |
+| Event-style | `letters/`, without the relationship-word exception | Event add/edit/delete/archive and the shared `EventContactsParser` used by `assign`, `unassign`, and `members` |
+
+A supported prefix starts a parameter; an unsupported token is rejected as an unknown parameter. Repeated and
+empty parameters are then handled according to the command. Contact and tag parsers, along with the shared
+`EventContactsParser` used by `assign`, `unassign`, and `members`, use `ArgumentTokenizer` to extract values after
+rejecting unknown parameters. `PrefixParser#parseUniqueParameters` also splits values and rejects repeated
+parameters for its callers.
+
+The examples below are argument fragments; other required arguments must still be supplied:
+
+| Fragment | Result |
+|---|---|
+| `r/Lead/Deputy` | The internal slash stays in the role value, which passes role validation. |
+| `r/Lead Deputy/Assistant` | `Deputy/` follows whitespace and is rejected as an unknown parameter. |
+| `m/Discuss r/Lead` | `r/` starts a role parameter rather than remaining in the note. |
+| `n/Ravi s/o Kumar` | The standalone relationship word is exempt from contact-style detection and is allowed by name validation. |
+| `evn/Concert/Workshop` | The internal slash stays in the event name. |
+| `evn/Concert Workshop/Music` | `Workshop/` follows whitespace and is rejected as an unknown parameter. |
+
+The `s/o` and `d/o` exemption applies throughout contact-style argument scanning, not only inside name fields.
+It does not change field validation: names allow slashes only in these standalone relationship words and need
+at least one letter outside them, whereas roles and organisations allow other slashes. Phones, emails, tags,
+and date fields reject slashes even when parameter detection leaves them in the value.
+
+`markattendance` currently uses contact-style detection for both its event and member names. Its event-name
+parsing therefore accepts `evn/Concert s/o Kumar`, which event-style commands reject.
+Passing parsing does not guarantee execution: the event and member must still exist. This describes the current
+parser difference rather than a design requirement for event names.
+
+Quotation marks do not disable parameter detection in contact, tag, or event commands. For example,
+`r/"Lead Deputy/Assistant"` still detects `Deputy/`; these commands provide no general quoting or escaping mechanism
+for parameter-like text inside values.
+
+Both detection styles retain slash-leading words such as `/st` and `/Workshop`: `evn/Concert /Workshop` names an event
 `Concert /Workshop`. `/st` and `/et` are not aliases for `st/` and `et/`: they fail date validation in date fields
 or cause missing-parameter errors when replacing required prefixes, but can remain literal in names.
 Startup cleanup shares `ParameterSyntax`'s pattern and preserves these names.
 
-`evn/Concert/Workshop` retains its internal slash; `evn/Concert Workshop/Music` rejects `Workshop/` as an unknown
-parameter. Contact/event commands provide no general quoting or escaping. [Filtering](#filtering-contacts) handles
-quoted values separately; `search` does not detect parameters in keywords.
+`filter` and `search` use separate parsers:
 
+* `FilterCommandParser` detects `letters/` at the same boundaries, with no `s/o` or `d/o` exemption. Tokens inside
+  double quotes are ignored during detection, so `filter organisation/"NUS docs/team"` keeps `docs/team` in the
+  value, while the unquoted form rejects `docs/`. Filter values are checked for non-emptiness and later resolved
+  against saved data, rather than passed through the corresponding model field validators. See
+  [Filtering contacts](#filtering-contacts).
+* `SearchCommandParser` treats the remaining arguments as a keyword, optionally removes surrounding double
+  quotes, and normalises whitespace. It does not detect parameters, so slash-containing text remains keyword text.
 ### Model component
 **API** : [`Model.java`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/Model.java)
 
@@ -360,6 +405,9 @@ An [`Event`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/j
 The constructor rejects attendance for non-members. `MarkAttendanceCommand` resolves the event and member ignoring
 case, rejects an unchanged status, or replaces the event using `Event#withAttendance`. It runs through `executeAtomicCommand`.
 
+Its parser uses contact-style [parameter detection](#parameter-detection), including for the event name; see that
+section for the difference from other event commands.
+
 | Change | Effect on attendance |
 |---|---|
 | `assign` adds members | Existing attendance is kept. New members are not marked. |
@@ -391,7 +439,8 @@ Parsing needs no saved data; resolving does.
 **Parsing.** [`FilterCommandParser`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/logic/parser/FilterCommandParser.java)
 splits `FIELD/` tokens into [`FilterCriterion`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/person/FilterCriterion.java)
 records containing a [`FilterField`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/person/FilterField.java)
-and value. Quoted values can contain literal `FIELD/` text.
+and value. Quoted values can contain literal `FIELD/` text, unlike contact and event commands; see
+[Parameter detection](#parameter-detection) for parser-specific rules.
 
 **Resolving.** [`FilterCommand#execute`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/logic/commands/FilterCommand.java)
 turns each criterion into a `Predicate<Person>` using the model:
@@ -477,9 +526,9 @@ Input dates cannot be past; loading accepts past dates so ended leave remains re
 
 The UI shows **On leave until** only while leave covers today. Passing the date changes no data: it remains saved
 until replaced or cleared. Copies made by `CoordiMate#setTag`, `CoordiMate#removeTag`, and similar methods must retain it.
-In the state diagram, **Leave ended** looks like **Not on leave**, but retains its saved date.
+The activity diagram shows how the UI determines leave status; expired dates remain saved but display as not on leave.
 
-<puml src="diagrams/LeaveStateDiagram.puml" width="560" />
+<puml src="diagrams/LeaveActivityDiagram.puml" width="560" alt="Activity for determining a contact's displayed leave status" />
 
 `PersonListPanel` and `EventListPanel` use testable `Clock`s. `MainWindow`'s one-minute reminder timer calls
 `PersonListPanel#refreshIfDateChanged()` and `EventListPanel#refreshIfDateChanged()` to redraw Contacts and Events
@@ -553,10 +602,24 @@ overlays the main window. Its fixed `TutorialStep` records specify a title, desc
 
 | Responsibility | Implementation |
 |---|---|
-| Change steps | The step-change handler calls `MainWindow#showTutorialStep`, selects the required tab, and passes the target node to `TutorialWindow#highlight`. The overlay shades other areas and places the card beside the target. |
+| Change steps | The step-change handler calls `MainWindow#showTutorialStep`, selects the required tab, and supplies `TutorialWindow#highlight` with a target supplier. The overlay shades other areas and places the card beside the target. |
 | Block underlying controls | Overlay and window filters consume mouse/key events outside the card; `MainWindow#showTutorial` disables the command box, preventing changes to highlighted lists. |
 | Handle keys | `TutorialWindow#handleShortcut` uses Left/Right for steps and Esc to close. Tab stays within enabled card buttons; Up/Down are consumed to prevent focus traversal. |
 | Restore normal lists | `MainWindow#showTutorial` first calls `Logic#showActiveItems()`, since archived views hide tour targets. |
+
+**Keeping highlights aligned.** A scene post-layout listener refreshes the highlight and card position from the
+target's final bounds, including after resizing without a step change. It is removed when hidden and transferred
+when the scene changes. `TutorialWindow#highlight` takes a `Supplier<Node>`, re-resolved on every refresh so contact
+and event targets do not retain reused or hidden virtualized cells. Card and backdrop layout is skipped unless
+target bounds or window size change. After resizing, synchronous card layout re-wraps its text immediately.
+
+Target resolution must be safe on every refresh. `EventListPanel#selectTutorialEventIfNeeded` selects the first
+event only if none is selected; other targets resolve without changing selection or scroll position.
+`MainWindow` calls `PersonListPanel#revealTutorialContactCard` to select and reveal the first contact, and
+`EventListPanel#revealTutorialMemberList` to scroll the member list into view, only when a step opens or the overlay
+resizes through `TutorialWindow#setResizeHandler`. Revealing on resize keeps targets positioned after size changes.
+Doing so every refresh would cause repeated layout requests: `ListView#scrollTo` and `ScrollPane#setVvalue` request
+layout even when nothing moves.
 
 `MainWindow#showTutorialOnFirstLaunch()` opens the tour only if `UserPrefs` says it is unseen. Finishing or closing
 calls `Logic#setHasSeenTutorial(true)`; preferences save on exit. If preferences were unreadable, `MainApp` preserves
@@ -584,7 +647,10 @@ Single-key navigation and command recall allow mouse-free use.
 | Command (default) | Type in the command box; Esc enters Navigation mode |
 | Navigation | Command box disabled; J/K select next/previous card; S selects the next view; releasing I returns to Command mode |
 
-<puml src="diagrams/InteractionModeStateDiagram.puml" width="520" />
+The activity diagram shows how inputs select the mode during normal use. The app starts in Command mode;
+browsing command history or navigating cards and views does not change the mode.
+
+<puml src="diagrams/InteractionModeActivityDiagram.puml" width="520" alt="Activity for selecting the interaction mode from a keyboard or mouse input" />
 
 `MainWindow#handleKeyboardInput` filters keys window-wide: only Esc in Command mode; J/K/S and consumption of other
 unmodified keys in Navigation mode. I acts on release so it does not enter the input. Clicking a card list enters
@@ -1209,10 +1275,10 @@ users for speed and onboarding targets.
 * **Normalised phone number**: A phone number with the optional `+`, spaces, hyphens and brackets removed, used to detect duplicates. For example, `+65 9123 4567` and `6591234567` are the same.
 * **On leave**: Unavailable through the saved leave end date, inclusive, using the computer's local date.
 * **Organisation**: A contact's company or body, such as a CCA, sponsor, or university office.
-* **Parameter-like text**: Text shaped like `[whitespace][letters]/`, such as the ` r/` in `Discuss r/Lead`.
-  The brackets describe parts of the input: whitespace includes spaces, tabs, Java whitespace and Unicode
-  `White_Space`; letters are one or more consecutive ASCII letters (`A-Z` or `a-z`) adjacent to the slash.
-  At the start of the arguments, preceding whitespace is not required. See [Parameter detection](#parameter-detection)
+* **Parameter-like text**: Text shaped like `[whitespace][letters]/` (e.g. ` r/`) that a parser may treat as a parameter,
+  not part of a value. The brackets are descriptive: whitespace includes spaces, tabs, Java whitespace and Unicode
+  `White_Space`; letters are consecutive ASCII letters (`A-Z` or `a-z`) adjacent to the slash. Preceding whitespace
+  is unnecessary at the start of the arguments; whitespace after the slash is not required. See [Parameter detection](#parameter-detection)
   for command-specific rules and exceptions.
 * **Prefix**: A command field label, such as `n/` for name or `t/` for tag.
 * **Reminder**: An in-app notice for an upcoming, active event. Timed starts qualify from 24 hours before start through start time; date-only starts qualify on the preceding day and start date. Refreshes at startup, after commands, and every minute while the app runs.

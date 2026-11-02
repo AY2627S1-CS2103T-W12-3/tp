@@ -6,15 +6,24 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import coordimate.testutil.JavaFxTestSupport;
+import javafx.animation.AnimationTimer;
+import javafx.application.Platform;
 import javafx.geometry.Bounds;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -343,6 +352,319 @@ public class TutorialWindowTest {
     }
 
     @Test
+    public void resizing_keepsHighlightAlignedWithoutChangingStep() throws Exception {
+        record Fixture(TutorialWindow tutorial, Stage stage, Region target) { }
+        Fixture fixture = JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+            TutorialWindow tutorial = new TutorialWindow();
+            Region target = new Region();
+            target.setPrefSize(120, 60);
+            target.setMaxSize(120, 60);
+            StackPane content = new StackPane(target);
+            content.setAlignment(Pos.BOTTOM_RIGHT);
+            content.setPadding(new Insets(40));
+            Stage stage = new Stage();
+            stage.setScene(new Scene(new StackPane(content, tutorial.getRoot()), 1000, 700));
+            addTutorialStyles(stage);
+            stage.show();
+            tutorial.show();
+            for (int step = 0; step < 4; step++) {
+                tutorial.handleShortcut(keyEvent(KeyCode.RIGHT));
+            }
+            applyLayout(stage);
+            tutorial.highlight(target);
+            return new Fixture(tutorial, stage, target);
+        });
+        try {
+            waitForLayoutPulses();
+            for (int width : List.of(800, 1100, 720)) {
+                JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+                    if (width == 1100) {
+                        // The visible tutorial must keep tracking layout when its scene changes.
+                        Scene previousScene = fixture.stage().getScene();
+                        Parent sceneRoot = previousScene.getRoot();
+                        previousScene.setRoot(new StackPane());
+                        fixture.stage().setScene(new Scene(sceneRoot));
+                        addTutorialStyles(fixture.stage());
+                    }
+                    fixture.stage().setWidth(width);
+                    fixture.stage().setHeight(width * 0.7);
+                });
+                waitForLayoutPulses();
+                JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+                    Stage stage = fixture.stage();
+                    Bounds target = fixture.target().localToScene(fixture.target().getLayoutBounds());
+                    Node highlight = stage.getScene().lookup("#targetHighlight");
+                    Bounds actual = highlight.localToScene(highlight.getLayoutBounds());
+                    assertEquals(target.getMinX() - 6, actual.getMinX(), 1);
+                    assertEquals(target.getMinY() - 6, actual.getMinY(), 1);
+                    assertEquals(target.getMaxX() + 6, actual.getMaxX(), 1);
+                    assertEquals(target.getMaxY() + 6, actual.getMaxY(), 1);
+                    assertEquals("Select a contact card", fixture.tutorial().getCurrentStep().title());
+                    Node card = stage.getScene().lookup("#tutorialCard");
+                    Bounds cardBounds = card.localToScene(card.getLayoutBounds());
+                    assertTrue(cardBounds.getMinX() >= 0 && cardBounds.getMinY() >= 0);
+                    assertTrue(cardBounds.getMaxX() <= stage.getScene().getWidth());
+                    assertTrue(cardBounds.getMaxY() <= stage.getScene().getHeight());
+                });
+            }
+        } finally {
+            JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+                fixture.tutorial().hide();
+                fixture.stage().close();
+            });
+        }
+    }
+
+    private static void waitForLayoutPulses() throws InterruptedException {
+        CountDownLatch completed = new CountDownLatch(1);
+        Platform.runLater(() -> new AnimationTimer() {
+            private int pulseCount;
+
+            @Override
+            public void handle(long now) {
+                if (++pulseCount == 3) {
+                    stop();
+                    completed.countDown();
+                }
+            }
+        }.start());
+        assertTrue(completed.await(10, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void highlight_withSupplier_tracksLaterResolvedNodeAcrossPulses() throws Exception {
+        record Fixture(TutorialWindow tutorial, Stage stage, Region firstTarget, Region secondTarget,
+                AtomicReference<Node> resolvedTarget) { }
+        Fixture fixture = JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+            TutorialWindow tutorial = new TutorialWindow();
+            Region firstTarget = new Region();
+            firstTarget.setPrefSize(100, 50);
+            firstTarget.setMaxSize(100, 50);
+            firstTarget.relocate(50, 50);
+            Region secondTarget = new Region();
+            secondTarget.setPrefSize(100, 50);
+            secondTarget.setMaxSize(100, 50);
+            secondTarget.relocate(400, 300);
+            Pane appContent = new Pane(firstTarget, secondTarget);
+            Stage stage = new Stage();
+            stage.setScene(new Scene(new StackPane(appContent, tutorial.getRoot()), 1000, 700));
+            addTutorialStyles(stage);
+            stage.show();
+            tutorial.show();
+            applyLayout(stage);
+
+            // Simulates a virtualized list cell: the supplier is re-invoked on every refresh
+            // instead of TutorialWindow caching a single resolved Node, so a later cell swap
+            // (e.g. after a resize reuses the cell for a different row) is picked up.
+            AtomicReference<Node> resolvedTarget = new AtomicReference<>(firstTarget);
+            tutorial.highlight(resolvedTarget::get);
+            applyLayout(stage);
+            return new Fixture(tutorial, stage, firstTarget, secondTarget, resolvedTarget);
+        });
+        try {
+            waitForLayoutPulses();
+            JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+                Node highlight = fixture.stage().getScene().lookup("#targetHighlight");
+                Bounds firstBounds = fixture.firstTarget().localToScene(fixture.firstTarget().getLayoutBounds());
+                Bounds actual = highlight.localToScene(highlight.getLayoutBounds());
+                assertEquals(firstBounds.getMinX() - 6, actual.getMinX(), 1);
+                assertEquals(firstBounds.getMinY() - 6, actual.getMinY(), 1);
+
+                // Swap the resolved node without calling highlight() again or resizing the window,
+                // so only the post-layout pulse listener (which keeps firing regardless) can pick it up.
+                fixture.resolvedTarget().set(fixture.secondTarget());
+            });
+            waitForLayoutPulses();
+            JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+                Node highlight = fixture.stage().getScene().lookup("#targetHighlight");
+                Bounds secondBounds = fixture.secondTarget().localToScene(fixture.secondTarget().getLayoutBounds());
+                Bounds actual = highlight.localToScene(highlight.getLayoutBounds());
+                assertEquals(secondBounds.getMinX() - 6, actual.getMinX(), 1);
+                assertEquals(secondBounds.getMinY() - 6, actual.getMinY(), 1);
+            });
+        } finally {
+            JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+                fixture.tutorial().hide();
+                fixture.stage().close();
+            });
+        }
+    }
+
+    @Test
+    public void highlight_withNullSupplier_clearsHighlight() throws Exception {
+        JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+            TutorialWindow tutorial = new TutorialWindow();
+            Stage stage = createStage(tutorial, 900, 650);
+            tutorial.show();
+            applyLayout(stage);
+            Node highlight = stage.getScene().lookup("#targetHighlight");
+
+            tutorial.highlight((Supplier<Node>) null);
+            applyLayout(stage);
+            assertFalse(highlight.isVisible());
+
+            tutorial.hide();
+            stage.close();
+        });
+    }
+
+    @Test
+    public void reopeningAfterHide_doesNotHighlightPreviousTarget() throws Exception {
+        record Fixture(TutorialWindow tutorial, Stage stage) { }
+        Fixture fixture = JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+            TutorialWindow tutorial = new TutorialWindow();
+            Region target = new Region();
+            target.setPrefSize(120, 60);
+            target.setMaxSize(120, 60);
+            Stage stage = new Stage();
+            stage.setScene(new Scene(new StackPane(target, tutorial.getRoot()), 900, 650));
+            addTutorialStyles(stage);
+            stage.show();
+            tutorial.show();
+            applyLayout(stage);
+            tutorial.highlight(target);
+            return new Fixture(tutorial, stage);
+        });
+        try {
+            waitForLayoutPulses();
+            JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+                assertTrue(fixture.stage().getScene().lookup("#targetHighlight").isVisible());
+                fixture.tutorial().hide();
+                fixture.tutorial().show();
+            });
+            waitForLayoutPulses();
+            JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+                Scene scene = fixture.stage().getScene();
+                assertFalse(scene.lookup("#targetHighlight").isVisible());
+                assertTrue(scene.lookup("#backdropFull").isVisible());
+            });
+        } finally {
+            JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+                fixture.tutorial().hide();
+                fixture.stage().close();
+            });
+        }
+    }
+
+    @Test
+    public void heightOnlyResize_runsResizeHandlerAndKeepsCardInWindow() throws Exception {
+        record Fixture(TutorialWindow tutorial, Stage stage, AtomicInteger resizeCount) { }
+        Fixture fixture = JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+            TutorialWindow tutorial = new TutorialWindow();
+            AtomicInteger resizeCount = new AtomicInteger();
+            tutorial.setResizeHandler(resizeCount::incrementAndGet);
+            Stage stage = createStage(tutorial, 900, 650);
+            tutorial.show();
+            return new Fixture(tutorial, stage, resizeCount);
+        });
+        try {
+            waitForLayoutPulses();
+            int countBeforeResize = JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+                int count = fixture.resizeCount().get();
+                fixture.stage().setHeight(fixture.stage().getHeight() - 150);
+                return count;
+            });
+            waitForLayoutPulses();
+            JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+                assertTrue(fixture.resizeCount().get() > countBeforeResize);
+                Scene scene = fixture.stage().getScene();
+                Node card = scene.lookup("#tutorialCard");
+                Bounds cardBounds = card.localToScene(card.getLayoutBounds());
+                assertTrue(cardBounds.getMinY() >= 0);
+                assertTrue(cardBounds.getMaxY() <= scene.getHeight());
+            });
+        } finally {
+            JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+                fixture.tutorial().hide();
+                fixture.stage().close();
+            });
+        }
+    }
+
+    @Test
+    public void resizeWhileOverlayInvisible_isAppliedOnNextPulse() throws Exception {
+        record Fixture(TutorialWindow tutorial, Stage stage, Region target) { }
+        Fixture fixture = JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+            TutorialWindow tutorial = new TutorialWindow();
+            Region target = new Region();
+            target.setPrefSize(120, 60);
+            target.setMaxSize(120, 60);
+            StackPane content = new StackPane(target);
+            content.setAlignment(Pos.BOTTOM_RIGHT);
+            content.setPadding(new Insets(40));
+            Stage stage = new Stage();
+            stage.setScene(new Scene(new StackPane(content, tutorial.getRoot()), 900, 650));
+            addTutorialStyles(stage);
+            stage.show();
+            tutorial.show();
+            applyLayout(stage);
+            tutorial.highlight(target);
+            return new Fixture(tutorial, stage, target);
+        });
+        try {
+            waitForLayoutPulses();
+            // The size listeners ignore changes while the overlay is invisible, so only the pulse listener can
+            // catch up once it is visible again: first after a width-only change, then after a height-only one.
+            for (boolean isWidthChange : List.of(true, false)) {
+                JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+                    fixture.tutorial().getRoot().setVisible(false);
+                    if (isWidthChange) {
+                        fixture.stage().setWidth(fixture.stage().getWidth() - 120);
+                    } else {
+                        fixture.stage().setHeight(fixture.stage().getHeight() - 120);
+                    }
+                });
+                waitForLayoutPulses();
+                JavaFxTestSupport.runOnFxThreadAndWait(() -> fixture.tutorial().getRoot().setVisible(true));
+                waitForLayoutPulses();
+                JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+                    Bounds target = fixture.target().localToScene(fixture.target().getLayoutBounds());
+                    Node highlight = fixture.stage().getScene().lookup("#targetHighlight");
+                    Bounds actual = highlight.localToScene(highlight.getLayoutBounds());
+                    assertEquals(target.getMinX() - 6, actual.getMinX(), 1);
+                    assertEquals(target.getMinY() - 6, actual.getMinY(), 1);
+                    assertEquals(target.getMaxX() + 6, actual.getMaxX(), 1);
+                    assertEquals(target.getMaxY() + 6, actual.getMaxY(), 1);
+                });
+            }
+        } finally {
+            JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+                fixture.tutorial().hide();
+                fixture.stage().close();
+            });
+        }
+    }
+
+    @Test
+    public void zeroSizedOverlay_doesNotRunResizeHandler() throws Exception {
+        record Fixture(TutorialWindow tutorial, Stage stage, AtomicInteger resizeCount) { }
+        Fixture fixture = JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+            TutorialWindow tutorial = new TutorialWindow();
+            AtomicInteger resizeCount = new AtomicInteger();
+            tutorial.setResizeHandler(resizeCount::incrementAndGet);
+            tutorial.getRoot().setMaxWidth(0);
+            Stage stage = createStage(tutorial, 900, 650);
+            tutorial.show();
+            return new Fixture(tutorial, stage, resizeCount);
+        });
+        try {
+            waitForLayoutPulses();
+            JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+                assertEquals(0, fixture.resizeCount().get());
+                fixture.tutorial().getRoot().setMaxWidth(Double.MAX_VALUE);
+                fixture.tutorial().getRoot().setMaxHeight(0);
+            });
+            waitForLayoutPulses();
+            JavaFxTestSupport.runOnFxThreadAndWait(() -> assertEquals(0, fixture.resizeCount().get()));
+        } finally {
+            JavaFxTestSupport.runOnFxThreadAndWait(() -> {
+                fixture.tutorial().hide();
+                fixture.stage().close();
+            });
+        }
+    }
+
+    @Test
     public void highlightedTarget_nearTopOrBottomPlacesCardOnVisibleSide() throws Exception {
         JavaFxTestSupport.runOnFxThreadAndWait(() -> {
             TutorialWindow tutorial = new TutorialWindow();
@@ -500,7 +822,7 @@ public class TutorialWindowTest {
                 assertFalse(tutorial.isInteractiveTarget(target));
             }
             nextButton.fire();
-            tutorial.highlight(null);
+            tutorial.highlight((Node) null);
             applyLayout(stage);
             assertFalse(highlight.isVisible());
             assertCardCentered(stage, card);
