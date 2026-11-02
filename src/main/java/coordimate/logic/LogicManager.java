@@ -4,6 +4,7 @@ import static coordimate.model.Model.PREDICATE_SHOW_ALL_PERSONS;
 
 import java.io.IOException;
 import java.time.Clock;
+import java.util.Locale;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
@@ -80,7 +81,7 @@ public class LogicManager implements Logic {
 
     @Override
     public CommandResult execute(String commandText) throws CommandException, ParseException {
-        String commandWord = pendingDelete == null ? commandText.strip().split("\\s+", 2)[0]
+        String commandWord = pendingDelete == null ? commandText.strip().split("\\s+", 2)[0].toLowerCase(Locale.ROOT)
                 : DeleteCommand.COMMAND_WORD;
         try {
             return executeCommand(commandText);

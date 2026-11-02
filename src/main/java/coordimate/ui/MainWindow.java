@@ -935,7 +935,7 @@ public class MainWindow extends UiPart<Stage> {
                 resultDisplay.setFeedbackToUser(commandResult.getFeedbackToUser());
             }
 
-            if (commandText.strip().split("\\s+", 2)[0].equals(AddEventCommand.COMMAND_WORD)) {
+            if (commandText.strip().split("\\s+", 2)[0].equalsIgnoreCase(AddEventCommand.COMMAND_WORD)) {
                 eventListPanel.selectNewestEvent();
             }
 
