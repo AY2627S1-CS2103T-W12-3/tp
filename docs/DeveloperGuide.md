@@ -1021,7 +1021,7 @@ already assigned. Extension 1c applies only to archived events; archived contact
 
 **MSS**
 
-1. EXCO member selects an event in Events to see members and attendance.
+1. EXCO member views an event's members and attendance.
 2. EXCO member marks a member present or absent.
 3. CoordiMate records and confirms the status.
 4. Repeat steps 2-3 for each member to mark.
@@ -1083,8 +1083,7 @@ already assigned. Extension 1c applies only to archived events; archived contact
 3. EXCO member requests archived contacts and events.
 4. CoordiMate shows only archived items.
 5. EXCO member requests restoration by member ID.
-6. CoordiMate restores the contact to active items and confirms. The contact leaves the displayed archived list;
-   the archived view stays open. Run `list` to see active contacts.
+6. CoordiMate confirms restoration. The contact leaves the archived results and is available among active contacts.
 
    Use case ends.
 
@@ -1159,9 +1158,12 @@ users for speed and onboarding targets.
 2. Store and reload the maximum [typical load](#glossary). Saved contact details, IDs, tags, schedules, assignments,
    attendance, archive flags, leave dates, and reminder dismissals should survive normal restarts. Assess performance
    under NFR 4. This is a whole-dataset capacity target, not an enforced limit; data is not partitioned by semester.
-3. For users familiar with shortcuts, switching views and selecting adjacent cards should be faster on average
-   by keyboard than mouse. Compare repeated trials by the same user from identical starting views and selections,
-   including mode changes.
+3. For users familiar with shortcuts, keyboard navigation should be faster on average than mouse navigation in
+   this benchmark. Use sample data, starting in Contacts with Alex Yeoh selected and the command box focused in
+   Command mode. Select Bernice, select Alex again, switch to Events, Tags, then Contacts, and return command-box
+   focus. After two practice trials per method, alternate methods for 10 timed trials each, resetting the starting
+   state before every trial. Time from a start signal until command-box focus returns, including mode changes.
+   Compare arithmetic means for the same user and machine; the keyboard mean should be lower.
 4. At [typical load](#glossary), every contact, tag, event, attendance, or reminder command should have a median
    response time of at most 2 seconds over repeated trials on the recorded machine, including `delete`, `unassign`,
    `archiveevent`, `unarchiveevent`, `dismiss`, and `clear`. Measure Enter to feedback and completed view update,
@@ -1644,3 +1646,51 @@ run `chmod a-w data` in the home folder.
 | `addevent evn/Test st/01-01-2027 et/01-01-2027` | No addition; Events unchanged. `Event could not be saved. No changes were made.` |
 | `add n/Test Person p/91234567 e/testperson@example.com r/Member` | No addition. `Contact could not be saved. No changes were made.` |
 | Untick **Read-only** or run `chmod u+w data`; repeat `addevent` | Event is added. |
+
+#### Startup event cleanup
+
+**Setup:** Restore sample data and run:
+
+1. `addevent evn/Planning Meeting st/01-01-2027 et/01-01-2027`
+1. `addevent evn/Planning Draft st/01-01-2027 et/01-01-2027`
+1. `addevent evn/Legacy Parameter st/01-01-2027 et/01-01-2027`
+1. `addevent evn/Legacy Date st/01-01-2027 et/01-01-2027`
+1. `assign evn/Planning Draft c/1`
+1. `markattendance evn/Planning Draft mem/Alex Yeoh att/absent`
+1. `archiveevent evn/Planning Draft`
+
+Close the app. In `data/coordimate.json`, keep all other fields unchanged and:
+
+* Rename `Planning Draft` to `"Planning\u00a0Meeting"`, using the JSON escape for a non-breaking space.
+  Set its `dismissedReminderStarts` to `["01-01-0000"]`.
+* Rename `Legacy Parameter` to `"Legacy c/review"`.
+* Change `Legacy Date`'s `startTime` and `endTime` to `"01-01-0000"`.
+
+| Test case | Expected |
+|---|---|
+| Launch and acknowledge the startup warning | Warning reports the rename to `Planning Meeting (2)` and deletion of `Legacy c/review` and `Legacy Date`. The original `Planning Meeting` remains active; sample contacts and event are preserved. |
+| `list archived`; select `Planning Meeting (2)` in Events; inspect the saved JSON | Event remains archived with its dates, Alex's membership, and `● absent` attendance preserved. Invalid reminder history is removed. The rename and deletions are saved. |
+| Close and relaunch | No cleanup warning; migrated data remains unchanged. |
+
+#### Concurrent-window save conflicts
+
+**Setup:** Restore sample data; run `edit 1 r/President` to create the data file, then close the app.
+Launch two instances, A and B, from the same JAR folder before running either test command.
+
+| Test case | Expected |
+|---|---|
+| In A, run `addtag t/ConcurrentA`; then in B, run `addtag t/ConcurrentB` | A saves successfully. B rejects its change: `The data file changed in another window. Reopen this window before saving. No changes were made.` B's data stays unchanged; the file contains `ConcurrentA`, not `ConcurrentB`. |
+| Close and reopen B; run `addtag t/ConcurrentB` | B loads `ConcurrentA` and saves `ConcurrentB`; the file contains both tags. Close both instances before continuing. |
+
+#### Reminder dismissal when saving fails
+
+**Setup:** Use data with no active reminders. Run `addevent evn/Unsaved Reminder st/TOMORROW et/TOMORROW`,
+then block saving as described under [Failed save](#failed-save).
+
+| Test case | Expected |
+|---|---|
+| `dismiss 1` | Reminder disappears with **Not saved** status: `Reminder dismissal could not be saved and may reappear after restarting.` The event and data file remain unchanged. |
+| Restore write access; run `list` without restarting | Reminder stays hidden for this session; the event remains saved. |
+| Close and relaunch while the event still qualifies | `Unsaved Reminder` reappears: its dismissal was not saved. |
+
+Cleanup: `deleteevent evn/Unsaved Reminder`.
