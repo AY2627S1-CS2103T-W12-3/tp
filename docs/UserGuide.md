@@ -561,10 +561,11 @@ Format: `filter FIELD/VALUE [FIELD/VALUE]...`
 
 **Quotation marks**
 
-* A value may be wrapped in quotation marks, which are removed: `filter event/"Final Concert"` and
-  `filter event/Final Concert` give the same results.
+* Quotation marks are part of the value, as in other event commands: `filter event/"Welcome Night"` matches an
+  event named `"Welcome Night"`, quotation marks included. A value with spaces needs no quotation marks:
+  `filter event/Final Concert`.
 * Inside quotation marks, text that looks like another field is kept as part of the value:
-  `filter event/"Planning tag/review"` is one filter for an event named `Planning tag/review`. Such a name can
+  `filter event/"Planning tag/review"` is one filter for an event named `"Planning tag/review"`. Such a name can
   exist only in a data file edited by hand, because `addevent` and `editevent` do not accept it.
 * A quotation mark with no closing quotation mark is kept as part of the value when no field follows it:
   `filter event/"Cali` matches an event named `"Cali`. A filter like this must be the last one in the command,
@@ -579,7 +580,7 @@ Examples:
 * `filter tag/EXCO` lists contacts tagged `EXCO`.
 * `filter event/Final Concert` lists the members of `Final Concert`.
 * `filter organisation/nus student affairs` lists contacts whose organisation is `NUS Student Affairs`.
-* `filter event/"Final Concert" tag/EXCO` lists members of `Final Concert` who are also tagged `EXCO`.
+* `filter event/Final Concert tag/EXCO` lists members of `Final Concert` who are also tagged `EXCO`.
 
 Success: `2 contact(s) found.`
 
@@ -589,7 +590,7 @@ If every value exists but no contact matches all the filters, the displayed list
 | Condition | Error message |
 |---|---|
 | No saved tag, event, or organisation has the supplied value. | `No saved tag, event, or organisation matches that value. Use a value from the saved data.` |
-| `tag/`, `event/`, or `organisation/` has no value, contains only whitespace, or has an empty quoted value. | `Filter value must not be empty.` with an example matching the field used, e.g. `Example: tag/Publicity` |
+| `tag/`, `event/`, or `organisation/` has no value or contains only whitespace. | `Filter value must not be empty.` with an example matching the field used, e.g. `Example: tag/Publicity` |
 
 ### Archiving contacts: `archive`, `unarchive`
 
@@ -1056,7 +1057,7 @@ Action | Format, Examples
 **Edit contact** | `edit MEMBER_ID [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [lv/LEAVE_END_DATE] [t/TAG]... [at/TAG]... [rt/TAG]...`<br> or `edit target/IDENTIFIER [n/NAME] [p/PHONE] [e/EMAIL] [r/ROLE] [b/BIRTHDAY] [a/ADDRESS] [o/ORGANISATION] [m/NOTE] [lv/LEAVE_END_DATE] [t/TAG]... [at/TAG]... [rt/TAG]...`<br> e.g., `edit 2 n/James Lee e/jameslee@example.com`
 **Delete contact** | `delete MEMBER_ID` or `delete n/NAME`, `delete p/PHONE`, `delete e/EMAIL`; confirm with `y`<br> e.g., `delete 3`
 **Search** | `search KEYWORD`<br> e.g., `search James`, `search "Jurong West"`
-**Filter** | `filter FIELD/VALUE [FIELD/VALUE]...`<br> e.g., `filter tag/EXCO`, `filter event/"Final Concert" tag/EXCO`
+**Filter** | `filter FIELD/VALUE [FIELD/VALUE]...`<br> e.g., `filter tag/EXCO`, `filter event/Final Concert tag/EXCO`
 **Archive contact** | `archive MEMBER_ID`<br> e.g., `archive 12`
 **Unarchive contact** | `unarchive MEMBER_ID`<br> e.g., `unarchive 12`
 **Add event** | `addevent evn/EVENT_NAME st/START_TIME et/END_TIME`<br> e.g., `addevent evn/Final Concert st/08-08-2026 15:00 et/08-08-2026 18:00`

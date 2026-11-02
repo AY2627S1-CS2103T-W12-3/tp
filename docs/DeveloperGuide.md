@@ -472,7 +472,8 @@ Filtering is split into parsing, which does not need saved data, and resolving, 
 splits the arguments at each `FIELD/` token into a list of [`FilterCriterion`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/person/FilterCriterion.java)
 records, each holding a [`FilterField`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/model/person/FilterField.java)
 and its value. A value may be wrapped in quotation marks, so that it can contain text that looks like a `FIELD/`
-token.
+token. The quotation marks stay part of the value, as in other commands that take an event name, because saved
+event names may contain them.
 
 **Resolving.** [`FilterCommand#execute`](https://github.com/AY2627S1-CS2103T-W12-3/tp/tree/master/src/main/java/coordimate/logic/commands/FilterCommand.java)
 turns each criterion into a `Predicate<Person>` using the model:

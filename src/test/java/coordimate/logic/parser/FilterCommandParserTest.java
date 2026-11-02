@@ -20,13 +20,13 @@ public class FilterCommandParserTest {
     private final String invalidFormat = String.format(MESSAGE_INVALID_COMMAND_FORMAT, FilterCommand.MESSAGE_USAGE);
 
     @Test
-    public void parse_unicodeWhitespace_separatesFieldsAndTrimsQuotedValues() {
+    public void parse_unicodeWhitespace_separatesFieldsAndTrimsValues() {
         FilterCommand expected = new FilterCommand(List.of(
                 new FilterCriterion(FilterField.EVENT, "Final Concert"),
                 new FilterCriterion(FilterField.TAG, "friend")));
         for (String space : UnicodeWhitespace.ALL) {
-            assertParseSuccess(parser, space + "event/\"" + space + "Final Concert" + space + "\""
-                    + space + "tag/friend" + space, expected);
+            assertParseSuccess(parser, space + "event/" + space + "Final Concert" + space
+                    + "tag/friend" + space, expected);
         }
     }
 
@@ -62,23 +62,25 @@ public class FilterCommandParserTest {
     }
 
     @Test
-    public void parse_valueWithSpacesInQuotes_stripsQuotes() {
+    public void parse_quotedValue_keepsQuotes() {
         FilterCommand expected = new FilterCommand(
-                List.of(new FilterCriterion(FilterField.EVENT, "Final Concert")));
-        assertParseSuccess(parser, " event/\"Final Concert\"", expected);
+                List.of(new FilterCriterion(FilterField.EVENT, "\"Welcome Night\"")));
+        assertParseSuccess(parser, " event/\"Welcome Night\"", expected);
+        assertParseSuccess(parser, " event/\"\"", new FilterCommand(
+                List.of(new FilterCriterion(FilterField.EVENT, "\"\""))));
     }
 
     @Test
     public void parse_fieldLikeTextInQuotes_treatedAsOneValue() {
         FilterCommand expected = new FilterCommand(
-                List.of(new FilterCriterion(FilterField.EVENT, "Planning tag/review")));
+                List.of(new FilterCriterion(FilterField.EVENT, "\"Planning tag/review\"")));
         assertParseSuccess(parser, " event/\"Planning tag/review\"", expected);
     }
 
     @Test
     public void parse_fieldAfterQuotedValue_parsedAsSeparateFilter() {
         FilterCommand expected = new FilterCommand(List.of(
-                new FilterCriterion(FilterField.EVENT, "Planning tag/review"),
+                new FilterCriterion(FilterField.EVENT, "\"Planning tag/review\""),
                 new FilterCriterion(FilterField.TAG, "friend")));
         assertParseSuccess(parser, " event/\"Planning tag/review\" tag/friend", expected);
     }
@@ -109,7 +111,7 @@ public class FilterCommandParserTest {
         FilterCommand expected = new FilterCommand(
                 List.of(new FilterCriterion(FilterField.ORGANISATION, "NUS Student Affairs")));
         assertParseSuccess(parser, " organisation/NUS Student Affairs", expected);
-        assertParseSuccess(parser, " ORGANISATION/\"NUS Student Affairs\"", expected);
+        assertParseSuccess(parser, " ORGANISATION/NUS Student Affairs", expected);
     }
 
     @Test

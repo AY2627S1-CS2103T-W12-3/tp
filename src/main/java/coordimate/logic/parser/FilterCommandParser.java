@@ -46,7 +46,8 @@ public class FilterCommandParser implements Parser<FilterCommand> {
             String fieldName = token.group(1);
             int valueStart = token.end();
             int valueEnd = (i + 1 < fieldTokens.size()) ? fieldTokens.get(i + 1).start() : trimmed.length();
-            String value = stripQuotes(StringUtil.stripWhitespace(trimmed.substring(valueStart, valueEnd)));
+            // Quotation marks are kept, since saved event names may contain them.
+            String value = StringUtil.stripWhitespace(trimmed.substring(valueStart, valueEnd));
 
             FilterField field = FilterField.fromFieldName(fieldName)
                     .orElseThrow(() -> new ParseException(String.format(MESSAGE_UNKNOWN_PARAMETER, fieldName + "/")));
@@ -90,12 +91,5 @@ public class FilterCommandParser implements Parser<FilterCommand> {
 
     private boolean isInsideQuotes(String args, int index) {
         return args.substring(0, index).chars().filter(c -> c == '"').count() % 2 == 1;
-    }
-
-    private String stripQuotes(String value) {
-        if (value.length() >= 2 && value.startsWith("\"") && value.endsWith("\"")) {
-            return StringUtil.stripWhitespace(value.substring(1, value.length() - 1));
-        }
-        return value;
     }
 }
