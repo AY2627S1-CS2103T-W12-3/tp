@@ -1,0 +1,18 @@
+@startuml
+skin rose
+skinparam ActivityFontSize 15
+skinparam ArrowFontSize 12
+
+start
+:Read today's date and
+the contact's leave date;
+
+if () then ([a leave date is saved and
+today is on or before that date])
+    :Show the contact as on leave
+    with the leave end date;
+else ([else])
+    :Show the contact as not on leave;
+endif
+stop
+@enduml

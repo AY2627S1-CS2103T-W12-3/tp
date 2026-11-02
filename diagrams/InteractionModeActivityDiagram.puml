@@ -1,0 +1,20 @@
+@startuml
+skin rose
+skinparam ActivityFontSize 15
+skinparam ArrowFontSize 12
+
+start
+:Receive a mode-switching input;
+
+if () then ([Esc is pressed or
+a card list is clicked])
+    :Enter Navigation mode;
+    :Disable the command box;
+else ([the command box is clicked,
+a command row is selected, or
+unmodified I is released in Navigation mode])
+    :Enter Command mode;
+    :Enable and focus the command box;
+endif
+stop
+@enduml
