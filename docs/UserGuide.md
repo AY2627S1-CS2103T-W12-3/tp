@@ -160,7 +160,7 @@ A command that breaks a constraint is rejected and makes no changes.
 | `ADDRESS` | `a/` | 1 to 200 printable characters, including at least one visible character. |
 | `ORGANISATION` | `o/` | 1 to 80 characters. Letters, digits, spaces, and `-` `&` `.` `,` `'` `(` `)` `/` only, with at least one letter or digit. Several spaces in a row count as one. |
 | `NOTE` | `m/` | 1 to 500 printable characters, including at least one visible character. |
-| `TAG`, `NEW_TAG` | `t/`, `at/`, `rt/` | 1 to 30 characters. English letters and digits only, with no spaces. Tags are unique, ignoring case. A contact can have at most 15 tags. |
+| `TAG`, `NEW_TAG` | `t/`, `at/`, `rt/` | 1 to 30 characters. English letters and digits only, with no spaces. Tags are unique, ignoring case. A contact can have at most 15 tags. `deletetag` only requires its `TAG` to match a saved tag. |
 | `EVENT_NAME`, `NEW_EVENT_NAME` | `evn/`, `nevn/` | 1 to 100 printable Unicode characters, including at least one visible character. Internal tabs, line breaks, and control characters are rejected. Several spaces in a row count as one. Event names are unique, ignoring case and extra spaces. See the parameter syntax note below. |
 | `START_TIME`, `END_TIME` | `st/`, `et/` | A real date in `dd-MM-yyyy` format, optionally followed by a 24-hour time in `HH:mm` format, e.g. `17-09-2026` or `17-09-2026 16:30`. The start must not be after the end. |
 | `STATUS` | `att/` | `present` or `absent`, ignoring case. |
@@ -900,22 +900,22 @@ If the dismissal cannot be saved, the reminder is hidden until CoordiMate closes
 
 ## Managing tags
 
-### Managing tags: `addtag`, `edittag`, `deletetag`
+A new tag name, the `TAG` given to `addtag` or the `NEW_TAG` given to `edittag`, must follow the `TAG` rule in
+[Parameter constraints](#parameter-constraints), and keeps the capitalization you type. Commands that name an existing
+tag, `OLD_TAG` in `edittag` and `TAG` in `deletetag`, find it ignoring capitalization, so `deletetag t/publicity`
+deletes `Publicity`. See [The main window](#the-main-window) for what the **Tags** view shows and which view opens
+after each command.
 
-| Condition | Error message |
-|---|---|
-| The tag name already exists, ignoring capitalization. | `A tag with this name already exists. No changes were made.` |
+If saving fails, each tag command reports `Tag could not be saved. No changes were made.`
 
-Formats:
+### Adding a tag: `addtag`
 
-* `addtag t/TAG` creates `TAG`.
-* `edittag OLD_TAG t/NEW_TAG` renames `OLD_TAG` to `NEW_TAG`.
-* `deletetag t/TAG` deletes `TAG`.
+Creates a custom tag, which can then be given to contacts.
 
-* `TAG` and `NEW_TAG` must contain 1 to 30 alphanumeric characters without spaces. Leading and trailing whitespace
-  is trimmed. Tag names preserve their capitalization, but are unique regardless of capitalization, so `addtag
-  t/publicity` is rejected as a duplicate if `Publicity` already exists.
-* `OLD_TAG`, and the `TAG` given to `deletetag`, must match an existing tag, ignoring capitalization.
+Format: `addtag t/TAG`
+
+* `TAG` must not match an existing tag, ignoring capitalization. For example, `addtag t/publicity` is rejected if
+  `Publicity` already exists.
 
 ![Add tag](images/addTag.png)
 *The Tags tab showing the new `ProductionCrew` tag after `addtag`.*
@@ -924,21 +924,38 @@ Examples:
 
 * `addtag t/ProductionCrew`
 * `addtag t/Publicity`
+
+Success: `Created tag: Publicity.`
+
+| Condition | Error message |
+|---|---|
+| The tag name already exists, ignoring capitalization. | `A tag with this name already exists. No changes were made.` |
+
+### Renaming a tag: `edittag`
+
+Renames an existing tag, including a default tag, and updates every contact to which it is assigned.
+
+Format: `edittag OLD_TAG t/NEW_TAG`
+
+* `OLD_TAG` must match an existing tag, ignoring capitalization.
+* `NEW_TAG` follows the same rules as a new tag in `addtag`, and must differ from `OLD_TAG` by more than
+  capitalization. To change only a tag's capitalization, rename it twice, e.g. `edittag Media t/MediaTemp` then
+  `edittag MediaTemp t/MEDIA`.
+
+Examples:
+
 * `edittag Production t/ProductionCrew`
 * `edittag Media t/Publicity`
 
-`OLD_TAG` must match an existing tag, ignoring capitalization. `NEW_TAG` must contain 1 to 30
-alphanumeric characters without spaces. Leading and trailing whitespace is trimmed before validation.
-
-Success for `edittag Media t/Publicity`: `Media successfully renamed to Publicity.`
+Success: `Media successfully renamed to Publicity.`
 
 | Condition | Error message |
 |---|---|
 | The current tag does not exist. | `Tag {OLD_TAG} does not exist. Use a saved tag name.` |
-| The new tag matches the current tag, ignoring capitalization. | `Tag {OLD_TAG} already has that name. No changes were made.` |
+| The new tag matches the current tag, ignoring capitalization. | `Tag {SAVED_TAG} already has that name. No changes were made.` |
 | The new tag already exists. | `A tag with this name already exists. No changes were made.` |
 
-If saving fails, the command reports `Tag could not be saved. No changes were made.`
+`{SAVED_TAG}` is the tag as saved, e.g. `Media` for `edittag media t/MEDIA`.
 
 ### Deleting a tag: `deletetag`
 
@@ -946,25 +963,23 @@ Deletes an existing tag, including a default tag, and removes it from every cont
 
 Format: `deletetag t/TAG`
 
+* `TAG` must match an existing tag, ignoring capitalization.
+
 Examples:
 
 * `deletetag t/ProductionCrew`
 * `deletetag t/Publicity`
 
-Success: `Created tag: Publicity.` (`addtag`) · `Media successfully renamed to Publicity.` (`edittag`) ·
-`Publicity successfully deleted.` (`deletetag`)
+Success: `Publicity successfully deleted.`
 
 | Condition | Error message |
 |---|---|
-| The specified tag does not exist. | `Tag {TAG_NAME} does not exist. Use a saved tag name.` |
-
-If saving fails, the command reports `Tag could not be saved. No changes were made.`
+| The specified tag does not exist. | `Tag {TAG} does not exist. Use a saved tag name.` |
 
 ### Viewing all tags
 
 The **Tags** tab shows every default and custom tag. To open it without the mouse, press <kbd>Esc</kbd> to enter
-Navigation mode, then press <kbd>S</kbd> until the Tags view is active. `addtag`, `edittag`, and `deletetag` also open
-the Tags view.
+Navigation mode, then press <kbd>S</kbd> until the Tags view is active.
 
 Select a tag in the **Tags** tab to see the contacts assigned to it and the member count. The member list includes
 all saved contacts, regardless of the current contact search or filter, and is ordered by name. Each member shows
