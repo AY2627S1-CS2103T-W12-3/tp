@@ -939,8 +939,10 @@ public class MainWindow extends UiPart<Stage> {
                 eventListPanel.selectNewestEvent();
             }
 
-            commandResult.getContactToFocus().ifPresent(personListPanel::selectContact);
-            commandResult.getContactIndexToFocus().ifPresent(personListPanel::selectContactAt);
+            boolean contactSelected = commandResult.getContactToFocus()
+                    .map(personListPanel::selectContact)
+                    .orElseGet(() -> commandResult.getContactIndexToFocus().stream()
+                            .anyMatch(personListPanel::selectContactAt));
 
             if (commandResult.shouldShowHelp()) {
                 handleHelp();
@@ -957,7 +959,7 @@ public class MainWindow extends UiPart<Stage> {
                 default -> { } // NONE keeps the selected view.
             }
 
-            if (commandResult.getContactToFocus().isPresent() || commandResult.getContactIndexToFocus().isPresent()) {
+            if (contactSelected) {
                 // Feedback and view changes can resize the list after its initial scroll request.
                 appRoot.applyCss();
                 appRoot.layout();
