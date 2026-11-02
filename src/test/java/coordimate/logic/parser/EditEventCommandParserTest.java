@@ -68,7 +68,7 @@ public class EditEventCommandParserTest {
         }
         assertError(" evn/Fair evn/Fair nevn/New",
                 String.format(EditEventCommandParser.MESSAGE_REPEATED_PARAMETER, "evn/"));
-        for (String unknown : new String[] {" r/Logistics", " x/unknown", " /et 10-10-2026"}) {
+        for (String unknown : new String[] {" r/Logistics", " x/unknown"}) {
             String prefix = unknown.strip().replaceFirst("^(\\w+/).*", "$1").split(" ", 2)[0];
             assertError(valid + unknown,
                     String.format(EditEventCommandParser.MESSAGE_UNKNOWN_PARAMETER, prefix));

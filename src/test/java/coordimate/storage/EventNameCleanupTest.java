@@ -52,7 +52,6 @@ public class EventNameCleanupTest {
         List<String> names = new ArrayList<>();
         for (String spacing : UnicodeWhitespace.ALL) {
             names.add("Planning" + spacing + "c/review");
-            names.add("Planning" + spacing + "/review");
         }
         writeLegacyData(path, expected, names);
         StorageManager storage = createStorage(new JsonCoordiMateStorage(path));
@@ -143,7 +142,8 @@ public class EventNameCleanupTest {
     public void cleanup_usableNamesAndFormatCharacters_preservesFile() throws Exception {
         Path path = testFolder.resolve("data.json");
         List<String> names = new ArrayList<>(List.of("/review", "\u2003c/review\u2003",
-                "Planningc/review", "Planning 123/review", "Planning /123", "Planning 中文/review"));
+                "Planningc/review", "Planning 123/review", "Planning /123", "Concert /Workshop",
+                "Fair /st today", "Fair /et tomorrow", "Planning 中文/review"));
         for (String character : List.of("\u180e", "\u200b", "\u2060", "\ufeff")) {
             names.add("Planning" + character + "c/review");
             names.add(character + "Planning");

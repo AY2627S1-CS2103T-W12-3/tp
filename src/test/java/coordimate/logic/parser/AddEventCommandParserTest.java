@@ -15,6 +15,16 @@ public class AddEventCommandParserTest {
     private final AddEventCommandParser parser = new AddEventCommandParser();
 
     @Test
+    public void parse_reversedPrefixesInValues_validatesDatesInsteadOfDetectingParameters() throws Exception {
+        assertEquals(new AddEventCommand(new Event("Fair /st /et", new EventTime("09-10-2026"),
+                new EventTime("10-10-2026"))),
+                parser.parse("evn/Fair /st /et st/09-10-2026 et/10-10-2026"));
+        assertError("evn/Fair st/09-10-2026 /et 10-10-2026 et/10-10-2026", EventTime.MESSAGE_CONSTRAINTS);
+        assertError("evn/Fair st/09-10-2026 et/10-10-2026 /st",
+                EventTime.MESSAGE_CONSTRAINTS.replace("Example: st/", "Example: et/"));
+    }
+
+    @Test
     public void parse_documentedExamples_success() throws Exception {
         AddEventCommand concert = new AddEventCommand(new Event("Final Concert",
                 new EventTime("08-08-2026 15:00"), new EventTime("08-08-2026 18:00")));
@@ -77,7 +87,7 @@ public class AddEventCommandParserTest {
                     String.format(AddEventCommandParser.MESSAGE_REPEATED_PARAMETER, prefix));
         }
         assertError(" evn/Fair st/09-10-2026 /et 10-10-2026",
-                String.format(AddEventCommandParser.MESSAGE_UNKNOWN_PARAMETER, "/et"));
+                String.format(MESSAGE_INVALID_COMMAND_FORMAT, AddEventCommand.MESSAGE_USAGE));
         assertError(" evn/Fair evn/Fair st/09-10-2026 et/10-10-2026",
                 String.format(AddEventCommandParser.MESSAGE_REPEATED_PARAMETER, "evn/"));
         assertThrows(ParseException.class, () -> parser.parse("unexpected" + valid));

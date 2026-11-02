@@ -46,7 +46,7 @@ public class MembersCommandParserTest {
 
     @Test
     public void parse_unknownParameters_rejected() {
-        for (String unknown : new String[] {" c/1", " x/1", " st/08-08-2026", " /et 1"}) {
+        for (String unknown : new String[] {" c/1", " x/1", " st/08-08-2026"}) {
             String prefix = unknown.strip().replaceFirst("^(\\w+/).*", "$1").split(" ", 2)[0];
             assertError(" evn/Final Concert" + unknown,
                     String.format(MembersCommandParser.MESSAGE_UNKNOWN_PARAMETER, prefix));
