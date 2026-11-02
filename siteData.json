@@ -16,14 +16,6 @@
       "headingKeywords": {}
     },
     {
-      "src": "Configuration.md",
-      "title": "Configuration guide",
-      "headings": {
-        "configuration-guide": "Configuration guide"
-      },
-      "headingKeywords": {}
-    },
-    {
       "src": "DevOps.md",
       "title": "DevOps guide",
       "headings": {
