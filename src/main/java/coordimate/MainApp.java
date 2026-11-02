@@ -13,6 +13,7 @@ import coordimate.commons.core.LogsCenter;
 import coordimate.commons.exceptions.DataLoadingException;
 import coordimate.commons.exceptions.IllegalValueException;
 import coordimate.commons.exceptions.JsonTypeMismatchException;
+import coordimate.commons.util.FileUtil;
 import coordimate.commons.util.StringUtil;
 import coordimate.logic.Logic;
 import coordimate.logic.LogicManager;
@@ -41,8 +42,9 @@ public class MainApp extends Application {
     public static final String VERSION = "V1.5";
 
     private static final Logger logger = LogsCenter.getLogger(MainApp.class);
-    private static final Path USER_PREFS_FILE_PATH = Paths.get("preferences.json");
-    private static final Path COORDIMATE_FILE_PATH = Paths.get("data", "coordimate.json");
+    private static final Path HOME_FOLDER = FileUtil.getHomeFolder();
+    private static final Path USER_PREFS_FILE_PATH = HOME_FOLDER.resolve("preferences.json");
+    private static final Path COORDIMATE_FILE_PATH = HOME_FOLDER.resolve(Paths.get("data", "coordimate.json"));
 
     protected Ui ui;
     protected Logic logic;

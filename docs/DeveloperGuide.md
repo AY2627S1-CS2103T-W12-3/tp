@@ -181,6 +181,11 @@ The `Storage` component,
 * converts CoordiMate data through `JsonSerializableCoordiMate`, which stores contacts (`JsonAdaptedPerson`), events (`JsonAdaptedEvent`), and the global tag list (`JsonAdaptedTag`) as separate lists. Each contact also stores its own tags, and each event records its members by contact name rather than by member ID.
 * depends on some classes in the `Model` component (because the `Storage` component's job is to save/retrieve objects that belong to the `Model`)
 
+`MainApp` resolves the data and preferences file paths, and `LogsCenter` resolves the log file path, against the
+[home folder](#glossary) returned by `FileUtil#getHomeFolder()`. This is the folder containing the running JAR, so
+the files stay in one place even if the user launches the JAR from another directory. If the app is not running from
+a JAR, such as from an IDE or Gradle, `getHomeFolder()` falls back to the current working directory.
+
 Saved data is validated when it is loaded, and a file that fails validation is never overwritten. If the data file
 cannot be loaded, CoordiMate shows a warning naming the file and then closes, so that the user can repair or restore
 it. If only the preferences file cannot be loaded, CoordiMate starts with default preferences and does not save them
@@ -1439,9 +1444,10 @@ the results. Speed and onboarding targets require timed trials with users from t
 * **EXCO (Executive Committee)**: The group of students elected to lead and run a CCA.
 * **External contact**: A contact from outside the CCA, such as a sponsor, university staff member, or EXCO member of a collaborating CCA.
 * **Future event**: An event whose start date/time is later than the current date/time.
+* **Home folder**: The folder containing the CoordiMate JAR file. CoordiMate keeps its data file, `preferences.json`, and log files here, regardless of the directory it is launched from. When run from an IDE or Gradle rather than a JAR, the current working directory is used instead.
 * **Internal contact**: A contact from within the CCA, such as a member, fellow EXCO member or advisor.
 * **JAR file**: A single file that packages a Java application so that it can be run without installation.
-* **Local data file**: The JSON file on the user's computer where CoordiMate saves the application data listed in NFR 2 under [Non-Functional Requirements](#non-functional-requirements). Its default path is `data/coordimate.json`, relative to the application's working directory.
+* **Local data file**: The JSON file on the user's computer where CoordiMate saves the application data listed in NFR 2 under [Non-Functional Requirements](#non-functional-requirements). Its default path is `data/coordimate.json`, relative to the [home folder](#glossary).
 * **Mainstream OS**: Windows, macOS, or Linux.
 * **Member ID**: A unique, permanent positive integer assigned to a contact, displayed as `ID: <number>`, and used in commands across searches, filters, and restarts.
 * **Navigation mode**: The keyboard mode in which key presses browse cards and switch views.
@@ -1461,7 +1467,7 @@ the results. Speed and onboarding targets require timed trials with users from t
 
 Given below are instructions to test the app manually.
 
-All relative file paths below are relative to the application's working directory. When launching with `java -jar`, this is the terminal's current directory. Use the same working directory when relaunching the app to reload the same data.
+All relative file paths below are relative to the [home folder](#glossary), the folder containing the JAR file. CoordiMate uses this folder however it is launched, even when `java -jar` is run from another directory.
 
 <box type="info" seamless>
 
@@ -1478,7 +1484,7 @@ sections is not always cleaned up, so when a section's prerequisites say **Resto
 continuing:
 
 1. Close the app.
-1. Delete `data/coordimate.json` from the application's working directory.
+1. Delete `data/coordimate.json` from the home folder.
 1. Relaunch the app.
 
 The app then starts with the six sample contacts (member IDs `1` to `6`), the `Freshmen Welcome Night` sample
@@ -1515,7 +1521,7 @@ event, and no custom tags. Deleting contacts by hand is not enough, because memb
 
 ### Tutorial and Help
 
-Closing the tutorial with Esc or **Close** also marks it as seen. Restoring the sample data does not reset this preference, which is stored in `preferences.json` in the application's working directory.
+Closing the tutorial with Esc or **Close** also marks it as seen. Restoring the sample data does not reset this preference, which is stored in `preferences.json` in the home folder.
 
 1. Test case: `tutorial`, then press Right Arrow, Left Arrow, Tab, and Shift+Tab.<br>
    Expected: The overlay starts at **Step 1 of 16**. Arrow keys change steps and Tab moves focus between the
@@ -2078,7 +2084,7 @@ want to keep.
 
 1. Dealing with a failed save
 
-   1. Prerequisites: The app is running and `data/coordimate.json` exists. Make the data impossible to save: on Windows, open the properties of `data/coordimate.json` and tick **Read-only**; on macOS or Linux, run `chmod a-w data` in the application's working directory.
+   1. Prerequisites: The app is running and `data/coordimate.json` exists. Make the data impossible to save: on Windows, open the properties of `data/coordimate.json` and tick **Read-only**; on macOS or Linux, run `chmod a-w data` in the home folder.
 
    1. Test case: `addevent evn/Test st/01-01-2027 et/01-01-2027`<br>
       Expected: No event is added and the **Events** tab is unchanged. The status message shows `Event could not be saved. No changes were made.`
