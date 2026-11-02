@@ -359,7 +359,11 @@ public class TutorialWindow extends UiPart<StackPane> {
         nextButton.setText(isLastStep ? "Finish →" : "Next →");
         nextButton.setAccessibleText(isLastStep ? "Finish, Right Arrow" : "Next, Right Arrow");
         stepChangeHandler.accept(step);
-        Platform.runLater(this::layoutOverlay);
+        Platform.runLater(() -> {
+            if (getCurrentStep() == step) {
+                layoutOverlay();
+            }
+        });
     }
 
     private void layoutOverlay() {
@@ -417,8 +421,6 @@ public class TutorialWindow extends UiPart<StackPane> {
         double cardWidth = Math.min(tutorialCard.prefWidth(-1), tutorialCard.getMaxWidth());
         double cardHeight = Math.min(tutorialCard.prefHeight(cardWidth), height - 2 * WINDOW_MARGIN);
         tutorialCard.resize(cardWidth, cardHeight);
-        // Force the card's text to re-wrap now; this layout runs after the scene's own layout pass,
-        // so without this the new size would not be reflected until the next pulse.
         tutorialCard.layout();
 
         Position position = getCardPosition(width, height, cardWidth, cardHeight, placement, targetBounds);
